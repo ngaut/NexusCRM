@@ -89,10 +89,10 @@ When a new Object is created, the Tool is automatic. The Skill (best practices f
 
 ---
 
-## 5. Migration Strategy
+## 5. Implementation Status
 
-1.  **Layer 1 (Done)**: The Foundation exists.
-2.  **Layer 2 (Next)**: Build the **MCP Server** that exposes `MetadataService` as live tools.
-    *   Implement `tools/list` to return `_System_Object` as CRUD tools.
-    *   Implement `tools/call` to route requests to `PersistenceService`.
-3.  **Verification**: Connect Claude Desktop to NexusCRM. Create a custom object in NexusCRM. Verify Claude *immediately* sees it and can interact with it.
+1.  **Layer 1 (Done)**: The Foundation exists and is stable.
+2.  **Layer 2 (Done)**: MCP Server is implemented in `mcp/`.
+    *   `tools/list` returns live schema-aware tools.
+    *   `tools/call` executes via `ActionHandler`.
+3.  **Layer 3 (MVP)**: Agent Skills foundation is established.

@@ -47,7 +47,7 @@ graph TD
 To support "Dynamic Discovery", the Bus validates usage of specific Meta-Tools:
 *   `list_tools(filter_string)`: Returns subset of tools matching string.
 *   `get_object_schema(object_name)`: Returns full field definitions for an object.
-*   `search_knowledge(query)`: Semantically searches `_System_Knowledge` (future).
+*   `search_knowledge(query)`: Semantically searches `_System_Knowledge` (Planned Feature).
 
 ## 4. API Specification (MCP Mapping)
 
@@ -92,8 +92,8 @@ To support "Dynamic Discovery", the Bus validates usage of specific Meta-Tools:
 ## 5. Security Design
 
 ### 5.1 Authentication
-*   **Transport**: HTTP Header `Authorization: Bearer <API_KEY>`.
-*   **Identity**: API Key maps to `_System_Agent` record, which is linked to a standard `User`.
+*   **Transport**: HTTP Header `Authorization: Bearer <JWT_TOKEN>`.
+*   **Identity**: Token maps to standard `_System_User` via `requireAuth` middleware.
 *   **Context**: All L1 service calls (`PersistenceService`, etc.) are wrapped in `UserContext` derived from the token.
 
 ### 5.2 Authorization (FLS/OLS)
@@ -103,9 +103,7 @@ The Tool Bus explicitly enforces permissions **before** calling Layer 1.
 ## 6. Data Model Updates
 
 ### New System Tables
-*   `_System_Agent`: Defines an external agent identity.
-*   `_System_AgentToken`: Long-lived access tokens.
-*   `_System_ToolCall`: Audit log for AI actions.
+*   `_System_ToolCall`: Audit log for AI actions (Optional/Future).
 
 ## 7. Scalability & Performance
 *   **Tool List Caching**: Since metadata changes are rare vs. reads, cache generated Tool Definitions in memory, invalidate on `MetadataService.Update()`.

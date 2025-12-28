@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "cd frontend && vite",
     "dev:client": "cd frontend && vite",
-    "dev:server": "cd backend && export $(grep -v '^#' ../.env | xargs) && PORT=3001 ./bin/server",
+    "dev:server": "cd backend && export $(grep -v '^#' ../.env | xargs) && PORT=3001 go run cmd/server/main.go",
     "dev:full": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "build": "npm run build:client && npm run build:server",
     "build:client": "cd frontend && vite build",

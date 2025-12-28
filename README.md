@@ -1,8 +1,8 @@
 # NexusCRM Project
 
 
-**Tech Stack:** React, TypeScript, Tailwind, Go, TiDB Cloud, JWT  
-**Architecture:** 100% Metadata-Driven Platform as a Service (PaaS)
+**Tech Stack:** React, TypeScript, Tailwind CSS, Go, TiDB Cloud, JWT
+**Architecture:** 100% Metadata-Driven Platform as a Service (PaaS) with Modular Backend Services
 
 ## 🔒 Security First
 
@@ -11,9 +11,10 @@ NexusCRM includes enterprise-grade authentication and security:
 - ✅ **bcrypt Password Hashing** (configurable rounds)
 - ✅ **Strong Password Requirements** (8+ chars, uppercase, lowercase, number, special char)
 - ✅ **Email Validation** with RFC 5322 compliance
-- ✅ **SQL Injection Prevention** with whitelist validation
+- ✅ **SQL Injection Prevention** with strict parameterization and whitelist validation
 - ✅ **System Admin-Only SQL Access** for enhanced security
-- ✅ **Frontend-Backend Separation** with REST API boundaries
+- ✅ **Frontend-Backend Separation** with strict REST API boundaries
+- ✅ **Modular Service Architecture** for maintainable security logic
 
 See [docs/SECURITY.md](./docs/SECURITY.md) for details.
 
@@ -23,11 +24,14 @@ See [docs/SECURITY.md](./docs/SECURITY.md) for details.
 /
 ├── frontend/                  # React Frontend
 │   └── src/
-│       ├── components/        # UI Components
-│       ├── pages/             # Page Views  
-│       ├── hooks/             # Custom React Hooks
-│       ├── contexts/          # React Contexts
-│       ├── services/          # API Services
+│       ├── components/    # Reusable UI components
+│       ├── constants/     # App constants
+│       ├── contexts/      # React contexts
+│       ├── core/          # Core framework logic
+│       ├── infrastructure/# API & event services
+│       ├── pages/         # Route components
+│       ├── plugins/       # Action & UI plugins
+│       ├── registries/    # Metadata registries
 │       └── types.ts           # TypeScript Definitions
 │
 ├── backend/                   # Go Backend (Clean Architecture)
@@ -39,6 +43,7 @@ See [docs/SECURITY.md](./docs/SECURITY.md) for details.
 │   │   │   └── events/        # Domain Events
 │   │   ├── application/       # Application Services
 │   │   │   └── services/      # Business Logic (metadata, query, flow, auth)
+│   │   ├── bootstrap/         # System Initialization
 │   │   ├── interfaces/        # Interface Adapters
 │   │   │   └── rest/          # REST API Handlers (auth, data, metadata, schema)
 │   │   └── infrastructure/    # Infrastructure
@@ -48,6 +53,7 @@ See [docs/SECURITY.md](./docs/SECURITY.md) for details.
 │   │   ├── auth/              # JWT Authentication & Password
 │   │   ├── errors/            # Error Handling
 │   │   ├── fieldtypes/        # Field Type Registry
+│   │   ├── versioning/        # Optimized Version Management
 │   │   └── constants/         # System Constants
 │   └── scripts/               # Utility Scripts
 │
@@ -55,10 +61,19 @@ See [docs/SECURITY.md](./docs/SECURITY.md) for details.
 │   ├── e2e/                   # Modular E2E Tests
 
 │
+├── shared/                    # Shared Definitions (Source of Truth)
+│   └── constants/             # JSON constants for CodeGen
+│
+├── scripts/                   # Project-wide Utilities
+│   └── generate-ts-constants.js # CodeGen script
+│
+├── mcp/                       # Model Context Protocol Server
+│   ├── pkg/                   # MCP Logic
+│   └── cmd/                   # Entry Points
+│
 └── docs/                      # Documentation
     ├── ARCHITECTURE.md        # System Architecture
     ├── SECURITY.md            # Security Features
-    └── archive/               # Archived Docs
 ```
 
 ## 🚀 Quick Start
@@ -66,20 +81,25 @@ See [docs/SECURITY.md](./docs/SECURITY.md) for details.
 1. **Install Dependencies**: `npm install`
 
 2. **Configure Environment**:
-   - Copy `.env.example` to `.env` in both `frontend/` and `backend/`
-   - Backend `.env`: Set TiDB connection (TIDB_HOST, TIDB_USER, TIDB_PASSWORD, TIDB_DATABASE)
-   - Backend `.env`: Generate `JWT_SECRET`: `openssl rand -base64 32`
-   - Frontend `.env`: Set `VITE_API_URL=http://localhost:3001`
+   - **Root**: Copy `.env.example` to `.env`. Set TiDB credentials and `JWT_SECRET`.
+   - **Optional**: 
+     - `API_BASE_URL`: Override implementation URL (default: `http://localhost:3001` - used by internal MCP client)
+     - `SKIP_ASSERTIONS=true`: Bypass strict startup checks (use with caution)
+   - **Frontend**: Create `frontend/.env` and set `VITE_API_URL=http://localhost:3001`.
 
 3. **Run Development**:
    ```bash
+   # Run both Backend and Frontend concurrently (Recommended)
+   npm run dev:full
+
+   # OR Run individually:
+   
    # Backend (Go)
-   cd backend && go run cmd/server/main.go
-   # Backend runs on http://localhost:3001
+   # Uses variables from root .env via package.json script
+   npm run dev:server
    
    # Frontend (React + Vite)  
-   npm run dev
-   # Frontend runs on http://localhost:5173
+   npm run dev:client
    ```
 
 4. **Default Credentials**:
@@ -96,7 +116,7 @@ See [docs/SECURITY.md](./docs/SECURITY.md) for details.
 
 ### Metadata-Driven Platform
 - **100% Metadata-Driven**: UI renders based on JSON configurations in database
-- **33 System Metadata Tables**: Complete platform configuration in database
+- **42+ System Metadata Tables**: Complete platform configuration in database
 - **Dynamic Schema Management**: Create objects and fields without code
 - **Runtime Configuration**: Change behavior without deployment
 
@@ -111,30 +131,42 @@ See [docs/SECURITY.md](./docs/SECURITY.md) for details.
 - **Flow Engine**: Automated workflows
 - **Formula Engine**: Excel-like calculated fields
 
+### Modular Service Architecture
+- **Decomposed Services**: Massive controllers broken down into focused, single-responsibility files (e.g., `schema_system_columns.go`, `permission_record_access.go`)
+- **Strict Linting**: Comprehensive `errcheck` and static analysis enforcement
+- **Maintainability**: Clear separation of business logic, validation, and persistence layers
+- **Single Source of Truth**: `shared/constants/system.json` drives code generation for both Go and TypeScript, ensuring frontend-backend constant alignment.
 
 
 
-## 📊 System Metadata Tables (33 Total)
 
-### Core Metadata (8 tables)
-- `_System_Object`, `_System_Field`, `_System_Profile`, `_System_ObjectPerms`, `_System_FieldPerms`, `_System_Role`, `_System_Session`, `_System_Config`
+## 📊 System Metadata Tables (40+ Total)
 
-### UI Metadata (11 tables)
-- `_System_Layout`, `_System_Dashboard`, `_System_App`, `_System_Tab`, `_System_SetupPage`, `_System_UITheme`, `_System_UIComponent`, `_System_FieldRendering`, `_System_NavigationMenu`, `_System_ListView`, `_System_Limit`
+### Core Schema (9 tables)
+- `_System_Object`, `_System_Field`, `_System_RecordType`, `_System_Relationship`, `_System_AutoNumber`
+- `_System_Profile`, `_System_Role`, `_System_User`, `_System_Group`, `_System_GroupMember`
 
-### Business Logic Metadata (9 tables)
-- `_System_Flow`, `_System_Action`, `_System_ActionHandler`, `_System_Validation`, `_System_FormulaFunction`, `_System_Transformation`, `_System_Webhook`, `_System_EmailTemplate`, `_System_ApiEndpoint`
+### Security & Permissions (6 tables)
+- `_System_ObjectPerms`, `_System_FieldPerms`, `_System_SharingRule`, `_System_RecordShare`, `_System_Session`, `_System_PermissionSet`
 
-### Data Management (5 tables)
-- `_System_SharingRule`, `_System_ProfileLayout`, `_System_RecycleBin`, `_System_Recent`, `_System_Log`
+### UI & Experience (14 tables)
+- `_System_App`, `_System_Layout`, `_System_Dashboard`, `_System_Tab`, `_System_ListView`
+- `_System_SetupPage`, `_System_UITheme`, `_System_UIComponent`, `_System_FieldRendering`
+- `_System_NavigationMenu`, `_System_Limit`, `_System_Prompt`, `_System_Theme`
+
+### Business Logic & Automation (11 tables)
+- `_System_Flow`, `_System_Action`, `_System_ActionHandler`, `_System_Validation`
+- `_System_FormulaFunction`, `_System_Transformation`, `_System_Webhook`, `_System_EmailTemplate`
+- `_System_ApiEndpoint`, `_System_ApprovalProcess`, `_System_FieldDependency`
+
+### Operations (5 tables)
+- `_System_RecycleBin`, `_System_Log`, `_System_Recent`, `_System_AuditLog`, `_System_OutboxEvent`
 
 ## 📚 Documentation
-
 - [ARCHITECTURE.md](./docs/ARCHITECTURE.md) - System architecture & design
 - [USER_MANUAL.md](./docs/USER_MANUAL.md) - Usage instructions
 - [SECURITY.md](./docs/SECURITY.md) - Security features & best practices
-- [DEBUGGING.md](./docs/DEBUGGING.md) - Debugging & distributed transaction tracing
-- [REFACTORING_PLAN.md](./docs/REFACTORING_PLAN.md) - Metadata-driven PaaS roadmap
+- [CONTRIBUTING.md](./CONTRIBUTING.md) - Development guide
 
 ## 🛠 Development Scripts
 
@@ -155,18 +187,6 @@ npm run test            # Run E2E tests
 ./backend/verify_custom_objects.sh # Verify Custom Object Lifecycle (Go)
 ```
 
-## Key Learnings
-Key Learning for Future Tests: When creating apps with navigation items, always include:
 
-json
-{
-    "id": "unique-id",
-    "type": "object",  // or "page", "dashboard", "web"
-    "label": "Display Name",
-    "object_api_name": "api_name",  // for type: "object"
-    "icon": "IconName"
-}
 
-## 📝 License
 
-MIT

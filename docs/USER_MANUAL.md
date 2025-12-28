@@ -12,8 +12,10 @@ Welcome to **NexusCRM**, a metadata-driven CRM platform designed to manage your 
 - ⚠️ **Change password immediately after first login**
 
 ### Accessing the Application
-1. Start backend:  `cd backend && go run cmd/server/main.go`
-2. Start frontend: `npm run dev` (from project root)
+1. **Easy Start**: Run `npm run dev:full` from the project root (starts both backend and frontend).
+2. **Alternative**:
+   - Backend: `npm run dev:server` (or `cd backend && go run cmd/server/main.go`)
+   - Frontend: `npm run dev:client`
 3. Open browser: `http://localhost:5173`
 4. Login with default credentials
 
@@ -27,6 +29,9 @@ Welcome to **NexusCRM**, a metadata-driven CRM platform designed to manage your 
 4. [Analytics & Reporting](#4-analytics--reporting)
 5. [Administrator Guide](#5-administrator-guide)
 6. [Security & Permissions](#6-security--permissions)
+7. [Tips & Best Practices](#7-tips--best-practices)
+8. [Business Processes](#8-business-processes)
+9. [Getting Help](#9-getting-help)
 
 ---
 
@@ -137,6 +142,7 @@ The left sidebar is your primary navigation:
 - **Metrics**: Key numbers (Total Revenue, Deal Count)
 - **Charts**: Visual data (Bar, Pie, Line charts)
 - **Tables**: Lists of records meeting criteria
+- **SQL Analytics**: Advanced SQL queries with visualization (Admin only)
 
 **Filtering Dashboards**:
 - Use date range picker
@@ -274,7 +280,7 @@ NexusCRM is a **metadata-driven platform** - you can customize without code.
 
 ---
 
-## Tips & Best Practices
+## 7. Tips & Best Practices
 
 ### Data Quality
 - ✅ Use validation rules to enforce data standards
@@ -301,11 +307,27 @@ NexusCRM is a **metadata-driven platform** - you can customize without code.
 - ✅ Test changes in sandbox environment
 - ✅ Train users on new features
 
+## 8. Business Processes
+
+### Lead Conversion
+1. Open a **Lead** record
+2. Click the **Convert** action button
+3. The system will automatically:
+   - Create a new **Account** (Company)
+   - Create a new **Contact** (Person)
+   - Create a new **Opportunity** (Deal)
+   - Update Lead status to "Converted"
+
+### AI Assistant (Nexus AI)
+- Click the **Nexus AI** button (🤖 icon) in the top navigation bar to open the assistant.
+- **Capabilities**:
+  - Answer questions about your data ("Show me high-value opportunities")
+  - Navigate the system ("Go to Setup")
+  - Perform actions ("Create a task to call John Doe")
+
 ---
 
-
-
-## Getting Help
+## 9. Getting Help
 
 
 
@@ -316,7 +338,7 @@ NexusCRM is a **metadata-driven platform** - you can customize without code.
 - This manual: User guide
 
 ### Support
-- Email: support@nexuscrm.app
+- Contact your System Administrator for access and support issues.
 - GitHub Issues: Bug reports and feature requests
 
 

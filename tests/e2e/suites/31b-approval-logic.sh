@@ -1,6 +1,6 @@
 #!/bin/bash
-# tests/e2e/suites/31-approvals.sh
-# Approval Process Logic Tests
+# tests/e2e/suites/31b-approval-logic.sh
+# Approval Process Logic Tests (Self-Contained)
 
 set +e
 SUITE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -8,7 +8,7 @@ source "$SUITE_DIR/../config.sh"
 source "$SUITE_DIR/../lib/helpers.sh"
 source "$SUITE_DIR/../lib/api.sh"
 
-SUITE_NAME="Approval Process Logic"
+SUITE_NAME="Approval Process Logic (Self-Contained)"
 
 run_suite() {
     section_header "$SUITE_NAME"
@@ -23,9 +23,9 @@ run_suite() {
     test_approval_submission_flow
 }
 
-# Test 31.1: Verify CheckProcess Endpoint
+# Test 31b.1: Verify CheckProcess Endpoint
 test_check_process_endpoint() {
-    echo "Test 31.1: Verify CheckProcess Endpoint"
+    echo "Test 31b.1: Verify CheckProcess Endpoint"
     
     # We assume 'Lead' has an active process call "Lead Test Approval" from previous manual setup
     # If not, we should probably create one, but let's first check if ANY process exists
@@ -43,9 +43,9 @@ test_check_process_endpoint() {
     fi
 }
 
-# Test 31.2: End-to-End Submission Flow
+# Test 31b.2: End-to-End Submission Flow
 test_approval_submission_flow() {
-    echo "Test 31.2: End-to-End Submission Flow"
+    echo "Test 31b.2: End-to-End Submission Flow"
 
     # Step 1: Create a Lead to submit
     echo "  1. Creating test Lead..."

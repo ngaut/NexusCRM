@@ -2,7 +2,7 @@
 
 This document outlines the strategic roadmap to evolve NexusCRM into a comprehensive, metadata-driven Platform-as-a-Service (PaaS) comparable to Salesforce.
 
-**Last Updated**: 2025-12-20
+**Last Updated: Dec 29, 2025**
 
 ## 1. Core Platform Architecture (The "Kernel")
 The heart of the system. Flexible, metadata-driven data model.
@@ -17,6 +17,7 @@ The heart of the system. Flexible, metadata-driven data model.
 - [x] **Roll-up Summary Fields**: Aggregate data (Sum, Max, Min, Count) from child records to parent.
 - [x] **Formula Fields**: Calculated fields (Application-level, read-time evaluation).
 - [ ] **Big Objects**: High-volume, immutable data storage for logs/audit.
+- [x] **Modular Backend**: Decomposed monolithic services into 100% maintainable, discrete components (Completed Dec 2025).
 
 ### 1.2 Identity & Security (The "Shield") (80% Complete)
 Granular control over who sees what.
@@ -97,7 +98,7 @@ Out-of-the-box functionality.
 - [/] **Sales Cloud**:
     - [x] **Leads**: Lead object with status workflow (E2E Suite 16 tested).
     - [x] **Opportunities**: Sales stages, forecasting fields.
-    - [ ] **Lead Conversion**: Creates Account + Contact + Opportunity.
+    - [x] **Lead Conversion**: Creates Account + Contact + Opportunity (`LeadConvertPlugin`).
     - [ ] **Products & Pricebooks**: Line items, Multi-currency.
 - [/] **Service Cloud**:
     - [x] **Cases**: Case object with status workflow (E2E Suite 17 tested).
@@ -108,7 +109,7 @@ Out-of-the-box functionality.
 ## 7. Testing Infrastructure (100% Complete)
 Comprehensive E2E test coverage.
 
-- [x] **E2E Test Suites**: 30 suites covering all major features
+- [x] **E2E Test Suites**: 42 suites covering all major features
 - [x] **Helper Libraries**: `schema_helpers.sh`, `test_data.sh` for DRY tests
 - [x] **Domain Scenarios**: HR, E-Commerce, Real Estate, Healthcare, Education, Jira
 - [x] **Performance Tests**: Bulk operations, concurrent workloads (Suite 27-28)
@@ -118,19 +119,27 @@ Comprehensive E2E test coverage.
 
 ## Execution Strategy
 
-### Phase 1: The Core ✅ Complete
+### Phase 1: Foundation (Completed)
 - Solidified Schema, Metadata, and Basic Security.
-- **Achieved**: Reliable CRUD and App Platform with 30 E2E test suites.
+- **Achieved**: Reliable CRUD and App Platform with 42 E2E test suites.
 
-### Phase 2: The "Killer Features" (In Progress)
+### Phase 2: The "Killer Features" (Completed)
+- [x] Phase 2.1: Schema Manager Decomposition
+- [x] Phase 2.2: Backend Service Decomposition
+- [x] Documentation Audit & Cleanup (Dec 2025)
+- [x] Deep Scrub: Removed non-existent Agent/Queue tables from docs
+- [x] Project Structure: Added `shared/` and `scripts/` to README
+- [x] Auxiliary Docs: Synced `.env.example`, `CONTRIBUTING.md`, `package.json`
 - **Advanced Relationships**: Master-Detail & Rollups ✅
 - **Sharing Engine**: Role hierarchy and sharing rules ✅
-- **Next**: Approval Processes, Lead Conversion.
+- **Agent-Native**: MCP Server Implemented ✅
+- **Done**: Approval Processes, Lead Conversion.
 
 ### Phase 3: The "Experience"
 - **Visual Flow Builder**: Empower non-coders.
 - **Page Layout Editor**: Flexible UI ✅
-- **Next**: Screen Flows, Global Search.
+- **Global Search**: Implemented ✅
+- **Next**: Screen Flows.
 
 ### Phase 4: The Ecosystem
 - **Packages & Marketplace**: Export apps.

@@ -36,20 +36,29 @@ tests/e2e/
     ├── 06-formulas.sh
     ├── 07-recyclebin.sh
     ├── 08-advanced-query.sh
-    └── 09-error-handling.sh
+    ├── 09-error-handling.sh
+    └── ... (42 suites total)
 ```
 
 ## Available Test Suites
 
-1. **Infrastructure** - Health checks, process validation
-2. **Authentication** - Login, protected endpoints, sessions
-3. **Metadata** - Apps, schemas, object metadata
-4. **CRUD** - Create, read, update, delete operations
-5. **Search** - Global search, validation
-6. **Formulas** - Formula engine, evaluation, functions
-7. **Recycle Bin** - Soft delete, restore, purge
-8. **Advanced Query** - Pagination, sorting, filtering
-9. **Error Handling** - Edge cases, validation, error responses
+### core (01-09)
+   - Infrastructure, Auth, Metadata, CRUD, Search, Formulas, Recycle Bin, Query, Errors
+
+### Advanced Data Modeling (10-12)
+   - Master-Detail, Junction Objects, Polymorphic Relationships
+
+### Security & Administration (13, 19, 35-36)
+   - Groups, PermSets, Security, Negative Security, Auth Edge Cases
+
+### Business Logic & Automation (14, 18, 20, 31-32)
+   - Custom Actions, Automations, Workflows, Approvals, Flow Execution
+
+### Industry Verticals & Integration (15-26)
+   - Integration, Sales, Service, HR, E-commerce, Real Estate, Healthcare, Education
+
+### Performance & Edge Cases (27-41)
+   - Concurrent Workloads, Bulk Ops, Validation, API Responses, UI Smoke, Backend Gaps
 
 ## Configuration
 

@@ -24,6 +24,12 @@ NexusCRM implements enterprise-grade security features with Go backend and indus
   - Expiration timestamp
 - Logout invalidates the session
 
+### Agent Authentication
+- **Mechanism**: Standard User JWT (Bearer Token)
+- **Identity**: Maps to `_System_User` (via `requireAuth` middleware)
+- **Permissions**: Agents inherit permissions from the authenticated User's Profile
+- **Validation**: Enforced by standard authentication middleware
+
 ### Password Security
 
 **Hashing**:

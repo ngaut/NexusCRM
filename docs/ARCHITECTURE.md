@@ -49,18 +49,23 @@ The core philosophy is that application structure (Schema), business logic (Flow
 │  │  - Business Models                          │        │
 │  │  - Domain Events                            │        │
 │  └──────────────────┬──────────────────────────┘        │
+│  └──────────────────┬──────────────────────────┘        │
 │  ┌──────────────────▼──────────────────────────┐        │
 │  │ Infrastructure Layer                        │        │
 │  │  - TiDB Connection (with TLS)               │        │
 │  │  - Event Bus                                │        │
-│  └────────────────────────────────────────────┘        │
+│  └──────────────────┬──────────────────────────┘        │
+│                     │                           ┌───────▼──────────────┐
+│                     │                           │ MCP Server (Layer 2) │
+│                     │                           │ (Agent Tool Bus)     │
+│                     │                           └──────────────────────┘
 └──────────────────────┬──────────────────────────────────┘
                        │ MySQL Protocol + TLS
 ┌──────────────────────▼──────────────────────────────────┐
 │                    TiDB Cloud                           │
 │              (MySQL-Compatible Database)                 │
 │                                                          │
-│  - 33 System Metadata Tables                           │
+│  - 42+ System Metadata Tables                           │
 │  - User Business Tables                                 │
 │  - ACID Transactions                                    │
 └─────────────────────────────────────────────────────────┘
@@ -100,6 +105,10 @@ The core philosophy is that application structure (Schema), business logic (Flow
 - **data_handler.go**: CRUD operations on records
 - **formula_handler.go**: Formula evaluation
 - **ui_handler.go**: UI metadata (layouts, apps, tabs)
+- **approval_handler.go**: Approval process management
+- **file_handler.go**: File uploads and attachments
+- **feed_handler.go**: Activity feed and comments
+- **notification_handler.go**: User notifications
 
 **Pattern**: Each handler delegates to application services
 
@@ -166,24 +175,28 @@ _System_User:
 
 ### 5.1 System Metadata Tables (Verified)
 
-**Core Metadata**:
-- `_System_Object`, `_System_Field`, `_System_RecordType`
-- `_System_Profile`, `_System_Role`, `_System_User`, `_System_Session`
-- `_System_ObjectPerms`, `_System_FieldPerms`
-- `_System_Config`, `_System_AutoNumber`
+### 5.1 System Metadata Tables (Verified)
 
-**UI Metadata**:
-- `_System_App`, `_System_Layout`, `_System_Dashboard`
-- `_System_ListView`, `_System_SetupPage`
-- `_System_UIComponent`
+**Core Schema (9 tables)**:
+- `_System_Object`, `_System_Field`, `_System_RecordType`, `_System_Relationship`, `_System_AutoNumber`
+- `_System_Profile`, `_System_Role`, `_System_User`, `_System_Group`, `_System_GroupMember`
 
-**Business Logic**:
-- `_System_Flow`, `_System_Action`
-- `_System_Validation`, `_System_FieldDependency`
+**Security & Permissions (6 tables)**:
+- `_System_ObjectPerms`, `_System_FieldPerms`, `_System_SharingRule`, `_System_RecordShare`
+- `_System_Session`, `_System_PermissionSet`
 
-**Data Management**:
-- `_System_SharingRule` (Schema only)
-- `_System_RecycleBin`, `_System_Recent`, `_System_Log`
+**UI & Experience (14 tables)**:
+- `_System_App`, `_System_Layout`, `_System_Dashboard`, `_System_Tab`, `_System_ListView`
+- `_System_SetupPage`, `_System_UITheme`, `_System_UIComponent`, `_System_FieldRendering`
+- `_System_NavigationMenu`, `_System_Limit`, `_System_Prompt`, `_System_Theme`
+
+**Business Logic & Automation (11 tables)**:
+- `_System_Flow`, `_System_Action`, `_System_ActionHandler`, `_System_Validation`
+- `_System_FormulaFunction`, `_System_Transformation`, `_System_Webhook`, `_System_EmailTemplate`
+- `_System_ApiEndpoint`, `_System_ApprovalProcess`, `_System_FieldDependency`
+
+**Operations (5 tables)**:
+- `_System_RecycleBin`, `_System_Log`, `_System_Recent`, `_System_AuditLog`, `_System_OutboxEvent`
 
 ### 5.2 Business Tables
 - **Standard Objects**: Account, Contact, Opportunity, Lead, Task
@@ -202,8 +215,7 @@ _System_User:
 **Enforced in QueryService**:
 1. **Object-Level Permissions**: Read/Create/Edit/Delete permissions checked per object.
 2. **Field-Level Visibility**: Fields hidden based on profile permissions.
-3. **Soft Deletion**: Automatically excludes deleted records (`is_deleted=0`).
-*Note: Advanced Sharing Rules and Role Hierarchy visibility are planned for future release.*
+*- Shared via Role Hierarchy and Sharing Rules.*
 
 ### 6.3 Field-Level Security (FLS)
 **Enforced at API layer**:
@@ -235,14 +247,8 @@ tests/e2e/
 │   └── api.sh             # API wrappers
 └── suites/
     ├── 01-infrastructure.sh
-    ├── 02-auth.sh
-    ├── 03-metadata.sh
-    ├── 04-crud.sh
-    ├── 05-search.sh
-    ├── 06-formulas.sh
-    ├── 07-recyclebin.sh
-    ├── 08-advanced-query.sh
-    └── 09-error-handling.sh
+    ├── ...
+    └── 42-ui-smoke.sh (42 suites total)
 ```
 
 **Run Tests**:
@@ -264,29 +270,26 @@ nexuscrm/
 ├── frontend/              # React + TypeScript + Vite
 │   ├── src/
 │   │   ├── components/
-│   │   ├── pages/
-│   │   ├── hooks/
-│   │   ├── contexts/
-│   │   ├── services/
-│   │   └── types.ts
+│   │   ├── ...
 │   └── vite.config.ts
 │
 ├── backend/               # Go + Clean Architecture
 │   ├── cmd/server/        # Entry point
 │   ├── internal/
-│   │   ├── domain/
-│   │   ├── application/
-│   │   ├── interfaces/
-│   │   └── infrastructure/
 │   ├── pkg/
-│   │   ├── auth/          # JWT utilities
-│   │   ├── errors/
-│   │   └── constants/
 │   └── go.mod
 │
+├── mcp/                   # Model Context Protocol Server
+│   ├── pkg/
+│   └── cmd/
+│
+├── shared/                # Shared Definitions
+│   └── constants/
+│
+├── scripts/               # Project-wide Utilities
+│
 └── tests/                 # Test suites
-    ├── e2e/
-    └── comprehensive_role_tests.sh
+    └── e2e/
 ```
 
 ### 8.2 Running Locally
@@ -314,7 +317,8 @@ JWT_SECRET=<generate-with-openssl-rand>
 
 **Frontend** (`.env`):
 ```bash
-VITE_API_URL=http://localhost:3001
+REACT_APP_BACKEND_URL=http://localhost:3001
+REACT_APP_FRONTEND_URL=http://localhost:5173
 ```
 
 ---
@@ -341,10 +345,11 @@ VITE_API_URL=http://localhost:3001
 - FLS checked at API boundaries
 - Profile/Role separation (Salesforce pattern)
 
-### 9.5 Agent-Native Architecture (Planned)
+### 9.5 Agent-Native Architecture (Implemented)
 - **4-Layer Design**: Foundation (L1) → Dynamic Tool Bus (L2) → Runtime (L3) → Interaction (L4).
-- **Protocol**: Model Context Protocol (MCP) for tool exposure.
+- **Protocol**: Model Context Protocol (MCP) for tool exposure (`/mcp` endpoint).
 - **Philosophy**: Agents are logical users subject to standard permissions but empowered with dynamic discovery.
+- **Implementation**: Deployed via `github.com/nexuscrm/mcp` module, integrated into `backend/cmd/server/main.go`.
 
 See detailed design documents:
 - [Agent-Native Vision (v3)](architecture/agent_native_vision.md)
