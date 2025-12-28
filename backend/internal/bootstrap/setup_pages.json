@@ -1,0 +1,90 @@
+[
+    {
+        "id": "setup_users_manage",
+        "label": "Users",
+        "icon": "Users",
+        "component_name": "UserManager",
+        "category": "Security",
+        "page_order": 10,
+        "description": "Manage system users and access",
+        "path": "/setup/users",
+        "is_enabled": true
+    },
+    {
+        "id": "setup_profiles_manage",
+        "label": "Profiles",
+        "icon": "Shield",
+        "component_name": "ProfileManager",
+        "category": "Security",
+        "page_order": 20,
+        "description": "Manage security profiles and permissions",
+        "path": "/setup/profiles",
+        "is_enabled": true
+    },
+    {
+        "id": "setup_objects_manage",
+        "label": "Object Manager",
+        "icon": "Database",
+        "component_name": "ObjectManager",
+        "category": "Objects",
+        "page_order": 30,
+        "description": "Manage database objects and fields",
+        "path": "/setup/objects",
+        "is_enabled": true
+    },
+    {
+        "id": "setup_apps_manage",
+        "label": "App Manager",
+        "icon": "Layout",
+        "component_name": "AppManager",
+        "category": "System",
+        "page_order": 40,
+        "description": "Manage applications and navigation",
+        "path": "/setup/app-manager",
+        "is_enabled": true
+    },
+    {
+        "id": "setup_automation_manage",
+        "label": "Automation Studio",
+        "icon": "Workflow",
+        "component_name": "Flows",
+        "category": "Automation",
+        "page_order": 50,
+        "description": "Manage flows and approval processes",
+        "path": "/setup/automation",
+        "is_enabled": true
+    },
+    {
+        "id": "setup_data_import",
+        "label": "Data Import",
+        "icon": "Upload",
+        "component_name": "DataImport",
+        "category": "System",
+        "page_order": 60,
+        "description": "Import data from CSV files",
+        "path": "/setup/dataimport",
+        "is_enabled": true
+    },
+    {
+        "id": "setup_data_export",
+        "label": "Data Export",
+        "icon": "Download",
+        "component_name": "DataExport",
+        "category": "System",
+        "page_order": 70,
+        "description": "Export system data",
+        "path": "/setup/dataexport",
+        "is_enabled": true
+    },
+    {
+        "id": "setup_recycle_bin",
+        "label": "Recycle Bin",
+        "icon": "Trash2",
+        "component_name": "RecycleBin",
+        "category": "System",
+        "page_order": 80,
+        "description": "Manage deleted records",
+        "path": "/setup/recyclebin",
+        "is_enabled": true
+    }
+]

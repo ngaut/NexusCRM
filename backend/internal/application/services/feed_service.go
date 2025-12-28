@@ -1,0 +1,79 @@
+package services
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/backend/pkg/constants"
+)
+
+type FeedService struct {
+	persistence *PersistenceService
+	query       *QueryService
+}
+
+func NewFeedService(persistence *PersistenceService, query *QueryService) *FeedService {
+	return &FeedService{
+		persistence: persistence,
+		query:       query,
+	}
+}
+
+// CreateComment creates a new comment
+func (s *FeedService) CreateComment(ctx context.Context, comment models.SystemComment, user *models.UserSession) (*models.SystemComment, error) {
+	data := comment.ToSObject()
+
+	// Create using Persistence Service
+	record, err := s.persistence.Insert(ctx, "_System_Comment", data, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Map back to SystemComment
+	return s.mapToComment(record), nil
+}
+
+// GetComments gets comments for a record
+func (s *FeedService) GetComments(ctx context.Context, recordID string, user *models.UserSession) ([]models.SystemComment, error) {
+	// Use formula expression for filtering
+	filterExpr := fmt.Sprintf("record_id == '%s'", recordID)
+	results, err := s.query.QueryWithFilter(
+		ctx,
+		"_System_Comment",
+		filterExpr,
+		user,
+		"created_date",
+		"DESC",
+		50,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	comments := make([]models.SystemComment, len(results))
+	for i, record := range results {
+		comments[i] = *s.mapToComment(record)
+	}
+
+	return comments, nil
+}
+
+func (s *FeedService) mapToComment(record models.SObject) *models.SystemComment {
+	return &models.SystemComment{
+		ID:            record.GetString(constants.FieldID),
+		Body:          record.GetString("body"),
+		RecordID:      record.GetString("record_id"),
+		ObjectAPIName: record.GetString("object_api_name"),
+		ParentCommentID: func() *string {
+			if v := record.GetString("parent_comment_id"); v != "" {
+				return &v
+			}
+			return nil
+		}(),
+		IsResolved:  record.GetBool("is_resolved"),
+		CreatedBy:   record.GetString(constants.FieldCreatedByID),
+		CreatedDate: record.GetTime(constants.FieldCreatedDate),
+	}
+}

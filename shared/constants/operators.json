@@ -1,0 +1,86 @@
+{
+    "equals": {
+        "label": "equals",
+        "symbol": "=",
+        "sqlOperator": "="
+    },
+    "not_equals": {
+        "label": "not equal to",
+        "symbol": "≠",
+        "sqlOperator": "!="
+    },
+    "contains": {
+        "label": "contains",
+        "symbol": "∋",
+        "sqlOperator": "LIKE",
+        "sqlPattern": "%{value}%"
+    },
+    "not_contains": {
+        "label": "does not contain",
+        "symbol": "∌",
+        "sqlOperator": "NOT LIKE",
+        "sqlPattern": "%{value}%"
+    },
+    "starts_with": {
+        "label": "starts with",
+        "symbol": "^",
+        "sqlOperator": "LIKE",
+        "sqlPattern": "{value}%"
+    },
+    "ends_with": {
+        "label": "ends with",
+        "symbol": "$",
+        "sqlOperator": "LIKE",
+        "sqlPattern": "%{value}"
+    },
+    "greater_than": {
+        "label": "greater than",
+        "symbol": ">",
+        "sqlOperator": ">"
+    },
+    "greater_or_equal": {
+        "label": "greater or equal",
+        "symbol": "≥",
+        "sqlOperator": ">="
+    },
+    "less_than": {
+        "label": "less than",
+        "symbol": "<",
+        "sqlOperator": "<"
+    },
+    "less_or_equal": {
+        "label": "less or equal",
+        "symbol": "≤",
+        "sqlOperator": "<="
+    },
+    "between": {
+        "label": "between",
+        "symbol": "↔",
+        "sqlOperator": "BETWEEN",
+        "requiresRange": true
+    },
+    "in": {
+        "label": "in",
+        "symbol": "∈",
+        "sqlOperator": "IN",
+        "requiresList": true
+    },
+    "not_in": {
+        "label": "not in",
+        "symbol": "∉",
+        "sqlOperator": "NOT IN",
+        "requiresList": true
+    },
+    "is_null": {
+        "label": "is empty",
+        "symbol": "∅",
+        "sqlOperator": "IS NULL",
+        "noValue": true
+    },
+    "is_not_null": {
+        "label": "is not empty",
+        "symbol": "≠∅",
+        "sqlOperator": "IS NOT NULL",
+        "noValue": true
+    }
+}

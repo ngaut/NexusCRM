@@ -1,0 +1,280 @@
+[
+    {
+        "api_name": "account",
+        "label": "Account",
+        "plural_label": "Accounts",
+        "icon": "Building",
+        "theme_color": "#2563eb",
+        "description": "Standard Account Object",
+        "is_custom": false,
+        "fields": [
+            {
+                "api_name": "name",
+                "label": "Account Name",
+                "type": "Text",
+                "required": true,
+                "is_name_field": true
+            },
+            {
+                "api_name": "industry",
+                "label": "Industry",
+                "type": "Text"
+            },
+            {
+                "api_name": "phone",
+                "label": "Phone",
+                "type": "Text"
+            },
+            {
+                "api_name": "website",
+                "label": "Website",
+                "type": "Text"
+            },
+            {
+                "api_name": "number_of_employees",
+                "label": "Employees",
+                "type": "Number"
+            },
+            {
+                "api_name": "annual_revenue",
+                "label": "Annual Revenue",
+                "type": "Number"
+            }
+        ]
+    },
+    {
+        "api_name": "contact",
+        "label": "Contact",
+        "plural_label": "Contacts",
+        "icon": "Users",
+        "theme_color": "#7c3aed",
+        "description": "Standard Contact Object",
+        "is_custom": false,
+        "fields": [
+            {
+                "api_name": "name",
+                "label": "Full Name",
+                "type": "Text",
+                "required": true,
+                "is_name_field": true
+            },
+            {
+                "api_name": "email",
+                "label": "Email",
+                "type": "Email",
+                "required": true
+            },
+            {
+                "api_name": "phone",
+                "label": "Phone",
+                "type": "Phone"
+            },
+            {
+                "api_name": "title",
+                "label": "Title",
+                "type": "Text"
+            },
+            {
+                "api_name": "department",
+                "label": "Department",
+                "type": "Text"
+            },
+            {
+                "api_name": "account_id",
+                "label": "Account",
+                "type": "Lookup",
+                "reference_to": [
+                    "account"
+                ]
+            }
+        ]
+    },
+    {
+        "api_name": "lead",
+        "label": "Lead",
+        "plural_label": "Leads",
+        "icon": "UserCheck",
+        "theme_color": "#f97316",
+        "description": "Standard Lead Object",
+        "is_custom": false,
+        "fields": [
+            {
+                "api_name": "name",
+                "label": "Full Name",
+                "type": "Text",
+                "required": true,
+                "is_name_field": true
+            },
+            {
+                "api_name": "email",
+                "label": "Email",
+                "type": "Email",
+                "required": true
+            },
+            {
+                "api_name": "phone",
+                "label": "Phone",
+                "type": "Phone"
+            },
+            {
+                "api_name": "company",
+                "label": "Company",
+                "type": "Text",
+                "required": true
+            },
+            {
+                "api_name": "status",
+                "label": "Status",
+                "type": "Text"
+            }
+        ]
+    },
+    {
+        "api_name": "opportunity",
+        "label": "Opportunity",
+        "plural_label": "Opportunities",
+        "icon": "TrendingUp",
+        "theme_color": "#eab308",
+        "description": "Standard Opportunity Object",
+        "is_custom": false,
+        "fields": [
+            {
+                "api_name": "name",
+                "label": "Opportunity Name",
+                "type": "Text",
+                "required": true,
+                "is_name_field": true
+            },
+            {
+                "api_name": "amount",
+                "label": "Amount",
+                "type": "Number"
+            },
+            {
+                "api_name": "stage_name",
+                "label": "Stage",
+                "type": "Text",
+                "required": true
+            },
+            {
+                "api_name": "close_date",
+                "label": "Close Date",
+                "type": "Date"
+            },
+            {
+                "api_name": "account_id",
+                "label": "Account",
+                "type": "Lookup",
+                "reference_to": [
+                    "account"
+                ]
+            }
+        ]
+    },
+    {
+        "api_name": "project",
+        "label": "Project",
+        "plural_label": "Projects",
+        "icon": "FolderOpen",
+        "theme_color": "#10b981",
+        "description": "Standard Project Object",
+        "is_custom": false,
+        "fields": [
+            {
+                "api_name": "name",
+                "label": "Project Name",
+                "type": "Text",
+                "required": true,
+                "is_name_field": true
+            },
+            {
+                "api_name": "status",
+                "label": "Status",
+                "type": "Text"
+            },
+            {
+                "api_name": "start_date",
+                "label": "Start Date",
+                "type": "Date"
+            },
+            {
+                "api_name": "end_date",
+                "label": "End Date",
+                "type": "Date"
+            },
+            {
+                "api_name": "budget",
+                "label": "Budget",
+                "type": "Number"
+            }
+        ]
+    },
+    {
+        "api_name": "task",
+        "label": "Task",
+        "plural_label": "Tasks",
+        "icon": "CheckSquare",
+        "theme_color": "#10b981",
+        "description": "Standard Task Object",
+        "is_custom": false,
+        "fields": [
+            {
+                "api_name": "subject",
+                "label": "Subject",
+                "type": "Text",
+                "required": true,
+                "is_name_field": true
+            },
+            {
+                "api_name": "status",
+                "label": "Status",
+                "type": "Picklist",
+                "required": true,
+                "options": [
+                    "Not Started",
+                    "In Progress",
+                    "Completed",
+                    "Waiting on someone else",
+                    "Deferred"
+                ]
+            },
+            {
+                "api_name": "priority",
+                "label": "Priority",
+                "type": "Picklist",
+                "required": true,
+                "options": [
+                    "High",
+                    "Normal",
+                    "Low"
+                ]
+            },
+            {
+                "api_name": "due_date",
+                "label": "Due Date",
+                "type": "Date"
+            },
+            {
+                "api_name": "description",
+                "label": "Description",
+                "type": "LongTextArea"
+            },
+            {
+                "api_name": "who_id",
+                "label": "Name",
+                "type": "Lookup",
+                "reference_to": [
+                    "contact"
+                ]
+            },
+            {
+                "api_name": "what_id",
+                "label": "Related To",
+                "type": "Lookup",
+                "reference_to": [
+                    "account"
+                ]
+            }
+        ]
+    }
+]

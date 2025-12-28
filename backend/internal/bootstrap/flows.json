@@ -1,0 +1,30 @@
+[
+    {
+        "id": "flow-user-hash-create",
+        "name": "User_Password_Hash_Create",
+        "status": "Active",
+        "trigger_object": "_System_User",
+        "trigger_type": "beforeCreate",
+        "trigger_condition": "",
+        "action_type": "UpdateRecord",
+        "action_config": {
+            "field_mappings": {
+                "password": "=BCRYPT(password)"
+            }
+        }
+    },
+    {
+        "id": "flow-user-hash-update",
+        "name": "User_Password_Hash_Update",
+        "status": "Active",
+        "trigger_object": "_System_User",
+        "trigger_type": "beforeUpdate",
+        "trigger_condition": "password != prior.password",
+        "action_type": "UpdateRecord",
+        "action_config": {
+            "field_mappings": {
+                "password": "=BCRYPT(password)"
+            }
+        }
+    }
+]

@@ -1,0 +1,44 @@
+{
+    "themes": [
+        {
+            "name": "Default",
+            "is_active": true,
+            "colors": {
+                "brand": "#4F46E5",
+                "brand_light": "#818CF8",
+                "brand_dark": "#3730A3",
+                "secondary": "#64748B",
+                "success": "#10B981",
+                "warning": "#F59E0B",
+                "danger": "#EF4444",
+                "background": "#F1F5F9",
+                "surface": "#FFFFFF",
+                "text": "#0F172A",
+                "text_secondary": "#64748B",
+                "border": "#E2E8F0"
+            },
+            "density": "comfortable",
+            "logo_url": "/logo.png"
+        },
+        {
+            "name": "Midnight",
+            "is_active": false,
+            "colors": {
+                "brand": "#6366F1",
+                "brand_light": "#818CF8",
+                "brand_dark": "#4338CA",
+                "secondary": "#94A3B8",
+                "success": "#34D399",
+                "warning": "#FBBF24",
+                "danger": "#F87171",
+                "background": "#0F172A",
+                "surface": "#1E293B",
+                "text": "#F8FAFC",
+                "text_secondary": "#94A3B8",
+                "border": "#334155"
+            },
+            "density": "compact",
+            "logo_url": "/logo-dark.png"
+        }
+    ]
+}

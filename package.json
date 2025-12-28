@@ -1,0 +1,58 @@
+{
+  "name": "nexuscrm",
+  "private": true,
+  "version": "3.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "cd frontend && vite",
+    "dev:client": "cd frontend && vite",
+    "dev:server": "cd backend && export $(grep -v '^#' ../.env | xargs) && PORT=3001 ./bin/server",
+    "dev:full": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "cd frontend && vite build",
+    "build:server": "npm run generate:constants && cd backend && go build -o bin/server cmd/server/main.go",
+    "generate:constants": "cd backend && go run cmd/tools/gen_constants/main.go",
+    "preview": "cd frontend && vite preview",
+    "server": "cd backend && export $(grep -v '^#' ../.env | xargs) && PORT=3001 ./bin/server",
+    "test": "./tests/e2e/runner.sh",
+    "lint": "cd frontend && tsc --noEmit"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@google/genai": "^1.34.0",
+    "@tiptap/extension-mention": "^3.13.0",
+    "@tiptap/react": "^3.13.0",
+    "@tiptap/starter-kit": "^3.13.0",
+    "@types/react-grid-layout": "^1.3.6",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.554.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-grid-layout": "^1.5.2",
+    "react-hook-form": "^7.68.0",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.9.6",
+    "react-syntax-highlighter": "^16.1.0",
+    "react-toastify": "^11.0.3",
+    "recharts": "^3.5.0",
+    "remark-gfm": "^4.0.1",
+    "tippy.js": "^6.3.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.23",
+    "concurrently": "^9.2.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
+    "typescript": "~5.8.2",
+    "vite": "^5.4.21"
+  },
+  "overrides": {
+    "esbuild": "^0.25.0"
+  }
+}

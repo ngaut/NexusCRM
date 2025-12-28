@@ -1,0 +1,37 @@
+{
+    "triggers": {
+        "BEFORE_CREATE": "beforeCreate",
+        "AFTER_CREATE": "afterCreate",
+        "BEFORE_UPDATE": "beforeUpdate",
+        "AFTER_UPDATE": "afterUpdate",
+        "BEFORE_DELETE": "beforeDelete",
+        "AFTER_DELETE": "afterDelete"
+    },
+    "flowStatus": {
+        "ACTIVE": "Active",
+        "INACTIVE": "Inactive",
+        "DRAFT": "Draft"
+    },
+    "actionTypes": {
+        "CREATE_RECORD": "CreateRecord",
+        "UPDATE_RECORD": "UpdateRecord",
+        "DELETE_RECORD": "DeleteRecord",
+        "SEND_EMAIL": "SendEmail",
+        "CALL_WEBHOOK": "CallWebhook",
+        "COMPOSITE": "Composite"
+    },
+    "eventTypes": {
+        "RECORD_BEFORE_CREATE": "record.beforeCreate",
+        "RECORD_AFTER_CREATE": "record.afterCreate",
+        "RECORD_CREATED": "record.created",
+        "RECORD_BEFORE_UPDATE": "record.beforeUpdate",
+        "RECORD_AFTER_UPDATE": "record.afterUpdate",
+        "RECORD_UPDATED": "record.updated",
+        "RECORD_BEFORE_DELETE": "record.beforeDelete",
+        "RECORD_AFTER_DELETE": "record.afterDelete",
+        "RECORD_DELETED": "record.deleted",
+        "OBJECT_CREATED": "schema.object_created",
+        "FIELD_CREATED": "schema.field_created",
+        "SYSTEM_STARTUP": "system.startup"
+    }
+}

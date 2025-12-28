@@ -1,0 +1,200 @@
+// NexusCRM Platform Constants
+// Single source of truth for all platform constants.
+// Generate native types for Go and TypeScript using:
+//   protoc --go_out=. --ts_out=. constants.proto
+
+syntax = "proto3";
+
+package nexuscrm.constants;
+
+option go_package = "github.com/nexuscrm/backend/pkg/constants/pb";
+
+// TriggerType defines when a flow should execute
+enum TriggerType {
+  TRIGGER_TYPE_UNSPECIFIED = 0;
+  TRIGGER_TYPE_BEFORE_CREATE = 1;
+  TRIGGER_TYPE_AFTER_CREATE = 2;
+  TRIGGER_TYPE_BEFORE_UPDATE = 3;
+  TRIGGER_TYPE_AFTER_UPDATE = 4;
+  TRIGGER_TYPE_BEFORE_DELETE = 5;
+  TRIGGER_TYPE_AFTER_DELETE = 6;
+}
+
+// FlowStatus defines the status of a flow
+enum FlowStatus {
+  FLOW_STATUS_UNSPECIFIED = 0;
+  FLOW_STATUS_ACTIVE = 1;
+  FLOW_STATUS_INACTIVE = 2;
+  FLOW_STATUS_DRAFT = 3;
+}
+
+// ActionType defines the type of action to execute
+enum ActionType {
+  ACTION_TYPE_UNSPECIFIED = 0;
+  ACTION_TYPE_CREATE_RECORD = 1;
+  ACTION_TYPE_UPDATE_RECORD = 2;
+  ACTION_TYPE_DELETE_RECORD = 3;
+  ACTION_TYPE_SEND_EMAIL = 4;
+  ACTION_TYPE_CALL_WEBHOOK = 5;
+  ACTION_TYPE_COMPOSITE = 6;
+}
+
+// EventType defines platform event types
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  
+  // Record events
+  EVENT_TYPE_RECORD_BEFORE_CREATE = 1;
+  EVENT_TYPE_RECORD_AFTER_CREATE = 2;
+  EVENT_TYPE_RECORD_CREATED = 3;  // Alias for AFTER_CREATE
+  EVENT_TYPE_RECORD_BEFORE_UPDATE = 4;
+  EVENT_TYPE_RECORD_AFTER_UPDATE = 5;
+  EVENT_TYPE_RECORD_UPDATED = 6;  // Alias for AFTER_UPDATE
+  EVENT_TYPE_RECORD_BEFORE_DELETE = 7;
+  EVENT_TYPE_RECORD_AFTER_DELETE = 8;
+  EVENT_TYPE_RECORD_DELETED = 9;  // Alias for AFTER_DELETE
+  
+  // Schema events
+  EVENT_TYPE_OBJECT_CREATED = 20;
+  EVENT_TYPE_FIELD_CREATED = 21;
+  
+  // System events
+  EVENT_TYPE_SYSTEM_STARTUP = 30;
+}
+
+// SharingModel defines object-level sharing model
+enum SharingModel {
+  SHARING_MODEL_UNSPECIFIED = 0;
+  SHARING_MODEL_PRIVATE = 1;
+  SHARING_MODEL_PUBLIC_READ = 2;
+  SHARING_MODEL_PUBLIC_READ_WRITE = 3;
+}
+
+// DeleteRule defines referential integrity rules
+enum DeleteRule {
+  DELETE_RULE_UNSPECIFIED = 0;
+  DELETE_RULE_RESTRICT = 1;
+  DELETE_RULE_CASCADE = 2;
+  DELETE_RULE_SET_NULL = 3;
+}
+
+// FieldType defines the type of a field
+enum FieldType {
+  FIELD_TYPE_UNSPECIFIED = 0;
+  FIELD_TYPE_TEXT = 1;
+  FIELD_TYPE_NUMBER = 2;
+  FIELD_TYPE_CURRENCY = 3;
+  FIELD_TYPE_DATE = 4;
+  FIELD_TYPE_DATE_TIME = 5;
+  FIELD_TYPE_PICKLIST = 6;
+  FIELD_TYPE_EMAIL = 7;
+  FIELD_TYPE_PHONE = 8;
+  FIELD_TYPE_TEXT_AREA = 9;
+  FIELD_TYPE_LOOKUP = 10;
+  FIELD_TYPE_URL = 11;
+  FIELD_TYPE_BOOLEAN = 12;
+  FIELD_TYPE_FORMULA = 13;
+  FIELD_TYPE_PERCENT = 14;
+  FIELD_TYPE_ROLLUP_SUMMARY = 15;
+  FIELD_TYPE_JSON = 16;
+  FIELD_TYPE_LONG_TEXT_AREA = 17;
+  FIELD_TYPE_RICH_TEXT = 18;
+  FIELD_TYPE_PASSWORD = 19;
+  FIELD_TYPE_AUTO_NUMBER = 20;
+}
+
+// ObjectCategory defines the category of an object
+enum ObjectCategory {
+  OBJECT_CATEGORY_UNSPECIFIED = 0;
+  OBJECT_CATEGORY_STANDARD = 1;
+  OBJECT_CATEGORY_CUSTOM = 2;
+  OBJECT_CATEGORY_SYSTEM = 3;
+}
+
+// ProfileType defines profile types
+enum ProfileType {
+  PROFILE_TYPE_UNSPECIFIED = 0;
+  PROFILE_TYPE_SYSTEM_ADMIN = 1;
+  PROFILE_TYPE_STANDARD_USER = 2;
+}
+
+// SystemField defines standard system field names (API names)
+enum SystemField {
+  SYSTEM_FIELD_UNSPECIFIED = 0;
+  SYSTEM_FIELD_ID = 1;
+  SYSTEM_FIELD_NAME = 2;
+  SYSTEM_FIELD_OWNER_ID = 3;
+  SYSTEM_FIELD_CREATED_DATE = 4;
+  SYSTEM_FIELD_CREATED_BY_ID = 5;
+  SYSTEM_FIELD_LAST_MODIFIED_DATE = 6;
+  SYSTEM_FIELD_LAST_MODIFIED_BY_ID = 7;
+  SYSTEM_FIELD_IS_DELETED = 8;
+}
+
+// SystemTable defines system table names
+enum SystemTable {
+  SYSTEM_TABLE_UNSPECIFIED = 0;
+  // Core Metadata
+  SYSTEM_TABLE_OBJECT = 1;
+  SYSTEM_TABLE_FIELD = 2;
+  SYSTEM_TABLE_RELATIONSHIP = 3;
+  SYSTEM_TABLE_RECORD_TYPE = 4;
+  // UI & Layout
+  SYSTEM_TABLE_LAYOUT = 10;
+  SYSTEM_TABLE_APP = 11;
+  SYSTEM_TABLE_DASHBOARD = 12;
+  SYSTEM_TABLE_LIST_VIEW = 13;
+  // Security
+  SYSTEM_TABLE_PROFILE = 20;
+  SYSTEM_TABLE_USER = 21;
+  SYSTEM_TABLE_OBJECT_PERMS = 22;
+  SYSTEM_TABLE_FIELD_PERMS = 23;
+  // Automation
+  SYSTEM_TABLE_FLOW = 30;
+  SYSTEM_TABLE_ACTION = 31;
+  SYSTEM_TABLE_VALIDATION = 32;
+  // System Operations
+  SYSTEM_TABLE_RECYCLE_BIN = 40;
+  SYSTEM_TABLE_LOG = 41;
+  SYSTEM_TABLE_RECENT = 42;
+  SYSTEM_TABLE_CONFIG = 43;
+}
+
+// Permission defines permission operations
+enum Permission {
+  PERMISSION_UNSPECIFIED = 0;
+  PERMISSION_READ = 1;
+  PERMISSION_CREATE = 2;
+  PERMISSION_EDIT = 3;
+  PERMISSION_DELETE = 4;
+  PERMISSION_VIEW_ALL = 5;
+  PERMISSION_MODIFY_ALL = 6;
+}
+
+// LogLevel defines log levels
+enum LogLevel {
+  LOG_LEVEL_UNSPECIFIED = 0;
+  LOG_LEVEL_DEBUG = 1;
+  LOG_LEVEL_INFO = 2;
+  LOG_LEVEL_WARNING = 3;
+  LOG_LEVEL_ERROR = 4;
+}
+
+// SortDirection defines sort order
+enum SortDirection {
+  SORT_DIRECTION_UNSPECIFIED = 0;
+  SORT_DIRECTION_ASC = 1;
+  SORT_DIRECTION_DESC = 2;
+}
+
+// ConstantMappings provides string values for enums (for database/API compatibility)
+message ConstantMappings {
+  map<string, string> trigger_types = 1;
+  map<string, string> flow_statuses = 2;
+  map<string, string> action_types = 3;
+  map<string, string> event_types = 4;
+  map<string, string> system_fields = 5;
+  map<string, string> system_tables = 6;
+  map<string, string> permissions = 7;
+}
+

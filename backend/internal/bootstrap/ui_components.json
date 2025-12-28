@@ -1,0 +1,58 @@
+{
+    "components": [
+        {
+            "name": "Dashboard",
+            "is_embeddable": false,
+            "description": "Dashboard Page",
+            "type": "page"
+        },
+        {
+            "name": "ObjectView",
+            "is_embeddable": false,
+            "description": "Object Record View",
+            "type": "page"
+        },
+        {
+            "name": "Flows",
+            "is_embeddable": false,
+            "description": "Flows Management",
+            "type": "page"
+        },
+        {
+            "name": "ObjectManager",
+            "is_embeddable": false,
+            "description": "Object Manager",
+            "type": "page"
+        },
+        {
+            "name": "Setup",
+            "is_embeddable": false,
+            "description": "Setup Page",
+            "type": "page"
+        },
+        {
+            "name": "AppManager",
+            "is_embeddable": false,
+            "description": "Application Manager",
+            "type": "page"
+        },
+        {
+            "name": "UserManager",
+            "is_embeddable": false,
+            "description": "User Manager",
+            "type": "page"
+        },
+        {
+            "name": "ActivityTimeline",
+            "is_embeddable": true,
+            "description": "Activity Timeline Widget",
+            "type": "widget"
+        },
+        {
+            "name": "LayoutEditor",
+            "is_embeddable": true,
+            "description": "Layout Editor Component",
+            "type": "widget"
+        }
+    ]
+}

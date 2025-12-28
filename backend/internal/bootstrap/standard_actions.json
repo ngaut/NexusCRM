@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Edit",
+        "label": "Edit",
+        "type": "UpdateRecord",
+        "icon": "Edit"
+    },
+    {
+        "name": "Delete",
+        "label": "Delete",
+        "type": "DeleteRecord",
+        "icon": "Trash"
+    }
+]

@@ -1,0 +1,157 @@
+{
+    "profiles": {
+        "SYSTEM_ADMIN": {
+            "id": "system_admin",
+            "label": "System Administrator",
+            "description": "Full access to all platform features and data. Can modify system configuration.",
+            "is_system": true,
+            "is_super_user": true
+        },
+        "STANDARD_USER": {
+            "id": "standard_user",
+            "label": "Standard User",
+            "description": "Default user profile with standard permissions as defined by administrators.",
+            "is_system": true,
+            "is_super_user": false
+        }
+    },
+    "systemFields": {
+        "ID": {
+            "apiName": "id",
+            "label": "ID",
+            "protoName": "SYSTEM_FIELD_ID"
+        },
+        "NAME": {
+            "apiName": "name",
+            "label": "Name",
+            "protoName": "SYSTEM_FIELD_NAME"
+        },
+        "OWNER_ID": {
+            "apiName": "owner_id",
+            "label": "Owner",
+            "protoName": "SYSTEM_FIELD_OWNER_ID"
+        },
+        "CREATED_DATE": {
+            "apiName": "created_date",
+            "label": "Created Date",
+            "protoName": "SYSTEM_FIELD_CREATED_DATE"
+        },
+        "CREATED_BY_ID": {
+            "apiName": "created_by_id",
+            "label": "Created By",
+            "protoName": "SYSTEM_FIELD_CREATED_BY_ID"
+        },
+        "LAST_MODIFIED_DATE": {
+            "apiName": "last_modified_date",
+            "label": "Last Modified Date",
+            "protoName": "SYSTEM_FIELD_LAST_MODIFIED_DATE"
+        },
+        "LAST_MODIFIED_BY_ID": {
+            "apiName": "last_modified_by_id",
+            "label": "Last Modified By",
+            "protoName": "SYSTEM_FIELD_LAST_MODIFIED_BY_ID"
+        },
+        "IS_DELETED": {
+            "apiName": "is_deleted",
+            "label": "Deleted",
+            "protoName": "SYSTEM_FIELD_IS_DELETED"
+        }
+    },
+    "systemTables": {
+        "OBJECT": "_System_Object",
+        "FIELD": "_System_Field",
+        "RELATIONSHIP": "_System_Relationship",
+        "RECORD_TYPE": "_System_RecordType",
+        "APP": "_System_App",
+        "TAB": "_System_Tab",
+        "LAYOUT": "_System_Layout",
+        "PROFILE_LAYOUT": "_System_ProfileLayout",
+        "DASHBOARD": "_System_Dashboard",
+        "LIST_VIEW": "_System_ListView",
+        "SETUP_PAGE": "_System_SetupPage",
+        "UI_THEME": "_System_UITheme",
+        "UI_COMPONENT": "_System_UIComponent",
+        "FIELD_RENDERING": "_System_FieldRendering",
+        "NAVIGATION_MENU": "_System_NavigationMenu",
+        "FLOW": "_System_Flow",
+        "ACTION_HANDLER": "_System_ActionHandler",
+        "FORMULA_FUNCTION": "_System_FormulaFunction",
+        "WEBHOOK": "_System_Webhook",
+        "EMAIL_TEMPLATE": "_System_EmailTemplate",
+        "API_ENDPOINT": "_System_ApiEndpoint",
+        "VALIDATION": "_System_Validation",
+        "TRANSFORMATION": "_System_Transformation",
+        "ACTION": "_System_Action",
+        "PROFILE": "_System_Profile",
+        "ROLE": "_System_Role",
+        "USER": "_System_User",
+        "OBJECT_PERMS": "_System_ObjectPerms",
+        "FIELD_PERMS": "_System_FieldPerms",
+        "SHARING_RULE": "_System_SharingRule",
+        "RECYCLE_BIN": "_System_RecycleBin",
+        "LOG": "_System_Log",
+        "RECENT": "_System_Recent",
+        "CONFIG": "_System_Config",
+        "LIMIT": "_System_Limit",
+        "PROMPT": "_System_Prompt"
+    },
+    "permissions": {
+        "READ": {
+            "value": "read",
+            "protoName": "PERMISSION_READ"
+        },
+        "CREATE": {
+            "value": "create",
+            "protoName": "PERMISSION_CREATE"
+        },
+        "EDIT": {
+            "value": "edit",
+            "protoName": "PERMISSION_EDIT"
+        },
+        "DELETE": {
+            "value": "delete",
+            "protoName": "PERMISSION_DELETE"
+        },
+        "VIEW_ALL": {
+            "value": "viewAll",
+            "protoName": "PERMISSION_VIEW_ALL"
+        },
+        "MODIFY_ALL": {
+            "value": "modifyAll",
+            "protoName": "PERMISSION_MODIFY_ALL"
+        }
+    },
+    "logLevels": {
+        "DEBUG": "DEBUG",
+        "INFO": "INFO",
+        "WARNING": "WARNING",
+        "ERROR": "ERROR"
+    },
+    "recordStates": {
+        "DELETED": 1,
+        "ACTIVE": 0
+    },
+    "standardObjects": {
+        "LEAD": "lead",
+        "ACCOUNT": "account",
+        "CONTACT": "contact",
+        "OPPORTUNITY": "opportunity",
+        "TASK": "task",
+        "CAMPAIGN": "campaign",
+        "PROJECT": "project"
+    },
+    "objectCategories": {
+        "SYSTEM_METADATA": "system_metadata",
+        "BUSINESS_STANDARD": "business_standard",
+        "BUSINESS_CUSTOM": "business_custom",
+        "SECURITY": "security",
+        "UTILITY": "utility"
+    },
+    "defaults": {
+        "userName": "Unknown",
+        "userEmail": "unknown@example.com",
+        "pageSize": 25,
+        "maxPageSize": 1000,
+        "orderDir": "DESC"
+    }
+}

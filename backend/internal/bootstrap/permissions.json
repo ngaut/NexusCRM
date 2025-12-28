@@ -1,0 +1,86 @@
+{
+    "object_permissions": [
+        {
+            "profile_id": "system_admin",
+            "objects": [
+                {
+                    "object_api_name": "account",
+                    "allow_read": true,
+                    "allow_create": true,
+                    "allow_edit": true,
+                    "allow_delete": true,
+                    "view_all": true,
+                    "modify_all": true
+                },
+                {
+                    "object_api_name": "contact",
+                    "allow_read": true,
+                    "allow_create": true,
+                    "allow_edit": true,
+                    "allow_delete": true,
+                    "view_all": true,
+                    "modify_all": true
+                },
+                {
+                    "object_api_name": "lead",
+                    "allow_read": true,
+                    "allow_create": true,
+                    "allow_edit": true,
+                    "allow_delete": true,
+                    "view_all": true,
+                    "modify_all": true
+                },
+                {
+                    "object_api_name": "opportunity",
+                    "allow_read": true,
+                    "allow_create": true,
+                    "allow_edit": true,
+                    "allow_delete": true,
+                    "view_all": true,
+                    "modify_all": true
+                }
+            ]
+        },
+        {
+            "profile_id": "standard_user",
+            "objects": [
+                {
+                    "object_api_name": "account",
+                    "allow_read": true,
+                    "allow_create": true,
+                    "allow_edit": true,
+                    "allow_delete": false,
+                    "view_all": false,
+                    "modify_all": false
+                },
+                {
+                    "object_api_name": "contact",
+                    "allow_read": true,
+                    "allow_create": true,
+                    "allow_edit": true,
+                    "allow_delete": false,
+                    "view_all": false,
+                    "modify_all": false
+                },
+                {
+                    "object_api_name": "lead",
+                    "allow_read": true,
+                    "allow_create": true,
+                    "allow_edit": true,
+                    "allow_delete": false,
+                    "view_all": false,
+                    "modify_all": false
+                },
+                {
+                    "object_api_name": "opportunity",
+                    "allow_read": true,
+                    "allow_create": true,
+                    "allow_edit": true,
+                    "allow_delete": false,
+                    "view_all": false,
+                    "modify_all": false
+                }
+            ]
+        }
+    ]
+}

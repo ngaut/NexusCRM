@@ -1,0 +1,3495 @@
+[
+    {
+        "tableName": "_System_Object",
+        "tableType": "system_metadata",
+        "category": "metadata",
+        "description": "Object metadata definitions",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "label",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "plural_label",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "app_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "icon",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "description",
+                "type": "TEXT"
+            },
+            {
+                "name": "theme_color",
+                "type": "VARCHAR(20)",
+                "nullable": true
+            },
+            {
+                "name": "is_custom",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "sharing_model",
+                "type": "VARCHAR(50)",
+                "default": "'ReadWrite'"
+            },
+            {
+                "name": "path_field",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "list_fields",
+                "type": "JSON",
+                "nullable": true
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "nullable": false,
+                "default": "0"
+            },
+            {
+                "name": "owner_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "is_custom"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Field",
+        "tableType": "system_metadata",
+        "category": "metadata",
+        "description": "Field metadata definitions",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "object_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "label",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "type",
+                "type": "VARCHAR(50)",
+                "nullable": false
+            },
+            {
+                "name": "required",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "unique",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "is_system",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "is_name_field",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "indexed",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "options",
+                "type": "JSON",
+                "nullable": true
+            },
+            {
+                "name": "reference_to",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "delete_rule",
+                "type": "VARCHAR(50)",
+                "nullable": true
+            },
+            {
+                "name": "formula",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "return_type",
+                "type": "VARCHAR(50)",
+                "nullable": true
+            },
+            {
+                "name": "default_value",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "help_text",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "description",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "track_history",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "min_value",
+                "type": "DECIMAL(18,4)",
+                "nullable": true
+            },
+            {
+                "name": "max_value",
+                "type": "DECIMAL(18,4)",
+                "nullable": true
+            },
+            {
+                "name": "min_length",
+                "type": "INT",
+                "nullable": true
+            },
+            {
+                "name": "max_length",
+                "type": "INT",
+                "nullable": true
+            },
+            {
+                "name": "regex",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "regex_message",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "validator",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "controlling_field",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "picklist_dependency",
+                "type": "JSON",
+                "nullable": true
+            },
+            {
+                "name": "rollup_config",
+                "type": "JSON",
+                "nullable": true
+            },
+            {
+                "name": "is_master_detail",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "relationship_name",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "nullable": false,
+                "default": "0"
+            },
+            {
+                "name": "owner_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "object_id"
+                ]
+            },
+            {
+                "columns": [
+                    "type"
+                ]
+            },
+            {
+                "columns": [
+                    "object_id",
+                    "api_name"
+                ],
+                "unique": true
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "object_id",
+                "references": "_System_Object(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Table",
+        "tableType": "system_core",
+        "category": "registry",
+        "description": "Meta-metadata registry cataloging all tables",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "table_name",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "table_type",
+                "type": "ENUM('system_core', 'system_metadata', 'standard_object', 'custom_object')",
+                "nullable": false
+            },
+            {
+                "name": "category",
+                "type": "VARCHAR(50)"
+            },
+            {
+                "name": "description",
+                "type": "TEXT"
+            },
+            {
+                "name": "is_managed",
+                "type": "TINYINT(1)",
+                "default": "1"
+            },
+            {
+                "name": "schema_version",
+                "type": "VARCHAR(50)",
+                "default": "'1.0.0'"
+            },
+            {
+                "name": "created_by",
+                "type": "VARCHAR(255)",
+                "default": "'bootstrap'"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "table_type"
+                ]
+            },
+            {
+                "columns": [
+                    "category"
+                ]
+            },
+            {
+                "columns": [
+                    "is_managed"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Profile",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "User profiles and permission sets",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "description",
+                "type": "TEXT"
+            },
+            {
+                "name": "is_active",
+                "type": "TINYINT(1)",
+                "default": "1"
+            },
+            {
+                "name": "is_system",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "nullable": false,
+                "default": "0"
+            },
+            {
+                "name": "owner_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Role",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "Role hierarchy for access control",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "description",
+                "type": "TEXT"
+            },
+            {
+                "name": "parent_role_id",
+                "type": "VARCHAR(255)",
+                "nullable": true,
+                "logicalType": "Lookup",
+                "referenceTo": "_System_Role"
+            },
+            {
+                "name": "is_active",
+                "type": "TINYINT(1)",
+                "default": "1"
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "nullable": false,
+                "default": "0"
+            },
+            {
+                "name": "owner_id",
+                "type": "VARCHAR(255)",
+                "nullable": true,
+                "logicalType": "Lookup",
+                "referenceTo": "_System_User"
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true,
+                "logicalType": "Lookup",
+                "referenceTo": "_System_User"
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true,
+                "logicalType": "Lookup",
+                "referenceTo": "_System_User"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "parent_role_id"
+                ]
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "parent_role_id",
+                "references": "_System_Role(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_User",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "System users",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "username",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true,
+                "isNameField": true
+            },
+            {
+                "name": "email",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true,
+                "isNameField": true
+            },
+            {
+                "name": "password",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "logicalType": "Password"
+            },
+            {
+                "name": "first_name",
+                "type": "VARCHAR(100)"
+            },
+            {
+                "name": "last_name",
+                "type": "VARCHAR(100)"
+            },
+            {
+                "name": "phone",
+                "type": "VARCHAR(40)"
+            },
+            {
+                "name": "profile_id",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "logicalType": "Lookup",
+                "referenceTo": "_System_Profile"
+            },
+            {
+                "name": "role_id",
+                "type": "VARCHAR(255)",
+                "nullable": true,
+                "logicalType": "Lookup",
+                "referenceTo": "_System_Role"
+            },
+            {
+                "name": "is_active",
+                "type": "TINYINT(1)",
+                "default": "1"
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "nullable": false,
+                "default": "0"
+            },
+            {
+                "name": "owner_id",
+                "type": "VARCHAR(255)",
+                "nullable": true,
+                "logicalType": "Lookup",
+                "referenceTo": "_System_User"
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true,
+                "logicalType": "Lookup",
+                "referenceTo": "_System_User"
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true,
+                "logicalType": "Lookup",
+                "referenceTo": "_System_User"
+            },
+            {
+                "name": "last_login_date",
+                "type": "DATETIME",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "profile_id"
+                ]
+            },
+            {
+                "columns": [
+                    "role_id"
+                ]
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "profile_id",
+                "references": "_System_Profile(id)"
+            },
+            {
+                "column": "role_id",
+                "references": "_System_Role(id)",
+                "onDelete": "SET NULL"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Session",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "User authentication sessions",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "user_id",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "logicalType": "Lookup",
+                "referenceTo": "_System_User"
+            },
+            {
+                "name": "token",
+                "type": "VARCHAR(512)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "expires_at",
+                "type": "DATETIME",
+                "nullable": false
+            },
+            {
+                "name": "last_activity",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "ip_address",
+                "type": "VARCHAR(45)"
+            },
+            {
+                "name": "user_agent",
+                "type": "VARCHAR(255)"
+            },
+            {
+                "name": "is_revoked",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "user_id"
+                ]
+            },
+            {
+                "columns": [
+                    "expires_at"
+                ]
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "user_id",
+                "references": "_System_User(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_RecordType",
+        "tableType": "system_metadata",
+        "category": "metadata",
+        "description": "Record type configurations",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "object_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "description",
+                "type": "TEXT"
+            },
+            {
+                "name": "is_active",
+                "type": "TINYINT(1)",
+                "default": "1"
+            },
+            {
+                "name": "is_master",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "nullable": false,
+                "default": "0"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "object_id"
+                ]
+            },
+            {
+                "columns": [
+                    "object_id",
+                    "name"
+                ],
+                "unique": true
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "object_id",
+                "references": "_System_Object(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_AutoNumber",
+        "tableType": "system_metadata",
+        "category": "metadata",
+        "description": "Auto-number sequence tracking",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "field_id",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "prefix",
+                "type": "VARCHAR(50)"
+            },
+            {
+                "name": "suffix",
+                "type": "VARCHAR(50)"
+            },
+            {
+                "name": "starting_number",
+                "type": "INT",
+                "nullable": false,
+                "default": "1"
+            },
+            {
+                "name": "current_number",
+                "type": "INT",
+                "nullable": false,
+                "default": "1"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "field_id",
+                "references": "_System_Field(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Relationship",
+        "tableType": "system_metadata",
+        "category": "metadata",
+        "description": "Object relationship definitions",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "child_object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "parent_object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "field_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "relationship_name",
+                "type": "VARCHAR(255)"
+            },
+            {
+                "name": "relationship_type",
+                "type": "VARCHAR(50)",
+                "nullable": false,
+                "default": "'Lookup'"
+            },
+            {
+                "name": "cascade_delete",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "restricted_delete",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "related_list_label",
+                "type": "VARCHAR(255)"
+            },
+            {
+                "name": "related_list_fields",
+                "type": "TEXT"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "child_object_api_name"
+                ]
+            },
+            {
+                "columns": [
+                    "parent_object_api_name"
+                ]
+            },
+            {
+                "columns": [
+                    "field_api_name"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_FieldDependency",
+        "tableType": "system_metadata",
+        "category": "metadata",
+        "description": "Field dependency rules",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "controlling_field_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "dependent_field_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "controlling_value",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "dependent_values",
+                "type": "JSON"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "controlling_field_id"
+                ]
+            },
+            {
+                "columns": [
+                    "dependent_field_id"
+                ]
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "controlling_field_id",
+                "references": "_System_Field(id)",
+                "onDelete": "CASCADE"
+            },
+            {
+                "column": "dependent_field_id",
+                "references": "_System_Field(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Dashboard",
+        "tableType": "system_metadata",
+        "category": "ui",
+        "description": "Dashboard configurations with widget-based layouts",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "description",
+                "type": "TEXT"
+            },
+            {
+                "name": "layout",
+                "type": "VARCHAR(50)",
+                "default": "'two-column'"
+            },
+            {
+                "name": "widgets",
+                "type": "JSON"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_App",
+        "tableType": "system_metadata",
+        "category": "ui",
+        "description": "Application configurations",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "label",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "description",
+                "type": "TEXT"
+            },
+            {
+                "name": "icon",
+                "type": "VARCHAR(50)"
+            },
+            {
+                "name": "color",
+                "type": "VARCHAR(50)"
+            },
+            {
+                "name": "navigation_items",
+                "type": "JSON"
+            },
+            {
+                "name": "is_default",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Theme",
+        "tableType": "system_metadata",
+        "category": "ui",
+        "description": "Visual theme configurations",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "is_active",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "colors",
+                "type": "JSON",
+                "nullable": false
+            },
+            {
+                "name": "density",
+                "type": "VARCHAR(50)",
+                "default": "'comfortable'"
+            },
+            {
+                "name": "logo_url",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Log",
+        "tableType": "system_core",
+        "category": "audit",
+        "description": "System event logs",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "timestamp",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "level",
+                "type": "VARCHAR(50)",
+                "nullable": false
+            },
+            {
+                "name": "source",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "message",
+                "type": "TEXT"
+            },
+            {
+                "name": "details",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "timestamp"
+                ]
+            },
+            {
+                "columns": [
+                    "level"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Recent",
+        "tableType": "system_metadata",
+        "category": "ui",
+        "description": "Recently viewed records",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "user_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "record_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "record_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "timestamp",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "user_id"
+                ]
+            },
+            {
+                "columns": [
+                    "user_id",
+                    "timestamp"
+                ]
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "user_id",
+                "references": "_System_User(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Config",
+        "tableType": "system_core",
+        "category": "config",
+        "description": "System configuration settings",
+        "columns": [
+            {
+                "name": "key_name",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "value",
+                "type": "TEXT"
+            },
+            {
+                "name": "is_secret",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "description",
+                "type": "TEXT"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Validation",
+        "tableType": "system_metadata",
+        "category": "metadata",
+        "description": "Validation rules for objects",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "active",
+                "type": "TINYINT(1)",
+                "default": "1"
+            },
+            {
+                "name": "condition",
+                "type": "TEXT",
+                "nullable": false
+            },
+            {
+                "name": "error_message",
+                "type": "TEXT",
+                "nullable": false
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "object_api_name"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Flow",
+        "tableType": "system_metadata",
+        "category": "automation",
+        "description": "Workflow automation definitions",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "trigger_object",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "trigger_type",
+                "type": "VARCHAR(50)",
+                "nullable": false
+            },
+            {
+                "name": "trigger_condition",
+                "type": "TEXT"
+            },
+            {
+                "name": "action_type",
+                "type": "VARCHAR(50)",
+                "nullable": false
+            },
+            {
+                "name": "action_config",
+                "type": "JSON"
+            },
+            {
+                "name": "flow_type",
+                "type": "VARCHAR(50)",
+                "default": "'simple'",
+                "nullable": false
+            },
+            {
+                "name": "description",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "default": "'active'"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "owner_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "is_deleted",
+                "type": "BOOLEAN",
+                "default": "false"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "trigger_object"
+                ]
+            },
+            {
+                "columns": [
+                    "status"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_FlowStep",
+        "tableType": "system_metadata",
+        "category": "automation",
+        "description": "Step definitions for multi-step flows",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "flow_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "step_order",
+                "type": "INT",
+                "nullable": false,
+                "default": "1"
+            },
+            {
+                "name": "step_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "step_type",
+                "type": "VARCHAR(50)",
+                "nullable": false,
+                "default": "'action'"
+            },
+            {
+                "name": "action_type",
+                "type": "VARCHAR(50)",
+                "nullable": true
+            },
+            {
+                "name": "action_config",
+                "type": "JSON",
+                "nullable": true
+            },
+            {
+                "name": "entry_condition",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "on_success_step",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "on_failure_step",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "owner_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "is_deleted",
+                "type": "BOOLEAN",
+                "default": "false"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "name": "idx_flowstep_flow",
+                "columns": [
+                    "flow_id"
+                ]
+            },
+            {
+                "name": "idx_flowstep_order",
+                "columns": [
+                    "flow_id",
+                    "step_order"
+                ]
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "flow_id",
+                "references": "_System_Flow(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_FlowInstance",
+        "tableType": "system_core",
+        "category": "automation",
+        "description": "Tracks running and paused flow executions",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "flow_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "record_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "nullable": false,
+                "default": "'Running'"
+            },
+            {
+                "name": "current_step_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "context_data",
+                "type": "JSON",
+                "nullable": true
+            },
+            {
+                "name": "started_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "paused_date",
+                "type": "DATETIME",
+                "nullable": true
+            },
+            {
+                "name": "completed_date",
+                "type": "DATETIME",
+                "nullable": true
+            },
+            {
+                "name": "owner_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": true
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "default": "0",
+                "nullable": false
+            }
+        ],
+        "indices": [
+            {
+                "name": "idx_flowinstance_flow",
+                "columns": [
+                    "flow_id"
+                ]
+            },
+            {
+                "name": "idx_flowinstance_record",
+                "columns": [
+                    "object_api_name",
+                    "record_id"
+                ]
+            },
+            {
+                "name": "idx_flowinstance_status",
+                "columns": [
+                    "status"
+                ]
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "flow_id",
+                "references": "_System_Flow(id)",
+                "onDelete": "CASCADE"
+            },
+            {
+                "column": "current_step_id",
+                "references": "_System_FlowStep(id)",
+                "onDelete": "SET NULL"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Action",
+        "tableType": "system_metadata",
+        "category": "ui",
+        "description": "UI action definitions",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "label",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "type",
+                "type": "VARCHAR(50)",
+                "nullable": false
+            },
+            {
+                "name": "icon",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "target_object",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "config",
+                "type": "JSON",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "object_api_name"
+                ]
+            },
+            {
+                "columns": [
+                    "object_api_name",
+                    "name"
+                ],
+                "unique": true
+            }
+        ]
+    },
+    {
+        "tableName": "_System_ListView",
+        "tableType": "system_metadata",
+        "category": "ui",
+        "description": "List view configurations",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "label",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "filters",
+                "type": "JSON",
+                "nullable": false
+            },
+            {
+                "name": "fields",
+                "type": "JSON",
+                "nullable": false
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "object_api_name"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_SharingRule",
+        "tableType": "system_metadata",
+        "category": "auth",
+        "description": "Record sharing rules",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "criteria",
+                "type": "TEXT"
+            },
+            {
+                "name": "access_level",
+                "type": "VARCHAR(50)",
+                "nullable": false
+            },
+            {
+                "name": "share_with_role_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "share_with_group_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "nullable": false,
+                "default": "0"
+            },
+            {
+                "name": "owner_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "object_api_name"
+                ]
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "share_with_role_id",
+                "references": "_System_Role(id)",
+                "onDelete": "CASCADE"
+            },
+            {
+                "column": "share_with_group_id",
+                "references": "_System_Group(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_RecycleBin",
+        "tableType": "system_core",
+        "category": "data",
+        "description": "Recycle bin for soft-deleted records",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "record_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "record_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "deleted_by",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "logicalType": "Lookup",
+                "referenceTo": "_System_User"
+            },
+            {
+                "name": "deleted_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "object_api_name"
+                ]
+            },
+            {
+                "columns": [
+                    "deleted_date"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Layout",
+        "tableType": "system_metadata",
+        "category": "ui",
+        "description": "Page layout configurations",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "config",
+                "type": "JSON"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "object_api_name"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_ProfileLayout",
+        "tableType": "system_metadata",
+        "category": "ui",
+        "description": "Profile to layout assignments",
+        "columns": [
+            {
+                "name": "profile_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "layout_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "profile_id",
+                    "object_api_name"
+                ],
+                "unique": true
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "profile_id",
+                "references": "_System_Profile(id)",
+                "onDelete": "CASCADE"
+            },
+            {
+                "column": "layout_id",
+                "references": "_System_Layout(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_SetupPage",
+        "tableType": "system_metadata",
+        "category": "ui",
+        "description": "Setup page definitions",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "label",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "icon",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "component_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "category",
+                "type": "VARCHAR(50)",
+                "nullable": false
+            },
+            {
+                "name": "page_order",
+                "type": "INT",
+                "default": "99"
+            },
+            {
+                "name": "permission_required",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "is_enabled",
+                "type": "BOOLEAN",
+                "default": "true"
+            },
+            {
+                "name": "description",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "path",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "category"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_ObjectPerms",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "Object permissions for profiles",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "profile_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "permission_set_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "allow_read",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "allow_create",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "allow_edit",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "allow_delete",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "view_all",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "modify_all",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "profile_id",
+                    "object_api_name"
+                ],
+                "unique": true
+            },
+            {
+                "name": "idx_objperms_permset",
+                "columns": [
+                    "permission_set_id",
+                    "object_api_name"
+                ],
+                "unique": true
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "profile_id",
+                "references": "_System_Profile(id)",
+                "onDelete": "CASCADE"
+            },
+            {
+                "column": "permission_set_id",
+                "references": "_System_PermissionSet(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_FieldPerms",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "Field permissions for profiles",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "profile_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "permission_set_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "field_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "readable",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "editable",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "profile_id",
+                    "object_api_name",
+                    "field_api_name"
+                ],
+                "unique": true
+            },
+            {
+                "name": "idx_fieldperms_permset",
+                "columns": [
+                    "permission_set_id",
+                    "object_api_name",
+                    "field_api_name"
+                ],
+                "unique": true
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "profile_id",
+                "references": "_System_Profile(id)",
+                "onDelete": "CASCADE"
+            },
+            {
+                "column": "permission_set_id",
+                "references": "_System_PermissionSet(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Comment",
+        "tableType": "system_core",
+        "category": "data",
+        "description": "User comments on records",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "record_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "body",
+                "type": "TEXT",
+                "nullable": false
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "parent_comment_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "is_resolved",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "object_api_name",
+                    "record_id"
+                ]
+            },
+            {
+                "columns": [
+                    "created_by_id"
+                ]
+            },
+            {
+                "columns": [
+                    "parent_comment_id"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_AuditLog",
+        "tableType": "system_core",
+        "category": "audit",
+        "description": "Field history tracking",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "record_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "field_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "old_value",
+                "type": "TEXT"
+            },
+            {
+                "name": "new_value",
+                "type": "TEXT"
+            },
+            {
+                "name": "changed_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "changed_at",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "object_api_name",
+                    "record_id"
+                ]
+            },
+            {
+                "columns": [
+                    "changed_at"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Notification",
+        "tableType": "system_core",
+        "category": "system",
+        "description": "User notifications",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "recipient_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "title",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "body",
+                "type": "TEXT"
+            },
+            {
+                "name": "link",
+                "type": "VARCHAR(512)"
+            },
+            {
+                "name": "is_read",
+                "type": "TINYINT(1)"
+            },
+            {
+                "name": "notification_type",
+                "type": "VARCHAR(50)"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "recipient_id"
+                ]
+            },
+            {
+                "columns": [
+                    "is_read"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_File",
+        "tableType": "system_core",
+        "category": "system",
+        "description": "File attachments",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "parent_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "mime_type",
+                "type": "VARCHAR(100)"
+            },
+            {
+                "name": "size_bytes",
+                "type": "BIGINT",
+                "default": "0"
+            },
+            {
+                "name": "storage_path",
+                "type": "VARCHAR(512)"
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "parent_id"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Group",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "Groups and Queues",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "label",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "type",
+                "type": "ENUM('Queue', 'Regular')",
+                "default": "'Regular'"
+            },
+            {
+                "name": "email",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "default": "0",
+                "nullable": false
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_GroupMember",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "Group membership",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "group_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "user_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "default": "0",
+                "nullable": false
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "group_id",
+                    "user_id"
+                ],
+                "unique": true
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "group_id",
+                "references": "_System_Group(id)",
+                "onDelete": "CASCADE"
+            },
+            {
+                "column": "user_id",
+                "references": "_System_User(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_PermissionSet",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "Additive permission sets",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "label",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "description",
+                "type": "TEXT"
+            },
+            {
+                "name": "is_active",
+                "type": "TINYINT(1)",
+                "default": "1"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "default": "0",
+                "nullable": false
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_PermissionSetAssignment",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "Assignment of permission sets to users",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "assignee_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "permission_set_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "default": "0",
+                "nullable": false
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "name": "idx_psa_assignee_permset",
+                "columns": [
+                    "assignee_id",
+                    "permission_set_id"
+                ],
+                "unique": true
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "assignee_id",
+                "references": "_System_User(id)",
+                "onDelete": "CASCADE"
+            },
+            {
+                "column": "permission_set_id",
+                "references": "_System_PermissionSet(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_RecordShare",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "Manual record sharing with users or groups",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "record_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "share_with_user_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "share_with_group_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "access_level",
+                "type": "VARCHAR(50)",
+                "nullable": false,
+                "default": "'Read'"
+            },
+            {
+                "name": "reason",
+                "type": "VARCHAR(50)",
+                "default": "'Manual'"
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": true
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "default": "0",
+                "nullable": false
+            }
+        ],
+        "indices": [
+            {
+                "name": "idx_recordshare_record",
+                "columns": [
+                    "object_api_name",
+                    "record_id"
+                ]
+            },
+            {
+                "name": "idx_recordshare_user",
+                "columns": [
+                    "share_with_user_id"
+                ]
+            },
+            {
+                "name": "idx_recordshare_group",
+                "columns": [
+                    "share_with_group_id"
+                ]
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "share_with_user_id",
+                "references": "_System_User(id)",
+                "onDelete": "CASCADE"
+            },
+            {
+                "column": "share_with_group_id",
+                "references": "_System_Group(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_TeamMember",
+        "tableType": "system_core",
+        "category": "auth",
+        "description": "Account and Opportunity team members",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "record_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "user_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "team_role",
+                "type": "VARCHAR(100)",
+                "default": "'Team Member'"
+            },
+            {
+                "name": "access_level",
+                "type": "VARCHAR(50)",
+                "nullable": false,
+                "default": "'Read'"
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": true
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "default": "0",
+                "nullable": false
+            }
+        ],
+        "indices": [
+            {
+                "name": "idx_teammember_record",
+                "columns": [
+                    "object_api_name",
+                    "record_id"
+                ]
+            },
+            {
+                "name": "idx_teammember_user",
+                "columns": [
+                    "user_id"
+                ]
+            },
+            {
+                "name": "idx_teammember_unique",
+                "columns": [
+                    "object_api_name",
+                    "record_id",
+                    "user_id"
+                ],
+                "unique": true
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "user_id",
+                "references": "_System_User(id)",
+                "onDelete": "CASCADE"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_ApprovalProcess",
+        "tableType": "system_core",
+        "category": "automation",
+        "description": "Approval process definitions",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "description",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "entry_criteria",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "approver_type",
+                "type": "VARCHAR(50)",
+                "nullable": false,
+                "default": "'User'"
+            },
+            {
+                "name": "approver_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "is_active",
+                "type": "TINYINT(1)",
+                "default": "1",
+                "nullable": false
+            },
+            {
+                "name": "owner_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": true
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "default": "0",
+                "nullable": false
+            }
+        ],
+        "indices": [
+            {
+                "name": "idx_approvalprocess_object",
+                "columns": [
+                    "object_api_name"
+                ]
+            },
+            {
+                "name": "idx_approvalprocess_name",
+                "columns": [
+                    "name"
+                ],
+                "unique": true
+            }
+        ],
+        "foreignKeys": []
+    },
+    {
+        "tableName": "_System_ApprovalWorkItem",
+        "tableType": "system_core",
+        "category": "automation",
+        "description": "Pending approval work items",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "process_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "flow_instance_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "flow_step_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "object_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "record_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "nullable": false,
+                "default": "'Pending'"
+            },
+            {
+                "name": "submitted_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "submitted_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "approver_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "approved_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "approved_date",
+                "type": "DATETIME",
+                "nullable": true
+            },
+            {
+                "name": "comments",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "owner_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_by_id",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": true
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "default": "0",
+                "nullable": false
+            }
+        ],
+        "indices": [
+            {
+                "name": "idx_approvalworkitem_process",
+                "columns": [
+                    "process_id"
+                ]
+            },
+            {
+                "name": "idx_approvalworkitem_record",
+                "columns": [
+                    "object_api_name",
+                    "record_id"
+                ]
+            },
+            {
+                "name": "idx_approvalworkitem_status",
+                "columns": [
+                    "status"
+                ]
+            },
+            {
+                "name": "idx_approvalworkitem_approver",
+                "columns": [
+                    "approver_id"
+                ]
+            }
+        ],
+        "foreignKeys": [
+            {
+                "column": "process_id",
+                "references": "_System_ApprovalProcess(id)",
+                "onDelete": "CASCADE"
+            },
+            {
+                "column": "submitted_by_id",
+                "references": "_System_User(id)",
+                "onDelete": "SET NULL"
+            },
+            {
+                "column": "approver_id",
+                "references": "_System_User(id)",
+                "onDelete": "SET NULL"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_UIComponent",
+        "tableType": "system_metadata",
+        "category": "ui",
+        "description": "Registered UI components",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "type",
+                "type": "VARCHAR(50)",
+                "default": "'page'"
+            },
+            {
+                "name": "is_embeddable",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "description",
+                "type": "TEXT"
+            },
+            {
+                "name": "component_path",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "is_embeddable"
+                ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_OutboxEvent",
+        "tableType": "system_core",
+        "category": "infrastructure",
+        "description": "Transactional event outbox for guaranteed delivery",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(36)",
+                "primaryKey": true
+            },
+            {
+                "name": "event_type",
+                "type": "VARCHAR(100)",
+                "nullable": false
+            },
+            {
+                "name": "payload",
+                "type": "JSON",
+                "nullable": false
+            },
+            {
+                "name": "status",
+                "type": "VARCHAR(20)",
+                "nullable": false,
+                "default": "'pending'"
+            },
+            {
+                "name": "retry_count",
+                "type": "INT",
+                "default": "0"
+            },
+            {
+                "name": "error_message",
+                "type": "TEXT",
+                "nullable": true
+            },
+            {
+                "name": "processed_date",
+                "type": "DATETIME",
+                "nullable": true
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ],
+        "indices": [
+            {
+                "columns": [
+                    "status",
+                    "created_date"
+                ],
+                "name": "idx_outbox_pending"
+            }
+        ]
+    }
+]

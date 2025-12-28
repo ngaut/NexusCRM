@@ -1,0 +1,318 @@
+{
+    "Text": {
+        "sqlType": "VARCHAR(255)",
+        "icon": "Type",
+        "label": "Text",
+        "description": "Text field with maximum 255 characters",
+        "isSearchable": true,
+        "isGroupable": false,
+        "isSummable": false,
+        "operators": [
+            "equals",
+            "not_equals",
+            "contains",
+            "not_contains",
+            "starts_with",
+            "ends_with",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "TextArea": {
+        "sqlType": "TEXT",
+        "icon": "AlignLeft",
+        "label": "Text Area",
+        "description": "Multi-line text field",
+        "isSearchable": true,
+        "isGroupable": false,
+        "isSummable": false,
+        "operators": [
+            "contains",
+            "not_contains",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "LongTextArea": {
+        "sqlType": "LONGTEXT",
+        "icon": "FileText",
+        "label": "Long Text Area",
+        "description": "Large text field for extensive content",
+        "isSearchable": false,
+        "isGroupable": false,
+        "isSummable": false,
+        "operators": [
+            "contains",
+            "not_contains",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "RichText": {
+        "sqlType": "LONGTEXT",
+        "icon": "Edit3",
+        "label": "Rich Text",
+        "description": "HTML-formatted text content",
+        "isSearchable": false,
+        "isGroupable": false,
+        "isSummable": false,
+        "operators": [
+            "contains",
+            "not_contains",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "Number": {
+        "sqlType": "DECIMAL(18,2)",
+        "icon": "Hash",
+        "label": "Number",
+        "description": "Numeric field with decimal support",
+        "isSearchable": false,
+        "isGroupable": true,
+        "isSummable": true,
+        "operators": [
+            "equals",
+            "not_equals",
+            "greater_than",
+            "greater_or_equal",
+            "less_than",
+            "less_or_equal",
+            "between",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "Currency": {
+        "sqlType": "DECIMAL(18,2)",
+        "icon": "DollarSign",
+        "label": "Currency",
+        "description": "Currency amount with 2 decimal places",
+        "isSearchable": false,
+        "isGroupable": true,
+        "isSummable": true,
+        "operators": [
+            "equals",
+            "not_equals",
+            "greater_than",
+            "greater_or_equal",
+            "less_than",
+            "less_or_equal",
+            "between",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "Percent": {
+        "sqlType": "DECIMAL(5,2)",
+        "icon": "Percent",
+        "label": "Percent",
+        "description": "Percentage value",
+        "isSearchable": false,
+        "isGroupable": true,
+        "isSummable": true,
+        "operators": [
+            "equals",
+            "not_equals",
+            "greater_than",
+            "greater_or_equal",
+            "less_than",
+            "less_or_equal",
+            "between",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "Date": {
+        "sqlType": "DATE",
+        "icon": "Calendar",
+        "label": "Date",
+        "description": "Date without time component",
+        "isSearchable": false,
+        "isGroupable": true,
+        "isSummable": false,
+        "operators": [
+            "equals",
+            "not_equals",
+            "greater_than",
+            "greater_or_equal",
+            "less_than",
+            "less_or_equal",
+            "between",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "DateTime": {
+        "sqlType": "DATETIME",
+        "icon": "Clock",
+        "label": "Date/Time",
+        "description": "Date with time component",
+        "isSearchable": false,
+        "isGroupable": false,
+        "isSummable": false,
+        "operators": [
+            "equals",
+            "not_equals",
+            "greater_than",
+            "greater_or_equal",
+            "less_than",
+            "less_or_equal",
+            "between",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "Boolean": {
+        "sqlType": "BOOLEAN",
+        "icon": "ToggleLeft",
+        "label": "Checkbox",
+        "description": "True/false toggle",
+        "isSearchable": false,
+        "isGroupable": true,
+        "isSummable": false,
+        "operators": [
+            "equals",
+            "not_equals"
+        ]
+    },
+    "Picklist": {
+        "sqlType": "VARCHAR(255)",
+        "icon": "List",
+        "label": "Picklist",
+        "description": "Single selection from predefined options",
+        "isSearchable": true,
+        "isGroupable": true,
+        "isSummable": false,
+        "operators": [
+            "equals",
+            "not_equals",
+            "in",
+            "not_in",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "Email": {
+        "sqlType": "VARCHAR(255)",
+        "icon": "Mail",
+        "label": "Email",
+        "description": "Email address with validation",
+        "isSearchable": true,
+        "isGroupable": false,
+        "isSummable": false,
+        "validationPattern": "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$",
+        "validationMessage": "invalid email format",
+        "operators": [
+            "equals",
+            "not_equals",
+            "contains",
+            "starts_with",
+            "ends_with",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "Phone": {
+        "sqlType": "VARCHAR(40)",
+        "icon": "Phone",
+        "label": "Phone",
+        "description": "Phone number",
+        "isSearchable": true,
+        "isGroupable": false,
+        "isSummable": false,
+        "validationPattern": "^\\+?[1-9]\\d{1,14}$",
+        "validationMessage": "invalid phone format",
+        "operators": [
+            "equals",
+            "not_equals",
+            "contains",
+            "starts_with",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "Url": {
+        "sqlType": "VARCHAR(1024)",
+        "icon": "Link",
+        "label": "URL",
+        "description": "Web address",
+        "isSearchable": true,
+        "isGroupable": false,
+        "isSummable": false,
+        "validationPattern": "^https?://[^\\s/$.?#].[^\\s]*$",
+        "validationMessage": "invalid URL format",
+        "operators": [
+            "equals",
+            "not_equals",
+            "contains",
+            "starts_with",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "Lookup": {
+        "sqlType": "VARCHAR(36)",
+        "icon": "ExternalLink",
+        "label": "Lookup",
+        "description": "Reference to another object record",
+        "isSearchable": true,
+        "isGroupable": true,
+        "isSummable": false,
+        "isFK": true,
+        "operators": [
+            "equals",
+            "not_equals",
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "Formula": {
+        "sqlType": null,
+        "icon": "Zap",
+        "label": "Formula",
+        "description": "Calculated field based on expression",
+        "isSearchable": false,
+        "isGroupable": false,
+        "isSummable": false,
+        "isVirtual": true,
+        "isSystemOnly": true,
+        "operators": []
+    },
+    "RollupSummary": {
+        "sqlType": null,
+        "icon": "Sigma",
+        "label": "Rollup Summary",
+        "description": "Aggregation of child records",
+        "isSearchable": false,
+        "isGroupable": false,
+        "isSummable": false,
+        "isVirtual": true,
+        "isSystemOnly": true,
+        "operators": []
+    },
+    "JSON": {
+        "sqlType": "JSON",
+        "icon": "Code",
+        "label": "JSON",
+        "description": "Structured JSON data",
+        "isSearchable": false,
+        "isGroupable": false,
+        "isSummable": false,
+        "operators": [
+            "is_null",
+            "is_not_null"
+        ]
+    },
+    "Password": {
+        "sqlType": "VARCHAR(255)",
+        "icon": "Lock",
+        "label": "Password",
+        "description": "Encrypted password field",
+        "isSearchable": false,
+        "isGroupable": false,
+        "isSummable": false,
+        "isSystemOnly": true,
+        "operators": []
+    }
+}
