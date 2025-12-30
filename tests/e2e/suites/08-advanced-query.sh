@@ -17,7 +17,7 @@ TEST_OBJ="query_test_$TS"
 
 test_cleanup() {
     echo "Cleaning up test object..."
-    api_delete "/api/metadata/schemas/$TEST_OBJ" > /dev/null 2>&1
+    api_delete "/api/metadata/objects/$TEST_OBJ" > /dev/null 2>&1
 }
 trap test_cleanup EXIT
 
@@ -41,7 +41,7 @@ run_suite() {
 setup_test_object() {
     echo "Setup: Creating test object '$TEST_OBJ'..."
     
-    local response=$(api_post "/api/metadata/schemas" "{
+    local response=$(api_post "/api/metadata/objects" "{
         \"label\": \"$TEST_OBJ\",
         \"plural_label\": \"${TEST_OBJ}s\",
         \"api_name\": \"$TEST_OBJ\",
@@ -59,8 +59,8 @@ setup_test_object() {
     fi
     
     # Add fields
-    api_post "/api/metadata/schemas/$TEST_OBJ/fields" '{"api_name": "industry", "label": "Industry", "type": "Text"}' > /dev/null
-    api_post "/api/metadata/schemas/$TEST_OBJ/fields" '{"api_name": "annual_revenue", "label": "Annual Revenue", "type": "Number"}' > /dev/null
+    api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "industry", "label": "Industry", "type": "Text"}' > /dev/null
+    api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "annual_revenue", "label": "Annual Revenue", "type": "Number"}' > /dev/null
     echo "  ✓ Fields added to test object"
     
     sleep 1  # Allow caches to refresh

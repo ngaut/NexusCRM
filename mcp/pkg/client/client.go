@@ -72,11 +72,11 @@ func (c *NexusClient) doRequest(ctx context.Context, method, path string, body i
 // API Methods
 
 func (c *NexusClient) ListObjects(ctx context.Context, authToken string) ([]models.ObjectMetadata, error) {
-	// Current API: GET /api/metadata/schemas
+	// Current API: GET /api/metadata/objects
 	// Response envelope: { "schemas": [ ... ] }
 	var respMap map[string][]models.ObjectMetadata
 
-	if err := c.doRequest(ctx, "GET", "/api/metadata/schemas", nil, &respMap, authToken); err != nil {
+	if err := c.doRequest(ctx, "GET", "/api/metadata/objects", nil, &respMap, authToken); err != nil {
 		return nil, err
 	}
 
@@ -87,10 +87,10 @@ func (c *NexusClient) ListObjects(ctx context.Context, authToken string) ([]mode
 }
 
 func (c *NexusClient) DescribeObject(ctx context.Context, objectName string, authToken string) (*models.ObjectMetadata, error) {
-	// GET /api/metadata/schemas/:name
+	// GET /api/metadata/objects/:name
 	// Returns { "schema": ... }
 	var respMap map[string]*models.ObjectMetadata
-	if err := c.doRequest(ctx, "GET", fmt.Sprintf("/api/metadata/schemas/%s", objectName), nil, &respMap, authToken); err != nil {
+	if err := c.doRequest(ctx, "GET", fmt.Sprintf("/api/metadata/objects/%s", objectName), nil, &respMap, authToken); err != nil {
 		return nil, err
 	}
 	if obj, ok := respMap["schema"]; ok {
@@ -175,12 +175,12 @@ func (c *NexusClient) CreateDashboard(ctx context.Context, dashboard models.Dash
 
 // CreateObject creates a new object schema
 func (c *NexusClient) CreateObject(ctx context.Context, schema models.ObjectMetadata, authToken string) error {
-	// POST /api/metadata/schemas
-	return c.doRequest(ctx, "POST", "/api/metadata/schemas", schema, nil, authToken)
+	// POST /api/metadata/objects
+	return c.doRequest(ctx, "POST", "/api/metadata/objects", schema, nil, authToken)
 }
 
 // CreateField creates a new field on an object
 func (c *NexusClient) CreateField(ctx context.Context, objectName string, field models.FieldMetadata, authToken string) error {
-	// POST /api/metadata/schemas/:apiName/fields
-	return c.doRequest(ctx, "POST", fmt.Sprintf("/api/metadata/schemas/%s/fields", objectName), field, nil, authToken)
+	// POST /api/metadata/objects/:apiName/fields
+	return c.doRequest(ctx, "POST", fmt.Sprintf("/api/metadata/objects/%s/fields", objectName), field, nil, authToken)
 }

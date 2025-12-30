@@ -36,11 +36,11 @@ run_suite() {
 test_create_objects() {
     echo "Test 11.1: Create 3 Parents and 1 Junction Object"
 
-    api_post "/api/metadata/schemas" "{\"api_name\": \"$PARENT_1\", \"label\": \"$PARENT_1\", \"is_custom\": true}" > /dev/null
-    api_post "/api/metadata/schemas" "{\"api_name\": \"$PARENT_2\", \"label\": \"$PARENT_2\", \"is_custom\": true}" > /dev/null
-    api_post "/api/metadata/schemas" "{\"api_name\": \"$PARENT_3\", \"label\": \"$PARENT_3\", \"is_custom\": true}" > /dev/null
+    api_post "/api/metadata/objects" "{\"api_name\": \"$PARENT_1\", \"label\": \"$PARENT_1\", \"is_custom\": true}" > /dev/null
+    api_post "/api/metadata/objects" "{\"api_name\": \"$PARENT_2\", \"label\": \"$PARENT_2\", \"is_custom\": true}" > /dev/null
+    api_post "/api/metadata/objects" "{\"api_name\": \"$PARENT_3\", \"label\": \"$PARENT_3\", \"is_custom\": true}" > /dev/null
 
-    res_j=$(api_post "/api/metadata/schemas" "{\"api_name\": \"$JUNCTION_OBJ\", \"label\": \"$JUNCTION_OBJ\", \"is_custom\": true}")
+    res_j=$(api_post "/api/metadata/objects" "{\"api_name\": \"$JUNCTION_OBJ\", \"label\": \"$JUNCTION_OBJ\", \"is_custom\": true}")
     
     if echo "$res_j" | grep -q "\"api_name\":\"$JUNCTION_OBJ\""; then
         test_passed "Junction Object Created"
@@ -54,13 +54,13 @@ test_create_2_md_fields() {
     echo "Test 11.2: Create 2 Master-Detail Fields (Allowed)"
 
     # MD 1 -> Parent 1
-    local res1=$(api_post "/api/metadata/schemas/$JUNCTION_OBJ/fields" "{
+    local res1=$(api_post "/api/metadata/objects/$JUNCTION_OBJ/fields" "{
         \"api_name\": \"md_link_1\", \"label\": \"Link 1\", \"type\": \"Lookup\",
         \"reference_to\": [\"$PARENT_1\"], \"is_master_detail\": true, \"required\": true
     }")
 
     # MD 2 -> Parent 2
-    local res2=$(api_post "/api/metadata/schemas/$JUNCTION_OBJ/fields" "{
+    local res2=$(api_post "/api/metadata/objects/$JUNCTION_OBJ/fields" "{
         \"api_name\": \"md_link_2\", \"label\": \"Link 2\", \"type\": \"Lookup\",
         \"reference_to\": [\"$PARENT_2\"], \"is_master_detail\": true, \"required\": true
     }")
@@ -77,7 +77,7 @@ test_create_3rd_md_field_fail() {
     echo "Test 11.3: Create 3rd Master-Detail Field (Should Fail)"
 
     # MD 3 -> Parent 3 (Should be blocked)
-    local res3=$(api_post "/api/metadata/schemas/$JUNCTION_OBJ/fields" "{
+    local res3=$(api_post "/api/metadata/objects/$JUNCTION_OBJ/fields" "{
         \"api_name\": \"md_link_3\", \"label\": \"Link 3\", \"type\": \"Lookup\",
         \"reference_to\": [\"$PARENT_3\"], \"is_master_detail\": true, \"required\": true
     }")

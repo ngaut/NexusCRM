@@ -14,14 +14,14 @@ import (
 
 // ==================== Schema Handlers ====================
 
-// GetSchemas handles GET /api/metadata/schemas
+// GetSchemas handles GET /api/metadata/objects
 func (h *MetadataHandler) GetSchemas(c *gin.Context) {
 	HandleGetEnvelope(c, "schemas", func() (interface{}, error) {
 		return h.svc.GetSchemas(), nil
 	})
 }
 
-// GetSchema handles GET /api/metadata/schemas/:apiName
+// GetSchema handles GET /api/metadata/objects/:apiName
 func (h *MetadataHandler) GetSchema(c *gin.Context) {
 	user := GetUserFromContext(c)
 	apiName := strings.ToLower(c.Param("apiName"))
@@ -36,7 +36,7 @@ func (h *MetadataHandler) GetSchema(c *gin.Context) {
 	})
 }
 
-// CreateSchema handles POST /api/metadata/schemas
+// CreateSchema handles POST /api/metadata/objects
 func (h *MetadataHandler) CreateSchema(c *gin.Context) {
 	// requireSystemAdmin handled by middleware
 
@@ -98,7 +98,7 @@ func (h *MetadataHandler) CreateSchema(c *gin.Context) {
 	})
 }
 
-// UpdateSchema handles PATCH /api/metadata/schemas/:apiName
+// UpdateSchema handles PATCH /api/metadata/objects/:apiName
 func (h *MetadataHandler) UpdateSchema(c *gin.Context) {
 	// requireSystemAdmin handled by middleware
 
@@ -109,7 +109,7 @@ func (h *MetadataHandler) UpdateSchema(c *gin.Context) {
 	})
 }
 
-// DeleteSchema handles DELETE /api/metadata/schemas/:apiName
+// DeleteSchema handles DELETE /api/metadata/objects/:apiName
 func (h *MetadataHandler) DeleteSchema(c *gin.Context) {
 	// requireSystemAdmin handled by middleware
 
@@ -144,7 +144,7 @@ func (h *MetadataHandler) DeleteSchema(c *gin.Context) {
 
 // ==================== Field Handlers ====================
 
-// CreateField handles POST /api/metadata/schemas/:apiName/fields
+// CreateField handles POST /api/metadata/objects/:apiName/fields
 func (h *MetadataHandler) CreateField(c *gin.Context) {
 	// requireSystemAdmin handled by middleware
 
@@ -176,7 +176,7 @@ func (h *MetadataHandler) CreateField(c *gin.Context) {
 	})
 }
 
-// UpdateField handles PATCH /api/metadata/schemas/:apiName/fields/:fieldApiName
+// UpdateField handles PATCH /api/metadata/objects/:apiName/fields/:fieldApiName
 func (h *MetadataHandler) UpdateField(c *gin.Context) {
 	// requireSystemAdmin handled by middleware
 
@@ -190,7 +190,7 @@ func (h *MetadataHandler) UpdateField(c *gin.Context) {
 	})
 }
 
-// DeleteField handles DELETE /api/metadata/schemas/:apiName/fields/:fieldApiName
+// DeleteField handles DELETE /api/metadata/objects/:apiName/fields/:fieldApiName
 func (h *MetadataHandler) DeleteField(c *gin.Context) {
 	// requireSystemAdmin handled by middleware
 

@@ -39,7 +39,7 @@ test_schema_exists() {
     echo "Test 13.1: Verify New System Tables Exist"
     
     # Check _System_Group schema
-    local response=$(api_get "/api/metadata/schemas/_system_group")
+    local response=$(api_get "/api/metadata/objects/_system_group")
     if echo "$response" | grep -q '"api_name"'; then
         test_passed "_System_Group schema exists"
     else
@@ -48,7 +48,7 @@ test_schema_exists() {
     
     echo ""
     # Check _System_PermissionSet schema
-    response=$(api_get "/api/metadata/schemas/_system_permissionset")
+    response=$(api_get "/api/metadata/objects/_system_permissionset")
     if echo "$response" | grep -q '"api_name"'; then
         test_passed "_System_PermissionSet schema exists"
     else
@@ -57,7 +57,7 @@ test_schema_exists() {
     
     echo ""
     # Check _System_GroupMember schema
-    response=$(api_get "/api/metadata/schemas/_system_groupmember")
+    response=$(api_get "/api/metadata/objects/_system_groupmember")
     if echo "$response" | grep -q '"api_name"'; then
         test_passed "_System_GroupMember schema exists"
     else
@@ -66,7 +66,7 @@ test_schema_exists() {
     
     echo ""
     # Check _System_PermissionSetAssignment schema
-    response=$(api_get "/api/metadata/schemas/_system_permissionsetassignment")
+    response=$(api_get "/api/metadata/objects/_system_permissionsetassignment")
     if echo "$response" | grep -q '"api_name"'; then
         test_passed "_System_PermissionSetAssignment schema exists"
     else

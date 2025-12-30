@@ -83,7 +83,7 @@ test_object_theme_metadata() {
     # The API returns the *Schema* details. 'theme_color' is a property of the ObjectMetadata, not a field in list_fields?
     # Yes, it's a top-level property of the object definition.
     
-    local response=$(api_get "/api/metadata/schemas/Account")
+    local response=$(api_get "/api/metadata/objects/Account")
     # Response structure: { "schema": { ... "theme_color": ... } }
     
     # We just check if the key exists in JSON, even if null

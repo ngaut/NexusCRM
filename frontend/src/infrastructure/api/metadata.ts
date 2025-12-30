@@ -3,19 +3,19 @@ import type { ObjectMetadata, FieldMetadata, PageLayout, AppConfig, DashboardCon
 
 export const metadataAPI = {
   // Schema operations
-  getSchemas: () => api.get<{ schemas: ObjectMetadata[] }>(`/api/metadata/schemas?t=${Date.now()}`),
-  getSchema: (api_name: string) => api.get<{ schema: ObjectMetadata }>(`/api/metadata/schemas/${api_name}?t=${Date.now()}`),
-  createSchema: (schema: Partial<ObjectMetadata>) => api.post('/api/metadata/schemas', schema),
-  updateSchema: (api_name: string, updates: Partial<ObjectMetadata>) => api.patch<{ message: string; schema: ObjectMetadata }>(`/api/metadata/schemas/${api_name}`, updates),
-  deleteSchema: (api_name: string) => api.delete<{ message: string }>(`/api/metadata/schemas/${api_name}`),
+  getSchemas: () => api.get<{ schemas: ObjectMetadata[] }>(`/api/metadata/objects?t=${Date.now()}`),
+  getSchema: (api_name: string) => api.get<{ schema: ObjectMetadata }>(`/api/metadata/objects/${api_name}?t=${Date.now()}`),
+  createSchema: (schema: Partial<ObjectMetadata>) => api.post('/api/metadata/objects', schema),
+  updateSchema: (api_name: string, updates: Partial<ObjectMetadata>) => api.patch<{ message: string; schema: ObjectMetadata }>(`/api/metadata/objects/${api_name}`, updates),
+  deleteSchema: (api_name: string) => api.delete<{ message: string }>(`/api/metadata/objects/${api_name}`),
 
   // Field operations
   createField: (objectApiName: string, field: Partial<FieldMetadata>) =>
-    api.post(`/api/metadata/schemas/${objectApiName}/fields`, field),
+    api.post(`/api/metadata/objects/${objectApiName}/fields`, field),
   updateField: (objectApiName: string, fieldApiName: string, updates: Partial<FieldMetadata>) =>
-    api.patch(`/api/metadata/schemas/${objectApiName}/fields/${fieldApiName}`, updates),
+    api.patch(`/api/metadata/objects/${objectApiName}/fields/${fieldApiName}`, updates),
   deleteField: (objectApiName: string, fieldApiName: string) =>
-    api.delete(`/api/metadata/schemas/${objectApiName}/fields/${fieldApiName}`),
+    api.delete(`/api/metadata/objects/${objectApiName}/fields/${fieldApiName}`),
 
   // Layout operations
   getLayout: (objectApiName: string) => api.get<{ layout: PageLayout }>(`/api/metadata/layouts/${objectApiName}`),

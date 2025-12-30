@@ -14,7 +14,7 @@ import (
 func TestListObjects(t *testing.T) {
 	// Mock Server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/api/metadata/schemas", r.URL.Path)
+		assert.Equal(t, "/api/metadata/objects", r.URL.Path)
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, "Bearer test-token", r.Header.Get("Authorization"))
 

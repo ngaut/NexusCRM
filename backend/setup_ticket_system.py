@@ -13,7 +13,7 @@ def login():
         return json.loads(resp.read())["token"]
 
 def delete_object(token, api_name):
-    req = urllib.request.Request(f"{BASE_URL}/metadata/schemas/{api_name}", method="DELETE", 
+    req = urllib.request.Request(f"{BASE_URL}/metadata/objects/{api_name}", method="DELETE", 
         headers={"Authorization": f"Bearer {token}"})
     try:
         urllib.request.urlopen(req)
@@ -29,7 +29,7 @@ def create_object(token, label, plural, api_name):
         "description": f"Custom object: {label}",
         "is_custom": True
     }
-    req = urllib.request.Request(f"{BASE_URL}/metadata/schemas", data=json.dumps(payload).encode(),
+    req = urllib.request.Request(f"{BASE_URL}/metadata/objects", data=json.dumps(payload).encode(),
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"})
     try:
         urllib.request.urlopen(req)
@@ -39,7 +39,7 @@ def create_object(token, label, plural, api_name):
         else: raise e
 
 def create_field(token, obj_name, field_def):
-    req = urllib.request.Request(f"{BASE_URL}/metadata/schemas/{obj_name}/fields", data=json.dumps(field_def).encode(),
+    req = urllib.request.Request(f"{BASE_URL}/metadata/objects/{obj_name}/fields", data=json.dumps(field_def).encode(),
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"})
     try:
         urllib.request.urlopen(req)

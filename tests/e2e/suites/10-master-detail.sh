@@ -36,7 +36,7 @@ test_create_objects() {
     echo "Test 10.1: Create Parent and Child Objects"
 
     # Create Parent
-    res_p=$(api_post "/api/metadata/schemas" "{
+    res_p=$(api_post "/api/metadata/objects" "{
         \"label\": \"$PARENT_OBJ\",
         \"plural_label\": \"${PARENT_OBJ}s\",
         \"api_name\": \"$PARENT_OBJ\",
@@ -44,7 +44,7 @@ test_create_objects() {
     }")
     
     # Create Child
-    res_c=$(api_post "/api/metadata/schemas" "{
+    res_c=$(api_post "/api/metadata/objects" "{
         \"label\": \"$CHILD_OBJ\",
         \"plural_label\": \"${CHILD_OBJ}s\",
         \"api_name\": \"$CHILD_OBJ\",
@@ -72,7 +72,7 @@ test_create_md_field() {
         \"required\": true
     }"
 
-    local response=$(api_post "/api/metadata/schemas/$CHILD_OBJ/fields" "$payload")
+    local response=$(api_post "/api/metadata/objects/$CHILD_OBJ/fields" "$payload")
 
     if echo "$response" | grep -q "\"api_name\":\"$TEST_FIELD\""; then
         test_passed "Master-Detail Field created successfully"
@@ -116,8 +116,8 @@ test_create_records() {
 
 cleanup_objects() {
     echo "Cleaning up..."
-    api_delete "/api/metadata/schemas/$CHILD_OBJ" > /dev/null
-    api_delete "/api/metadata/schemas/$PARENT_OBJ" > /dev/null
+    api_delete "/api/metadata/objects/$CHILD_OBJ" > /dev/null
+    api_delete "/api/metadata/objects/$PARENT_OBJ" > /dev/null
 }
 
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then

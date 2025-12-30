@@ -44,7 +44,7 @@ setup_schemas() {
     echo "Setup: Ensuring Opportunity schema exists"
     
     # Check if Opportunity schema exists
-    local check=$(api_get "/api/metadata/schemas/opportunity")
+    local check=$(api_get "/api/metadata/objects/opportunity")
     
     if echo "$check" | grep -q '"api_name"'; then
         echo "  ✓ Opportunity schema already exists"
@@ -58,33 +58,33 @@ setup_schemas() {
             "is_custom": false
         }'
         
-        local res=$(api_post "/api/metadata/schemas" "$schema_payload")
+        local res=$(api_post "/api/metadata/objects" "$schema_payload")
         
         if echo "$res" | grep -q '"api_name"'; then
             echo "  ✓ Opportunity schema created"
             CREATED_OPP_SCHEMA=true
             
             # Add required fields
-            api_post "/api/metadata/schemas/opportunity/fields" '{
+            api_post "/api/metadata/objects/opportunity/fields" '{
                 "api_name": "stage_name",
                 "label": "Stage",
                 "type": "Picklist",
                 "options": ["Prospecting", "Qualification", "Needs Analysis", "Proposal", "Negotiation", "Closed Won", "Closed Lost"]
             }' > /dev/null
             
-            api_post "/api/metadata/schemas/opportunity/fields" '{
+            api_post "/api/metadata/objects/opportunity/fields" '{
                 "api_name": "amount",
                 "label": "Amount",
                 "type": "Currency"
             }' > /dev/null
             
-            api_post "/api/metadata/schemas/opportunity/fields" '{
+            api_post "/api/metadata/objects/opportunity/fields" '{
                 "api_name": "close_date",
                 "label": "Close Date",
                 "type": "Date"
             }' > /dev/null
             
-            api_post "/api/metadata/schemas/opportunity/fields" '{
+            api_post "/api/metadata/objects/opportunity/fields" '{
                 "api_name": "account_id",
                 "label": "Account",
                 "type": "Lookup",

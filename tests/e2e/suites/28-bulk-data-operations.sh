@@ -53,7 +53,7 @@ run_suite() {
 setup_bulk_test_schema() {
     echo "Setup: Creating Bulk Test Schema"
     
-    local check=$(api_get "/api/metadata/schemas/bulk_record")
+    local check=$(api_get "/api/metadata/objects/bulk_record")
     
     if echo "$check" | grep -q '"api_name"'; then
         echo "  ✓ Bulk test schema already exists"
@@ -65,31 +65,31 @@ setup_bulk_test_schema() {
             "is_custom": true
         }'
         
-        local res=$(api_post "/api/metadata/schemas" "$payload")
+        local res=$(api_post "/api/metadata/objects" "$payload")
         
         if echo "$res" | grep -q '"api_name"'; then
             CREATED_BULK_SCHEMA=true
             
-            api_post "/api/metadata/schemas/bulk_record/fields" '{
+            api_post "/api/metadata/objects/bulk_record/fields" '{
                 "api_name": "batch_id",
                 "label": "Batch ID",
                 "type": "Text"
             }' > /dev/null
             
-            api_post "/api/metadata/schemas/bulk_record/fields" '{
+            api_post "/api/metadata/objects/bulk_record/fields" '{
                 "api_name": "sequence_num",
                 "label": "Sequence",
                 "type": "Number"
             }' > /dev/null
             
-            api_post "/api/metadata/schemas/bulk_record/fields" '{
+            api_post "/api/metadata/objects/bulk_record/fields" '{
                 "api_name": "status",
                 "label": "Status",
                 "type": "Picklist",
                 "options": ["Pending", "Processed", "Error"]
             }' > /dev/null
             
-            api_post "/api/metadata/schemas/bulk_record/fields" '{
+            api_post "/api/metadata/objects/bulk_record/fields" '{
                 "api_name": "payload",
                 "label": "Payload",
                 "type": "LongText"

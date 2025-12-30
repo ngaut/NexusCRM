@@ -64,7 +64,7 @@ test_role_hierarchy() {
         echo "  ✓ Found $count roles in system"
         
         # Check for parent_role_id field (hierarchy support)
-        local schema=$(api_get "/api/metadata/schemas/_system_role")
+        local schema=$(api_get "/api/metadata/objects/_system_role")
         if echo "$schema" | grep -qi "parent"; then
             echo "  ✓ Role hierarchy structure exists"
         fi
@@ -233,14 +233,14 @@ test_org_wide_defaults() {
     echo "Test 19.7: Organization-Wide Defaults"
     
     # Check if OWD settings exist in schema config
-    local schema=$(api_get "/api/metadata/schemas/account")
+    local schema=$(api_get "/api/metadata/objects/account")
     
     if echo "$schema" | grep -qi "sharing"; then
         echo "  ✓ Sharing model configured on objects"
         test_passed "OWD settings verified"
     else
         # Check system config
-        local config=$(api_get "/api/metadata/schemas/_system_config")
+        local config=$(api_get "/api/metadata/objects/_system_config")
         if echo "$config" | grep -qi "owd\|sharing"; then
             echo "  ✓ OWD in system config"
         fi

@@ -44,7 +44,7 @@ setup_schemas() {
     echo "Setup: Ensuring Case schema exists"
     
     # Check if Case schema exists
-    local check=$(api_get "/api/metadata/schemas/case")
+    local check=$(api_get "/api/metadata/objects/case")
     
     if echo "$check" | grep -q '"api_name"'; then
         echo "  ✓ Case schema already exists"
@@ -58,47 +58,47 @@ setup_schemas() {
             "is_custom": false
         }'
         
-        local res=$(api_post "/api/metadata/schemas" "$schema_payload")
+        local res=$(api_post "/api/metadata/objects" "$schema_payload")
         
         if echo "$res" | grep -q '"api_name"'; then
             echo "  ✓ Case schema created"
             CREATED_CASE_SCHEMA=true
             
             # Add required fields
-            api_post "/api/metadata/schemas/case/fields" '{
+            api_post "/api/metadata/objects/case/fields" '{
                 "api_name": "subject",
                 "label": "Subject",
                 "type": "Text"
             }' > /dev/null
             
-            api_post "/api/metadata/schemas/case/fields" '{
+            api_post "/api/metadata/objects/case/fields" '{
                 "api_name": "description",
                 "label": "Description",
                 "type": "LongText"
             }' > /dev/null
             
-            api_post "/api/metadata/schemas/case/fields" '{
+            api_post "/api/metadata/objects/case/fields" '{
                 "api_name": "status",
                 "label": "Status",
                 "type": "Picklist",
                 "options": ["New", "Working", "Escalated", "Resolved", "Closed"]
             }' > /dev/null
             
-            api_post "/api/metadata/schemas/case/fields" '{
+            api_post "/api/metadata/objects/case/fields" '{
                 "api_name": "priority",
                 "label": "Priority",
                 "type": "Picklist",
                 "options": ["Low", "Medium", "High", "Critical"]
             }' > /dev/null
             
-            api_post "/api/metadata/schemas/case/fields" '{
+            api_post "/api/metadata/objects/case/fields" '{
                 "api_name": "contact_id",
                 "label": "Contact",
                 "type": "Lookup",
                 "reference_to": ["contact"]
             }' > /dev/null
             
-            api_post "/api/metadata/schemas/case/fields" '{
+            api_post "/api/metadata/objects/case/fields" '{
                 "api_name": "account_id",
                 "label": "Account",
                 "type": "Lookup",
@@ -188,7 +188,7 @@ test_case_creation() {
     echo "Test 17.3: Create Case from Contact"
     
     # Check if Case schema exists
-    local schema_check=$(api_get "/api/metadata/schemas/case")
+    local schema_check=$(api_get "/api/metadata/objects/case")
     if echo "$schema_check" | grep -q "not found\|error"; then
         echo "  Note: Case object not available in this environment"
         test_passed "Case creation (skipped - no Case object)"

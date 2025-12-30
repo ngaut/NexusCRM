@@ -24,7 +24,7 @@ ensure_schema() {
     local label="$2"
     local plural_label="${3:-${label}s}"
     
-    local check=$(api_get "/api/metadata/schemas/$api_name")
+    local check=$(api_get "/api/metadata/objects/$api_name")
     
     # API returns {"schema": {...}} for existing schemas
     if echo "$check" | jq -e '.schema.api_name' &>/dev/null; then
@@ -38,7 +38,7 @@ ensure_schema() {
         --arg plural "$plural_label" \
         '{label: $label, api_name: $api_name, plural_label: $plural, is_custom: true}')
     
-    local res=$(api_post "/api/metadata/schemas" "$payload")
+    local res=$(api_post "/api/metadata/objects" "$payload")
     
     if echo "$res" | jq -e '.api_name // .schema.api_name' &>/dev/null; then
         echo "  ✓ $label schema created"
@@ -56,7 +56,7 @@ ensure_schema() {
 delete_schema() {
     local api_name="$1"
     
-    local res=$(api_delete "/api/metadata/schemas/$api_name")
+    local res=$(api_delete "/api/metadata/objects/$api_name")
     
     # Check if delete was successful (200 OK or 404 Not Found is cleaner than error)
     if [ -z "$res" ] || echo "$res" | grep -q "\"success\":true" || echo "$res" | grep -q "deleted"; then
@@ -96,7 +96,7 @@ add_field() {
         json=$(echo "$json" | jq --argjson extra "$extra" '. + $extra')
     fi
     
-    local res=$(api_post "/api/metadata/schemas/$schema/fields" "$json")
+    local res=$(api_post "/api/metadata/objects/$schema/fields" "$json")
     
     if echo "$res" | jq -e '.api_name // .field.api_name' &>/dev/null; then
         return 0

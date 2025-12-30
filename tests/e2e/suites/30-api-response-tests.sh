@@ -194,7 +194,7 @@ test_list_response_format() {
     echo ""
     echo "Test 30.7: List Endpoint Response Format"
     
-    local res=$(api_get "/api/metadata/schemas")
+    local res=$(api_get "/api/metadata/objects")
     
     local has_schemas=$(echo "$res" | jq -e '.schemas' 2>/dev/null)
     

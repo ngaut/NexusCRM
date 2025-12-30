@@ -35,7 +35,7 @@ test_snake_case_validation() {
     
     # 1. Invalid CamelCase Object
     echo "  Checking CamelCase Object API Name..."
-    local res=$(api_post "/api/metadata/schemas" '{
+    local res=$(api_post "/api/metadata/objects" '{
         "label": "Invalid Camel",
         "plural_label": "Invalid Camels",
         "api_name": "InvalidCamelObject_'$TIMESTAMP'",
@@ -50,7 +50,7 @@ test_snake_case_validation() {
 
     # 2. Invalid Uppercase Object
     echo "  Checking Uppercase Object API Name..."
-    local res2=$(api_post "/api/metadata/schemas" '{
+    local res2=$(api_post "/api/metadata/objects" '{
         "label": "UPPER CASE",
         "plural_label": "UPPER CASES",
         "api_name": "UPPER_CASE_OBJECT_'$TIMESTAMP'",
@@ -65,7 +65,7 @@ test_snake_case_validation() {
 
     # 3. Create Valid Object for Field Tests
     local valid_obj="val_test_${TIMESTAMP}"
-    api_post "/api/metadata/schemas" '{
+    api_post "/api/metadata/objects" '{
         "label": "Valid Validation Test",
         "plural_label": "Valid Validation Tests",
         "api_name": "'$valid_obj'",
@@ -74,7 +74,7 @@ test_snake_case_validation() {
 
     # 4. Invalid CamelCase Field
     echo "  Checking CamelCase Field..."
-    local res3=$(api_post "/api/metadata/schemas/$valid_obj/fields" '{
+    local res3=$(api_post "/api/metadata/objects/$valid_obj/fields" '{
         "label": "Camel Field",
         "api_name": "camelField",
         "type": "Text"
@@ -98,7 +98,7 @@ test_lookup_reference_validation() {
 
     # 1. Lookup without Reference
     echo "  Checking Lookup without reference_to..."
-    local res=$(api_post "/api/metadata/schemas/$valid_obj/fields" '{
+    local res=$(api_post "/api/metadata/objects/$valid_obj/fields" '{
         "label": "Bad Lookup",
         "api_name": "bad_lookup",
         "type": "Lookup"
@@ -122,7 +122,7 @@ test_picklist_options_validation() {
 
     # 1. Picklist without Options
     echo "  Checking Picklist without options..."
-    local res=$(api_post "/api/metadata/schemas/$valid_obj/fields" '{
+    local res=$(api_post "/api/metadata/objects/$valid_obj/fields" '{
         "label": "Bad Picklist",
         "api_name": "bad_picklist",
         "type": "Picklist"
@@ -146,7 +146,7 @@ test_formula_return_type_validation() {
 
     # 1. Formula without Return Type
     echo "  Checking Formula without return_type..."
-    local res=$(api_post "/api/metadata/schemas/$valid_obj/fields" '{
+    local res=$(api_post "/api/metadata/objects/$valid_obj/fields" '{
         "label": "Bad Formula",
         "api_name": "bad_formula",
         "type": "Formula",

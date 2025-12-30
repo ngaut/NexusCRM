@@ -87,9 +87,9 @@ test_delete_system_object() {
     echo ""
     echo "Test 35.1: Standard User cannot delete System Object"
     
-    # Try DELETE /api/metadata/schemas/Account
+    # Try DELETE /api/metadata/objects/Account
     # Note: Using metadata endpoint
-    local res=$(api_delete "/api/metadata/schemas/Account")
+    local res=$(api_delete "/api/metadata/objects/Account")
     
     if echo "$res" | grep -qiE "Forbidden|Unauthorized|Access Denied|403"; then
         echo "  ✓ Delete System Object Denied (403)"
@@ -108,7 +108,7 @@ test_create_schema() {
     echo ""
     echo "Test 35.2: Standard User cannot create Schema"
     
-    local res=$(api_post "/api/metadata/schemas" '{
+    local res=$(api_post "/api/metadata/objects" '{
         "label": "Hacker Object",
         "plural_label": "Hacker Objects",
         "api_name": "hacker_object",

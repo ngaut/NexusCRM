@@ -34,7 +34,7 @@ test_create_analytics_object() {
     echo "Test 39.1: Create Analytics Object ($OBJ_NAME)"
     
     # Create Object
-    api_post "/api/metadata/schemas" '{
+    api_post "/api/metadata/objects" '{
         "label": "'$OBJ_NAME'",
         "plural_label": "'$OBJ_NAME's",
         "api_name": "'$API_NAME'",
@@ -42,7 +42,7 @@ test_create_analytics_object() {
     }' > /dev/null
     
     # Add Region (Picklist)
-    api_post "/api/metadata/schemas/$API_NAME/fields" '{
+    api_post "/api/metadata/objects/$API_NAME/fields" '{
         "label": "Region",
         "api_name": "region",
         "type": "Picklist",
@@ -50,7 +50,7 @@ test_create_analytics_object() {
     }' > /dev/null
     
     # Add Amount (Currency)
-    api_post "/api/metadata/schemas/$API_NAME/fields" '{
+    api_post "/api/metadata/objects/$API_NAME/fields" '{
         "label": "Amount",
         "api_name": "amount",
         "type": "Currency"

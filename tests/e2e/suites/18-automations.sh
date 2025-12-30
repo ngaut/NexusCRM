@@ -44,7 +44,7 @@ test_create_object_with_formula() {
         "is_custom": true
     }'
     
-    local obj_res=$(api_post "/api/metadata/schemas" "$obj_payload")
+    local obj_res=$(api_post "/api/metadata/objects" "$obj_payload")
     
     if ! echo "$obj_res" | grep -q '"api_name"'; then
         test_failed "Failed to create test object" "$obj_res"
@@ -53,13 +53,13 @@ test_create_object_with_formula() {
     echo "  Created object: $TEST_OBJ_NAME"
     
     # Add number fields for formula testing
-    local field1=$(api_post "/api/metadata/schemas/$TEST_OBJ_NAME/fields" '{
+    local field1=$(api_post "/api/metadata/objects/$TEST_OBJ_NAME/fields" '{
         "api_name": "quantity",
         "label": "Quantity",
         "type": "Number"
     }')
     
-    local field2=$(api_post "/api/metadata/schemas/$TEST_OBJ_NAME/fields" '{
+    local field2=$(api_post "/api/metadata/objects/$TEST_OBJ_NAME/fields" '{
         "api_name": "unit_price",
         "label": "Unit Price",
         "type": "Currency"
@@ -70,7 +70,7 @@ test_create_object_with_formula() {
     fi
     
     # Add formula field: total = quantity * unit_price
-    local formula_res=$(api_post "/api/metadata/schemas/$TEST_OBJ_NAME/fields" '{
+    local formula_res=$(api_post "/api/metadata/objects/$TEST_OBJ_NAME/fields" '{
         "api_name": "total_price",
         "label": "Total Price",
         "type": "Formula",
@@ -238,9 +238,9 @@ test_cleanup() {
     fi
     
     # Delete test object (only if we created it successfully)
-    local schema_check=$(api_get "/api/metadata/schemas/$TEST_OBJ_NAME")
+    local schema_check=$(api_get "/api/metadata/objects/$TEST_OBJ_NAME")
     if echo "$schema_check" | grep -q '"api_name"'; then
-        api_delete "/api/metadata/schemas/$TEST_OBJ_NAME" > /dev/null
+        api_delete "/api/metadata/objects/$TEST_OBJ_NAME" > /dev/null
         echo "  ✓ Test object deleted"
     fi
     

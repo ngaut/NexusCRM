@@ -35,12 +35,12 @@ test_get_all_schemas() {
     echo ""
     echo "Test 3.2: Get All Schemas"
     
-    local response=$(api_get "/api/metadata/schemas")
+    local response=$(api_get "/api/metadata/objects")
     if echo "$response" | grep -q '"schemas"' && echo "$response" | grep -q '\['; then
         local schema_count=$(echo "$response" | grep -o '"api_name"' | wc -l)
-        test_passed "GET /api/metadata/schemas returns schema list ($schema_count objects)"
+        test_passed "GET /api/metadata/objects returns schema list ($schema_count objects)"
     else
-        test_failed "GET /api/metadata/schemas" "$response"
+        test_failed "GET /api/metadata/objects" "$response"
     fi
 }
 
@@ -48,12 +48,12 @@ test_get_specific_schema() {
     echo ""
     echo "Test 3.3: Get Specific Schema (User)"
     
-    local response=$(api_get "/api/metadata/schemas/_System_User")
+    local response=$(api_get "/api/metadata/objects/_System_User")
     if echo "$response" | grep -q '"schema"' && echo "$response" | grep -q '"_System_User"'; then
         local field_count=$(echo "$response" | grep -o '"api_name"' | wc -l)
-        test_passed "GET /api/metadata/schemas/_System_User returns User schema ($field_count fields)"
+        test_passed "GET /api/metadata/objects/_System_User returns User schema ($field_count fields)"
     else
-        test_failed "GET /api/metadata/schemas/_System_User" "$response"
+        test_failed "GET /api/metadata/objects/_System_User" "$response"
     fi
 }
 
@@ -61,7 +61,7 @@ test_nonexistent_schema() {
     echo ""
     echo "Test 3.4: Get Non-Existent Schema (404)"
     
-    local response=$(api_get "/api/metadata/schemas/NonExistentObject12345")
+    local response=$(api_get "/api/metadata/objects/NonExistentObject12345")
     if echo "$response" | grep -qE "not found|Not Found"; then
         test_passed "GET non-existent schema returns 404"
     else

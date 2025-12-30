@@ -33,7 +33,7 @@ test_create_custom_object() {
     echo ""
     echo "Test 38.1: Create Custom Object ($OBJ_NAME)"
     
-    local res=$(api_post "/api/metadata/schemas" '{
+    local res=$(api_post "/api/metadata/objects" '{
         "label": "'$OBJ_NAME'",
         "plural_label": "'$OBJ_NAME's",
         "api_name": "'$API_NAME'",
@@ -54,7 +54,7 @@ test_add_custom_fields() {
     echo "Test 38.2: Add Fields (Date, Currency, Lookup)"
     
     # 1. Start Date (Date)
-    local res1=$(api_post "/api/metadata/schemas/$API_NAME/fields" '{
+    local res1=$(api_post "/api/metadata/objects/$API_NAME/fields" '{
         "label": "Start Date",
         "api_name": "start_date",
         "type": "Date"
@@ -62,7 +62,7 @@ test_add_custom_fields() {
     assert_contains "$res1" "start_date" "Date Field Created"
     
     # 2. Budget (Currency)
-    local res2=$(api_post "/api/metadata/schemas/$API_NAME/fields" '{
+    local res2=$(api_post "/api/metadata/objects/$API_NAME/fields" '{
         "label": "Budget",
         "api_name": "budget",
         "type": "Currency"
@@ -70,7 +70,7 @@ test_add_custom_fields() {
     assert_contains "$res2" "budget" "Currency Field Created"
     
     # 3. Manager (Lookup to User)
-    local res3=$(api_post "/api/metadata/schemas/$API_NAME/fields" '{
+    local res3=$(api_post "/api/metadata/objects/$API_NAME/fields" '{
         "label": "Manager",
         "api_name": "manager",
         "type": "Lookup",
@@ -118,7 +118,7 @@ test_schema_evolution() {
     echo "Test 38.4: Schema Evolution (Add Field & Update Record)"
     
     # Add 'Status' Picklist
-    local res=$(api_post "/api/metadata/schemas/$API_NAME/fields" '{
+    local res=$(api_post "/api/metadata/objects/$API_NAME/fields" '{
         "label": "Project Status",
         "api_name": "status",
         "type": "Picklist",

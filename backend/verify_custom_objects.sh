@@ -26,10 +26,10 @@ echo "   ✅ Logged in successfully"
 # 2. Create Custom Object 'Project__c'
 echo "2. Creating Custom Object 'Project__c'..."
 # Clean up if exists (ignore error)
-curl -s -X DELETE $API_URL/api/metadata/schemas/project__c \
+curl -s -X DELETE $API_URL/api/metadata/objects/project__c \
   -H "Authorization: Bearer $TOKEN" >/dev/null || true
 
-OBJ_RES=$(curl -s -X POST $API_URL/api/metadata/schemas \
+OBJ_RES=$(curl -s -X POST $API_URL/api/metadata/objects \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -52,7 +52,7 @@ echo "3. Adding Custom Fields..."
 
 # 3a. Budget (Currency)
 echo "   - Adding Budget__c (Currency)..."
-FIELD_RES=$(curl -s -X POST $API_URL/api/metadata/schemas/project__c/fields \
+FIELD_RES=$(curl -s -X POST $API_URL/api/metadata/objects/project__c/fields \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -64,7 +64,7 @@ FIELD_RES=$(curl -s -X POST $API_URL/api/metadata/schemas/project__c/fields \
 
 # 3b. Start Date (Date)
 echo "   - Adding Start_Date__c (Date)..."
-FIELD_RES=$(curl -s -X POST $API_URL/api/metadata/schemas/project__c/fields \
+FIELD_RES=$(curl -s -X POST $API_URL/api/metadata/objects/project__c/fields \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -75,7 +75,7 @@ FIELD_RES=$(curl -s -X POST $API_URL/api/metadata/schemas/project__c/fields \
   
 # 3c. Status (Picklist)
 echo "   - Adding Status__c (Picklist)..."
-FIELD_RES=$(curl -s -X POST $API_URL/api/metadata/schemas/project__c/fields \
+FIELD_RES=$(curl -s -X POST $API_URL/api/metadata/objects/project__c/fields \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

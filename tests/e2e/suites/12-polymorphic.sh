@@ -33,18 +33,18 @@ test_polymorphic_flow() {
     
     # 1. Create Parent Objects
     echo "Creating parent objects..."
-    api_post "/api/metadata/schemas" "{\"label\": \"$p1_name\", \"api_name\": \"$p1_name\", \"is_custom\": true}" > /dev/null
-    api_post "/api/metadata/schemas" "{\"label\": \"$p2_name\", \"api_name\": \"$p2_name\", \"is_custom\": true}" > /dev/null
+    api_post "/api/metadata/objects" "{\"label\": \"$p1_name\", \"api_name\": \"$p1_name\", \"is_custom\": true}" > /dev/null
+    api_post "/api/metadata/objects" "{\"label\": \"$p2_name\", \"api_name\": \"$p2_name\", \"is_custom\": true}" > /dev/null
     
     # 2. Create Child Object
     echo "Creating child object..."
-    api_post "/api/metadata/schemas" "{\"label\": \"$child_name\", \"api_name\": \"$child_name\", \"is_custom\": true}" > /dev/null
+    api_post "/api/metadata/objects" "{\"label\": \"$child_name\", \"api_name\": \"$child_name\", \"is_custom\": true}" > /dev/null
     
     # 3. Add Polymorphic Field
     echo "Adding polymorphic lookup field 'what_id'..."
     # reference_to is sent as JSON array
     local field_payload="{\"api_name\": \"what_id\", \"label\": \"Related To\", \"type\": \"Lookup\", \"reference_to\": [\"$p1_name\", \"$p2_name\"]}"
-    local field_res=$(api_post "/api/metadata/schemas/$child_name/fields" "$field_payload")
+    local field_res=$(api_post "/api/metadata/objects/$child_name/fields" "$field_payload")
     
     if echo "$field_res" | grep -q '"api_name":"what_id"'; then
         echo "  Field created successfully."
@@ -107,9 +107,9 @@ test_polymorphic_flow() {
     
     # 7. Cleanup
     echo "Cleaning up..."
-    api_delete "/api/metadata/schemas/$child_name" > /dev/null
-    api_delete "/api/metadata/schemas/$p1_name" > /dev/null
-    api_delete "/api/metadata/schemas/$p2_name" > /dev/null
+    api_delete "/api/metadata/objects/$child_name" > /dev/null
+    api_delete "/api/metadata/objects/$p1_name" > /dev/null
+    api_delete "/api/metadata/objects/$p2_name" > /dev/null
     
     if [ $failures -eq 0 ]; then
         test_passed "Polymorphic Lookups End-to-End"

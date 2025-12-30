@@ -17,7 +17,7 @@ TEST_OBJ="crudobject_$TS"
 
 test_cleanup() {
     echo "Cleaning up test object..."
-    api_delete "/api/metadata/schemas/$TEST_OBJ" > /dev/null 2>&1
+    api_delete "/api/metadata/objects/$TEST_OBJ" > /dev/null 2>&1
 }
 trap test_cleanup EXIT
 
@@ -45,7 +45,7 @@ run_suite() {
 setup_test_object() {
     echo "Setup: Creating test object '$TEST_OBJ'..."
     
-    local response=$(api_post "/api/metadata/schemas" "{
+    local response=$(api_post "/api/metadata/objects" "{
         \"label\": \"$TEST_OBJ\",
         \"plural_label\": \"${TEST_OBJ}s\",
         \"api_name\": \"$TEST_OBJ\",
@@ -63,8 +63,8 @@ setup_test_object() {
     fi
     
     # Add fields
-    api_post "/api/metadata/schemas/$TEST_OBJ/fields" '{"api_name": "industry", "label": "Industry", "type": "Text"}' > /dev/null
-    api_post "/api/metadata/schemas/$TEST_OBJ/fields" '{"api_name": "annual_revenue", "label": "Annual Revenue", "type": "Number"}' > /dev/null
+    api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "industry", "label": "Industry", "type": "Text"}' > /dev/null
+    api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "annual_revenue", "label": "Annual Revenue", "type": "Number"}' > /dev/null
     echo "  ✓ Fields added to test object"
     
     sleep 1  # Allow caches to refresh
@@ -183,9 +183,9 @@ test_frontend_simulation() {
     local object_name="UiTestObject"
     local object_api="ui_test_object_$TS"
 
-    # 1. Create Object (POST /api/metadata/schemas)
+    # 1. Create Object (POST /api/metadata/objects)
     echo "Step 1: Creating object via API (simulating frontend)..."
-    local response=$(api_post "/api/metadata/schemas" "{
+    local response=$(api_post "/api/metadata/objects" "{
         \"label\": \"$object_name\",
         \"plural_label\": \"${object_name}s\",
         \"api_name\": \"$object_api\",
@@ -195,25 +195,25 @@ test_frontend_simulation() {
     }")
 
     if echo "$response" | grep -q "\"api_name\":\"$object_api\""; then
-        test_passed "Frontend Object Creation (POST /api/metadata/schemas)"
+        test_passed "Frontend Object Creation (POST /api/metadata/objects)"
     else
         test_failed "Frontend Object Creation" "$response"
         return
     fi
 
-    # 2. Verify Object Existence (GET /api/metadata/schemas/:apiName)
+    # 2. Verify Object Existence (GET /api/metadata/objects/:apiName)
     echo "Step 2: Verifying object existence (simulating ObjectDetail load)..."
-    local detail_response=$(api_get "/api/metadata/schemas/$object_api")
+    local detail_response=$(api_get "/api/metadata/objects/$object_api")
 
     if echo "$detail_response" | grep -q "\"api_name\":\"$object_api\""; then
-        test_passed "Object Retrieval (GET /api/metadata/schemas/$object_api)"
+        test_passed "Object Retrieval (GET /api/metadata/objects/$object_api)"
     else
         test_failed "Object Retrieval" "$detail_response"
     fi
     
     # Cleanup
     echo "Step 3: Cleanup"
-    api_delete "/api/metadata/schemas/$object_api" > /dev/null
+    api_delete "/api/metadata/objects/$object_api" > /dev/null
 }
 
 # Run if executed directly
