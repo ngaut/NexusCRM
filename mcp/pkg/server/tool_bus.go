@@ -20,6 +20,9 @@ const (
 	ToolUpdateRecord    = "update_record"
 	ToolDeleteRecord    = "delete_record"
 	ToolCreateDashboard = "create_dashboard"
+	// Schema Tools
+	ToolCreateSchema = "create_object"
+	ToolCreateField  = "create_field"
 	// Context Tools
 	ToolContextAdd    = "context_add"
 	ToolContextRemove = "context_remove"
@@ -228,6 +231,74 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 	})
 
 	allTools = append(allTools, mcp.Tool{
+		Name:        ToolCreateSchema,
+		Description: "Create a new custom object/table. Example: Create a 'Vehicle' object.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"api_name": map[string]interface{}{
+					"type":        "string",
+					"description": "API name (snake_case, e.g. 'vehicle'). Must be unique.",
+				},
+				"label": map[string]interface{}{
+					"type":        "string",
+					"description": "Human readable label (e.g. 'Vehicle')",
+				},
+				"plural_label": map[string]interface{}{
+					"type":        "string",
+					"description": "Plural label (e.g. 'Vehicles')",
+				},
+				"description": map[string]interface{}{
+					"type":        "string",
+					"description": "Description of the object",
+				},
+			},
+			"required": []string{"api_name", "label", "plural_label"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolCreateField,
+		Description: "Create a new field on an existing object.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"object_name": map[string]interface{}{
+					"type":        "string",
+					"description": "API name of the object (e.g. 'account')",
+				},
+				"api_name": map[string]interface{}{
+					"type":        "string",
+					"description": "API name of the field (snake_case, e.g. 'model_year')",
+				},
+				"label": map[string]interface{}{
+					"type":        "string",
+					"description": "Field label",
+				},
+				"type": map[string]interface{}{
+					"type":        "string",
+					"enum":        []string{"Text", "Number", "Currency", "Boolean", "Date", "DateTime", "Email", "Phone", "URL", "Select", "Lookup", "Rollup"},
+					"description": "Field type",
+				},
+				"required": map[string]interface{}{
+					"type": "boolean",
+				},
+				"options": map[string]interface{}{
+					"type":        "array",
+					"items":       map[string]interface{}{"type": "string"},
+					"description": "Options for Select type",
+				},
+				"reference_to": map[string]interface{}{
+					"type":        "array",
+					"items":       map[string]interface{}{"type": "string"},
+					"description": "Target object for Lookup type (e.g. ['account'])",
+				},
+			},
+			"required": []string{"object_name", "api_name", "label", "type"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
 		Name:        ToolContextAdd,
 		Description: "Add files to the conversation context. The content of these files will be available to the AI.",
 		InputSchema: map[string]interface{}{
@@ -309,6 +380,17 @@ func (s *ToolBusService) HandleCallTool(ctx context.Context, params json.RawMess
 	if req.Name == ToolCreateDashboard {
 		return s.handleCreateDashboard(ctx, req)
 	}
+	if req.Name == ToolCreateDashboard {
+		return s.handleCreateDashboard(ctx, req)
+	}
+	// Schema Tools
+	if req.Name == ToolCreateSchema {
+		return s.handleCreateSchema(ctx, req)
+	}
+	if req.Name == ToolCreateField {
+		return s.handleCreateField(ctx, req)
+	}
+
 	// Context Tools
 	if req.Name == ToolContextAdd {
 		return s.handleContextAdd(ctx, req)
@@ -624,6 +706,89 @@ func (s *ToolBusService) handleCreateDashboard(ctx context.Context, req mcp.Call
 
 	return mcp.CallToolResult{
 		Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully created dashboard '%s' with ID: %s", name, id)}},
+	}, nil
+}
+
+func (s *ToolBusService) handleCreateSchema(ctx context.Context, req mcp.CallToolParams) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	apiName, ok1 := req.Arguments["api_name"].(string)
+	label, ok2 := req.Arguments["label"].(string)
+	pluralLabel, ok3 := req.Arguments["plural_label"].(string)
+
+	if !ok1 || !ok2 || !ok3 {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "api_name, label, and plural_label are required"}}}, nil
+	}
+
+	description, _ := req.Arguments["description"].(string)
+
+	schema := models.ObjectMetadata{
+		APIName:     apiName,
+		Label:       label,
+		PluralLabel: pluralLabel,
+		Description: &description,
+		IsCustom:    true,
+	}
+
+	if err := s.client.CreateSchema(ctx, schema, token); err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to create object: %v", err)}}}, nil
+	}
+
+	return mcp.CallToolResult{
+		Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully created object '%s' (%s)", label, apiName)}},
+	}, nil
+}
+
+func (s *ToolBusService) handleCreateField(ctx context.Context, req mcp.CallToolParams) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	objectName, ok1 := req.Arguments["object_name"].(string)
+	apiName, ok2 := req.Arguments["api_name"].(string)
+	label, ok3 := req.Arguments["label"].(string)
+	fieldType, ok4 := req.Arguments["type"].(string)
+
+	if !ok1 || !ok2 || !ok3 || !ok4 {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "object_name, api_name, label, and type are required"}}}, nil
+	}
+
+	field := models.FieldMetadata{
+		APIName: apiName,
+		Label:   label,
+		Type:    models.FieldType(fieldType), // Potentially risky cast, but backed by API validation
+	}
+
+	if val, ok := req.Arguments["required"].(bool); ok {
+		field.Required = val
+	}
+
+	if opts, ok := req.Arguments["options"].([]interface{}); ok {
+		for _, o := range opts {
+			if str, ok := o.(string); ok {
+				field.Options = append(field.Options, str)
+			}
+		}
+	}
+
+	if refs, ok := req.Arguments["reference_to"].([]interface{}); ok {
+		for _, r := range refs {
+			if str, ok := r.(string); ok {
+				field.ReferenceTo = append(field.ReferenceTo, str)
+			}
+		}
+	}
+
+	if err := s.client.CreateField(ctx, objectName, field, token); err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to create field: %v", err)}}}, nil
+	}
+
+	return mcp.CallToolResult{
+		Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully created field '%s' on %s", apiName, objectName)}},
 	}, nil
 }
 

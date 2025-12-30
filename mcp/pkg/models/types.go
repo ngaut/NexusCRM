@@ -3,22 +3,28 @@ package models
 // SObject represents a generic CRM object record (map of field names to values)
 type SObject map[string]interface{}
 
+// FieldType alias
+type FieldType = string
+
 // ObjectMetadata describes the schema of a CRM object
 type ObjectMetadata struct {
 	APIName     string          `json:"api_name"`
 	Label       string          `json:"label"`
 	PluralLabel string          `json:"plural_label"`
 	Description *string         `json:"description,omitempty"`
+	IsCustom    bool            `json:"is_custom,omitempty"`
 	Fields      []FieldMetadata `json:"fields"`
 }
 
 // FieldMetadata describes a single field on an object
 type FieldMetadata struct {
-	APIName     string  `json:"api_name"`
-	Label       string  `json:"label"`
-	Type        string  `json:"type"` // Changed from data_type to match backend
-	Required    bool    `json:"required"`
-	Description *string `json:"description,omitempty"`
+	APIName     string    `json:"api_name"`
+	Label       string    `json:"label"`
+	Type        FieldType `json:"type"` // Changed from data_type to match backend
+	Required    bool      `json:"required"`
+	Description *string   `json:"description,omitempty"`
+	Options     []string  `json:"options,omitempty"`
+	ReferenceTo []string  `json:"reference_to,omitempty"`
 }
 
 // UserSession represents the authenticated user context
