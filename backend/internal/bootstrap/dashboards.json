@@ -1,0 +1,57 @@
+[
+    {
+        "id": "sales_dashboard",
+        "label": "Sales Dashboard",
+        "description": "Default sales metrics dashboard",
+        "widgets": [
+            {
+                "id": "widget1",
+                "title": "Total Revenue",
+                "type": "metric",
+                "query": {
+                    "object_api_name": "opportunity",
+                    "operation": "sum",
+                    "field": "amount"
+                },
+                "x": 0,
+                "y": 0,
+                "w": 3,
+                "h": 2
+            },
+            {
+                "id": "widget2",
+                "title": "Sales by Stage",
+                "type": "chart-bar",
+                "config": {
+                    "object_api_name": "opportunity",
+                    "groupBy": "stage",
+                    "aggregation": "COUNT"
+                },
+                "x": 3,
+                "y": 0,
+                "w": 4,
+                "h": 3
+            },
+            {
+                "id": "widget3",
+                "title": "Recent Opportunities",
+                "type": "record-list",
+                "config": {
+                    "object_api_name": "opportunity",
+                    "fields": [
+                        "name",
+                        "stage",
+                        "amount",
+                        "close_date"
+                    ],
+                    "limit": 5,
+                    "orderBy": "created_date DESC"
+                },
+                "x": 7,
+                "y": 0,
+                "w": 5,
+                "h": 4
+            }
+        ]
+    }
+]

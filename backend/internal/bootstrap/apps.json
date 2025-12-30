@@ -11,9 +11,9 @@
                 {
                     "id": "item_dashboard",
                     "label": "Dashboard",
-                    "icon": "BarChart3",
-                    "type": "page",
-                    "page_url": "/dashboard"
+                    "icon": "LayoutDashboard",
+                    "type": "dashboard",
+                    "dashboard_id": "sales_dashboard"
                 }
             ]
         }
