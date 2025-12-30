@@ -48,7 +48,6 @@ const (
 type ObjectCategory string
 
 const (
-	ObjectCategoryStandard ObjectCategory = "Standard"
-	ObjectCategoryCustom   ObjectCategory = "Custom"
-	ObjectCategorySystem   ObjectCategory = "System"
+	ObjectCategoryCustom ObjectCategory = "Custom"
+	ObjectCategorySystem ObjectCategory = "System"
 )

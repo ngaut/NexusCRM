@@ -49,7 +49,7 @@ func (qs *QueryService) QueryWithFilter(
 	limit int,
 ) ([]models.SObject, error) {
 	// Check permissions
-	if !qs.permissions.CheckObjectPermissionWithUser(objectName, "read", currentUser) {
+	if !qs.permissions.CheckObjectPermissionWithUser(objectName, constants.PermRead, currentUser) {
 		return nil, fmt.Errorf("insufficient permissions to read %s", objectName)
 	}
 
@@ -125,7 +125,7 @@ func (qs *QueryService) QueryWithFilter(
 
 // SearchSingleObject searches within a single object
 func (qs *QueryService) SearchSingleObject(ctx context.Context, objectName string, term string, currentUser *models.UserSession) ([]models.SObject, error) {
-	if !qs.permissions.CheckObjectPermissionWithUser(objectName, "read", currentUser) {
+	if !qs.permissions.CheckObjectPermissionWithUser(objectName, constants.PermRead, currentUser) {
 		return []models.SObject{}, nil
 	}
 
@@ -269,7 +269,7 @@ func (qs *QueryService) GlobalSearch(ctx context.Context, term string, currentUs
 func (qs *QueryService) RunAnalytics(ctx context.Context, analyticsQuery models.AnalyticsQuery, currentUser *models.UserSession) (interface{}, error) {
 	objectName := analyticsQuery.ObjectAPIName
 
-	if !qs.permissions.CheckObjectPermissionWithUser(objectName, "read", currentUser) {
+	if !qs.permissions.CheckObjectPermissionWithUser(objectName, constants.PermRead, currentUser) {
 		return nil, fmt.Errorf("access denied: cannot read %s", objectName)
 	}
 

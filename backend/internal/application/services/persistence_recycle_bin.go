@@ -35,7 +35,7 @@ func (ps *PersistenceService) GetRecycleBinItems(ctx context.Context, currentUse
 		builder.Where(constants.FieldDeletedBy+" = ?", currentUser.Name)
 	}
 
-	binQ := builder.OrderBy(constants.FieldSysRecycleBin_DeletedDate, "DESC").Build()
+	binQ := builder.OrderBy(constants.FieldSysRecycleBin_DeletedDate, constants.SortDESC).Build()
 
 	records, err := ExecuteQuery(ctx, ps.db, binQ)
 	if err != nil {
@@ -58,7 +58,7 @@ func (ps *PersistenceService) Restore(
 	}
 
 	// Check permissions
-	if !ps.permissions.CheckObjectPermissionWithUser(objectName, "delete", currentUser) {
+	if !ps.permissions.CheckObjectPermissionWithUser(objectName, constants.PermDelete, currentUser) {
 		return fmt.Errorf("insufficient permissions to restore %s", objectName)
 	}
 
@@ -117,7 +117,7 @@ func (ps *PersistenceService) Purge(
 	}
 
 	// Check permissions (purge requires delete permission)
-	if !ps.permissions.CheckObjectPermissionWithUser(objectName, "delete", currentUser) {
+	if !ps.permissions.CheckObjectPermissionWithUser(objectName, constants.PermDelete, currentUser) {
 		return fmt.Errorf("insufficient permissions to purge %s", objectName)
 	}
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/backend/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/formula"
 )
 
@@ -52,12 +53,12 @@ func (ps *PermissionService) checkSharingRuleAccess(
 	// AccessLevel: "Read" or "Edit"
 	// "Edit" includes read, so Edit grants both read and edit
 	switch strings.ToLower(rule.AccessLevel) {
-	case "read":
-		if operation != "read" {
+	case constants.PermRead:
+		if operation != constants.PermRead {
 			return false
 		}
-	case "edit":
-		if operation != "read" && operation != "edit" {
+	case constants.PermEdit:
+		if operation != constants.PermRead && operation != constants.PermEdit {
 			return false
 		}
 	default:

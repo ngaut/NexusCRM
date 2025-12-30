@@ -31,7 +31,7 @@ func (s *NotificationService) GetMyNotifications(ctx context.Context, user *mode
 		filterExpr,
 		user,
 		constants.FieldCreatedDate,
-		"DESC",
+		constants.SortDESC,
 		20,
 	)
 

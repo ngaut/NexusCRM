@@ -135,7 +135,7 @@ func (h *DataHandler) GetRecord(c *gin.Context) {
 			filterExpr,
 			user,
 			constants.FieldCreatedDate,
-			"DESC",
+			constants.SortDESC,
 			1,
 		)
 		if err != nil {
@@ -151,11 +151,11 @@ func (h *DataHandler) GetRecord(c *gin.Context) {
 		// Secure Read: Check single record access (Ownership/Sharing)
 		schema := h.svc.Metadata.GetSchema(objectApiName)
 		if schema != nil {
-			if !h.svc.Permissions.CheckRecordAccess(schema, record, "read", user) {
+			if !h.svc.Permissions.CheckRecordAccess(schema, record, constants.PermRead, user) {
 				// Return PermissionError (403) or NotFound (404) depending on security policy.
 				// For strict security, 404 prevents enumerating IDs.
 				// But we'll use PermissionError for clarity for now, or match persistence service.
-				return nil, errors.NewPermissionError("read", objectApiName+"/"+id)
+				return nil, errors.NewPermissionError(constants.PermRead, objectApiName+"/"+id)
 			}
 		}
 

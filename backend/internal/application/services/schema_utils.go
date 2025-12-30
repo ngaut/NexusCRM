@@ -78,10 +78,10 @@ func ToStorageRecord(schema *models.ObjectMetadata, data models.SObject) models.
 			// ID is special, always pass if present
 			if strings.EqualFold(key, constants.FieldID) {
 				result[constants.FieldID] = val
-			} else if strings.HasSuffix(key, "_type") {
+			} else if strings.HasSuffix(key, constants.PolymorphicTypeSuffix) {
 				// Polymorphic type fields are also allowed to pass through if they follow the pattern <field>_type
 				// Check if the base field exists and is polymorphic
-				baseField := strings.TrimSuffix(key, "_type")
+				baseField := strings.TrimSuffix(key, constants.PolymorphicTypeSuffix)
 				baseMeta := FindField(schema, baseField)
 				if baseMeta != nil && baseMeta.IsPolymorphic {
 					result[key] = val
@@ -236,5 +236,15 @@ func FindField(schema *models.ObjectMetadata, fieldName string) *models.FieldMet
 
 // GetPolymorphicTypeColumnName returns the standardized column name for the type discriminator of a polymorphic field
 func GetPolymorphicTypeColumnName(fieldAPIName string) string {
-	return fieldAPIName + "_type"
+	return fieldAPIName + constants.PolymorphicTypeSuffix
+}
+
+// GenerateObjectID generates a standardized ID for an object based on its API Name
+func GenerateObjectID(apiName string) string {
+	return constants.PrefixObject + apiName
+}
+
+// GenerateFieldID generates a standardized ID for a field
+func GenerateFieldID(objectAPIName, fieldAPIName string) string {
+	return fmt.Sprintf("%s%s_%s", constants.PrefixField, objectAPIName, fieldAPIName)
 }

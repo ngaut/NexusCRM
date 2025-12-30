@@ -12,11 +12,9 @@ export { SYSTEM_TABLE_NAMES, type SystemTableName };
 // Backward-compatible alias (prefer SYSTEM_TABLE_NAMES for new code)
 export const SYSTEM_TABLES = SYSTEM_TABLE_NAMES;
 
-// Object categorization and standard objects from shared constants
+// Object categorization from shared constants
+// Note: Standard objects are no longer hardcoded - they are created dynamically via Metadata API
 export {
-    STANDARD_OBJECTS,
-    type StandardObjectName,
-    isStandardObject,
     isCustomObject,
     OBJECT_CATEGORIES,
     type ObjectCategory,
@@ -28,8 +26,3 @@ export function isSystemTable(objectApiName: string): boolean {
     return objectApiName.startsWith('_System_');
 }
 
-// Re-import for local use
-import {
-    STANDARD_OBJECTS,
-    type StandardObjectName
-} from '../../../../shared/generated/constants';

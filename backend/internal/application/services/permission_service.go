@@ -259,7 +259,7 @@ func (ps *PermissionService) CheckFieldEditabilityWithUser(objectAPIName, fieldA
 	}
 
 	// Fallback to object permission
-	return ps.CheckObjectPermissionWithUser(objectAPIName, "edit", user)
+	return ps.CheckObjectPermissionWithUser(objectAPIName, constants.PermEdit, user)
 }
 
 // CheckFieldVisibilityWithUser checks if a field is visible to the current user
@@ -285,7 +285,7 @@ func (ps *PermissionService) CheckFieldVisibilityWithUser(objectAPIName, fieldAP
 	}
 
 	// Fallback to object permission
-	return ps.CheckObjectPermissionWithUser(objectAPIName, "read", user)
+	return ps.CheckObjectPermissionWithUser(objectAPIName, constants.PermRead, user)
 }
 
 // RefreshPermissions reloads permissions from the database

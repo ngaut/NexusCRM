@@ -22,7 +22,7 @@ func (ps *PersistenceService) Delete(
 	id string,
 	currentUser *models.UserSession,
 ) error {
-	schema, err := ps.prepareOperation(objectName, "delete", currentUser)
+	schema, err := ps.prepareOperation(objectName, constants.PermDelete, currentUser)
 	if err != nil {
 		return err
 	}
@@ -47,8 +47,8 @@ func (ps *PersistenceService) Delete(
 	record := records[0]
 
 	// Check record-level access
-	if schema != nil && !ps.permissions.CheckRecordAccess(schema, record, "delete", currentUser) {
-		return errors.NewPermissionError("delete", objectName+"/"+id)
+	if schema != nil && !ps.permissions.CheckRecordAccess(schema, record, constants.PermDelete, currentUser) {
+		return errors.NewPermissionError(constants.PermDelete, objectName+"/"+id)
 	}
 
 	// Check child relationships

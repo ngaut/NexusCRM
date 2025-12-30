@@ -601,7 +601,7 @@ func tableNameToPrefix(name string) string {
 		clean := strings.TrimPrefix(name, "_System_")
 		return "Sys" + snakeToPascal(clean)
 	}
-	// For standard objects, just use PascalCase name
+	// For business objects (custom or legacy), just use PascalCase name
 	return snakeToPascal(name)
 }
 

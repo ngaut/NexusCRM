@@ -44,7 +44,7 @@ func (s *FeedService) GetComments(ctx context.Context, recordID string, user *mo
 		filterExpr,
 		user,
 		constants.FieldCreatedDate,
-		"DESC",
+		constants.SortDESC,
 		50,
 	)
 

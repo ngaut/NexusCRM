@@ -162,7 +162,7 @@ func (as *ActionService) executeUpdateRecord(ctx context.Context, action *models
 // executeComposite executes a sequence of actions within a transaction
 func (as *ActionService) executeComposite(ctx context.Context, action *models.ActionMetadata, actionCtx *ActionContext) error {
 	// composite action config should have a "steps" array
-	stepsInterface, ok := action.Config["steps"]
+	stepsInterface, ok := action.Config[constants.ConfigKeySteps]
 	if !ok {
 		return fmt.Errorf("steps not specified in composite action")
 	}
@@ -364,7 +364,7 @@ func (as *ActionService) evaluateRef(value interface{}, actionCtx *ActionContext
 	if formulaCtx.Fields == nil {
 		formulaCtx.Fields = make(map[string]interface{})
 	}
-	formulaCtx.Fields["results"] = resultsMap
+	formulaCtx.Fields[constants.ConfigKeyResults] = resultsMap
 
 	// Evaluate using shared engine
 	return as.formula.Evaluate(expression, formulaCtx)

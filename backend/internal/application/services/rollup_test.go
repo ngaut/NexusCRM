@@ -49,7 +49,7 @@ func TestRollupSummary_Sum(t *testing.T) {
 	parentDef := schema.TableDefinition{
 		TableName:   parentName,
 		Description: "Master Invoice",
-		TableType:   "custom_object",
+		TableType:   string(constants.TableTypeCustomObject),
 		Columns:     parentCols,
 	}
 	require.NoError(t, schemaMgr.CreateTableFromDefinition(context.Background(), parentDef))

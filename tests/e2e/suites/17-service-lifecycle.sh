@@ -134,6 +134,8 @@ test_setup_account_contact() {
     # Create Contact
     local contact_payload='{
         "name": "Support Contact '$TIMESTAMP'",
+        "first_name": "Support",
+        "last_name": "Contact '$TIMESTAMP'",
         "email": "support'$TIMESTAMP'@example.com",
         "account_id": "'$TEST_ACCOUNT_ID'"
     }'

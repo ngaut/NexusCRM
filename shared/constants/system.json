@@ -131,18 +131,8 @@
         "DELETED": 1,
         "ACTIVE": 0
     },
-    "standardObjects": {
-        "LEAD": "lead",
-        "ACCOUNT": "account",
-        "CONTACT": "contact",
-        "OPPORTUNITY": "opportunity",
-        "TASK": "task",
-        "CAMPAIGN": "campaign",
-        "PROJECT": "project"
-    },
     "objectCategories": {
         "SYSTEM_METADATA": "system_metadata",
-        "BUSINESS_STANDARD": "business_standard",
         "BUSINESS_CUSTOM": "business_custom",
         "SECURITY": "security",
         "UTILITY": "utility"

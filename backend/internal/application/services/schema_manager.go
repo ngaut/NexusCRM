@@ -284,18 +284,22 @@ func (sm *SchemaManager) BatchRegisterTables(defs []schema.TableDefinition, exec
 	var args []interface{}
 
 	for _, def := range defs {
-		valuePlaceholders = append(valuePlaceholders, "(?, ?, ?, ?, ?, 'schema_manager', NOW(), NOW())")
+		id := "tbl_" + def.TableName
+		valuePlaceholders = append(valuePlaceholders, "(?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())")
 		args = append(args,
-			"tbl_"+def.TableName,
+			id,
 			def.TableName,
 			def.TableType,
 			def.Category,
 			def.Description,
+			def.IsManaged,
+			def.SchemaVersion, // Use version from definition
+			"bootstrap",       // Created by
 		)
 	}
 
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, table_name, table_type, category, description, created_by, created_date, last_modified_date)
+		INSERT INTO %s (id, table_name, table_type, category, description, is_managed, schema_version, created_by, created_date, last_modified_date)
 		VALUES %s
 		ON DUPLICATE KEY UPDATE last_modified_date = NOW()
 	`, constants.TableTable, strings.Join(valuePlaceholders, ", "))
@@ -344,8 +348,8 @@ func (sm *SchemaManager) RegisterObjectMetadata(def schema.TableDefinition, exec
 		exec = sm.db
 	}
 	// 1. Construct Object Metadata
-	objectID := "obj_" + def.TableName
-	isCustom := def.TableType == "custom_object"
+	objectID := GenerateObjectID(def.TableName)
+	isCustom := constants.TableType(def.TableType) == constants.TableTypeCustomObject
 
 	// Determine Label (use description or table name if not provided)
 	label := def.Description
@@ -362,7 +366,7 @@ func (sm *SchemaManager) RegisterObjectMetadata(def schema.TableDefinition, exec
 		PluralLabel:  def.TableName + "s", // Simple pluralization
 		Description:  &description,
 		IsCustom:     isCustom,
-		SharingModel: "PublicReadWrite", // Default for system objects
+		SharingModel: models.SharingModel(constants.SharingModelPublicReadWrite), // Default for system objects
 	}
 
 	// 2. Upsert Object (reuse Batch method)

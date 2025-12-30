@@ -20,7 +20,7 @@ func (sm *SchemaManager) prepareObjectDBValues(obj *models.ObjectMetadata) ([]in
 	appID := ToNullString(obj.AppID)
 	sharingModel := obj.SharingModel
 	if sharingModel == "" {
-		sharingModel = "Private"
+		sharingModel = models.SharingModel(constants.SharingModelPrivate)
 	}
 
 	var listFields sql.NullString
@@ -35,10 +35,17 @@ func (sm *SchemaManager) prepareObjectDBValues(obj *models.ObjectMetadata) ([]in
 	pathField := ToNullString(obj.PathField)
 	themeColor := ToNullString(obj.ThemeColor)
 
+	tableType := constants.TableTypeSystemMetadata
+	if obj.IsCustom {
+		tableType = constants.TableTypeCustomObject
+	}
+	// For core objects bootstrapped via this path, we default to metadata/custom.
+	// Real system core objects are often inserted via dedicated bootstrap scripts, but if using this, defaulting to metadata is safer than null.
+
 	// Order matches ObjectInsertQuery
 	return []interface{}{
 		obj.APIName, obj.Label, obj.PluralLabel, icon, description,
-		obj.IsCustom, sharingModel, appID, listFields, pathField, themeColor,
+		obj.IsCustom, sharingModel, appID, listFields, pathField, themeColor, tableType,
 	}, nil
 }
 
@@ -117,9 +124,9 @@ func (sm *SchemaManager) prepareFieldDBValues(field *models.FieldMetadata) ([]in
 func (sm *SchemaManager) getObjectInsertQuery() string {
 	return fmt.Sprintf(`INSERT INTO %s (
 		id, api_name, label, plural_label, icon, description, 
-		is_custom, sharing_model, app_id, list_fields, path_field, theme_color,
+		is_custom, sharing_model, app_id, list_fields, path_field, theme_color, table_type,
 		created_date, last_modified_date
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
 	ON DUPLICATE KEY UPDATE
 		label = VALUES(label),
 		plural_label = VALUES(plural_label),
@@ -130,6 +137,7 @@ func (sm *SchemaManager) getObjectInsertQuery() string {
 		list_fields = VALUES(list_fields),
 		path_field = VALUES(path_field),
 		theme_color = VALUES(theme_color),
+		table_type = VALUES(table_type),
 		last_modified_date = NOW()
 	`, constants.TableObject)
 }

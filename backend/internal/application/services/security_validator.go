@@ -171,7 +171,7 @@ func (v *SecurityVisitor) Enter(in ast.Node) (ast.Node, bool) {
 	if t, ok := in.(*ast.TableName); ok {
 		objName := t.Name.O
 		if objName != "" {
-			if !v.permissions.CheckObjectPermissionWithUser(objName, "read", v.user) {
+			if !v.permissions.CheckObjectPermissionWithUser(objName, constants.PermRead, v.user) {
 				v.err = fmt.Errorf("access denied: cannot read table '%s'", objName)
 				return in, true
 			}

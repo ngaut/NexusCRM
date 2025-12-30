@@ -36,7 +36,7 @@ func assertObjectTableMapping(db *sql.DB, result *AssertionResult) {
 		if err != nil {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "SchemaMismatch",
-				Severity:    "error",
+				Severity:    constants.SeverityError,
 				Object:      tableName,
 				Description: fmt.Sprintf("Metadata exists for object '%s', but the database table is missing.", tableName),
 			})
@@ -107,7 +107,7 @@ func assertFieldColumnMapping(db *sql.DB, result *AssertionResult) {
 		if len(missing) > 0 {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "SchemaMismatch",
-				Severity:    "error",
+				Severity:    constants.SeverityError,
 				Object:      obj.Name,
 				Description: fmt.Sprintf("Table '%s' is missing physical columns for fields: %s", obj.Name, strings.Join(missing, ", ")),
 			})
@@ -164,7 +164,7 @@ func assertRelationshipIntegrity(db *sql.DB, result *AssertionResult) {
 				if target != "" && !validObjects[strings.ToLower(target)] {
 					result.Violations = append(result.Violations, AssertionViolation{
 						Category:    "BrokenRelationship",
-						Severity:    "error",
+						Severity:    constants.SeverityError,
 						Object:      objName,
 						Description: fmt.Sprintf("Field '%s' references non-existent object '%s'", fieldName, target),
 					})
@@ -174,7 +174,7 @@ func assertRelationshipIntegrity(db *sql.DB, result *AssertionResult) {
 			// Invalid format - should be JSON array
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "InvalidFormat",
-				Severity:    "error",
+				Severity:    constants.SeverityError,
 				Object:      objName,
 				Description: fmt.Sprintf("Field '%s' has invalid reference_to format (expected JSON array): %s", fieldName, refToJSON),
 			})
@@ -226,7 +226,7 @@ func assertConstraintConsistency(db *sql.DB, result *AssertionResult) {
 		if !hasIndex {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "MissingConstraint",
-				Severity:    "warning",
+				Severity:    constants.SeverityWarning,
 				Object:      tableName,
 				Description: fmt.Sprintf("Field '%s' is marked unique but has no unique index in DB.", colName),
 			})
@@ -251,7 +251,7 @@ func assertNamingConventions(db *sql.DB, result *AssertionResult) {
 			if !validName.MatchString(name) {
 				result.Violations = append(result.Violations, AssertionViolation{
 					Category:    "NamingConvention",
-					Severity:    "warning",
+					Severity:    constants.SeverityWarning,
 					Object:      name,
 					Description: fmt.Sprintf("Object API name '%s' should be snake_case (lowercase entry starting with letter).", name),
 				})
@@ -276,7 +276,7 @@ func assertNamingConventions(db *sql.DB, result *AssertionResult) {
 			if !validName.MatchString(fieldName) {
 				result.Violations = append(result.Violations, AssertionViolation{
 					Category:    "NamingConvention",
-					Severity:    "warning",
+					Severity:    constants.SeverityWarning,
 					Object:      objName,
 					Description: fmt.Sprintf("Custom field '%s' should be snake_case.", fieldName),
 				})
@@ -311,7 +311,7 @@ func assertFormulaValidity(db *sql.DB, result *AssertionResult) {
 		if err := engine.Validate(expression, map[string]interface{}{}); err != nil {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "InvalidFormula",
-				Severity:    "error",
+				Severity:    constants.SeverityError,
 				Object:      objName,
 				Description: fmt.Sprintf("Field '%s' has invalid formula: %v", fieldName, err),
 			})

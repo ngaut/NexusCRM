@@ -25,12 +25,10 @@ func (ms *MetadataService) PrepareTableDefinition(schema *models.ObjectMetadata)
 		desc := fmt.Sprintf("Custom object: %s", schema.Label)
 		schema.Description = &desc
 	}
-	tableType := "custom_object"
-	if !schema.IsCustom {
-		tableType = "standard_object"
-	}
+	// In pure meta-driven architecture, all non-system objects use custom_object table type
+	tableType := constants.TableTypeCustomObject
 	if schema.ID == "" {
-		schema.ID = "obj_" + schema.APIName
+		schema.ID = GenerateObjectID(schema.APIName)
 	}
 
 	// Ensure System Fields
@@ -46,7 +44,7 @@ func (ms *MetadataService) PrepareTableDefinition(schema *models.ObjectMetadata)
 	// Build Table Definition
 	def := domainSchema.TableDefinition{
 		TableName:   schema.APIName,
-		TableType:   tableType,
+		TableType:   string(tableType),
 		Category:    "standard",
 		Description: *schema.Description,
 		Columns:     make([]domainSchema.ColumnDefinition, 0),

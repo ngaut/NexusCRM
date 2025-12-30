@@ -25,7 +25,7 @@ func (sm *SchemaManager) SaveObjectMetadata(obj *models.ObjectMetadata, exec Exe
 
 	// Determine Object ID if not set
 	if obj.ID == "" {
-		obj.ID = "obj_" + obj.APIName
+		obj.ID = GenerateObjectID(obj.APIName)
 	}
 
 	values, err := sm.prepareObjectDBValues(obj)
@@ -72,7 +72,7 @@ func (sm *SchemaManager) BatchSaveObjectMetadata(objs []*models.ObjectMetadata, 
 	for _, obj := range objs {
 		// Ensure ID is set
 		if obj.ID == "" {
-			obj.ID = "obj_" + obj.APIName
+			obj.ID = GenerateObjectID(obj.APIName)
 		}
 
 		values, err := sm.prepareObjectDBValues(obj)
@@ -80,14 +80,14 @@ func (sm *SchemaManager) BatchSaveObjectMetadata(objs []*models.ObjectMetadata, 
 			return err
 		}
 
-		valuePlaceholders = append(valuePlaceholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())")
+		valuePlaceholders = append(valuePlaceholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())")
 		args = append(args, obj.ID)
 		args = append(args, values...)
 	}
 
 	query := fmt.Sprintf(`INSERT INTO %s (
 		id, api_name, label, plural_label, icon, description, 
-		is_custom, sharing_model, app_id, list_fields, path_field, theme_color,
+		is_custom, sharing_model, app_id, list_fields, path_field, theme_color, table_type,
 		created_date, last_modified_date
 	) VALUES %s
 	ON DUPLICATE KEY UPDATE
@@ -100,6 +100,7 @@ func (sm *SchemaManager) BatchSaveObjectMetadata(objs []*models.ObjectMetadata, 
 		list_fields = VALUES(list_fields),
 		path_field = VALUES(path_field),
         theme_color = VALUES(theme_color),
+		table_type = VALUES(table_type),
 		last_modified_date = NOW()
 	`, constants.TableObject, strings.Join(valuePlaceholders, ", "))
 
@@ -178,7 +179,7 @@ func (sm *SchemaManager) BatchSaveFieldMetadata(fields []FieldWithContext, exec 
 
 // PrepareFieldForBatch converts a column definition to FieldWithContext for batch processing
 func (sm *SchemaManager) PrepareFieldForBatch(tableName string, col schema.ColumnDefinition) FieldWithContext {
-	objectID := "obj_" + tableName
+	objectID := GenerateObjectID(tableName)
 	fieldID := fmt.Sprintf("fld_%s_%s", tableName, col.Name)
 
 	fieldType := sm.mapSQLTypeToLogical(col.Type)

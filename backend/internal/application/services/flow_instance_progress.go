@@ -67,20 +67,20 @@ func (s *FlowInstanceService) GetInstanceProgress(ctx context.Context, instanceI
 
 	// Build step progress list with status
 	for _, step := range steps {
-		status := "pending"
+		status := constants.ProgressStatusPending
 		if currentStepOrder > 0 {
 			if step.StepOrder < currentStepOrder {
-				status = "completed"
+				status = constants.ProgressStatusCompleted
 			} else if step.StepOrder == currentStepOrder {
-				status = "current"
+				status = constants.ProgressStatusCurrent
 			}
 		}
 		// If flow is completed, all steps are completed
 		if instance.Status == models.FlowInstanceStatusCompleted {
-			status = "completed"
+			status = constants.ProgressStatusCompleted
 		} else if instance.Status == models.FlowInstanceStatusFailed {
 			if step.StepOrder == currentStepOrder {
-				status = "skipped"
+				status = constants.ProgressStatusSkipped
 			}
 		}
 

@@ -25,14 +25,11 @@ export {
 // System Objects
 export {
     SYSTEM_TABLES,
-    STANDARD_OBJECTS,
     type ObjectCategory,
     isSystemTable,
-    isStandardObject,
     isCustomObject,
     getObjectCategory,
     type SystemTableName,
-    type StandardObjectName,
 } from './SystemObjects';
 
 // Application Defaults

@@ -53,8 +53,8 @@ func InitializeSchema(db *database.TiDBConnection) error {
 	var allFields []services.FieldWithContext
 
 	for _, def := range tableDefs {
-		objectID := "obj_" + def.TableName
-		isCustom := def.TableType == "custom_object"
+		objectID := services.GenerateObjectID(def.TableName)
+		isCustom := constants.TableType(def.TableType) == constants.TableTypeCustomObject
 		label := def.Description
 		if label == "" {
 			label = def.TableName
@@ -68,7 +68,7 @@ func InitializeSchema(db *database.TiDBConnection) error {
 			PluralLabel:  def.TableName + "s",
 			Description:  &description,
 			IsCustom:     isCustom,
-			SharingModel: "PublicReadWrite",
+			SharingModel: models.SharingModel(constants.SharingModelPublicReadWrite),
 		})
 
 		// Collect fields for this table

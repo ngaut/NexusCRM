@@ -32,7 +32,7 @@ func (ms *MetadataService) CreateFlow(flow *models.Flow) error {
 
 	// Set defaults
 	if flow.Status == "" {
-		flow.Status = "Draft"
+		flow.Status = constants.FlowStatusDraft
 	}
 	flow.LastModified = NowTimestamp()
 

@@ -144,6 +144,26 @@ else
     done
 fi
 
+
+# Global Setup: Ensure standard objects exist
+if [ ${#SUITES_TO_RUN[@]} -gt 0 ]; then
+    echo ""
+    echo "═══════════════════════════════════════════════════════════"
+    echo "   Global Setup"
+    echo "═══════════════════════════════════════════════════════════"
+    
+    source "$SCRIPT_DIR/lib/setup.sh"
+    
+    # We need a token for setup
+    if api_login; then
+        ensure_standard_objects_exist
+    else
+        echo -e "${RED}✗ Global Login Failed. Aborting.${NC}"
+        exit 1
+    fi
+    echo ""
+fi
+
 # Run selected suites
 for suite in "${SUITES_TO_RUN[@]}"; do
     run_test_suite "$suite"

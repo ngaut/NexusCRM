@@ -144,7 +144,7 @@ func (h *FlowHandler) validateFlowForExecution(flowID string, user *models.UserS
 		return nil, &flowError{404, "Flow not found: " + flowID}
 	}
 
-	if flow.Status != "Active" {
+	if flow.Status != constants.FlowStatusActive {
 		return nil, &flowError{400, "Flow is not active (status: " + flow.Status + ")"}
 	}
 

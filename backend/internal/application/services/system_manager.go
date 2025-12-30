@@ -78,7 +78,7 @@ func (sm *SystemManager) GetLogs(limit int) ([]*models.SystemLog, error) {
 
 	q := query.From(constants.TableLog).
 		Select([]string{constants.FieldID, constants.FieldTimestamp, constants.FieldLevel, constants.FieldSource, constants.FieldMessage, constants.FieldDetails}).
-		OrderBy(constants.FieldTimestamp, "DESC").
+		OrderBy(constants.FieldTimestamp, constants.SortDESC).
 		Limit(limit).
 		Build()
 
@@ -149,7 +149,7 @@ func (sm *SystemManager) GetRecentItems(currentUser *models.UserSession, limit i
 	q := query.From(constants.TableRecent).
 		Select([]string{constants.FieldID, constants.FieldUserID, constants.FieldObjectAPIName, constants.FieldRecordID, constants.FieldRecordName, constants.FieldTimestamp}).
 		Where(constants.FieldUserID+" = ?", currentUser.ID).
-		OrderBy(constants.FieldTimestamp, "DESC").
+		OrderBy(constants.FieldTimestamp, constants.SortDESC).
 		Limit(limit).
 		Build()
 

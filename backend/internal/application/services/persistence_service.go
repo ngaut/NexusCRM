@@ -178,7 +178,7 @@ func (ps *PersistenceService) Update(
 	updates models.SObject,
 	currentUser *models.UserSession,
 ) error {
-	schema, err := ps.prepareOperation(objectName, "edit", currentUser)
+	schema, err := ps.prepareOperation(objectName, constants.PermEdit, currentUser)
 	if err != nil {
 		return err
 	}
@@ -221,7 +221,7 @@ func (ps *PersistenceService) Update(
 		}
 
 		// Check record-level access
-		if !ps.permissions.CheckRecordAccess(schema, oldRecord, "edit", currentUser) {
+		if !ps.permissions.CheckRecordAccess(schema, oldRecord, constants.PermEdit, currentUser) {
 			return errors.NewPermissionError("update", objectName+"/"+id)
 		}
 

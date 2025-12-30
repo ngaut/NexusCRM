@@ -215,7 +215,7 @@ func (vs *ValidationService) ValidateRecord(
 
 // ValidateFlow checks for duplicate active triggers
 func (vs *ValidationService) ValidateFlow(flow *models.Flow, existingFlows []*models.Flow) error {
-	if flow.Status != "Active" {
+	if flow.Status != constants.FlowStatusActive {
 		return nil
 	}
 
@@ -230,7 +230,7 @@ func (vs *ValidationService) ValidateFlow(flow *models.Flow, existingFlows []*mo
 			if existing.ID != flow.ID && // Skip self
 				existing.TriggerObject == flow.TriggerObject &&
 				existing.TriggerType == flow.TriggerType &&
-				existing.Status == "Active" {
+				existing.Status == constants.FlowStatusActive {
 				count++
 			}
 		}

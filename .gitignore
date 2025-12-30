@@ -37,3 +37,4 @@ coverage/
 *.out
 .idea/
 *.swp
+backend/uploads/

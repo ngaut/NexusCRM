@@ -23,7 +23,7 @@ func (ps *PersistenceService) Insert(
 	data models.SObject,
 	currentUser *models.UserSession,
 ) (models.SObject, error) {
-	schema, err := ps.prepareOperation(objectName, "create", currentUser)
+	schema, err := ps.prepareOperation(objectName, constants.PermCreate, currentUser)
 	if err != nil {
 		return nil, err
 	}

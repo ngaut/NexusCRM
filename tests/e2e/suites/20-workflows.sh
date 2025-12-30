@@ -150,7 +150,7 @@ test_multi_object_workflow() {
     echo "  ✓ Account created"
     
     # Create Contact linked to Account
-    local contact=$(api_post "/api/data/contact" '{"name": "Workflow Contact '$TIMESTAMP'", "email": "wf.'$TIMESTAMP'@test.com", "account_id": "'$TEST_ACCOUNT_ID'"}')
+    local contact=$(api_post "/api/data/contact" '{"name": "Workflow Contact '$TIMESTAMP'", "first_name": "Workflow", "last_name": "Contact '$TIMESTAMP'", "email": "wf.'$TIMESTAMP'@test.com", "account_id": "'$TEST_ACCOUNT_ID'"}')
     TEST_CONTACT_ID=$(json_extract "$contact" "id")
     [ -z "$TEST_CONTACT_ID" ] && { test_failed "Contact creation failed"; return 1; }
     echo "  ✓ Contact created (linked to Account)"

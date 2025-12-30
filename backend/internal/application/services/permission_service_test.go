@@ -16,7 +16,7 @@ func TestCheckObjectPermissionWithUser_NilUser(t *testing.T) {
 	ps := &PermissionService{}
 
 	// Nil user should return false
-	result := ps.CheckObjectPermissionWithUser(constants.ObjectAccount, constants.PermRead, nil)
+	result := ps.CheckObjectPermissionWithUser("Account", constants.PermRead, nil)
 	if result {
 		t.Error("Expected false for nil user, got true")
 	}
@@ -35,7 +35,7 @@ func TestCheckObjectPermissionWithUser_SuperUser(t *testing.T) {
 
 	operations := []string{constants.PermRead, constants.PermCreate, constants.PermEdit, constants.PermDelete}
 	for _, op := range operations {
-		result := ps.CheckObjectPermissionWithUser(constants.ObjectAccount, op, user)
+		result := ps.CheckObjectPermissionWithUser("Account", op, user)
 		if !result {
 			t.Errorf("Expected true for SuperUser %s operation, got false", op)
 		}
@@ -62,7 +62,7 @@ func TestCheckFieldEditabilityWithUser_SystemField(t *testing.T) {
 	}
 
 	for _, field := range systemFields {
-		result := ps.CheckFieldEditabilityWithUser(constants.ObjectAccount, field, user)
+		result := ps.CheckFieldEditabilityWithUser("Account", field, user)
 		if result {
 			t.Errorf("Expected system field %s to be non-editable, got editable", field)
 		}
@@ -73,7 +73,7 @@ func TestCheckFieldVisibilityWithUser_NilUser(t *testing.T) {
 	ps := &PermissionService{}
 
 	// Nil user should return false
-	result := ps.CheckFieldVisibilityWithUser(constants.ObjectAccount, constants.FieldName, nil)
+	result := ps.CheckFieldVisibilityWithUser("Account", constants.FieldName, nil)
 	if result {
 		t.Error("Expected false for nil user, got true")
 	}
@@ -89,7 +89,7 @@ func TestCheckFieldVisibilityWithUser_SuperUser(t *testing.T) {
 	}
 
 	// Super user should see all fields
-	result := ps.CheckFieldVisibilityWithUser(constants.ObjectAccount, constants.FieldName, user)
+	result := ps.CheckFieldVisibilityWithUser("Account", constants.FieldName, user)
 	if !result {
 		t.Error("Expected true for SuperUser field visibility, got false")
 	}
@@ -98,7 +98,7 @@ func TestCheckFieldVisibilityWithUser_SuperUser(t *testing.T) {
 func TestCheckPermissionOrErrorWithUser_NilUser(t *testing.T) {
 	ps := &PermissionService{}
 
-	err := ps.CheckPermissionOrErrorWithUser(constants.ObjectAccount, constants.PermRead, nil)
+	err := ps.CheckPermissionOrErrorWithUser("Account", constants.PermRead, nil)
 	if err == nil {
 		t.Error("Expected error for nil user, got nil")
 	}
@@ -113,7 +113,7 @@ func TestCheckPermissionOrErrorWithUser_SuperUser(t *testing.T) {
 		ProfileID: constants.ProfileSystemAdmin,
 	}
 
-	err := ps.CheckPermissionOrErrorWithUser(constants.ObjectAccount, constants.PermRead, user)
+	err := ps.CheckPermissionOrErrorWithUser("Account", constants.PermRead, user)
 	if err != nil {
 		t.Errorf("Expected no error for SuperUser, got: %v", err)
 	}
@@ -133,7 +133,7 @@ func TestGetEffectiveSchema_SuperUser(t *testing.T) {
 		ProfileID: constants.ProfileSystemAdmin,
 	}
 	schema := &models.ObjectMetadata{
-		APIName: constants.ObjectAccount,
+		APIName: "Account",
 		Fields: []models.FieldMetadata{
 			{APIName: constants.FieldName},
 			{APIName: "Secret"},
@@ -149,7 +149,7 @@ func TestGetEffectiveSchema_SuperUser(t *testing.T) {
 func TestGetEffectiveSchema_NilUser(t *testing.T) {
 	ps := &PermissionService{}
 	schema := &models.ObjectMetadata{
-		APIName: constants.ObjectAccount,
+		APIName: "Account",
 		Fields: []models.FieldMetadata{
 			{APIName: constants.FieldName},
 			{APIName: "Secret"},

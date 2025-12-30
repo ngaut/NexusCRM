@@ -41,7 +41,7 @@ func TestSchemaManager_Integration_ACID(t *testing.T) {
 	// 2. Define Table
 	def := schema.TableDefinition{
 		TableName:   tableName,
-		TableType:   "custom_object",
+		TableType:   string(constants.TableTypeCustomObject),
 		Category:    "test",
 		Description: "Test Object for ACID",
 		Columns: []schema.ColumnDefinition{

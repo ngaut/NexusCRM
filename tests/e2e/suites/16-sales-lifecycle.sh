@@ -185,7 +185,9 @@ test_lead_conversion() {
     
     # 2. Create Contact linked to Account
     local contact_payload='{
-        "name": "'$lead_name'",
+        "name": "Convert '$lead_name'",
+        "first_name": "Convert",
+        "last_name": "'$lead_name'",
         "email": "'$lead_email'",
         "account_id": "'$TEST_ACCOUNT_ID'"
     }'

@@ -38,11 +38,13 @@ type ForeignKeyDefinition struct {
 
 // TableDefinition represents a complete table schema
 type TableDefinition struct {
-	TableName   string                 `json:"table_name"`
-	TableType   string                 `json:"table_type"` // system_core, system_metadata, custom_object
-	Category    string                 `json:"category"`   // auth, metadata, crm, etc.
-	Description string                 `json:"description"`
-	Columns     []ColumnDefinition     `json:"columns"`
-	Indices     []IndexDefinition      `json:"indices,omitempty"`
-	ForeignKeys []ForeignKeyDefinition `json:"foreign_keys,omitempty"`
+	TableName     string                 `json:"table_name"`
+	TableType     string                 `json:"table_type"` // system_core, system_metadata, custom_object
+	Category      string                 `json:"category"`   // auth, metadata, crm, etc.
+	Description   string                 `json:"description"`
+	IsManaged     bool                   `json:"is_managed,omitempty"`
+	SchemaVersion string                 `json:"schema_version,omitempty"`
+	Columns       []ColumnDefinition     `json:"columns"`
+	Indices       []IndexDefinition      `json:"indices,omitempty"`
+	ForeignKeys   []ForeignKeyDefinition `json:"foreign_keys,omitempty"`
 }

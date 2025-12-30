@@ -54,7 +54,7 @@ func TestMasterDetail_CascadeDelete(t *testing.T) {
 	masterDef := schema.TableDefinition{
 		TableName:   masterObjName,
 		Description: "Master Project",
-		TableType:   "custom_object",
+		TableType:   string(constants.TableTypeCustomObject),
 		Columns:     masterCols,
 	}
 	require.NoError(t, schemaMgr.CreateTableFromDefinition(context.Background(), masterDef))

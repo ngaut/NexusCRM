@@ -17,6 +17,12 @@
                 "unique": true
             },
             {
+                "name": "table_type",
+                "type": "VARCHAR(50)",
+                "nullable": false,
+                "default": "'custom_object'"
+            },
+            {
                 "name": "label",
                 "type": "VARCHAR(255)",
                 "nullable": false
@@ -348,7 +354,7 @@
             },
             {
                 "name": "table_type",
-                "type": "ENUM('system_core', 'system_metadata', 'standard_object', 'custom_object')",
+                "type": "ENUM('system_core', 'system_metadata', 'custom_object')",
                 "nullable": false
             },
             {

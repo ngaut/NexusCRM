@@ -125,7 +125,7 @@ func (sm *SchemaManager) registerField(tableName string, col schema.ColumnDefini
 	if exec == nil {
 		exec = sm.db
 	}
-	objectID := "obj_" + tableName
+	objectID := GenerateObjectID(tableName)
 	fieldID := fmt.Sprintf("fld_%s_%s", tableName, col.Name)
 
 	// Determine Field Type

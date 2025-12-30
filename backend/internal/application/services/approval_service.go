@@ -59,7 +59,7 @@ func (s *ApprovalService) Submit(ctx context.Context, req SubmitRequest, user *m
 	}
 
 	// Security check: verify user has read access to the record
-	if !s.permissions.CheckObjectPermissionWithUser(req.ObjectAPIName, "read", user) {
+	if !s.permissions.CheckObjectPermissionWithUser(req.ObjectAPIName, constants.PermRead, user) {
 		return nil, errors.New("you don't have permission to submit this record for approval")
 	}
 
@@ -112,7 +112,7 @@ func (s *ApprovalService) GetPending(ctx context.Context, user *models.UserSessi
 		constants.TableApprovalWorkItem,
 		filterExpr,
 		user,
-		constants.FieldCreatedDate, "DESC",
+		constants.FieldCreatedDate, constants.SortDESC,
 		100,
 	)
 }
@@ -125,7 +125,7 @@ func (s *ApprovalService) GetHistory(ctx context.Context, objectAPIName, recordI
 		constants.TableApprovalWorkItem,
 		filterExpr,
 		user,
-		constants.FieldCreatedDate, "DESC",
+		constants.FieldCreatedDate, constants.SortDESC,
 		50,
 	)
 }

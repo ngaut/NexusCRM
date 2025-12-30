@@ -42,7 +42,7 @@ func RunAssertions(db *database.TiDBConnection, strictMode bool) (*AssertionResu
 	assertDefaultAppExists(db.DB(), result)
 	assertDefaultThemeExists(db.DB(), result)
 
-	assertStandardActionsExist(db.DB(), result)
+	// assertStandardActionsExist(db.DB(), result) // Removed deprecated call
 	assertSystemAdminProfileExists(db.DB(), result)
 	assertSystemAdminUserExists(db.DB(), result)
 	assertCriticalTablesExist(db.DB(), result)
@@ -131,7 +131,7 @@ func assertSystemFieldsConsistency(db *sql.DB, result *AssertionResult) {
 		if len(missing) > 0 {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "SystemFields",
-				Severity:    "error",
+				Severity:    constants.SeverityError,
 				Object:      tableName,
 				Description: fmt.Sprintf("Table '%s' missing system fields in metadata: %s", tableName, strings.Join(missing, ", ")),
 			})
@@ -171,7 +171,7 @@ func assertNoDuplicateActions(db *sql.DB, result *AssertionResult) {
 		if err := rows.Scan(&objectName, &actionName, &count); err == nil {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "DuplicateAction",
-				Severity:    "error",
+				Severity:    constants.SeverityError,
 				Object:      objectName,
 				Description: fmt.Sprintf("Object '%s' has %d duplicate actions named '%s'", objectName, count, actionName),
 			})
@@ -212,7 +212,7 @@ func assertNoDuplicateFlows(db *sql.DB, result *AssertionResult) {
 		if err := rows.Scan(&objectName, &triggerType, &count); err == nil {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "DuplicateFlow",
-				Severity:    "warning",
+				Severity:    constants.SeverityWarning,
 				Object:      objectName,
 				Description: fmt.Sprintf("Object '%s' has %d active flows with trigger '%s'", objectName, count, triggerType),
 			})
@@ -253,7 +253,7 @@ func assertNoOrphanedSharingRules(db *sql.DB, result *AssertionResult) {
 		if err := rows.Scan(&ruleID, &ruleName, &groupID); err == nil {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "OrphanedSharingRule",
-				Severity:    "warning",
+				Severity:    constants.SeverityWarning,
 				Object:      ruleName,
 				Description: fmt.Sprintf("Sharing rule '%s' references non-existent group '%s'", ruleName, groupID),
 			})
@@ -282,14 +282,14 @@ func assertDefaultAppExists(db *sql.DB, result *AssertionResult) {
 		if count == 0 {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "MissingData",
-				Severity:    "warning",
+				Severity:    constants.SeverityWarning,
 				Object:      constants.TableApp,
 				Description: "No applications defined. System will be unusable.",
 			})
 		} else {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "Configuration",
-				Severity:    "warning",
+				Severity:    constants.SeverityWarning,
 				Object:      constants.TableApp,
 				Description: "No default application set.",
 			})
@@ -311,38 +311,10 @@ func assertDefaultThemeExists(db *sql.DB, result *AssertionResult) {
 	if count == 0 {
 		result.Violations = append(result.Violations, AssertionViolation{
 			Category:    "MissingData",
-			Severity:    "warning",
+			Severity:    constants.SeverityWarning,
 			Object:      constants.TableTheme,
 			Description: "No themes defined. UI will not load correctly.",
 		})
-	}
-}
-
-// assertStandardActionsExist checks that core objects have minimal actions
-func assertStandardActionsExist(db *sql.DB, result *AssertionResult) {
-	log.Println("   📋 Checking for standard actions...")
-
-	coreObjects := []string{} // Standard objects are now purely meta-driven
-	requiredActions := []string{"Edit", "Delete"}
-
-	for _, obj := range coreObjects {
-		for _, action := range requiredActions {
-			var count int
-			query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE object_api_name = ? AND name = ?", constants.TableAction)
-			err := db.QueryRow(query, obj, action).Scan(&count)
-			if err != nil {
-				continue
-			}
-
-			if count == 0 {
-				result.Violations = append(result.Violations, AssertionViolation{
-					Category:    "MissingAction",
-					Severity:    "warning",
-					Object:      obj,
-					Description: fmt.Sprintf("Standard object '%s' is missing '%s' action.", obj, action),
-				})
-			}
-		}
 	}
 }
 
@@ -360,7 +332,7 @@ func assertSystemAdminProfileExists(db *sql.DB, result *AssertionResult) {
 	if count == 0 {
 		result.Violations = append(result.Violations, AssertionViolation{
 			Category:    "MissingSystemData",
-			Severity:    "error",
+			Severity:    constants.SeverityError,
 			Object:      constants.TableProfile,
 			Description: fmt.Sprintf("Critical: System Admin profile '%s' is missing.", constants.ProfileSystemAdmin),
 		})
@@ -381,7 +353,7 @@ func assertSystemAdminUserExists(db *sql.DB, result *AssertionResult) {
 	if count == 0 {
 		result.Violations = append(result.Violations, AssertionViolation{
 			Category:    "MissingData",
-			Severity:    "error",
+			Severity:    constants.SeverityError,
 			Object:      constants.TableUser,
 			Description: "No active System Admin users found. You may be locked out.",
 		})
@@ -406,7 +378,7 @@ func assertCriticalTablesExist(db *sql.DB, result *AssertionResult) {
 		if err != nil {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "MissingTable",
-				Severity:    "error",
+				Severity:    constants.SeverityError,
 				Object:      t,
 				Description: fmt.Sprintf("Critical system table '%s' is missing from the database.", t),
 			})

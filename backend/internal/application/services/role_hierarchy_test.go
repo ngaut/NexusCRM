@@ -1,12 +1,14 @@
 package services_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/backend/internal/domain/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/stretchr/testify/require"
 )
 
 // TestRoleHierarchy_ManagerVisibility tests that managers can see records owned by subordinates
@@ -32,67 +34,67 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 	// Clean up any existing test roles
 	cleanupRoles := []string{repRoleID, managerRoleID, vpRoleID, ceoRoleID}
 	for _, roleID := range cleanupRoles {
-		db.Exec("DELETE FROM _System_Role WHERE id = ?", roleID)
+		db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableRole), roleID)
 	}
 
 	// Create roles in reverse order (children first, then parents)
-	_, err = db.Exec("INSERT INTO _System_Role (id, name, description, parent_role_id) VALUES (?, 'CEO', 'Chief Executive Officer', NULL)", ceoRoleID)
-	if err != nil {
-		t.Fatalf("Failed to create CEO role: %v", err)
-	}
-	_, err = db.Exec("INSERT INTO _System_Role (id, name, description, parent_role_id) VALUES (?, 'VP', 'Vice President', ?)", vpRoleID, ceoRoleID)
-	if err != nil {
-		t.Fatalf("Failed to create VP role: %v", err)
-	}
-	_, err = db.Exec("INSERT INTO _System_Role (id, name, description, parent_role_id) VALUES (?, 'Manager', 'Sales Manager', ?)", managerRoleID, vpRoleID)
-	if err != nil {
-		t.Fatalf("Failed to create Manager role: %v", err)
-	}
-	_, err = db.Exec("INSERT INTO _System_Role (id, name, description, parent_role_id) VALUES (?, 'Rep', 'Sales Representative', ?)", repRoleID, managerRoleID)
-	if err != nil {
-		t.Fatalf("Failed to create Rep role: %v", err)
-	}
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id) VALUES (?, 'CEO', 'Chief Executive Officer', NULL)", constants.TableRole), ceoRoleID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id) VALUES (?, 'VP', 'Vice President', ?)", constants.TableRole), vpRoleID, ceoRoleID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id) VALUES (?, 'Manager', 'Sales Manager', ?)", constants.TableRole), managerRoleID, vpRoleID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id) VALUES (?, 'Rep', 'Sales Representative', ?)", constants.TableRole), repRoleID, managerRoleID)
+	require.NoError(t, err)
 
 	// Refresh role hierarchy cache
 	permService.RefreshRoleHierarchy()
 
 	// Create test users
-	repUserID := "test-user-rep"
-	managerUserID := "test-user-manager"
-	vpUserID := "test-user-vp"
-	ceoUserID := "test-user-ceo"
-	siblingUserID := "test-user-sibling"
+	ceoUserID := "user_ceo"
+	vpUserID := "user_vp"
+	managerUserID := "user_mgr"
+	repUserID := "user_rep1"
+	siblingUserID := "user_rep2" // Sibling user
 
 	// Clean up test users
-	testUsers := []string{repUserID, managerUserID, vpUserID, ceoUserID, siblingUserID}
+	testUsers := []string{ceoUserID, vpUserID, managerUserID, repUserID, siblingUserID}
 	for _, userID := range testUsers {
-		db.Exec("DELETE FROM _System_User WHERE id = ?", userID)
+		db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableUser), userID)
 	}
 
+	profileID := constants.ProfileStandardUser
+
 	// Create users with roles - correct column names
-	_, err = db.Exec("INSERT INTO _System_User (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		repUserID, "rep_user", "rep@test.com", "hash", "Rep", "User", constants.ProfileStandardUser, repRoleID, 1)
-	if err != nil {
-		t.Fatalf("Failed to create rep user: %v", err)
-	}
-	_, err = db.Exec("INSERT INTO _System_User (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		managerUserID, "manager_user", "manager@test.com", "hash", "Manager", "User", constants.ProfileStandardUser, managerRoleID, 1)
-	if err != nil {
-		t.Fatalf("Failed to create manager user: %v", err)
-	}
-	_, err = db.Exec("INSERT INTO _System_User (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		vpUserID, "vp_user", "vp@test.com", "hash", "VP", "User", constants.ProfileStandardUser, vpRoleID, 1)
-	if err != nil {
-		t.Fatalf("Failed to create vp user: %v", err)
-	}
-	_, err = db.Exec("INSERT INTO _System_User (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		ceoUserID, "ceo_user", "ceo@test.com", "hash", "CEO", "User", constants.ProfileStandardUser, ceoRoleID, 1)
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
+		ceoUserID, "ceo_user", "ceo@example.com", "pass", "CEO", "User", profileID, ceoRoleID, 1)
 	if err != nil {
 		t.Fatalf("Failed to create ceo user: %v", err)
 	}
-	// Sibling user (same level as Rep, different manager chain)
-	_, err = db.Exec("INSERT INTO _System_User (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		siblingUserID, "sibling_user", "sibling@test.com", "hash", "Sibling", "User", constants.ProfileStandardUser, repRoleID, 1)
+
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
+		vpUserID, "vp_user", "vp@example.com", "pass", "VP", "User", profileID, vpRoleID, 1)
+	if err != nil {
+		t.Fatalf("Failed to create vp user: %v", err)
+	}
+
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
+		managerUserID, "manager_user", "manager@test.com", "pass", "Manager", "User", profileID, managerRoleID, 1)
+	if err != nil {
+		t.Fatalf("Failed to create manager user: %v", err)
+	}
+
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
+		repUserID, "rep_user", "rep@test.com", "pass", "Rep", "User", profileID, repRoleID, 1)
+	if err != nil {
+		t.Fatalf("Failed to create rep user: %v", err)
+	}
+
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
+		siblingUserID, "sibling_user", "sibling@test.com", "pass", "Sibling", "User", profileID, repRoleID, 1)
 	if err != nil {
 		t.Fatalf("Failed to create sibling user: %v", err)
 	}
@@ -188,10 +190,10 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 
 	// Cleanup
 	for _, userID := range testUsers {
-		db.Exec("DELETE FROM _System_User WHERE id = ?", userID)
+		db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableUser), userID)
 	}
 	for _, roleID := range cleanupRoles {
-		db.Exec("DELETE FROM _System_Role WHERE id = ?", roleID)
+		db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableRole), roleID)
 	}
 
 	t.Log("✅ Role Hierarchy tests completed successfully")

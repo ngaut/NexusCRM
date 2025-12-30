@@ -55,6 +55,8 @@ export function isSystemProfile(profileId: string | undefined): boolean {
 export const SYSTEM_TABLES = {
     OBJECT: '_System_Object',
     FIELD: '_System_Field',
+    RELATIONSHIP: '_System_Relationship',
+    RECORD_TYPE: '_System_RecordType',
     APP: '_System_App',
     TAB: '_System_Tab',
     LAYOUT: '_System_Layout',
@@ -77,6 +79,7 @@ export const SYSTEM_TABLES = {
     ACTION: '_System_Action',
     PROFILE: '_System_Profile',
     ROLE: '_System_Role',
+    USER: '_System_User',
     OBJECT_PERMS: '_System_ObjectPerms',
     FIELD_PERMS: '_System_FieldPerms',
     SHARING_RULE: '_System_SharingRule',
@@ -85,8 +88,7 @@ export const SYSTEM_TABLES = {
     RECENT: '_System_Recent',
     CONFIG: '_System_Config',
     LIMIT: '_System_Limit',
-    PROMPT: '_System_Prompt',
-    USER: '_System_User'
+    PROMPT: '_System_Prompt'
 } as const;
 
 export type SystemTableName = typeof SYSTEM_TABLES[keyof typeof SYSTEM_TABLES];
@@ -95,23 +97,10 @@ export function isSystemTable(objectApiName: string): boolean {
     return objectApiName.startsWith('_System_');
 }
 
-// ==================== Standard Objects ====================
+// ==================== Custom Objects ====================
 
-export const STANDARD_OBJECTS = {
-    LEAD: 'lead',
-    ACCOUNT: 'account',
-    CONTACT: 'contact',
-    OPPORTUNITY: 'opportunity',
-    TASK: 'task',
-    CAMPAIGN: 'campaign',
-    PROJECT: 'project'
-} as const;
-
-export type StandardObjectName = typeof STANDARD_OBJECTS[keyof typeof STANDARD_OBJECTS];
-
-export function isStandardObject(objectApiName: string): boolean {
-    return Object.values(STANDARD_OBJECTS).includes(objectApiName as any);
-}
+// Note: Standard objects (Account, Lead, etc.) are no longer hardcoded.
+// They are created dynamically via the Metadata API as part of the pure meta-driven architecture.
 
 export function isCustomObject(objectApiName: string): boolean {
     return objectApiName.endsWith('__c');
@@ -121,7 +110,6 @@ export function isCustomObject(objectApiName: string): boolean {
 
 export const OBJECT_CATEGORIES = {
     SYSTEM_METADATA: 'system_metadata',
-    BUSINESS_STANDARD: 'business_standard',
     BUSINESS_CUSTOM: 'business_custom',
     SECURITY: 'security',
     UTILITY: 'utility'
@@ -154,10 +142,7 @@ export function getObjectCategory(objectApiName: string): ObjectCategory {
         return OBJECT_CATEGORIES.SYSTEM_METADATA;
     }
 
-    if (isStandardObject(objectApiName)) {
-        return OBJECT_CATEGORIES.BUSINESS_STANDARD;
-    }
-
+    // All non-system objects are now treated as custom business objects
     return OBJECT_CATEGORIES.BUSINESS_CUSTOM;
 }
 
@@ -167,7 +152,7 @@ export const DEFAULTS = {
     userName: 'Unknown',
     userEmail: 'unknown@example.com',
     pageSize: 25,
-    maxPageSize: 200
+    maxPageSize: 1000
 } as const;
 
 // ==================== Field Types ====================
@@ -391,6 +376,8 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeDefinition> = {
         "isSearchable": true,
         "isGroupable": false,
         "isSummable": false,
+        "validationPattern": "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$",
+        "validationMessage": "invalid email format",
         "operators": [
             "equals",
             "not_equals",
@@ -409,6 +396,8 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeDefinition> = {
         "isSearchable": true,
         "isGroupable": false,
         "isSummable": false,
+        "validationPattern": "^\\+?[1-9]\\d{1,14}$",
+        "validationMessage": "invalid phone format",
         "operators": [
             "equals",
             "not_equals",
@@ -426,6 +415,8 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeDefinition> = {
         "isSearchable": true,
         "isGroupable": false,
         "isSummable": false,
+        "validationPattern": "^https?://[^\\s/$.?#].[^\\s]*$",
+        "validationMessage": "invalid URL format",
         "operators": [
             "equals",
             "not_equals",

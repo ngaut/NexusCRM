@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/nexuscrm/backend/internal/application/services"
@@ -51,17 +52,17 @@ func TestSharingRules_Integration(t *testing.T) {
 	marketingUserID := "test-sharing-marketing-user"
 	ownerUserID := "test-sharing-owner"
 
-	_, err = db.Exec("INSERT INTO _System_User (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
 		salesUserID, "sales_test", "sales_test@test.com", "hash", "Sales", "User", constants.ProfileStandardUser, salesRoleID, 1)
 	if err != nil {
 		t.Fatalf("Failed to create sales user: %v", err)
 	}
-	_, err = db.Exec("INSERT INTO _System_User (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
 		marketingUserID, "marketing_test", "marketing_test@test.com", "hash", "Marketing", "User", constants.ProfileStandardUser, marketingRoleID, 1)
 	if err != nil {
 		t.Fatalf("Failed to create marketing user: %v", err)
 	}
-	_, err = db.Exec("INSERT INTO _System_User (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
 		ownerUserID, "owner_test", "owner_test@test.com", "hash", "Owner", "User", constants.ProfileStandardUser, nil, 1)
 	if err != nil {
 		t.Fatalf("Failed to create owner user: %v", err)
@@ -70,7 +71,7 @@ func TestSharingRules_Integration(t *testing.T) {
 	// Create a sharing rule: Share Account records where industry=Technology with Sales role
 	sharingRuleID := "test-sharing-rule-1"
 	criteria := `industry == "Technology"`
-	_, err = db.Exec("INSERT INTO _System_SharingRule (id, object_api_name, name, criteria, access_level, share_with_role_id) VALUES (?, ?, ?, ?, ?, ?)",
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, object_api_name, name, criteria, access_level, share_with_role_id) VALUES (?, ?, ?, ?, ?, ?)", constants.TableSharingRule),
 		sharingRuleID, "Account", "Share Tech Accounts with Sales", criteria, "Read", salesRoleID)
 	if err != nil {
 		t.Fatalf("Failed to create sharing rule: %v", err)

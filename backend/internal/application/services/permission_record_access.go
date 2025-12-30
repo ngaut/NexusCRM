@@ -69,7 +69,7 @@ func (ps *PermissionService) CheckRecordAccess(schema *models.ObjectMetadata, re
 	// 2. Role Hierarchy Check (Read-Only access for managers)
 	// If the user's role is above the record owner's role in the hierarchy,
 	// grant READ access (not edit/delete)
-	if operation == "read" && hasOwner && ownerIDStr != "" {
+	if operation == constants.PermRead && hasOwner && ownerIDStr != "" {
 		ownerRoleID := ps.getRecordOwnerRoleID(ownerIDStr)
 		if ps.isUserAboveInHierarchy(user.RoleID, ownerRoleID) {
 			return true
@@ -155,10 +155,10 @@ func (ps *PermissionService) accessLevelAllowsOperation(accessLevel, operation s
 	operation = strings.ToLower(operation)
 
 	switch accessLevel {
-	case "edit":
-		return operation == "read" || operation == "edit"
-	case "read":
-		return operation == "read"
+	case constants.PermEdit:
+		return operation == constants.PermRead || operation == constants.PermEdit
+	case constants.PermRead:
+		return operation == constants.PermRead
 	default:
 		return false
 	}
