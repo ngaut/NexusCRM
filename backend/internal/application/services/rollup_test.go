@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -105,7 +105,7 @@ func TestRollupSummary_Sum(t *testing.T) {
 		f.IsSystem = false
 		parentBatch[i] = FieldWithContext{
 			ObjectID: parentObjID,
-			FieldID:  fmt.Sprintf("fld_%s_%s", parentName, f.APIName),
+			FieldID:  GenerateFieldID(parentName, f.APIName),
 			Field:    &f,
 		}
 	}
@@ -121,7 +121,7 @@ func TestRollupSummary_Sum(t *testing.T) {
 		f.IsSystem = false
 		childBatch[i] = FieldWithContext{
 			ObjectID: childObjID,
-			FieldID:  fmt.Sprintf("fld_%s_%s", childName, f.APIName),
+			FieldID:  GenerateFieldID(childName, f.APIName),
 			Field:    &f,
 		}
 	}
@@ -135,7 +135,7 @@ func TestRollupSummary_Sum(t *testing.T) {
 	invoiceData := models.SObject{"total_amount": 0, "name": "Invoice 001"}
 	invoice, err := ps.Insert(ctx, parentName, invoiceData, adminUser)
 	require.NoError(t, err)
-	invoiceID := invoice["id"].(string)
+	invoiceID := invoice[constants.FieldID].(string)
 
 	checkInvoice := func(expected float64) {
 		// Wait for async? No, rollup is synchronous in current implementation if transactional.
@@ -166,7 +166,7 @@ func TestRollupSummary_Sum(t *testing.T) {
 	// Update Item 1 ($100 -> $200) - need ID
 	item3, err := ps.Insert(ctx, childName, models.SObject{"amount": 25, "invoice_id": invoiceID, "name": "Item 3"}, adminUser)
 	require.NoError(t, err)
-	item3ID := item3["id"].(string)
+	item3ID := item3[constants.FieldID].(string)
 	checkInvoice(175)
 
 	// Update Item 3 ($25 -> $125)
@@ -184,7 +184,7 @@ func TestRollupSummary_Sum(t *testing.T) {
 	invoice2Data := models.SObject{"total_amount": 0, "name": "Invoice 002"}
 	invoice2, err := ps.Insert(ctx, parentName, invoice2Data, adminUser)
 	require.NoError(t, err)
-	invoice2ID := invoice2["id"].(string)
+	invoice2ID := invoice2[constants.FieldID].(string)
 
 	checkInvoice2 := func(expected float64) {
 		var val float64
@@ -200,7 +200,7 @@ func TestRollupSummary_Sum(t *testing.T) {
 	// For simplicity, let's create a NEW Item 4 ($75) on Invoice 1
 	item4, err := ps.Insert(ctx, childName, models.SObject{"amount": 75, "invoice_id": invoiceID, "name": "Item 4"}, adminUser)
 	require.NoError(t, err)
-	item4ID := item4["id"].(string)
+	item4ID := item4[constants.FieldID].(string)
 
 	// Invoice 1 should be 150 + 75 = 225
 	checkInvoice(225) // FAILS IF REPARENTING BROKEN? No, this is insert.

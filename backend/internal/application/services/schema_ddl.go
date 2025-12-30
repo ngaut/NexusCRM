@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/nexuscrm/backend/internal/domain/schema"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/formula"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // buildColumnDDL generates DDL for a single column
@@ -20,7 +20,7 @@ func (sm *SchemaManager) buildColumnDDL(col schema.ColumnDefinition) string {
 		sqlType := sm.MapFieldTypeToSQL(col.ReturnType)
 		if sqlType == "" || sqlType == "VARCHAR(255)" {
 			// Default to DECIMAL for numeric formulas, or VARCHAR for text
-			if col.ReturnType == "" || col.ReturnType == "Number" || col.ReturnType == "Currency" || col.ReturnType == "Percent" {
+			if col.ReturnType == "" || col.ReturnType == string(constants.FieldTypeNumber) || col.ReturnType == string(constants.FieldTypeCurrency) || col.ReturnType == string(constants.FieldTypePercent) {
 				sqlType = "DECIMAL(18,6)"
 			}
 		}

@@ -6,9 +6,58 @@ import (
 	"log"
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
+
+var objectColumns = []string{
+	constants.FieldID,
+	constants.FieldAPIName,
+	constants.FieldLabel,
+	constants.FieldPluralLabel,
+	constants.FieldSysObject_Icon,
+	constants.FieldDescription,
+	constants.FieldIsCustom,
+	constants.FieldSysObject_PathField,
+	constants.FieldSysObject_ListFields,
+	constants.FieldSysObject_AppID,
+	constants.FieldSysObject_ThemeColor,
+}
+
+var fieldColumns = []string{
+	constants.FieldID,
+	constants.FieldObjectID,
+	constants.FieldAPIName,
+	constants.FieldLabel,
+	"`" + constants.FieldMetaType + "`",
+	constants.FieldIsRequired,
+	"`" + constants.FieldIsUnique + "`",
+	constants.FieldIsSystem,
+	constants.FieldSysField_IsNameField,
+	"`" + constants.FieldSysField_Options + "`",
+	constants.FieldReferenceTo,
+	constants.FieldSysField_DeleteRule,
+	constants.FieldSysField_IsMasterDetail,
+	constants.FieldSysField_RelationshipName,
+	constants.FieldSysField_Formula,
+	constants.FieldSysField_ReturnType,
+	constants.FieldSysField_DefaultValue,
+	constants.FieldSysField_HelpText,
+	constants.FieldDescription,
+	constants.FieldSysField_TrackHistory,
+	constants.FieldSysField_MinValue,
+	constants.FieldSysField_MaxValue,
+	constants.FieldSysField_MinLength,
+	constants.FieldSysField_MaxLength,
+	constants.FieldSysField_Regex,
+	constants.FieldSysField_RegexMessage,
+	constants.FieldSysField_Validator,
+	constants.FieldSysField_ControllingField,
+	constants.FieldSysField_PicklistDependency,
+	constants.FieldSysField_RollupConfig,
+	constants.FieldCreatedDate,
+	constants.FieldLastModifiedDate,
+}
 
 // scanObject scans a row into an ObjectMetadata struct
 func (ms *MetadataService) scanObject(row Scannable) (*models.ObjectMetadata, error) {
@@ -54,7 +103,7 @@ func (ms *MetadataService) scanObject(row Scannable) (*models.ObjectMetadata, er
 // querySchemaByAPIName queries a single schema from the database by API name
 func (ms *MetadataService) querySchemaByAPIName(apiName string) (*models.ObjectMetadata, error) {
 	// Query the object
-	objectQuery := fmt.Sprintf("SELECT id, api_name, label, plural_label, icon, description, is_custom, path_field, list_fields, app_id, theme_color FROM %s WHERE api_name = ?", constants.TableObject)
+	objectQuery := fmt.Sprintf("SELECT %s FROM %s WHERE api_name = ?", strings.Join(objectColumns, ", "), constants.TableObject)
 	row := ms.db.QueryRow(objectQuery, apiName)
 
 	obj, err := ms.scanObject(row)
@@ -77,7 +126,7 @@ func (ms *MetadataService) querySchemaByAPIName(apiName string) (*models.ObjectM
 // queryAllSchemas queries all schemas from the database
 func (ms *MetadataService) queryAllSchemas() ([]*models.ObjectMetadata, error) {
 	// Query all objects
-	objectQuery := fmt.Sprintf("SELECT id, api_name, label, plural_label, icon, description, is_custom, path_field, list_fields, app_id, theme_color FROM %s", constants.TableObject)
+	objectQuery := fmt.Sprintf("SELECT %s FROM %s", strings.Join(objectColumns, ", "), constants.TableObject)
 	rows, err := ms.db.Query(objectQuery)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query objects: %w", err)
@@ -100,17 +149,7 @@ func (ms *MetadataService) queryAllSchemas() ([]*models.ObjectMetadata, error) {
 	}
 
 	// Load all fields
-	fieldQuery := fmt.Sprintf(`
-		SELECT 
-			id, object_id, api_name, label, `+"`type`"+`, 
-			required, `+"`unique`"+`, is_system, is_name_field, `+"`options`"+`, 
-			reference_to, delete_rule, is_master_detail, relationship_name, formula, return_type, default_value, 
-			help_text, description, track_history, min_value, max_value, 
-			min_length, max_length, regex, regex_message, validator, 
-			controlling_field, picklist_dependency, rollup_config, 
-			created_date, last_modified_date 
-		FROM %s
-	`, constants.TableField)
+	fieldQuery := fmt.Sprintf("SELECT %s FROM %s", strings.Join(fieldColumns, ", "), constants.TableField)
 	fieldRows, err := ms.db.Query(fieldQuery)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query fields: %w", err)
@@ -135,18 +174,7 @@ func (ms *MetadataService) queryAllSchemas() ([]*models.ObjectMetadata, error) {
 
 // queryFieldsForObject queries all fields for a specific object
 func (ms *MetadataService) queryFieldsForObject(objectID string) ([]models.FieldMetadata, error) {
-	fieldQuery := fmt.Sprintf(`
-		SELECT 
-			id, object_id, api_name, label, `+"`type`"+`, 
-			required, `+"`unique`"+`, is_system, is_name_field, `+"`options`"+`, 
-			reference_to, delete_rule, is_master_detail, relationship_name, formula, return_type, default_value, 
-			help_text, description, track_history, min_value, max_value, 
-			min_length, max_length, regex, regex_message, validator, 
-			controlling_field, picklist_dependency, rollup_config, 
-			created_date, last_modified_date 
-		FROM %s
-		WHERE object_id = ?
-	`, constants.TableField)
+	fieldQuery := fmt.Sprintf("SELECT %s FROM %s WHERE object_id = ?", strings.Join(fieldColumns, ", "), constants.TableField)
 
 	rows, err := ms.db.Query(fieldQuery, objectID)
 	if err != nil {

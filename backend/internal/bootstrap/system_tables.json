@@ -866,18 +866,19 @@
                 "primaryKey": true
             },
             {
-                "name": "field_id",
+                "name": "object_api_name",
                 "type": "VARCHAR(255)",
-                "nullable": false,
-                "unique": true
+                "nullable": false
             },
             {
-                "name": "prefix",
-                "type": "VARCHAR(50)"
+                "name": "field_api_name",
+                "type": "VARCHAR(255)",
+                "nullable": false
             },
             {
-                "name": "suffix",
-                "type": "VARCHAR(50)"
+                "name": "display_format",
+                "type": "VARCHAR(255)",
+                "nullable": false
             },
             {
                 "name": "starting_number",
@@ -889,7 +890,7 @@
                 "name": "current_number",
                 "type": "INT",
                 "nullable": false,
-                "default": "1"
+                "default": "0"
             },
             {
                 "name": "created_date",
@@ -904,11 +905,13 @@
                 "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
             }
         ],
-        "foreignKeys": [
+        "indices": [
             {
-                "column": "field_id",
-                "references": "_System_Field(id)",
-                "onDelete": "CASCADE"
+                "columns": [
+                    "object_api_name",
+                    "field_api_name"
+                ],
+                "unique": true
             }
         ]
     },

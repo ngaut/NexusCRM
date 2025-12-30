@@ -1,4 +1,6 @@
 import { apiClient } from './client';
+import { API_ENDPOINTS } from './endpoints';
+import { COMMON_FIELDS } from '../../core/constants';
 import type { SObject } from '../../types';
 
 // ============================================================================
@@ -6,13 +8,13 @@ import type { SObject } from '../../types';
 // ============================================================================
 
 export interface ApprovalWorkItem {
-    id: string;
-    process_id: string;
-    object_api_name: string;
-    record_id: string;
+    [COMMON_FIELDS.ID]: string;
+    [COMMON_FIELDS.PROCESS_ID]: string;
+    [COMMON_FIELDS.OBJECT_API_NAME]: string;
+    [COMMON_FIELDS.RECORD_ID]: string;
     status: 'Pending' | 'Approved' | 'Rejected';
     submitted_by_id: string;
-    submitted_date: string;
+    [COMMON_FIELDS.SUBMITTED_DATE]: string;
     approver_id?: string;
     approved_by_id?: string;
     approved_date?: string;
@@ -53,7 +55,7 @@ export const approvalsAPI = {
      * Submit a record for approval
      */
     async submit(request: SubmitApprovalRequest): Promise<SubmitApprovalResponse> {
-        return apiClient.post<SubmitApprovalResponse>('/api/approvals/submit', request);
+        return apiClient.post<SubmitApprovalResponse>(API_ENDPOINTS.APPROVALS.SUBMIT, request);
     },
 
     /**
@@ -61,7 +63,7 @@ export const approvalsAPI = {
      */
     async approve(workItemId: string, comments?: string): Promise<ApprovalActionResponse> {
         return apiClient.post<ApprovalActionResponse>(
-            `/api/approvals/${encodeURIComponent(workItemId)}/approve`,
+            API_ENDPOINTS.APPROVALS.APPROVE(workItemId),
             { comments }
         );
     },
@@ -71,7 +73,7 @@ export const approvalsAPI = {
      */
     async reject(workItemId: string, comments?: string): Promise<ApprovalActionResponse> {
         return apiClient.post<ApprovalActionResponse>(
-            `/api/approvals/${encodeURIComponent(workItemId)}/reject`,
+            API_ENDPOINTS.APPROVALS.REJECT(workItemId),
             { comments }
         );
     },
@@ -81,7 +83,7 @@ export const approvalsAPI = {
      */
     async getPending(): Promise<ApprovalWorkItem[]> {
         const response = await apiClient.get<{ work_items: ApprovalWorkItem[] }>(
-            '/api/approvals/pending'
+            API_ENDPOINTS.APPROVALS.PENDING
         );
         return response.work_items || [];
     },
@@ -91,7 +93,7 @@ export const approvalsAPI = {
      */
     async getHistory(objectApiName: string, recordId: string): Promise<ApprovalWorkItem[]> {
         const response = await apiClient.get<{ work_items: ApprovalWorkItem[] }>(
-            `/api/approvals/history/${encodeURIComponent(objectApiName)}/${encodeURIComponent(recordId)}`
+            API_ENDPOINTS.APPROVALS.HISTORY(objectApiName, recordId)
         );
         return response.work_items || [];
     },
@@ -102,7 +104,7 @@ export const approvalsAPI = {
     async getFlowInstanceProgress(flowInstanceId: string): Promise<FlowInstanceProgress | null> {
         try {
             const response = await apiClient.get<FlowInstanceProgress>(
-                `/api/approvals/flow-progress/${encodeURIComponent(flowInstanceId)}`
+                API_ENDPOINTS.APPROVALS.FLOW_PROGRESS(flowInstanceId)
             );
             return response;
         } catch {
@@ -117,7 +119,7 @@ export const approvalsAPI = {
     async hasProcessForObject(objectApiName: string): Promise<boolean> {
         try {
             const response = await apiClient.get<{ has_process: boolean; process_name?: string }>(
-                `/api/approvals/check/${encodeURIComponent(objectApiName)}`
+                API_ENDPOINTS.APPROVALS.CHECK(objectApiName)
             );
             return response.has_process ?? false;
         } catch {
@@ -128,19 +130,19 @@ export const approvalsAPI = {
 
 // Flow Instance Progress for multi-step approvals
 export interface FlowInstanceProgress {
-    id: string;
-    flow_id: string;
-    status: 'Running' | 'Paused' | 'Completed' | 'Failed';
-    current_step_id?: string;
+    [COMMON_FIELDS.ID]: string;
+    [COMMON_FIELDS.FLOW_ID]: string;
+    [COMMON_FIELDS.STATUS]: 'Running' | 'Paused' | 'Completed' | 'Failed';
+    [COMMON_FIELDS.CURRENT_STEP_ID]?: string;
     current_step_order?: number;
     total_steps?: number;
     steps?: FlowStepProgress[];
 }
 
 export interface FlowStepProgress {
-    id: string;
-    step_order: number;
-    step_name: string;
-    step_type: 'action' | 'approval' | 'decision';
-    status: 'pending' | 'completed' | 'current' | 'skipped';
+    [COMMON_FIELDS.ID]: string;
+    [COMMON_FIELDS.STEP_ORDER]: number;
+    [COMMON_FIELDS.STEP_NAME]: string;
+    [COMMON_FIELDS.STEP_TYPE]: 'action' | 'approval' | 'decision';
+    [COMMON_FIELDS.STATUS]: 'pending' | 'completed' | 'current' | 'skipped';
 }

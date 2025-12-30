@@ -3,6 +3,7 @@ import { useErrorToast } from './ui/Toast';
 import { DndContext, DragOverlay, useDraggable, useDroppable, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { ObjectMetadata, SObject } from '../types';
+import { COMMON_FIELDS } from '../core/constants';
 
 interface KanbanBoardProps {
     objectMetadata: ObjectMetadata;
@@ -25,7 +26,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const [activeId, setActiveId] = useState<string | null>(null);
 
     // Determine Group By Field
-    const groupByField = propGroupBy || objectMetadata.kanban_group_by || 'status';
+    const groupByField = propGroupBy || objectMetadata.kanban_group_by || COMMON_FIELDS.STATUS;
 
     // Get Columns
     const { columns, groupedRecords } = useMemo(() => {
@@ -71,7 +72,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         const newStatus = over.id as string;
 
         // Find record
-        const record = records.find(r => r.id === recordId);
+        const record = records.find(r => (r[COMMON_FIELDS.ID] as string) === recordId);
         if (!record) return;
 
         const currentStatus = String(record[groupByField] || 'Unassigned');
@@ -97,7 +98,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         );
     }
 
-    const activeRecord = activeId ? records.find(r => r.id === activeId) : null;
+    const activeRecord = activeId ? records.find(r => (r[COMMON_FIELDS.ID] as string) === activeId) : null;
 
     return (
         <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -153,7 +154,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, records, objectM
             <div className="p-2 flex-1 overflow-y-auto space-y-2 min-h-[100px]">
                 {records.map(record => (
                     <DraggableKanbanCard
-                        key={record.id as string}
+                        key={record[COMMON_FIELDS.ID] as string}
                         record={record}
                         objectMetadata={objectMetadata}
                         onClick={() => onRecordClick && onRecordClick(record)}
@@ -177,7 +178,7 @@ interface KanbanCardProps {
 }
 
 const KanbanCard: React.FC<KanbanCardProps> = ({ record, objectMetadata, onClick, isOverlay }) => {
-    const nameField = objectMetadata.fields?.find(f => f.is_name_field)?.api_name || 'name';
+    const nameField = objectMetadata.fields?.find(f => f.is_name_field)?.api_name || COMMON_FIELDS.NAME;
 
     // Find some secondary fields to show (e.g. priority, type, owner)
     // Priority 1: Priority
@@ -214,7 +215,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ record, objectMetadata, onClick
             </div>
 
             <div className="mt-3 pt-2 border-t border-slate-50 flex justify-between items-center">
-                <span className="text-[10px] text-slate-400 font-mono">{(record.id as string).substring(0, 6)}</span>
+                <span className="text-[10px] text-slate-400 font-mono">{(record[COMMON_FIELDS.ID] as string).substring(0, 6)}</span>
                 {/* Avatar placeholder? */}
             </div>
         </div>
@@ -223,7 +224,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ record, objectMetadata, onClick
 
 const DraggableKanbanCard: React.FC<KanbanCardProps & { record: SObject }> = (props) => {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-        id: props.record.id as string,
+        id: props.record[COMMON_FIELDS.ID] as string,
     });
 
     if (isDragging) {

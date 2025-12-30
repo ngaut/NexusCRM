@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/nexuscrm/backend/internal/application/services"
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // TestSharingRules tests that sharing rules grant access to matching records
@@ -84,15 +84,15 @@ func TestSharingRules_Integration(t *testing.T) {
 
 	// Test records
 	techRecord := models.SObject{
-		"id":       "test-record-tech",
-		"owner_id": ownerUserID,
-		"industry": "Technology",
+		constants.FieldID:      "test-record-tech",
+		constants.FieldOwnerID: ownerUserID,
+		"industry":             "Technology",
 	}
 
 	nonTechRecord := models.SObject{
-		"id":       "test-record-finance",
-		"owner_id": ownerUserID,
-		"industry": "Finance",
+		constants.FieldID:      "test-record-finance",
+		constants.FieldOwnerID: ownerUserID,
+		"industry":             "Finance",
 	}
 
 	// Test cases
@@ -102,7 +102,7 @@ func TestSharingRules_Integration(t *testing.T) {
 			ProfileID: constants.ProfileStandardUser,
 			RoleID:    &salesRoleID,
 		}
-		if !permService.CheckRecordAccess(schema, techRecord, "read", salesSession) {
+		if !permService.CheckRecordAccess(schema, techRecord, constants.PermRead, salesSession) {
 			t.Error("Sales user should be able to read Tech record via sharing rule")
 		}
 	})
@@ -113,7 +113,7 @@ func TestSharingRules_Integration(t *testing.T) {
 			ProfileID: constants.ProfileStandardUser,
 			RoleID:    &salesRoleID,
 		}
-		if permService.CheckRecordAccess(schema, nonTechRecord, "read", salesSession) {
+		if permService.CheckRecordAccess(schema, nonTechRecord, constants.PermRead, salesSession) {
 			t.Error("Sales user should NOT be able to read Finance record (criteria doesn't match)")
 		}
 	})
@@ -124,7 +124,7 @@ func TestSharingRules_Integration(t *testing.T) {
 			ProfileID: constants.ProfileStandardUser,
 			RoleID:    &marketingRoleID,
 		}
-		if permService.CheckRecordAccess(schema, techRecord, "read", marketingSession) {
+		if permService.CheckRecordAccess(schema, techRecord, constants.PermRead, marketingSession) {
 			t.Error("Marketing user should NOT be able to read Tech record (not in Sales role)")
 		}
 	})
@@ -135,7 +135,7 @@ func TestSharingRules_Integration(t *testing.T) {
 			ProfileID: constants.ProfileStandardUser,
 			RoleID:    &salesRoleID,
 		}
-		if permService.CheckRecordAccess(schema, techRecord, "edit", salesSession) {
+		if permService.CheckRecordAccess(schema, techRecord, constants.PermEdit, salesSession) {
 			t.Error("Sales user should NOT be able to edit Tech record (Read access only)")
 		}
 	})
@@ -155,10 +155,10 @@ func TestSharingRules_Integration(t *testing.T) {
 			RoleID:    &marketingRoleID,
 		}
 		// Both tech and non-tech records should be editable
-		if !permService.CheckRecordAccess(schema, techRecord, "edit", marketingSession) {
+		if !permService.CheckRecordAccess(schema, techRecord, constants.PermEdit, marketingSession) {
 			t.Error("Marketing user should be able to edit Tech record (Edit access)")
 		}
-		if !permService.CheckRecordAccess(schema, nonTechRecord, "read", marketingSession) {
+		if !permService.CheckRecordAccess(schema, nonTechRecord, constants.PermRead, marketingSession) {
 			t.Error("Marketing user should be able to read Finance record (Edit grants read too)")
 		}
 	})

@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/nexuscrm/backend/internal/domain/events"
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/domain/ports"
 	"github.com/nexuscrm/backend/pkg/auth"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -124,8 +124,8 @@ func TestFlowExecutor_PasswordHashing(t *testing.T) {
 				Name:          "Test_Password_Hash",
 				Status:        constants.FlowStatusActive,
 				TriggerObject: constants.TableUser,
-				TriggerType:   "beforeCreate",
-				ActionType:    "UpdateRecord",
+				TriggerType:   constants.TriggerBeforeCreate,
+				ActionType:    constants.ActionTypeUpdateRecord,
 				ActionConfig: map[string]interface{}{
 					"field_mappings": map[string]interface{}{
 						"password": "=BCRYPT(password)",
@@ -142,10 +142,10 @@ func TestFlowExecutor_PasswordHashing(t *testing.T) {
 	t.Run("Should hash password on beforeCreate", func(t *testing.T) {
 		rawPassword := "SecurePass123!"
 		userRecord := models.SObject{
-			"id":       "user-1",
-			"name":     "Test User",
-			"email":    "test@example.com",
-			"password": rawPassword,
+			constants.FieldID:       "user-1",
+			constants.FieldName:     "Test User",
+			constants.FieldEmail:    "test@example.com",
+			constants.FieldPassword: rawPassword,
 		}
 
 		payload := RecordEventPayload{
@@ -172,15 +172,15 @@ func TestFlowExecutor_HighPriorityAlert(t *testing.T) {
 				Name:             "High Priority Alert",
 				Status:           constants.FlowStatusActive,
 				TriggerObject:    "Ticket",
-				TriggerType:      "afterCreate",
+				TriggerType:      constants.TriggerAfterCreate,
 				TriggerCondition: `priority == "High"`,
-				ActionType:       "createRecord",
+				ActionType:       constants.ActionTypeCreateRecord,
 				ActionConfig: map[string]interface{}{
 					constants.ConfigTargetObject: "Ticket",
 					constants.ConfigFieldMappings: map[string]interface{}{
-						"name":     "URGENT: Alert",
-						"priority": "Medium",
-						"status":   "New",
+						constants.FieldName:     "URGENT: Alert",
+						constants.FieldPriority: "Medium",
+						constants.FieldStatus:   "New",
 					},
 				},
 			},
@@ -208,9 +208,9 @@ func TestFlowExecutor_HighPriorityAlert(t *testing.T) {
 		payload := RecordEventPayload{
 			ObjectAPIName: "Ticket",
 			Record: models.SObject{
-				"id":       "ticket-1",
-				"priority": "High",
-				"name":     "Crash",
+				constants.FieldID:       "ticket-1",
+				constants.FieldPriority: "High",
+				constants.FieldName:     "Crash",
 			},
 			CurrentUser: &models.UserSession{ID: "admin"},
 		}
@@ -228,9 +228,9 @@ func TestFlowExecutor_HighPriorityAlert(t *testing.T) {
 		payload := RecordEventPayload{
 			ObjectAPIName: "Ticket",
 			Record: models.SObject{
-				"id":       "ticket-2",
-				"priority": "Low",
-				"name":     "Minor bug",
+				constants.FieldID:   "ticket-2",
+				"priority":          "Low",
+				constants.FieldName: "Minor bug",
 			},
 			CurrentUser: &models.UserSession{ID: "admin"},
 		}

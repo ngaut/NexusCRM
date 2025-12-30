@@ -5,9 +5,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // AddColumn adds a column to the table and registers it
@@ -110,7 +110,7 @@ func (sm *SchemaManager) DropColumn(tableName string, columnName string) error {
 	}
 
 	// 2. Unregister from _System_Field
-	fieldID := fmt.Sprintf("fld_%s_%s", tableName, columnName)
+	fieldID := GenerateFieldID(tableName, columnName)
 	query := fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableField)
 	if _, err := sm.db.Exec(query, fieldID); err != nil {
 		log.Printf("⚠️  Warning: Failed to unregister field %s: %v", fieldID, err)
@@ -126,7 +126,7 @@ func (sm *SchemaManager) registerField(tableName string, col schema.ColumnDefini
 		exec = sm.db
 	}
 	objectID := GenerateObjectID(tableName)
-	fieldID := fmt.Sprintf("fld_%s_%s", tableName, col.Name)
+	fieldID := GenerateFieldID(tableName, col.Name)
 
 	// Determine Field Type
 	fieldType := sm.mapSQLTypeToLogical(col.Type)

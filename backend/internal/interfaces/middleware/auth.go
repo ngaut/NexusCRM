@@ -14,7 +14,7 @@ import (
 func RequireAuth(authSvc *services.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get token from Authorization header
-		authHeader := c.GetHeader("Authorization")
+		authHeader := c.GetHeader(constants.HeaderAuthorization)
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				constants.ResponseError: "Unauthorized",
@@ -54,7 +54,7 @@ func RequireAuth(authSvc *services.AuthService) gin.HandlerFunc {
 		authSvc.TouchSession(claims.RegisteredClaims.ID)
 
 		// Set user session in context
-		c.Set("user", claims.User)
+		c.Set(constants.ContextKeyUser, claims.User)
 		c.Set("token", tokenString)
 
 		c.Next()
@@ -64,7 +64,7 @@ func RequireAuth(authSvc *services.AuthService) gin.HandlerFunc {
 // RequireSystemAdmin checks if the user is a system administrator
 func RequireSystemAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userInterface, exists := c.Get("user")
+		userInterface, exists := c.Get(constants.ContextKeyUser)
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				constants.ResponseError: "Unauthorized",

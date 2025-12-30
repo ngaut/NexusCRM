@@ -1,4 +1,6 @@
 import { apiClient } from './client';
+import { API_ENDPOINTS } from './endpoints';
+import { COMMON_FIELDS } from '../../core/constants';
 import type { SObject, SearchResult, AnalyticsQuery, RecycleBinItem } from '../../types';
 
 export interface QueryRequest {
@@ -15,14 +17,14 @@ export const dataAPI = {
    */
   async query<T = SObject>(request: QueryRequest): Promise<T[]> {
     const payload = {
-      object_api_name: request.objectApiName,
+      [COMMON_FIELDS.OBJECT_API_NAME]: request.objectApiName,
       filter_expr: request.filterExpr,
       sort_field: request.sortField,
       sort_direction: request.sortDirection,
       limit: request.limit,
     };
     const response = await apiClient.post<{ records: T[] }>(
-      '/api/data/query',
+      API_ENDPOINTS.DATA.QUERY,
       payload
     );
     return response.records;
@@ -33,7 +35,7 @@ export const dataAPI = {
    */
   async search(term: string): Promise<SearchResult[]> {
     const response = await apiClient.post<{ results: SearchResult[] }>(
-      '/api/data/search',
+      API_ENDPOINTS.DATA.SEARCH,
       { term }
     );
     return response.results;
@@ -44,7 +46,7 @@ export const dataAPI = {
    */
   async searchSingleObject<T = SObject>(objectApiName: string, term: string): Promise<T[]> {
     const response = await apiClient.get<{ records: T[] }>(
-      `/api/data/search/${encodeURIComponent(objectApiName)}?term=${encodeURIComponent(term)}`
+      `${API_ENDPOINTS.DATA.SEARCH_OBJECT(objectApiName)}?term=${encodeURIComponent(term)}`
     );
     return response.records;
   },
@@ -54,7 +56,7 @@ export const dataAPI = {
    */
   async getRecord<T = SObject>(objectApiName: string, id: string): Promise<T> {
     const response = await apiClient.get<{ record: T }>(
-      `/api/data/${encodeURIComponent(objectApiName)}/${encodeURIComponent(id)}`
+      API_ENDPOINTS.DATA.RECORD(objectApiName, id)
     );
     return response.record;
   },
@@ -62,9 +64,9 @@ export const dataAPI = {
   /**
    * Create a new record
    */
-  async createRecord<T = SObject>(objectApiName: string, data: Partial<T>): Promise<T & { id: string }> {
-    const response = await apiClient.post<{ record: T & { id: string } }>(
-      `/api/data/${encodeURIComponent(objectApiName)}`,
+  async createRecord<T = SObject>(objectApiName: string, data: Partial<T>): Promise<T & { [COMMON_FIELDS.ID]: string }> {
+    const response = await apiClient.post<{ record: T & { [COMMON_FIELDS.ID]: string } }>(
+      API_ENDPOINTS.DATA.RECORDS(objectApiName),
       data
     );
     return response.record;
@@ -75,7 +77,7 @@ export const dataAPI = {
    */
   async updateRecord(objectApiName: string, id: string, updates: Partial<SObject>): Promise<void> {
     await apiClient.patch(
-      `/api/data/${encodeURIComponent(objectApiName)}/${encodeURIComponent(id)}`,
+      API_ENDPOINTS.DATA.RECORD(objectApiName, id),
       updates
     );
   },
@@ -85,7 +87,7 @@ export const dataAPI = {
    */
   async deleteRecord(objectApiName: string, id: string): Promise<void> {
     await apiClient.delete(
-      `/api/data/${encodeURIComponent(objectApiName)}/${encodeURIComponent(id)}`
+      API_ENDPOINTS.DATA.RECORD(objectApiName, id)
     );
   },
 
@@ -93,7 +95,7 @@ export const dataAPI = {
    * Get recycle bin items
    */
   async getRecycleBinItems(scope: 'mine' | 'all' = 'mine'): Promise<RecycleBinItem[]> {
-    const response = await apiClient.get<{ items: RecycleBinItem[] }>(`/api/data/recyclebin/items?scope=${scope}`);
+    const response = await apiClient.get<{ items: RecycleBinItem[] }>(`${API_ENDPOINTS.DATA.RECYCLE_BIN}?scope=${scope}`);
     return response.items;
   },
 

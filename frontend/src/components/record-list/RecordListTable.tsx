@@ -1,6 +1,7 @@
 import React from 'react';
 import { SObject, FieldMetadata, ObjectMetadata } from '../../types';
 import { UIRegistry } from '../../registries/UIRegistry';
+import { COMMON_FIELDS } from '../../core/constants';
 
 interface RecordListTableProps {
     records: SObject[];
@@ -64,7 +65,7 @@ export const RecordListTable: React.FC<RecordListTableProps> = ({
                     <tbody className="divide-y divide-gray-100">
                         {records.map(record => (
                             <tr
-                                key={record.id}
+                                key={record[COMMON_FIELDS.ID] as string}
                                 className="hover:bg-gray-50 cursor-pointer transition-colors"
                                 onClick={() => handleRecordClick(record)}
                             >
@@ -74,8 +75,8 @@ export const RecordListTable: React.FC<RecordListTableProps> = ({
                                 >
                                     <input
                                         type="checkbox"
-                                        checked={selectedRecords.has(record.id)}
-                                        onChange={() => toggleSelectRecord(record.id)}
+                                        checked={selectedRecords.has(record[COMMON_FIELDS.ID] as string)}
+                                        onChange={() => toggleSelectRecord(record[COMMON_FIELDS.ID] as string)}
                                         className="rounded border-gray-300"
                                     />
                                 </td>

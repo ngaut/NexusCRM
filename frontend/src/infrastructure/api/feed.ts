@@ -1,14 +1,16 @@
 import { apiClient } from './client';
+import { API_ENDPOINTS } from './endpoints';
+import { COMMON_FIELDS } from '../../core/constants';
 
 export interface SystemComment {
-    id: string;
+    [COMMON_FIELDS.ID]: string;
     body: string;
-    object_api_name: string;
-    record_id: string;
+    [COMMON_FIELDS.OBJECT_API_NAME]: string;
+    [COMMON_FIELDS.RECORD_ID]: string;
     parent_comment_id?: string;
     is_resolved: boolean;
-    created_by: string;
-    created_date: string;
+    [COMMON_FIELDS.CREATED_BY]: string;
+    [COMMON_FIELDS.CREATED_DATE]: string;
 }
 
 export const feedAPI = {
@@ -17,7 +19,7 @@ export const feedAPI = {
      */
     async getComments(recordId: string): Promise<SystemComment[]> {
         const response = await apiClient.get<{ comments: SystemComment[] }>(
-            `/api/feed/${encodeURIComponent(recordId)}`
+            API_ENDPOINTS.FEED.RECORD(recordId)
         );
         return response.comments;
     },
@@ -27,7 +29,7 @@ export const feedAPI = {
      */
     async createComment(comment: Partial<SystemComment>): Promise<SystemComment> {
         const response = await apiClient.post<{ comment: SystemComment }>(
-            '/api/feed/comments',
+            API_ENDPOINTS.FEED.COMMENTS,
             comment
         );
         return response.comment;

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/domain/events"
-	"github.com/nexuscrm/shared/pkg/models"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/query"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ==================== Insert Operations ====================
@@ -61,8 +61,16 @@ func (ps *PersistenceService) Insert(
 		data[k] = v
 	}
 
+	// NOTE: Password hashing for _System_User is handled by Flow 'User_Password_Hash_Create'
+	// Do NOT add redundant hashing here - it will double-hash and break logins.
+
 	// Execute Transactional Work
 	err = ps.RunInTransaction(ctx, func(tx *sql.Tx, txCtx context.Context) error {
+		// Generate AutoNumbers WITHIN transaction to ensure atomicity
+		if err := ps.generateAutoNumbers(txCtx, tx, objectName, data); err != nil {
+			return fmt.Errorf("failed to generate auto-numbers: %w", err)
+		}
+
 		// Publish beforeCreate event (synchronous, can fail transaction)
 		if err := ps.publishRecordEvent(txCtx, events.RecordBeforeCreate, objectName, data, nil, currentUser); err != nil {
 			return err

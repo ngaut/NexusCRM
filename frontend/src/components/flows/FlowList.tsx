@@ -2,6 +2,7 @@ import React from 'react';
 import { Play, Pause, PlayCircle, Edit, Trash2, CheckCircle, Zap, Clock } from 'lucide-react';
 import type { Flow } from '../../infrastructure/api/flows';
 import { FLOW_STATUS } from '../../core/constants/FlowConstants';
+import { COMMON_FIELDS } from '../../core/constants';
 
 interface FlowListProps {
     flows: Flow[];
@@ -110,12 +111,12 @@ export const FlowList: React.FC<FlowListProps> = ({
                                         <Zap className="w-4 h-4" />
                                         {getActionTypeLabel(flow.action_type)}
                                     </span>
-                                    {flow.last_modified && (
+                                    {flow[COMMON_FIELDS.LAST_MODIFIED_DATE] && (
                                         <>
                                             <span>•</span>
                                             <span className="flex items-center gap-1">
                                                 <Clock className="w-4 h-4" />
-                                                {new Date(flow.last_modified).toLocaleDateString()}
+                                                {new Date(flow[COMMON_FIELDS.LAST_MODIFIED_DATE]).toLocaleDateString()}
                                             </span>
                                         </>
                                     )}

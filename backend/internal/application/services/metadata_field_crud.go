@@ -6,10 +6,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	domainSchema "github.com/nexuscrm/backend/internal/domain/schema"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ==================== Field CRUD Methods ====================
@@ -158,7 +158,7 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 		typeColDef := domainSchema.ColumnDefinition{
 			Name:        typeColName,
 			Type:        "VARCHAR(100)",
-			LogicalType: "Text",
+			LogicalType: string(constants.FieldTypeText),
 			Nullable:    true,
 		}
 		if err := ms.schemaMgr.AddColumn(objectAPIName, typeColDef); err != nil {
@@ -197,6 +197,24 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 					log.Printf("⚠️ Failed to grant permission for polymorphic type field: %v", err)
 				}
 			}
+		}
+	}
+
+	// For AutoNumber fields, register in _System_AutoNumber
+	if field.Type == constants.FieldTypeAutoNumber {
+		format := "{0}"
+		if field.DefaultValue != nil && *field.DefaultValue != "" {
+			format = *field.DefaultValue
+		}
+
+		anID := GenerateAutoNumberID(objectAPIName, field.APIName)
+		// Default starting_number to 1 (current_number = 0)
+		_, err := ms.db.Exec(
+			fmt.Sprintf("INSERT INTO %s (id, object_api_name, field_api_name, display_format, starting_number, current_number) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE display_format = VALUES(display_format)", constants.TableAutoNumber),
+			anID, objectAPIName, field.APIName, format, 1, 0,
+		)
+		if err != nil {
+			log.Printf("⚠️ Failed to register auto-number metadata: %v", err)
 		}
 	}
 
@@ -269,7 +287,7 @@ func (ms *MetadataService) UpdateField(objectAPIName, fieldAPIName string, updat
 	}
 
 	// Generate Field ID (reuse existing)
-	fieldID := fmt.Sprintf("fld_%s_%s", obj.APIName, fieldAPIName)
+	fieldID := GenerateFieldID(obj.APIName, fieldAPIName)
 
 	// Delegate to SchemaManager
 	if err := ms.schemaMgr.SaveFieldMetadataWithIDs(existingField, obj.ID, fieldID, ms.db); err != nil {
@@ -336,7 +354,7 @@ func (ms *MetadataService) BatchSyncSystemFields(objectAPIName string, fields []
 
 		batchFields = append(batchFields, FieldWithContext{
 			ObjectID: obj.ID,
-			FieldID:  fmt.Sprintf("fld_%s_%s", objectAPIName, f.APIName),
+			FieldID:  GenerateFieldID(objectAPIName, f.APIName),
 			Field:    &f,
 		})
 	}

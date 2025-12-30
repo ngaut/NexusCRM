@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // FieldWithContext holds field metadata with context for batch operations
@@ -180,7 +180,7 @@ func (sm *SchemaManager) BatchSaveFieldMetadata(fields []FieldWithContext, exec 
 // PrepareFieldForBatch converts a column definition to FieldWithContext for batch processing
 func (sm *SchemaManager) PrepareFieldForBatch(tableName string, col schema.ColumnDefinition) FieldWithContext {
 	objectID := GenerateObjectID(tableName)
-	fieldID := fmt.Sprintf("fld_%s_%s", tableName, col.Name)
+	fieldID := GenerateFieldID(tableName, col.Name)
 
 	fieldType := sm.mapSQLTypeToLogical(col.Type)
 	if col.LogicalType != "" {

@@ -1,12 +1,13 @@
 package services
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/formula"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ==================== Sharing Rules ====================
@@ -43,9 +44,26 @@ func (ps *PermissionService) checkSharingRuleAccess(
 	user *models.UserSession,
 	operation string,
 ) bool {
-	// 1. Check if user is in the shared role (or a child role)
-	targetRoleID := rule.ShareWithRoleID
-	if !ps.isUserInRoleOrBelow(user.RoleID, &targetRoleID) {
+	matchesIdentity := false
+
+	// 1. Check if user belongs to the target role/group
+	// A. Role-based sharing
+	if rule.ShareWithRoleID != nil {
+		if ps.isUserInRoleOrBelow(user.RoleID, rule.ShareWithRoleID) {
+			matchesIdentity = true
+		}
+	}
+
+	// B. Group-based sharing
+	if !matchesIdentity && rule.ShareWithGroupID != nil {
+		query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE group_id = ? AND user_id = ?", constants.TableGroupMember)
+		var count int
+		if err := ps.db.DB().QueryRow(query, *rule.ShareWithGroupID, user.ID).Scan(&count); err == nil && count > 0 {
+			matchesIdentity = true
+		}
+	}
+
+	if !matchesIdentity {
 		return false
 	}
 

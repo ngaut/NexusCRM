@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/domain/events"
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/formula"
 	"github.com/nexuscrm/backend/pkg/query"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // PersistenceService handles CRUD operations with validation and events
@@ -402,4 +402,54 @@ func getUserID(user *models.UserSession) string {
 		return "system"
 	}
 	return user.ID
+}
+
+// generateAutoNumbers handles atomic generation of AutoNumber field values within a transaction
+func (ps *PersistenceService) generateAutoNumbers(ctx context.Context, tx *sql.Tx, objectName string, data models.SObject) error {
+	autoNumbers := ps.metadata.GetAutoNumbers(objectName)
+	if len(autoNumbers) == 0 {
+		return nil
+	}
+
+	for _, an := range autoNumbers {
+		// 1. Lock and increment current value in DB
+		queryStr := fmt.Sprintf("SELECT current_number FROM %s WHERE id = ? FOR UPDATE", constants.TableAutoNumber)
+		var currentValue int
+		err := tx.QueryRowContext(ctx, queryStr, an.ID).Scan(&currentValue)
+		if err != nil {
+			return fmt.Errorf("failed to lock auto-number %s: %w", an.ID, err)
+		}
+
+		newValue := currentValue + 1
+
+		// 2. Update DB
+		updateQuery := fmt.Sprintf("UPDATE %s SET current_number = ?, last_modified_date = NOW() WHERE id = ?", constants.TableAutoNumber)
+		_, err = tx.ExecContext(ctx, updateQuery, newValue, an.ID)
+		if err != nil {
+			return fmt.Errorf("failed to update auto-number %s: %w", an.ID, err)
+		}
+
+		// 3. Format value
+		formatted := ps.formatAutoNumber(an.DisplayFormat, newValue)
+
+		// 4. Set value in data
+		data[an.FieldAPIName] = formatted
+	}
+	return nil
+}
+
+// formatAutoNumber applies a display format (e.g., "INV-{0000}") to a numeric value
+func (ps *PersistenceService) formatAutoNumber(format string, value int) string {
+	start := strings.Index(format, "{")
+	end := strings.Index(format, "}")
+	if start == -1 || end == -1 || end <= start {
+		// Fallback: just append
+		return fmt.Sprintf("%s%d", format, value)
+	}
+
+	placeholder := format[start+1 : end]
+	padding := len(placeholder)
+
+	formattedValue := fmt.Sprintf("%0*d", padding, value)
+	return format[:start] + formattedValue + format[end+1:]
 }

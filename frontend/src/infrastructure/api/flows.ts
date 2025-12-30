@@ -1,31 +1,33 @@
 import { apiClient } from './client';
+import { API_ENDPOINTS } from './endpoints';
+import { COMMON_FIELDS } from '../../core/constants';
 import { FLOW_STATUS, FlowStatus } from '../../core/constants/FlowConstants';
 
 export interface FlowStep {
-    id: string;
-    flow_id?: string;
-    step_order: number;
-    step_name: string;
-    step_type: string;
-    action_type?: string;
+    [COMMON_FIELDS.ID]: string;
+    [COMMON_FIELDS.FLOW_ID]?: string;
+    [COMMON_FIELDS.STEP_ORDER]: number;
+    [COMMON_FIELDS.STEP_NAME]: string;
+    [COMMON_FIELDS.STEP_TYPE]: string;
+    [COMMON_FIELDS.ACTION_TYPE]?: string;
     action_config?: Record<string, unknown>;
     entry_condition?: string;
-    on_success_step?: string;
-    on_failure_step?: string;
+    [COMMON_FIELDS.ON_SUCCESS_STEP]?: string;
+    [COMMON_FIELDS.ON_FAILURE_STEP]?: string;
 }
 
 export interface Flow {
-    id: string;
-    name: string;
-    status: FlowStatus;
-    trigger_object: string;
-    trigger_type: string;
+    [COMMON_FIELDS.ID]: string;
+    [COMMON_FIELDS.NAME]: string;
+    [COMMON_FIELDS.STATUS]: FlowStatus;
+    [COMMON_FIELDS.TRIGGER_OBJECT]: string;
+    [COMMON_FIELDS.TRIGGER_TYPE]: string;
     trigger_condition: string;
-    action_type: string;
+    [COMMON_FIELDS.ACTION_TYPE]: string;
     action_config: Record<string, unknown>;
     flow_type: 'simple' | 'multistep';
     steps?: FlowStep[];
-    last_modified: string;
+    [COMMON_FIELDS.LAST_MODIFIED_DATE]: string;
 }
 
 // ============================================================================
@@ -33,8 +35,8 @@ export interface Flow {
 // ============================================================================
 
 export interface ExecuteFlowRequest {
-    record_id?: string;
-    object_api_name?: string;
+    [COMMON_FIELDS.RECORD_ID]?: string;
+    [COMMON_FIELDS.OBJECT_API_NAME]?: string;
     context?: Record<string, any>;
 }
 
@@ -57,29 +59,29 @@ export interface ExecuteFlowResponse {
 
 export const flowsApi = {
     async getAll(): Promise<Flow[]> {
-        const response = await apiClient.get<{ flows: Flow[] }>('/api/metadata/flows');
+        const response = await apiClient.get<{ flows: Flow[] }>(API_ENDPOINTS.METADATA.FLOWS);
         return response.flows || [];
     },
 
     async getById(flowId: string): Promise<Flow> {
-        return apiClient.get(`/api/metadata/flows/${flowId}`);
+        return apiClient.get(API_ENDPOINTS.METADATA.FLOW(flowId));
     },
 
     async create(flow: Omit<Flow, 'id' | 'lastModified'>): Promise<Flow> {
-        return apiClient.post('/api/metadata/flows', flow);
+        return apiClient.post(API_ENDPOINTS.METADATA.FLOWS, flow);
     },
 
     async update(flowId: string, updates: Partial<Flow>): Promise<Flow> {
-        return apiClient.patch(`/api/metadata/flows/${flowId}`, updates);
+        return apiClient.patch(API_ENDPOINTS.METADATA.FLOW(flowId), updates);
     },
 
     async delete(flowId: string): Promise<void> {
-        return apiClient.delete(`/api/metadata/flows/${flowId}`);
+        return apiClient.delete(API_ENDPOINTS.METADATA.FLOW(flowId));
     },
 
     async toggleStatus(flowId: string, currentStatus: string): Promise<Flow> {
         const newStatus = currentStatus === FLOW_STATUS.ACTIVE ? FLOW_STATUS.DRAFT : FLOW_STATUS.ACTIVE;
-        return apiClient.patch(`/api/metadata/flows/${flowId}`, { status: newStatus });
+        return apiClient.patch(API_ENDPOINTS.METADATA.FLOW(flowId), { status: newStatus });
     },
 
     /**
@@ -89,7 +91,7 @@ export const flowsApi = {
      */
     async execute(flowId: string, request: ExecuteFlowRequest = {}): Promise<ExecuteFlowResponse> {
         return apiClient.post<ExecuteFlowResponse>(
-            `/api/flows/${encodeURIComponent(flowId)}/execute`,
+            API_ENDPOINTS.FLOWS.EXECUTE(flowId),
             request
         );
     },

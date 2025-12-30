@@ -61,3 +61,14 @@ export {
     printEnvironmentSummary,
     getConfigSummary,
 } from './EnvironmentConfig';
+
+// Field Constants
+export {
+    COMMON_FIELDS,
+} from './CommonFields';
+
+// Approval Constants
+export {
+    APPROVAL_STATUS,
+    type ApprovalStatus,
+} from './ApprovalConstants';

@@ -19,6 +19,7 @@ import (
 	mcp_models "github.com/nexuscrm/mcp/pkg/models"
 	"github.com/nexuscrm/mcp/pkg/server"
 	mcp_server "github.com/nexuscrm/mcp/pkg/server"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 func main() {
@@ -192,13 +193,13 @@ func main() {
 	// 2. Propagate User Context (Gin -> Stdlib Context) -> WrapH(mcpHandler)
 	router.POST("/mcp", requireAuth, func(c *gin.Context) {
 		// Extract user from Gin context (set by RequireAuth)
-		if user, exists := c.Get("user"); exists {
+		if user, exists := c.Get(constants.ContextKeyUser); exists {
 			ctx := c.Request.Context()
 			// Inject into standard context
-			ctx = context.WithValue(ctx, "user", user)
+			ctx = context.WithValue(ctx, constants.ContextKeyUser, user)
 
 			// Inject Auth Token (needed for ContextStore)
-			authHeader := c.GetHeader("Authorization")
+			authHeader := c.GetHeader(constants.HeaderAuthorization)
 			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
 				token := authHeader[7:]
 				ctx = context.WithValue(ctx, mcp.ContextKeyAuthToken, token)

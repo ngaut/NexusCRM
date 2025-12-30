@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
 import { useNotification } from '../contexts/NotificationContext';
 import type { SObject, FieldMetadata } from '../types';
+import { COMMON_FIELDS } from '../core/constants';
 
 interface PathProps {
     objectApiName: string;
@@ -33,7 +34,7 @@ export const Path: React.FC<PathProps> = ({
         if (status === currentStatus) return;
 
         try {
-            await dataAPI.updateRecord(objectApiName, record.id, {
+            await dataAPI.updateRecord(objectApiName, record[COMMON_FIELDS.ID] as string, {
                 [pathField]: status
             });
             success('Status Updated', `Moved to "${status}"`);

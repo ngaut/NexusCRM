@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Edit3, Loader2, AlertCircle } from 'lucide-react';
 import { ObjectMetadata, FieldMetadata } from '../../types';
 import { dataAPI } from '../../infrastructure/api/data';
+import { COMMON_FIELDS } from '../../core/constants';
 import { Button } from '../ui/Button';
 import { BaseModal } from '../ui/BaseModal';
 import { useSuccessToast, useErrorToast } from '../ui/Toast';
@@ -53,7 +54,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
             !f.is_system &&
             !f.formula &&
             f.type !== 'AutoNumber' &&
-            f.api_name !== 'id'
+            f.api_name !== COMMON_FIELDS.ID
         );
     }, [objectMetadata.fields]);
 

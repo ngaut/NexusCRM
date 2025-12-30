@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/nexuscrm/mcp/pkg/models"
+	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,8 +21,8 @@ func TestListObjects(t *testing.T) {
 
 		response := map[string]interface{}{
 			"schemas": []models.ObjectMetadata{
-				{APIName: "Account", Label: "Account"},
-				{APIName: "Contact", Label: "Contact"},
+				{APIName: constants.TableAccount, Label: "Account"},
+				{APIName: constants.TableContact, Label: "Contact"},
 			},
 		}
 		json.NewEncoder(w).Encode(response)
@@ -33,7 +34,7 @@ func TestListObjects(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, objects, 2)
-	assert.Equal(t, "Account", objects[0].APIName)
+	assert.Equal(t, constants.TableAccount, objects[0].APIName)
 }
 
 func TestQuery(t *testing.T) {
@@ -43,7 +44,7 @@ func TestQuery(t *testing.T) {
 
 		var req models.QueryRequest
 		json.NewDecoder(r.Body).Decode(&req)
-		assert.Equal(t, "Account", req.ObjectAPIName)
+		assert.Equal(t, constants.TableAccount, req.ObjectAPIName)
 		assert.NotEmpty(t, req.FilterExpr)
 
 		response := map[string]interface{}{
@@ -57,7 +58,7 @@ func TestQuery(t *testing.T) {
 
 	client := NewNexusClient(server.URL)
 	req := models.QueryRequest{
-		ObjectAPIName: "Account",
+		ObjectAPIName: constants.TableAccount,
 		FilterExpr:    "name == 'Acme'",
 	}
 	results, err := client.Query(context.Background(), req, "test-token")
@@ -69,7 +70,7 @@ func TestQuery(t *testing.T) {
 
 func TestCreateRecord(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/api/data/Account", r.URL.Path)
+		assert.Equal(t, "/api/data/"+constants.TableAccount, r.URL.Path)
 		assert.Equal(t, "POST", r.Method)
 
 		var body map[string]interface{}
@@ -84,7 +85,7 @@ func TestCreateRecord(t *testing.T) {
 	defer server.Close()
 
 	client := NewNexusClient(server.URL)
-	id, err := client.CreateRecord(context.Background(), "Account", map[string]interface{}{"name": "New Account"}, "test-token")
+	id, err := client.CreateRecord(context.Background(), constants.TableAccount, map[string]interface{}{"name": "New Account"}, "test-token")
 
 	assert.NoError(t, err)
 	assert.Equal(t, "new-id-123", id)
@@ -101,14 +102,14 @@ func TestCreateRecord(t *testing.T) {
 	defer server2.Close()
 
 	client2 := NewNexusClient(server2.URL)
-	id2, err := client2.CreateRecord(context.Background(), "Account", map[string]interface{}{"name": "Another Account"}, "test-token")
+	id2, err := client2.CreateRecord(context.Background(), constants.TableAccount, map[string]interface{}{"name": "Another Account"}, "test-token")
 	assert.NoError(t, err)
 	assert.Equal(t, "record-id-456", id2)
 }
 
 func TestSearchObject(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/api/data/search/Account", r.URL.Path)
+		assert.Equal(t, "/api/data/search/"+constants.TableAccount, r.URL.Path)
 		assert.Equal(t, "GET", r.Method)
 		assert.Equal(t, "Acme", r.URL.Query().Get("term"))
 
@@ -122,7 +123,7 @@ func TestSearchObject(t *testing.T) {
 	defer server.Close()
 
 	client := NewNexusClient(server.URL)
-	results, err := client.SearchObject(context.Background(), "Account", "Acme", "test-token")
+	results, err := client.SearchObject(context.Background(), constants.TableAccount, "Acme", "test-token")
 
 	assert.NoError(t, err)
 	assert.Len(t, results, 1)
@@ -131,7 +132,7 @@ func TestSearchObject(t *testing.T) {
 
 func TestGetRecord(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/api/data/Account/123", r.URL.Path)
+		assert.Equal(t, "/api/data/"+constants.TableAccount+"/123", r.URL.Path)
 		assert.Equal(t, "GET", r.Method)
 
 		response := map[string]interface{}{
@@ -144,7 +145,7 @@ func TestGetRecord(t *testing.T) {
 	defer server.Close()
 
 	client := NewNexusClient(server.URL)
-	record, err := client.GetRecord(context.Background(), "Account", "123", "test-token")
+	record, err := client.GetRecord(context.Background(), constants.TableAccount, "123", "test-token")
 
 	assert.NoError(t, err)
 	assert.Equal(t, "123", record["id"])

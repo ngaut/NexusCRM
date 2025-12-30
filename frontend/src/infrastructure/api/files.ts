@@ -5,10 +5,12 @@
  */
 
 import { API_CONFIG } from '../../core/constants/EnvironmentConfig';
+import { COMMON_FIELDS } from '../../core/constants';
+import { API_ENDPOINTS } from './endpoints';
 
 export interface UploadedFile {
     path: string;
-    name: string;
+    [COMMON_FIELDS.NAME]: string;
     size: number;
     mime: string;
 }
@@ -29,7 +31,7 @@ export const filesAPI = {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const response = await fetch(`${API_CONFIG.BACKEND_URL}/api/files/upload`, {
+        const response = await fetch(`${API_CONFIG.BACKEND_URL}${API_ENDPOINTS.FILES.UPLOAD}`, {
             method: 'POST',
             headers,
             body: formData,

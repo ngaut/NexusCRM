@@ -80,7 +80,7 @@ func (h *DataHandler) GetRecycleBinItems(c *gin.Context) {
 		RespondError(c, errors.GetHTTPStatus(err), err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": items})
+	c.JSON(http.StatusOK, gin.H{constants.ResponseItems: items})
 }
 
 // RestoreFromRecycleBin handles POST /api/data/recyclebin/restore/:id

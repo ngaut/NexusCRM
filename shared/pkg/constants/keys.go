@@ -19,3 +19,9 @@ const (
 	ConfigApproverFormula = "approver_formula"
 	ConfigComments        = "comments"
 )
+
+// Context Keys
+const (
+	ContextKeyUser  = "user"
+	ContextKeyToken = "token"
+)

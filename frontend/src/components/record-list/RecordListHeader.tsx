@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, RefreshCw, Search, ChevronDown, Save, List } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { COMMON_FIELDS } from '../../core/constants';
 import { ListFilters } from '../ListFilters';
 import { ObjectMetadata, ListView } from '../../types';
 import { usePermissions } from '../../contexts/PermissionContext';
@@ -83,8 +84,9 @@ export const RecordListHeader: React.FC<RecordListHeaderProps> = ({
                                         key={view.id}
                                         onClick={() => {
                                             setSelectedView(view);
-                                            if (view.filterExpr) {
-                                                setActiveFilterExpr(view.filterExpr);
+                                            const filterExpr = view[COMMON_FIELDS.FILTERS];
+                                            if (filterExpr) {
+                                                setActiveFilterExpr(filterExpr);
                                             } else {
                                                 setActiveFilterExpr('');
                                             }

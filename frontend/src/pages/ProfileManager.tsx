@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Plus, AlertCircle, Edit, Trash2, X, Save, Shield } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
 import { SYSTEM_TABLE_NAMES } from '../generated-schema';
+import { COMMON_FIELDS } from '../core/constants';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 
 interface Profile {
@@ -74,7 +75,7 @@ const ProfileManager: React.FC = () => {
     const confirmDelete = async () => {
         if (!profileToDelete) return;
         try {
-            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_PROFILE, profileToDelete.id);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_PROFILE, profileToDelete[COMMON_FIELDS.ID] as string);
             setDeleteModalOpen(false);
             setProfileToDelete(null);
             loadProfiles();
@@ -94,7 +95,7 @@ const ProfileManager: React.FC = () => {
             setError(null);
 
             if (editingProfile) {
-                await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_PROFILE, editingProfile.id, formData);
+                await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_PROFILE, editingProfile[COMMON_FIELDS.ID] as string, formData);
             } else {
                 await dataAPI.createRecord<Profile>(SYSTEM_TABLE_NAMES.SYSTEM_PROFILE, formData);
             }
@@ -175,7 +176,7 @@ const ProfileManager: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                             {profiles.map((profile) => (
-                                <tr key={profile.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                <tr key={profile[COMMON_FIELDS.ID] as string} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
 import { usersAPI } from '../../infrastructure/api/users';
 import { metadataAPI } from '../../infrastructure/api/metadata';
+import { COMMON_FIELDS } from '../../core/constants';
 import type { ObjectMetadata, ObjectPermission, FieldPermission } from '../../types';
 
 // Sub-components
@@ -32,7 +33,7 @@ export const PermissionEditorModal: React.FC<PermissionEditorModalProps> = ({ en
     const [error, setError] = useState<string | null>(null);
 
     // Determine the entity ID field name based on type
-    const entityIdField = entity.type === 'profile' ? 'profile_id' : 'permission_set_id';
+    const entityIdField = entity.type === 'profile' ? COMMON_FIELDS.PROFILE_ID : COMMON_FIELDS.PERMISSION_SET_ID;
 
     useEffect(() => {
         loadData();
@@ -86,7 +87,7 @@ export const PermissionEditorModal: React.FC<PermissionEditorModalProps> = ({ en
                 const fields = schema.fields || [];
                 fields.forEach(field => {
                     // Skip 'id' field
-                    if (field.api_name === 'id') return;
+                    if (field.api_name === COMMON_FIELDS.ID) return;
 
                     const existing = existingFieldPerms.find(p =>
                         p.object_api_name === schema.api_name && p.field_api_name === field.api_name

@@ -1,4 +1,6 @@
 import { apiClient } from './client';
+import { API_ENDPOINTS } from './endpoints';
+import { COMMON_FIELDS } from '../../core/constants';
 import type { SObject } from '../../types';
 
 export interface ExecuteActionRequest {
@@ -14,20 +16,20 @@ export interface ExecuteActionResponse {
 }
 
 export interface ActionMetadata {
-    id: string;
-    object_api_name: string;
-    name: string;
-    label: string;
-    type: string;
+    [COMMON_FIELDS.ID]: string;
+    [COMMON_FIELDS.OBJECT_API_NAME]: string;
+    [COMMON_FIELDS.NAME]: string;
+    [COMMON_FIELDS.LABEL]: string;
+    [COMMON_FIELDS.TYPE]: string;
     icon: string;
     target_object?: string;
-    config?: Record<string, any>;
+    [COMMON_FIELDS.CONFIG]?: Record<string, any>;
 }
 
 export const actionAPI = {
     getActions: async (objectName: string): Promise<ActionMetadata[]> => {
         const response = await apiClient.get<{ actions: ActionMetadata[] }>(
-            `/api/metadata/actions/${objectName}`
+            API_ENDPOINTS.METADATA.ACTIONS(objectName)
         );
         return response.actions;
     },
@@ -37,7 +39,7 @@ export const actionAPI = {
         request: ExecuteActionRequest
     ): Promise<ExecuteActionResponse> => {
         const response = await apiClient.post<ExecuteActionResponse>(
-            `/api/actions/execute/${actionId}`,
+            API_ENDPOINTS.ACTIONS.EXECUTE(actionId),
             request
         );
         return response;

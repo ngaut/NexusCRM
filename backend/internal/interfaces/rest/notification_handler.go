@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 type NotificationHandler struct {
@@ -34,5 +35,5 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true})
+	c.JSON(http.StatusOK, gin.H{constants.ResponseSuccess: true})
 }

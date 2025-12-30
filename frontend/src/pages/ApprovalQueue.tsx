@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, ExternalLink, RefreshCw, Inbox, Calendar } from 'lucide-react';
 import { approvalsAPI, ApprovalWorkItem } from '../infrastructure/api/approvals';
+import { COMMON_FIELDS } from '../core/constants';
 import { Button } from '../components/ui/Button';
 import { useSuccessToast, useErrorToast } from '../components/ui/Toast';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
@@ -54,13 +55,13 @@ export function ApprovalQueue() {
     const confirmAction = async () => {
         if (!actionModal.workItem) return;
 
-        setProcessingId(actionModal.workItem.id);
+        setProcessingId(actionModal.workItem[COMMON_FIELDS.ID] as string);
         try {
             if (actionModal.action === 'approve') {
-                await approvalsAPI.approve(actionModal.workItem.id, comments);
+                await approvalsAPI.approve(actionModal.workItem[COMMON_FIELDS.ID] as string, comments);
                 showSuccess('Approval submitted successfully');
             } else {
-                await approvalsAPI.reject(actionModal.workItem.id, comments);
+                await approvalsAPI.reject(actionModal.workItem[COMMON_FIELDS.ID] as string, comments);
                 showSuccess('Rejection submitted successfully');
             }
             setActionModal({ isOpen: false, action: 'approve', workItem: null });
@@ -73,7 +74,7 @@ export function ApprovalQueue() {
     };
 
     const viewRecord = (workItem: ApprovalWorkItem) => {
-        navigate(`/object/${workItem.object_api_name}/${workItem.record_id}`);
+        navigate(`/object/${workItem[COMMON_FIELDS.OBJECT_API_NAME]}/${workItem[COMMON_FIELDS.RECORD_ID]}`);
     };
 
     const formatDate = (dateStr: string) => {
@@ -158,25 +159,26 @@ export function ApprovalQueue() {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {workItems.map((item) => (
-                                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                                <tr key={item[COMMON_FIELDS.ID] as string} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <button
                                             onClick={() => viewRecord(item)}
                                             className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
                                         >
-                                            {item.record_id.substring(0, 8)}...
+                                            {(item[COMMON_FIELDS.RECORD_ID] as string).substring(0, 8)}...
                                             <ExternalLink className="w-3 h-3" />
                                         </button>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded">
-                                            {item.object_api_name}
+                                            {item[COMMON_FIELDS.OBJECT_API_NAME]}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <div className="flex items-center gap-1">
+                                            <div className="sr-only">Calendar</div>
                                             <Calendar className="w-4 h-4" />
-                                            {formatDate(item.submitted_date)}
+                                            {formatDate(item[COMMON_FIELDS.SUBMITTED_DATE] as string)}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -190,7 +192,7 @@ export function ApprovalQueue() {
                                                 variant="primary"
                                                 size="sm"
                                                 onClick={() => handleApprove(item)}
-                                                disabled={processingId === item.id}
+                                                disabled={processingId === item[COMMON_FIELDS.ID]}
                                                 icon={<CheckCircle className="w-4 h-4" />}
                                             >
                                                 Approve
@@ -199,7 +201,7 @@ export function ApprovalQueue() {
                                                 variant="danger"
                                                 size="sm"
                                                 onClick={() => handleReject(item)}
-                                                disabled={processingId === item.id}
+                                                disabled={processingId === item[COMMON_FIELDS.ID]}
                                                 icon={<XCircle className="w-4 h-4" />}
                                             >
                                                 Reject

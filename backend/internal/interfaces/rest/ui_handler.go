@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
-	"github.com/nexuscrm/shared/pkg/models"
-	"github.com/nexuscrm/shared/pkg/constants"
 	appErrors "github.com/nexuscrm/backend/pkg/errors"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 type UIHandler struct {
@@ -125,7 +125,7 @@ func (h *UIHandler) GetLayout(c *gin.Context) {
 		// For now, just return the default layout regardless of type
 	}
 
-	c.JSON(http.StatusOK, gin.H{"layout": layout})
+	c.JSON(http.StatusOK, gin.H{constants.ResponseLayout: layout})
 }
 
 // SaveLayout handles POST /api/metadata/layouts
@@ -192,7 +192,7 @@ func (h *UIHandler) GetDashboard(c *gin.Context) {
 		RespondError(c, http.StatusNotFound, appErrors.ErrNotFound.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"dashboard": dashboard})
+	c.JSON(http.StatusOK, gin.H{constants.ResponseDashboard: dashboard})
 }
 
 // CreateDashboard handles POST /api/metadata/dashboards

@@ -3,6 +3,8 @@ import { metadataAPI } from '../../infrastructure/api/metadata';
 import { dataAPI } from '../../infrastructure/api/data';
 import { ObjectMetadata, SObject } from '../../types';
 import { getSafeString } from '../utils/recordUtils';
+import { COMMON_FIELDS } from '../constants';
+import { FIELD_TYPES } from '@shared/generated/constants';
 
 interface UseKanbanProps {
     objectApiName?: string;
@@ -64,7 +66,7 @@ export function useKanban({ objectApiName, config }: UseKanbanProps): UseKanbanR
         if (!schema) return { columns: [], groupedRecords: {} };
 
         const queryConfig = config?.query as { filterExpr?: string, group_by?: string } | undefined;
-        const groupByField = queryConfig?.group_by || schema.kanban_group_by || 'status';
+        const groupByField = queryConfig?.group_by || schema.kanban_group_by || COMMON_FIELDS.STATUS;
         const fields = schema.fields || [];
         const fieldMeta = fields.find(f => f.api_name === groupByField);
 

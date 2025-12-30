@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { API_ENDPOINTS } from './endpoints';
 
 export interface AnalyticsResult {
     success: boolean;
@@ -7,7 +8,7 @@ export interface AnalyticsResult {
 
 export const analyticsAPI = {
     executeAdminQuery: async (sql: string, params: unknown[] = []): Promise<AnalyticsResult> => {
-        const response = await apiClient.post<AnalyticsResult>('/api/analytics/query', { sql, params });
+        const response = await apiClient.post<AnalyticsResult>(API_ENDPOINTS.ANALYTICS.QUERY, { sql, params });
         return response;
     }
 };

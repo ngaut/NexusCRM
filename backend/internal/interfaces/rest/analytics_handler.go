@@ -6,8 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/pkg/auth"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 type AnalyticsHandler struct {
@@ -41,7 +42,7 @@ func (h *AnalyticsHandler) ExecuteAdminQuery(c *gin.Context) {
 	}
 
 	// Retrieve user from context (set by requireAuth middleware)
-	userInterface, exists := c.Get("user")
+	userInterface, exists := c.Get(constants.ContextKeyUser)
 	if !exists {
 		RespondError(c, http.StatusUnauthorized, "User session not found")
 		return

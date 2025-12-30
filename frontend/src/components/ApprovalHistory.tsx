@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle, XCircle, Send, User, MessageSquare } from 'lucide-react';
 import { approvalsAPI, ApprovalWorkItem } from '../infrastructure/api/approvals';
+import { APPROVAL_STATUS } from '../core/constants';
 
 interface ApprovalHistoryProps {
     objectApiName: string;
@@ -40,11 +41,11 @@ export function ApprovalHistory({ objectApiName, recordId }: ApprovalHistoryProp
 
     const getStatusInfo = (status: string) => {
         switch (status) {
-            case 'Approved':
+            case APPROVAL_STATUS.APPROVED:
                 return { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50' };
-            case 'Rejected':
+            case APPROVAL_STATUS.REJECTED:
                 return { icon: XCircle, color: 'text-red-500', bg: 'bg-red-50' };
-            case 'Pending':
+            case APPROVAL_STATUS.PENDING:
             default:
                 return { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50' };
         }
@@ -107,7 +108,7 @@ export function ApprovalHistory({ objectApiName, recordId }: ApprovalHistoryProp
 
                         {item.approved_date && (
                             <div className="text-xs text-gray-400 mt-1">
-                                {item.status === 'Approved' ? 'Approved' : 'Rejected'} on {formatDate(item.approved_date)}
+                                {item.status === APPROVAL_STATUS.APPROVED ? 'Approved' : 'Rejected'} on {formatDate(item.approved_date)}
                             </div>
                         )}
                     </div>
@@ -136,7 +137,7 @@ export function useApprovalStatus(objectApiName: string, recordId: string) {
                     const latest = items[0];
                     setStatus(latest.status);
                     // If pending, expose the item for inline actions
-                    if (latest.status === 'Pending') {
+                    if (latest.status === APPROVAL_STATUS.PENDING) {
                         setPendingItem(latest);
                     } else {
                         setPendingItem(null);

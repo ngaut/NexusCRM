@@ -4,6 +4,7 @@ import { dataAPI } from '../infrastructure/api/data';
 import type { SObject } from '../types';
 import { useDebounce } from '../core/hooks/useDebounce';
 import { getRecordDisplayName } from '../core/utils/recordUtils';
+import { COMMON_FIELDS } from '../core/constants';
 
 interface SearchableLookupProps {
     objectApiName: string | string[];
@@ -89,7 +90,7 @@ export const SearchableLookup: React.FC<SearchableLookupProps> = ({
             }
         };
 
-        if (isInitialLoad || (value && value !== selectedRecord?.id)) {
+        if (isInitialLoad || (value && value !== (selectedRecord?.[COMMON_FIELDS.ID] as string))) {
             loadInitialValue();
         }
     }, [value, objectApiName, objectType, isInitialLoad, selectedRecord]);
@@ -104,7 +105,7 @@ export const SearchableLookup: React.FC<SearchableLookupProps> = ({
 
             // Don't search if the search term matches the selected record
             if (selectedRecord && (
-                debouncedSearchTerm === selectedRecord.name
+                debouncedSearchTerm === selectedRecord[COMMON_FIELDS.NAME]
             )) {
                 return;
             }
@@ -163,7 +164,7 @@ export const SearchableLookup: React.FC<SearchableLookupProps> = ({
     const handleSelect = (record: SObject) => {
         setSelectedRecord(record);
         setSearchTerm(getRecordDisplayName(record));
-        onChange(record.id as string, record);
+        onChange(record[COMMON_FIELDS.ID] as string, record);
         setIsOpen(false);
         setHighlightedIndex(-1);
         setResults([]);
@@ -280,7 +281,7 @@ export const SearchableLookup: React.FC<SearchableLookupProps> = ({
                         <ul className="py-1">
                             {results.map((record, index) => (
                                 <li
-                                    key={record.id as string}
+                                    key={record[COMMON_FIELDS.ID] as string}
                                     id={`lookup-option-${index}`}
                                     role="option"
                                     aria-selected={highlightedIndex === index}
@@ -305,7 +306,7 @@ export const SearchableLookup: React.FC<SearchableLookupProps> = ({
                                                 {getRecordDisplayName(record)}
                                             </div>
                                             <div className="text-xs text-slate-500 font-mono truncate">
-                                                {(record as SObject & { _object_type?: string })._object_type || objectApiName} • {record.id}
+                                                {(record as SObject & { _object_type?: string })._object_type || objectApiName} • {record[COMMON_FIELDS.ID]}
                                             </div>
                                         </div>
                                     </button>

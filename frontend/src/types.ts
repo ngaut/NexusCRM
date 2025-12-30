@@ -1,4 +1,6 @@
 
+import { COMMON_FIELDS } from './core/constants';
+
 // --- Core Schema Metadata ---
 
 export type FieldType = 'Text' | 'Number' | 'Currency' | 'Date' | 'DateTime' | 'Picklist' | 'Email' | 'Phone' | 'TextArea' | 'LongTextArea' | 'RichText' | 'Lookup' | 'Url' | 'Boolean' | 'Formula' | 'Percent' | 'RollupSummary' | 'JSON' | 'Password' | string;
@@ -264,10 +266,10 @@ export interface PageLayout {
 }
 
 export interface ListView {
-  id: string;
-  object_api_name: string;
-  label: string;
-  filterExpr?: string; // New formula filter
+  [COMMON_FIELDS.ID]: string;
+  [COMMON_FIELDS.OBJECT_API_NAME]: string;
+  [COMMON_FIELDS.LABEL]: string;
+  [COMMON_FIELDS.FILTERS]?: string; // New formula filter
   fields?: string[]; // Columns to display
 }
 
@@ -431,14 +433,14 @@ export interface AppConfig {
 // --- Runtime Data & Interaction ---
 
 export interface SObject {
-  id?: string;
-  created_date?: string;
-  owner_id?: string;
-  created_by_id?: string;
-  last_modified_date?: string;
-  last_modified_by_id?: string;
-  is_deleted?: boolean; // Soft Delete Flag
-  [key: string]: unknown;
+  [COMMON_FIELDS.ID]?: string;
+  [COMMON_FIELDS.CREATED_DATE]?: string;
+  [COMMON_FIELDS.OWNER_ID]?: string;
+  [COMMON_FIELDS.CREATED_BY_ID]?: string;
+  [COMMON_FIELDS.LAST_MODIFIED_DATE]?: string;
+  [COMMON_FIELDS.LAST_MODIFIED_BY_ID]?: string;
+  [COMMON_FIELDS.IS_DELETED]?: boolean; // Soft Delete Flag
+  [key: string]: any;
 }
 
 export interface SearchResult {
@@ -494,12 +496,12 @@ export interface ApprovalProcess {
 }
 
 export interface RecycleBinItem {
-  id: string;
-  record_id: string;
-  object_api_name: string;
+  [COMMON_FIELDS.ID]: string;
+  [COMMON_FIELDS.RECORD_ID]: string;
+  [COMMON_FIELDS.OBJECT_API_NAME]: string;
   record_name: string;
-  deleted_by: string;
-  deleted_date: string;
+  [COMMON_FIELDS.DELETED_BY]: string;
+  [COMMON_FIELDS.DELETED_DATE]: string;
 }
 
 export interface SystemLog {

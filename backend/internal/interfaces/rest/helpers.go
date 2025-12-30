@@ -13,7 +13,7 @@ import (
 
 // GetUserFromContext extracts the authenticated user from gin.Context
 func GetUserFromContext(c *gin.Context) *models.UserSession {
-	userInterface, exists := c.Get("user")
+	userInterface, exists := c.Get(constants.ContextKeyUser)
 	if !exists {
 		return nil
 	}
@@ -36,7 +36,7 @@ func RespondError(c *gin.Context, code int, message string) {
 	if code >= 500 {
 		log.Printf("❌ ERROR [%d] %s %s: %s", code, c.Request.Method, c.Request.URL.Path, message)
 	}
-	c.JSON(code, gin.H{"error": message})
+	c.JSON(code, gin.H{constants.ResponseError: message})
 }
 
 // BindJSON binds JSON and returns true if successful. If failed, it sends bad request error.

@@ -11,6 +11,7 @@ import { usePermissions } from '../contexts/PermissionContext';
 import { CreateObjectWizard } from './modals/CreateObjectWizard';
 import { BulkEditModal } from './modals/BulkEditModal';
 import { TableObject } from '../constants';
+import { COMMON_FIELDS } from '../core/constants';
 import { KanbanBoard } from './KanbanBoard';
 import { ListViewCharts } from './ListViewCharts';
 import { useSplitView } from './SplitViewContainer';
@@ -112,7 +113,7 @@ export function MetadataRecordList({
             );
         }
         return fields
-            .filter(f => !f.is_system || f.api_name === 'name')
+            .filter(f => !f.is_system || f.api_name === COMMON_FIELDS.NAME)
             .slice(0, 6);
     }, [objectMetadata]);
 
@@ -130,7 +131,7 @@ export function MetadataRecordList({
             if (effectiveSearch) {
                 const fields = objectMetadata.fields || [];
                 const nameField = fields.find(f => f.is_name_field) ||
-                    fields.find(f => f.api_name === 'name') ||
+                    fields.find(f => f.api_name === COMMON_FIELDS.NAME) ||
                     fields.find(f => f.type === 'Text');
 
                 if (nameField) {
@@ -169,7 +170,7 @@ export function MetadataRecordList({
         if (selectedRecords.size === records.length) {
             setSelectedRecords(new Set());
         } else {
-            setSelectedRecords(new Set(records.map(r => r.id)));
+            setSelectedRecords(new Set(records.map(r => r[COMMON_FIELDS.ID] as string)));
         }
     };
 
@@ -185,12 +186,13 @@ export function MetadataRecordList({
 
     // Handle record click
     const handleRecordClick = (record: SObject) => {
+        const recordId = record[COMMON_FIELDS.ID] as string;
         if (onRecordClick) {
-            onRecordClick(record.id);
+            onRecordClick(recordId);
         } else if (isSplitMode) {
-            openInSplit(record.id);
+            openInSplit(recordId);
         } else {
-            navigate(`/object/${objectMetadata.api_name}/${record.id}`);
+            navigate(`/object/${objectMetadata.api_name}/${recordId}`);
         }
     };
 
@@ -332,9 +334,9 @@ export function MetadataRecordList({
                                     if (!newViewName.trim()) return;
                                     try {
                                         const res = await metadataAPI.createListView({
-                                            object_api_name: objectMetadata.api_name,
-                                            label: newViewName.trim(),
-                                            filterExpr: activeFilterExpr,
+                                            [COMMON_FIELDS.OBJECT_API_NAME]: objectMetadata.api_name,
+                                            [COMMON_FIELDS.LABEL]: newViewName.trim(),
+                                            [COMMON_FIELDS.FILTERS]: activeFilterExpr,
                                             fields: displayFields.map(f => f.api_name),
                                         });
                                         setListViews([...listViews, res.view]);

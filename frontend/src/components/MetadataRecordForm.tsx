@@ -9,6 +9,8 @@ import { SearchableLookup } from './SearchableLookup';
 import { dataAPI } from '../infrastructure/api/data';
 import type { ObjectMetadata, FieldMetadata, SObject } from '../types';
 import { SYSTEM_FIELDS } from '../constants';
+import { COMMON_FIELDS } from '../core/constants';
+import { FIELD_TYPES, FieldType } from '@shared/generated/constants';
 
 // Additional hidden fields beyond SYSTEM_FIELDS
 const ADDITIONAL_HIDDEN = ['system_modstamp', 'stage_name'] as const;
@@ -124,7 +126,7 @@ export function MetadataRecordForm({
             let savedRecord;
             if (isEdit && recordId) {
                 await dataAPI.updateRecord(objectMetadata.api_name, recordId, cleanData);
-                savedRecord = { ...initialData, ...cleanData, id: recordId };
+                savedRecord = { ...initialData, ...cleanData, [COMMON_FIELDS.ID]: recordId };
                 showSuccess(`${objectMetadata.label} updated successfully`);
             } else {
                 savedRecord = await dataAPI.createRecord(objectMetadata.api_name, cleanData);
@@ -147,7 +149,7 @@ export function MetadataRecordForm({
         // Simple rendering logic based on type (can be expanded to use complex inputs from UIRegistry)
         const commonClasses = "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border disabled:bg-gray-100 disabled:text-gray-500";
 
-        switch (field.type) {
+        switch (field.type as FieldType) {
             case 'Boolean':
                 return (
                     <Controller

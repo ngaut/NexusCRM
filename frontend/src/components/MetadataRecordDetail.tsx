@@ -18,7 +18,8 @@ import { Path } from './Path';
 import { ChangePasswordModal } from './modals/ChangePasswordModal';
 import { SubmitApprovalModal } from './modals/SubmitApprovalModal';
 import { StudioFieldEditor } from './studio/StudioFieldEditor';
-import { FieldCreatedDate, FieldLastModifiedDate, FieldOwnerID, TableObject, TableField, TableUser } from '../constants';
+import { TableObject, TableField, TableUser } from '../constants';
+import { COMMON_FIELDS, APPROVAL_STATUS } from '../core/constants';
 import { useActions } from '../core/hooks/useMetadata';
 import { ActionRenderer } from './ActionRenderer';
 import { LayoutRenderer } from './runtime/LayoutRenderer';
@@ -136,7 +137,7 @@ export function MetadataRecordDetail({
                         <div>
                             <div className="text-sm text-gray-500">{objectMetadata.label}</div>
                             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                                {(record.name as string | number) || (record.subject as string | number) || 'Untitled Record'}
+                                {(record[COMMON_FIELDS.NAME] as string | number) || (record[COMMON_FIELDS.SUBJECT] as string | number) || 'Untitled Record'}
                             </h1>
                         </div>
                     </div>
@@ -196,7 +197,7 @@ export function MetadataRecordDetail({
             <ApprovalBanner
                 objectApiName={objectMetadata.api_name}
                 recordId={recordId}
-                recordName={String(record?.name || record?.subject || 'Record')}
+                recordName={String(record?.[COMMON_FIELDS.NAME] || record?.[COMMON_FIELDS.SUBJECT] || 'Record')}
                 pendingItem={pendingItem}
                 onActionComplete={() => {
                     loadRecord();
@@ -268,8 +269,8 @@ export function MetadataRecordDetail({
                                         id: 'fields',
                                         label: 'Fields',
                                         object_api_name: TableField,
-                                        lookup_field: 'object_id',
-                                        fields: ['api_name', 'label', 'type', 'required']
+                                        lookup_field: COMMON_FIELDS.OBJECT_ID,
+                                        fields: [COMMON_FIELDS.API_NAME, COMMON_FIELDS.LABEL, COMMON_FIELDS.TYPE, COMMON_FIELDS.IS_REQUIRED]
                                     }}
                                     parentRecordId={recordId}
                                     parentObjectApiName={objectMetadata.api_name}
@@ -287,8 +288,8 @@ export function MetadataRecordDetail({
                         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                             <h2 className="font-semibold text-gray-900">Approvals</h2>
                             {approvalStatus && (
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${approvalStatus === 'Pending' ? 'bg-amber-100 text-amber-700' :
-                                    approvalStatus === 'Approved' ? 'bg-green-100 text-green-700' :
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${approvalStatus === APPROVAL_STATUS.PENDING ? 'bg-amber-100 text-amber-700' :
+                                    approvalStatus === APPROVAL_STATUS.APPROVED ? 'bg-green-100 text-green-700' :
                                         'bg-red-100 text-red-700'
                                     }`}>
                                     {approvalStatus}
@@ -343,7 +344,7 @@ export function MetadataRecordDetail({
                 onClose={() => setShareModalOpen(false)}
                 objectApiName={objectMetadata.api_name}
                 recordId={recordId}
-                recordName={String(record?.name || record?.subject || 'Record')}
+                recordName={String(record?.[COMMON_FIELDS.NAME] || record?.[COMMON_FIELDS.SUBJECT] || 'Record')}
             />
 
             {/* Submit for Approval Modal */}
@@ -352,7 +353,7 @@ export function MetadataRecordDetail({
                 onClose={() => setApprovalModalOpen(false)}
                 objectApiName={objectMetadata.api_name}
                 recordId={recordId}
-                recordName={String(record?.name || record?.subject || undefined)}
+                recordName={String(record?.[COMMON_FIELDS.NAME] || record?.[COMMON_FIELDS.SUBJECT] || undefined)}
                 onSuccess={loadRecord}
             />
         </div>

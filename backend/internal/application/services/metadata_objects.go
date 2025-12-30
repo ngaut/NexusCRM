@@ -8,8 +8,8 @@ import (
 	"log"
 
 	"github.com/nexuscrm/backend/internal/domain/events"
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // GetAllObjects returns all object definitions visible to the user
@@ -290,14 +290,16 @@ func (ms *MetadataService) GetFieldDependencies(objectAPIName string) []*models.
 
 func (ms *MetadataService) GetChildRelationships(parentObjectAPIName string) []*models.ObjectMetadata {
 	// Query fields that reference this object
+	// reference_to is stored as JSON array string or simple string
 	query := fmt.Sprintf(`
 		SELECT o.api_name 
 		FROM %s f
 		JOIN %s o ON f.object_id = o.id
-		WHERE f.reference_to = ? AND f.type = 'Lookup'
+		WHERE (f.reference_to = ? OR f.reference_to LIKE ?) AND f.type = 'Lookup'
 	`, constants.TableField, constants.TableObject)
 
-	rows, err := ms.db.Query(query, parentObjectAPIName)
+	likePattern := fmt.Sprintf("%%%q%%", parentObjectAPIName)
+	rows, err := ms.db.Query(query, parentObjectAPIName, likePattern)
 	if err != nil {
 		log.Printf("⚠️ Failed to query child relationships for %s: %v", parentObjectAPIName, err)
 		return []*models.ObjectMetadata{}

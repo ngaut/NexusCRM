@@ -4,10 +4,54 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
+
+var actionColumns = []string{
+	constants.FieldSysAction_ID,
+	constants.FieldSysAction_ObjectAPIName,
+	constants.FieldSysAction_Name,
+	constants.FieldSysAction_Label,
+	constants.FieldSysAction_Type,
+	constants.FieldSysAction_Icon,
+	constants.FieldSysAction_TargetObject,
+	constants.FieldSysAction_Config,
+}
+
+var validationRuleColumns = []string{
+	constants.FieldSysValidation_ID,
+	constants.FieldSysValidation_ObjectAPIName,
+	constants.FieldSysValidation_Name,
+	constants.FieldSysValidation_Active,
+	constants.FieldSysValidation_Condition,
+	constants.FieldSysValidation_ErrorMessage,
+}
+
+var flowColumns = []string{
+	constants.FieldSysFlow_ID,
+	constants.FieldSysFlow_Name,
+	constants.FieldSysFlow_TriggerObject,
+	constants.FieldSysFlow_TriggerType,
+	constants.FieldSysFlow_TriggerCondition,
+	constants.FieldSysFlow_ActionType,
+	constants.FieldSysFlow_ActionConfig,
+	constants.FieldSysFlow_Status,
+	constants.FieldSysFlow_FlowType,
+	constants.FieldSysFlow_LastModifiedDate,
+}
+
+var sharingRuleColumns = []string{
+	constants.FieldSysSharingRule_ID,
+	constants.FieldSysSharingRule_ObjectAPIName,
+	constants.FieldSysSharingRule_Name,
+	constants.FieldSysSharingRule_Criteria,
+	constants.FieldSysSharingRule_AccessLevel,
+	constants.FieldSysSharingRule_ShareWithRoleID,
+	constants.FieldSysSharingRule_ShareWithGroupID,
+}
 
 // scanAction scans a row into an ActionMetadata struct
 func (ms *MetadataService) scanAction(row Scannable) (*models.ActionMetadata, error) {
@@ -23,7 +67,7 @@ func (ms *MetadataService) scanAction(row Scannable) (*models.ActionMetadata, er
 
 // queryActions queries actions for an object
 func (ms *MetadataService) queryActions(objectAPIName string) ([]*models.ActionMetadata, error) {
-	query := fmt.Sprintf("SELECT id, object_api_name, name, label, type, icon, target_object, config FROM %s WHERE object_api_name = ?", constants.TableAction)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE object_api_name = ?", strings.Join(actionColumns, ", "), constants.TableAction)
 	rows, err := ms.db.Query(query, objectAPIName)
 	if err != nil {
 		return nil, err
@@ -43,7 +87,7 @@ func (ms *MetadataService) queryActions(objectAPIName string) ([]*models.ActionM
 
 // queryAction queries a single action by ID
 func (ms *MetadataService) queryAction(id string) (*models.ActionMetadata, error) {
-	query := fmt.Sprintf("SELECT id, object_api_name, name, label, type, icon, target_object, config FROM %s WHERE id = ?", constants.TableAction)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE id = ?", strings.Join(actionColumns, ", "), constants.TableAction)
 
 	action, err := ms.scanAction(ms.db.QueryRow(query, id))
 	if err != nil {
@@ -68,7 +112,7 @@ func (ms *MetadataService) scanValidationRule(row Scannable) (*models.Validation
 
 // queryValidationRules queries validation rules for an object
 func (ms *MetadataService) queryValidationRules(objectAPIName string) ([]*models.ValidationRule, error) {
-	query := fmt.Sprintf("SELECT id, object_api_name, name, active, condition, error_message FROM %s WHERE object_api_name = ?", constants.TableValidation)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE object_api_name = ?", strings.Join(validationRuleColumns, ", "), constants.TableValidation)
 	rows, err := ms.db.Query(query, objectAPIName)
 	if err != nil {
 		return nil, err
@@ -99,7 +143,7 @@ func (ms *MetadataService) scanFlow(row Scannable) (*models.Flow, error) {
 
 // queryFlows queries all flows
 func (ms *MetadataService) queryFlows() ([]*models.Flow, error) {
-	query := fmt.Sprintf("SELECT id, name, trigger_object, trigger_type, trigger_condition, action_type, action_config, status, flow_type, last_modified_date FROM %s", constants.TableFlow)
+	query := fmt.Sprintf("SELECT %s FROM %s", strings.Join(flowColumns, ", "), constants.TableFlow)
 	rows, err := ms.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -120,7 +164,7 @@ func (ms *MetadataService) queryFlows() ([]*models.Flow, error) {
 
 // queryFlow queries a single flow
 func (ms *MetadataService) queryFlow(id string) (*models.Flow, error) {
-	query := fmt.Sprintf("SELECT id, name, trigger_object, trigger_type, trigger_condition, action_type, action_config, status, flow_type, last_modified_date FROM %s WHERE id = ?", constants.TableFlow)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE id = ?", strings.Join(flowColumns, ", "), constants.TableFlow)
 
 	flow, err := ms.scanFlow(ms.db.QueryRow(query, id))
 	if err != nil {
@@ -134,7 +178,7 @@ func (ms *MetadataService) queryFlow(id string) (*models.Flow, error) {
 
 // querySharingRules queries sharing rules for an object
 func (ms *MetadataService) querySharingRules(objectAPIName string) ([]*models.SharingRule, error) {
-	query := fmt.Sprintf("SELECT id, object_api_name, name, criteria, access_level, share_with_role_id FROM %s WHERE object_api_name = ?", constants.TableSharingRule)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE object_api_name = ?", strings.Join(sharingRuleColumns, ", "), constants.TableSharingRule)
 	rows, err := ms.db.Query(query, objectAPIName)
 	if err != nil {
 		return nil, err
@@ -144,8 +188,15 @@ func (ms *MetadataService) querySharingRules(objectAPIName string) ([]*models.Sh
 	rules := make([]*models.SharingRule, 0)
 	for rows.Next() {
 		var rule models.SharingRule
-		if err := rows.Scan(&rule.ID, &rule.ObjectAPIName, &rule.Name, &rule.Criteria, &rule.AccessLevel, &rule.ShareWithRoleID); err != nil {
+		var roleID, groupID sql.NullString
+		if err := rows.Scan(&rule.ID, &rule.ObjectAPIName, &rule.Name, &rule.Criteria, &rule.AccessLevel, &roleID, &groupID); err != nil {
 			continue
+		}
+		if roleID.Valid {
+			rule.ShareWithRoleID = &roleID.String
+		}
+		if groupID.Valid {
+			rule.ShareWithGroupID = &groupID.String
 		}
 		rules = append(rules, &rule)
 	}

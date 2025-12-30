@@ -24,7 +24,7 @@ func NewFileHandler(svcMgr *services.ServiceManager) *FileHandler {
 func (h *FileHandler) Upload(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
+		c.JSON(http.StatusBadRequest, gin.H{constants.ResponseError: "No file uploaded"})
 		return
 	}
 
@@ -32,7 +32,7 @@ func (h *FileHandler) Upload(c *gin.Context) {
 	uploadDir := "uploads"
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		if err := os.Mkdir(uploadDir, 0755); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
+			c.JSON(http.StatusInternalServerError, gin.H{constants.ResponseError: "Failed to create upload directory"})
 			return
 		}
 	}
@@ -44,7 +44,7 @@ func (h *FileHandler) Upload(c *gin.Context) {
 
 	// Save
 	if err := c.SaveUploadedFile(file, path); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
+		c.JSON(http.StatusInternalServerError, gin.H{constants.ResponseError: "Failed to save file"})
 		return
 	}
 
@@ -53,6 +53,6 @@ func (h *FileHandler) Upload(c *gin.Context) {
 		"path":                           path,
 		constants.FieldName:              file.Filename,
 		constants.FieldSysFile_SizeBytes: file.Size,
-		constants.FieldSysFile_MimeType:  file.Header.Get("Content-Type"),
+		constants.FieldSysFile_MimeType:  file.Header.Get(constants.HeaderContentType),
 	})
 }

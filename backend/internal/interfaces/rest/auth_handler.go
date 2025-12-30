@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/backend/pkg/auth"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 type AuthHandler struct {
@@ -84,7 +84,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // Logout handles POST /api/auth/logout
 func (h *AuthHandler) Logout(c *gin.Context) {
 	// Get token from context (set by auth middleware)
-	tokenString, exists := c.Get("token")
+	tokenString, exists := c.Get(constants.ContextKeyToken)
 	if !exists {
 		RespondError(c, http.StatusUnauthorized, "No token provided")
 		return
@@ -98,7 +98,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // GetMe handles GET /api/auth/me
 func (h *AuthHandler) GetMe(c *gin.Context) {
 	// Get user from context (set by auth middleware)
-	userInterface, exists := c.Get("user")
+	userInterface, exists := c.Get(constants.ContextKeyUser)
 	if !exists {
 		RespondError(c, http.StatusUnauthorized, "User not found")
 		return
@@ -131,7 +131,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	var req ChangePasswordRequest
 	HandleUpdateEnvelope(c, "", "Password changed successfully", &req, func() error {
 		// Get user from context
-		userInterface, exists := c.Get("user")
+		userInterface, exists := c.Get(constants.ContextKeyUser)
 		if !exists {
 			return errors.NewUnauthorizedError("User not found")
 		}
@@ -143,7 +143,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 
 // GetMyPermissions handles GET /api/auth/permissions/me
 func (h *AuthHandler) GetMyPermissions(c *gin.Context) {
-	userInterface, exists := c.Get("user")
+	userInterface, exists := c.Get(constants.ContextKeyUser)
 	if !exists {
 		RespondError(c, http.StatusUnauthorized, "User not found")
 		return

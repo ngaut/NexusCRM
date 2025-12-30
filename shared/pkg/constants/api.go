@@ -15,7 +15,11 @@ const (
 	BearerPrefix = "Bearer "
 
 	// Response Keys
-	ResponseError = "error"
+	ResponseError     = "error"
+	ResponseSuccess   = "success"
+	ResponseItems     = "items"
+	ResponseLayout    = "layout"
+	ResponseDashboard = "dashboard"
 )
 
 // Query parameter constants

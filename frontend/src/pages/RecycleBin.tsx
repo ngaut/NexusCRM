@@ -4,6 +4,7 @@ import { Trash2, RotateCcw, Filter, CheckSquare, Square } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { useRuntime } from '../contexts/RuntimeContext';
+import { COMMON_FIELDS } from '../core/constants';
 import type { RecycleBinItem } from '../types';
 
 export const RecycleBin: React.FC = () => {
@@ -41,7 +42,7 @@ export const RecycleBin: React.FC = () => {
         if (selectedIds.size === items.length) {
             setSelectedIds(new Set());
         } else {
-            setSelectedIds(new Set(items.map(i => i.record_id))); // Store original record_ids for actions
+            setSelectedIds(new Set(items.map(i => i[COMMON_FIELDS.RECORD_ID] as string))); // Store original record_ids for actions
         }
     };
 
@@ -146,19 +147,19 @@ export const RecycleBin: React.FC = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {items.map(item => (
-                                    <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.has(item.record_id) ? 'bg-blue-50/50' : ''}`}>
+                                    <tr key={item[COMMON_FIELDS.ID] as string} className={`hover:bg-slate-50 transition-colors ${selectedIds.has(item[COMMON_FIELDS.RECORD_ID] as string) ? 'bg-blue-50/50' : ''}`}>
                                         <td className="p-4">
                                             <button
-                                                onClick={() => handleSelectOne(item.record_id)}
-                                                className={`${selectedIds.has(item.record_id) ? 'text-blue-600' : 'text-slate-300 hover:text-slate-400'}`}
+                                                onClick={() => handleSelectOne(item[COMMON_FIELDS.RECORD_ID] as string)}
+                                                className={`${selectedIds.has(item[COMMON_FIELDS.RECORD_ID] as string) ? 'text-blue-600' : 'text-slate-300 hover:text-slate-400'}`}
                                             >
-                                                {selectedIds.has(item.record_id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                                                {selectedIds.has(item[COMMON_FIELDS.RECORD_ID] as string) ? <CheckSquare size={18} /> : <Square size={18} />}
                                             </button>
                                         </td>
                                         <td className="p-4 font-medium text-slate-900">{item.record_name}</td>
-                                        <td className="p-4 font-mono text-xs text-slate-500 bg-slate-100 rounded px-2 w-fit">{item.object_api_name}</td>
-                                        <td className="p-4 text-slate-500">{new Date(item.deleted_date).toLocaleString()}</td>
-                                        <td className="p-4 text-slate-500">{item.deleted_by}</td>
+                                        <td className="p-4 font-mono text-xs text-slate-500 bg-slate-100 rounded px-2 w-fit">{item[COMMON_FIELDS.OBJECT_API_NAME]}</td>
+                                        <td className="p-4 text-slate-500">{new Date(item[COMMON_FIELDS.DELETED_DATE] as string).toLocaleString()}</td>
+                                        <td className="p-4 text-slate-500">{item[COMMON_FIELDS.DELETED_BY]}</td>
                                     </tr>
                                 ))}
                             </tbody>

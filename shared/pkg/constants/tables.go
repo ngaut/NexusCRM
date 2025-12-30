@@ -5,6 +5,14 @@ import "strings"
 // SystemTablePrefix is the prefix for all system tables
 const SystemTablePrefix = "_System_"
 
+// Standard Object API Names
+const (
+	TableAccount = "account"
+	TableContact = "contact"
+	// Common Fields
+	FieldPriority = "priority"
+)
+
 // IsSystemTable checks if a table name is a system table
 func IsSystemTable(tableName string) bool {
 	return strings.HasPrefix(tableName, SystemTablePrefix)

@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/nexuscrm/backend/internal/application/services"
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -101,8 +101,8 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 
 	// Test record owned by Rep
 	repRecord := models.SObject{
-		"id":       "test-record-1",
-		"owner_id": repUserID,
+		constants.FieldID:      "test-record-1",
+		constants.FieldOwnerID: repUserID,
 	}
 
 	// Test cases
@@ -112,7 +112,7 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 			ProfileID: constants.ProfileStandardUser,
 			RoleID:    &repRoleID,
 		}
-		if !permService.CheckRecordAccess(nil, repRecord, "read", repSession) {
+		if !permService.CheckRecordAccess(nil, repRecord, constants.PermRead, repSession) {
 			t.Error("Rep should be able to access their own record")
 		}
 	})
@@ -123,7 +123,7 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 			ProfileID: constants.ProfileStandardUser,
 			RoleID:    &managerRoleID,
 		}
-		if !permService.CheckRecordAccess(nil, repRecord, "read", managerSession) {
+		if !permService.CheckRecordAccess(nil, repRecord, constants.PermRead, managerSession) {
 			t.Error("Manager should be able to read Rep's record via hierarchy")
 		}
 	})
@@ -134,7 +134,7 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 			ProfileID: constants.ProfileStandardUser,
 			RoleID:    &vpRoleID,
 		}
-		if !permService.CheckRecordAccess(nil, repRecord, "read", vpSession) {
+		if !permService.CheckRecordAccess(nil, repRecord, constants.PermRead, vpSession) {
 			t.Error("VP should be able to read Rep's record via hierarchy (2 levels)")
 		}
 	})
@@ -145,22 +145,22 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 			ProfileID: constants.ProfileStandardUser,
 			RoleID:    &ceoRoleID,
 		}
-		if !permService.CheckRecordAccess(nil, repRecord, "read", ceoSession) {
+		if !permService.CheckRecordAccess(nil, repRecord, constants.PermRead, ceoSession) {
 			t.Error("CEO should be able to read Rep's record via hierarchy (top of hierarchy)")
 		}
 	})
 
 	t.Run("Rep cannot read Manager record", func(t *testing.T) {
 		managerRecord := models.SObject{
-			"id":       "test-record-2",
-			"owner_id": managerUserID,
+			constants.FieldID:      "test-record-2",
+			constants.FieldOwnerID: managerUserID,
 		}
 		repSession := &models.UserSession{
 			ID:        repUserID,
 			ProfileID: constants.ProfileStandardUser,
 			RoleID:    &repRoleID,
 		}
-		if permService.CheckRecordAccess(nil, managerRecord, "read", repSession) {
+		if permService.CheckRecordAccess(nil, managerRecord, constants.PermRead, repSession) {
 			t.Error("Rep should NOT be able to read Manager's record (no upward visibility)")
 		}
 	})
@@ -171,7 +171,7 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 			ProfileID: constants.ProfileStandardUser,
 			RoleID:    &repRoleID,
 		}
-		if permService.CheckRecordAccess(nil, repRecord, "read", siblingSession) {
+		if permService.CheckRecordAccess(nil, repRecord, constants.PermRead, siblingSession) {
 			t.Error("Sibling should NOT be able to read peer's record (same level)")
 		}
 	})
@@ -183,7 +183,7 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 			RoleID:    &managerRoleID,
 		}
 		// Hierarchy grants READ only, not EDIT
-		if permService.CheckRecordAccess(nil, repRecord, "edit", managerSession) {
+		if permService.CheckRecordAccess(nil, repRecord, constants.PermEdit, managerSession) {
 			t.Error("Manager should NOT be able to edit Rep's record via hierarchy (read-only)")
 		}
 	})

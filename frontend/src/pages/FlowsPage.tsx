@@ -3,7 +3,7 @@ import { Plus, Zap, AlertCircle, ShieldCheck } from 'lucide-react';
 import { flowsApi } from '../infrastructure/api/flows';
 import { metadataAPI } from '../infrastructure/api/metadata';
 import { dataAPI } from '../infrastructure/api/data';
-import { SYSTEM_TABLE_NAMES } from '../generated-schema';
+import { SYSTEM_TABLE_NAMES, COMMON_FIELDS } from '../generated-schema';
 import { useSchemas } from '../core/hooks/useMetadata';
 import FlowBuilderModal from '../components/modals/FlowBuilderModal';
 import { FlowExecutionModal } from '../components/modals/FlowExecutionModal';
@@ -81,7 +81,7 @@ const FlowsPage: React.FC = () => {
 
     const handleToggleStatus = async (flow: Flow) => {
         try {
-            await flowsApi.toggleStatus(flow.id, flow.status);
+            await flowsApi.toggleStatus(flow[COMMON_FIELDS.ID] as string, flow[COMMON_FIELDS.STATUS]);
             loadFlows();
         } catch (err) {
             setFlowError('Failed to toggle status: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -92,7 +92,7 @@ const FlowsPage: React.FC = () => {
         if (!flowToDelete) return;
         setDeletingFlow(true);
         try {
-            await flowsApi.delete(flowToDelete.id);
+            await flowsApi.delete(flowToDelete[COMMON_FIELDS.ID] as string);
             loadFlows();
             setDeleteFlowModalOpen(false);
             setFlowToDelete(null);
@@ -106,7 +106,7 @@ const FlowsPage: React.FC = () => {
     const handleSaveFlow = async (flowData: Partial<Flow>) => {
         try {
             if (editingFlow) {
-                await flowsApi.update(editingFlow.id, flowData);
+                await flowsApi.update(editingFlow[COMMON_FIELDS.ID] as string, flowData);
             } else {
                 await flowsApi.create(flowData as Omit<Flow, 'id' | 'lastModified'>);
             }
@@ -151,7 +151,7 @@ const FlowsPage: React.FC = () => {
             setApprovalError(null);
 
             if (editingProcess) {
-                await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_APPROVALPROCESS, editingProcess.id, formData);
+                await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_APPROVALPROCESS, editingProcess[COMMON_FIELDS.ID] as string, formData);
             } else {
                 await dataAPI.createRecord<ApprovalProcess>(SYSTEM_TABLE_NAMES.SYSTEM_APPROVALPROCESS, formData);
             }
@@ -167,7 +167,7 @@ const FlowsPage: React.FC = () => {
     const confirmDeleteApproval = async () => {
         if (!processToDelete) return;
         try {
-            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_APPROVALPROCESS, processToDelete.id);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_APPROVALPROCESS, processToDelete[COMMON_FIELDS.ID] as string);
             setDeleteApprovalModalOpen(false);
             setProcessToDelete(null);
             loadApprovals();

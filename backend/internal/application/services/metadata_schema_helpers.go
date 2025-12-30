@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	domainSchema "github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ==================== DRY Helpers ====================
@@ -90,7 +90,7 @@ func (ms *MetadataService) PrepareTableDefinition(schema *models.ObjectMetadata)
 			typeColDef := domainSchema.ColumnDefinition{
 				Name:        GetPolymorphicTypeColumnName(field.APIName),
 				Type:        "VARCHAR(100)",
-				LogicalType: "Text",
+				LogicalType: string(constants.FieldTypeText),
 				Nullable:    true, // Can be null if lookup is null
 			}
 			def.Columns = append(def.Columns, typeColDef)
@@ -100,7 +100,7 @@ func (ms *MetadataService) PrepareTableDefinition(schema *models.ObjectMetadata)
 		f := field // copy
 		batchFields = append(batchFields, FieldWithContext{
 			ObjectID: schema.ID,
-			FieldID:  fmt.Sprintf("fld_%s_%s", schema.APIName, f.APIName),
+			FieldID:  GenerateFieldID(schema.APIName, f.APIName),
 			Field:    &f,
 		})
 	}

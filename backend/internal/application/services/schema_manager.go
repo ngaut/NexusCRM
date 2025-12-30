@@ -9,10 +9,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/domain/schema"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/fieldtypes"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // SchemaManager handles all table creation and schema operations
@@ -31,7 +31,7 @@ func (sm *SchemaManager) CreatePhysicalTable(ctx context.Context, def schema.Tab
 
 	// VALIDATION: Table Name
 	// System tables (starting with _System_) are exempt from strict snake_case
-	if !strings.HasPrefix(def.TableName, "_System_") {
+	if !constants.IsSystemTable(def.TableName) {
 		validName := regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 		if !validName.MatchString(def.TableName) {
 			return fmt.Errorf("table name '%s' must be snake_case (lowercase, alphanumeric, underscores)", def.TableName)
@@ -284,7 +284,7 @@ func (sm *SchemaManager) BatchRegisterTables(defs []schema.TableDefinition, exec
 	var args []interface{}
 
 	for _, def := range defs {
-		id := "tbl_" + def.TableName
+		id := GenerateTableID(def.TableName)
 		valuePlaceholders = append(valuePlaceholders, "(?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())")
 		args = append(args,
 			id,
@@ -335,6 +335,11 @@ func (sm *SchemaManager) DropTable(tableName string) error {
 	// Delete object
 	if _, err := sm.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE api_name = ?", constants.TableObject), tableName); err != nil {
 		log.Printf("⚠️  Warning: Failed to delete object metadata %s: %v", tableName, err)
+	}
+
+	// Delete AutoNumber metadata
+	if _, err := sm.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE LOWER(object_api_name) = LOWER(?)", constants.TableAutoNumber), tableName); err != nil {
+		log.Printf("⚠️  Warning: Failed to delete auto-number metadata for %s: %v", tableName, err)
 	}
 
 	log.Printf("   ✅ Table dropped and metadata cleaned: %s", tableName)
@@ -418,7 +423,7 @@ func (sm *SchemaManager) mapSQLTypeToLogical(sqlType string) string {
 	if strings.Contains(upper, "DATE") {
 		return string(constants.FieldTypeDate)
 	}
-	if strings.Contains(upper, "JSON") {
+	if strings.Contains(upper, string(constants.FieldTypeJSON)) {
 		return string(constants.FieldTypeJSON)
 	}
 	return string(constants.FieldTypeText) // Default
@@ -472,12 +477,12 @@ func (sm *SchemaManager) ValidateFieldDefinition(field schema.ColumnDefinition) 
 
 	// 2. Type-Specific Assertions
 	switch field.Type {
-	case "Lookup":
+	case string(constants.FieldTypeLookup):
 		// User assumption: Lookups must specific a target
 		if field.ReferenceTo == "" && len(field.AllReferences) == 0 {
 			return fmt.Errorf("lookup field '%s' must have a valid 'reference_to' target", field.Name)
 		}
-	case "Picklist":
+	case string(constants.FieldTypePicklist):
 		// User assumption: Picklists must have options
 		if len(field.Options) == 0 {
 			// Note: We allow empty options temporarily if loaded from partial metadata?
@@ -485,7 +490,7 @@ func (sm *SchemaManager) ValidateFieldDefinition(field schema.ColumnDefinition) 
 			// Let's enforce it strictly "Faile Fast".
 			return fmt.Errorf("picklist field '%s' must have at least one option", field.Name)
 		}
-	case "Formula":
+	case string(constants.FieldTypeFormula):
 		if field.Formula == "" {
 			return fmt.Errorf("formula field '%s' must have a formula expression", field.Name)
 		}

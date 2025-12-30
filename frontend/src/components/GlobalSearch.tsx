@@ -4,6 +4,7 @@ import { dataAPI } from '../infrastructure/api/data';
 import type { SearchResult, SObject } from '../types';
 import { Search, Loader2, X } from 'lucide-react';
 import { getRecordDisplayName } from '../core/utils/recordUtils';
+import { COMMON_FIELDS } from '../core/constants';
 
 export const GlobalSearch: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -181,8 +182,8 @@ export const GlobalSearch: React.FC = () => {
                                     <div className="divide-y divide-slate-100">
                                         {group.matches.map((record) => (
                                             <button
-                                                key={record.id}
-                                                onClick={() => handleResultClick(group.object_api_name, record.id!)}
+                                                key={record[COMMON_FIELDS.ID] as string}
+                                                onClick={() => handleResultClick(group.object_api_name, record[COMMON_FIELDS.ID] as string)}
                                                 className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors flex items-start gap-3"
                                             >
                                                 <div className="flex-1 min-w-0">

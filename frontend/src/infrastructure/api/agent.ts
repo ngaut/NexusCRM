@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { API_ENDPOINTS } from './endpoints';
 import { API_CONFIG } from '../../core/constants/EnvironmentConfig';
 
 export interface ToolCall {
@@ -71,16 +72,16 @@ export interface CompactResponse {
 
 export const agentApi = {
     chat: async (request: ChatRequest): Promise<ChatResponse> => {
-        return await apiClient.post<ChatResponse>('/api/agent/chat', request);
+        return await apiClient.post<ChatResponse>(API_ENDPOINTS.AGENT.CHAT, request);
     },
 
     getContext: async (includeContent: boolean = false): Promise<ContextState> => {
         const query = includeContent ? '?include_content=true' : '';
-        return await apiClient.get<ContextState>(`/api/agent/context${query}`);
+        return await apiClient.get<ContextState>(API_ENDPOINTS.AGENT.CONTEXT(query));
     },
 
     compact: async (request: CompactRequest): Promise<CompactResponse> => {
-        return await apiClient.post<CompactResponse>('/api/agent/compact', request);
+        return await apiClient.post<CompactResponse>(API_ENDPOINTS.AGENT.COMPACT, request);
     },
 
     // Streaming chat using EventSource pattern
@@ -98,7 +99,7 @@ export const agentApi = {
             return controller;
         }
 
-        fetch(`${API_CONFIG.BACKEND_URL}/api/agent/chat/stream`, {
+        fetch(`${API_CONFIG.BACKEND_URL}${API_ENDPOINTS.AGENT.CHAT_STREAM}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

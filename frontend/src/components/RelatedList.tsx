@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { dataAPI } from '../infrastructure/api/data';
+import { COMMON_FIELDS } from '../core/constants';
 import { useObjectMetadata } from '../core/hooks/useMetadata';
 import { UIRegistry } from '../registries/UIRegistry';
 import type { SObject, RelatedListConfig } from '../types';
@@ -41,7 +42,7 @@ export const RelatedList: React.FC<RelatedListProps> = ({
             const relatedRecords = await dataAPI.query({
                 objectApiName: config.object_api_name,
                 filterExpr: `${config.lookup_field} == '${parentRecordId}'`,
-                sortField: 'created_date',
+                sortField: COMMON_FIELDS.CREATED_DATE,
                 sortDirection: 'DESC',
                 limit: 50
             });
@@ -58,7 +59,7 @@ export const RelatedList: React.FC<RelatedListProps> = ({
     const displayFields = config.fields && config.fields.length > 0
         ? config.fields
         : metadata?.fields
-            .filter(f => !f.is_system && f.api_name !== 'id')
+            .filter(f => !f.is_system && f.api_name !== COMMON_FIELDS.ID)
             .slice(0, 4)
             .map(f => f.api_name) || [];
 
@@ -133,10 +134,10 @@ export const RelatedList: React.FC<RelatedListProps> = ({
                         <tbody className="divide-y divide-slate-100">
                             {records.map((record) => (
                                 <tr
-                                    key={record.id}
+                                    key={record[COMMON_FIELDS.ID] as string}
                                     className="hover:bg-slate-50 transition-colors cursor-pointer"
                                     onClick={() => {
-                                        window.location.href = `/object/${config.object_api_name}/${record.id}`;
+                                        window.location.href = `/object/${config.object_api_name}/${record[COMMON_FIELDS.ID] as string}`;
                                     }}
                                 >
                                     {displayFields.map(fieldApiName => {
@@ -169,7 +170,7 @@ export const RelatedList: React.FC<RelatedListProps> = ({
                                     })}
                                     <td className="px-6 py-4 text-right">
                                         <Link
-                                            to={`/object/${config.object_api_name}/${record.id}`}
+                                            to={`/object/${config.object_api_name}/${record[COMMON_FIELDS.ID] as string}`}
                                             className="text-blue-600 hover:text-blue-800"
                                             onClick={(e) => e.stopPropagation()}
                                         >

@@ -64,6 +64,116 @@ type genContext struct {
 	timestamp string
 }
 
+var commonFields = map[string]string{
+	// Primary/Core fields
+	"id":           "FieldID",
+	"name":         "FieldName",
+	"api_name":     "FieldAPIName",
+	"label":        "FieldLabel",
+	"plural_label": "FieldPluralLabel",
+	"description":  "FieldDescription",
+
+	// Audit fields
+	"created_date":        "FieldCreatedDate",
+	"created_by_id":       "FieldCreatedByID",
+	"last_modified_date":  "FieldLastModifiedDate",
+	"last_modified_by_id": "FieldLastModifiedByID",
+	"owner_id":            "FieldOwnerID",
+	"is_deleted":          "FieldIsDeleted",
+	"created_by":          "FieldCreatedBy",
+
+	// User fields
+	"email":             "FieldEmail",
+	"username":          "FieldUsername",
+	"password":          "FieldPassword",
+	"first_name":        "FieldFirstName",
+	"last_name":         "FieldLastName",
+	"profile_id":        "FieldProfileID",
+	"permission_set_id": "FieldPermissionSetID",
+	"role_id":           "FieldRoleID",
+	"is_active":         "FieldIsActive",
+	"last_login_date":   "FieldLastLoginDate",
+
+	// Object/Field Metadata
+	"type":         "FieldMetaType",
+	"object_id":    "FieldObjectID",
+	"reference_to": "FieldReferenceTo",
+	"subject":      "FieldSubject",
+	"is_custom":    "FieldIsCustom",
+	"is_system":    "FieldIsSystem",
+	"required":     "FieldIsRequired",
+	"unique":       "FieldIsUnique",
+
+	// Flow/Action fields
+	"status":     "FieldStatus",
+	"sort_order": "FieldSortOrder",
+	"condition":  "FieldCondition",
+	"config":     "FieldConfig",
+
+	// Approval fields
+	"process_id":     "FieldProcessID",
+	"work_item_id":   "FieldWorkItemID",
+	"submitted_date": "FieldSubmittedDate",
+	"approver_id":    "FieldApproverID",
+	"approved_by_id": "FieldApprovedByID",
+	"approved_date":  "FieldApprovedDate",
+	"comments":       "FieldComments",
+	"entry_criteria": "FieldEntryCriteria",
+	"approver_type":  "FieldApproverType",
+
+	// Flow/Step fields
+	"flow_id":          "FieldFlowID",
+	"flow_instance_id": "FieldFlowInstanceID",
+	"flow_step_id":     "FieldFlowStepID",
+	"current_step_id":  "FieldCurrentStepID",
+	"step_name":        "FieldStepName",
+	"step_order":       "FieldStepOrder",
+	"step_type":        "FieldStepType",
+	"action_type":      "FieldActionType",
+	"trigger_type":     "FieldTriggerType",
+	"trigger_object":   "FieldTriggerObject",
+	"on_success_step":  "FieldOnSuccessStep",
+	"on_failure_step":  "FieldOnFailureStep",
+
+	// Recycle Bin fields
+	"record_id":       "FieldRecordID",
+	"object_api_name": "FieldObjectAPIName",
+	"record_name":     "FieldRecordName",
+	"deleted_by":      "FieldDeletedBy",
+	"deleted_date":    "FieldDeletedDate",
+
+	// Recent Items fields
+	"user_id":   "FieldUserID",
+	"timestamp": "FieldTimestamp",
+
+	// Config fields
+	"key_name":  "FieldKeyName",
+	"value":     "FieldValue",
+	"is_secret": "FieldIsSecret",
+
+	// Log fields
+	"level":   "FieldLevel",
+	"source":  "FieldSource",
+	"message": "FieldMessage",
+	"details": "FieldDetails",
+
+	// Session fields
+	"token":         "FieldToken",
+	"expires_at":    "FieldExpiresAt",
+	"last_activity": "FieldLastActivity",
+	"ip_address":    "FieldIPAddress",
+	"user_agent":    "FieldUserAgent",
+	"is_revoked":    "FieldIsRevoked",
+
+	// Metadata fields
+	"table_name":     "FieldTableName",
+	"table_type":     "FieldTableType",
+	"category":       "FieldCategory",
+	"filters":        "FieldFilters",
+	"is_managed":     "FieldIsManaged",
+	"schema_version": "FieldSchemaVersion",
+}
+
 func main() {
 	// Find project root by looking for system_tables.json
 	jsonPath := findSystemTablesJSON()
@@ -172,7 +282,7 @@ func generateGoTableConstants(ctx *genContext, projectRoot string) error {
 	}
 	sb.WriteString("}\n")
 
-	outPath := filepath.Join(projectRoot, "backend", "pkg", "constants", "z_generated_tables.go")
+	outPath := filepath.Join(projectRoot, "shared", "pkg", "constants", "z_generated_tables.go")
 	if err := os.WriteFile(outPath, []byte(sb.String()), 0644); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
@@ -191,92 +301,6 @@ func generateGoFieldConstants(ctx *genContext, projectRoot string) error {
 	sb.WriteString("// Source: internal/bootstrap/system_tables.json\n")
 	sb.WriteString("// Generated at: " + ctx.timestamp + "\n\n")
 	sb.WriteString("package constants\n\n")
-
-	// Track common fields for backward compatibility
-	// These mirror the fields from the original fields.go to maintain compatibility
-	commonFields := map[string]string{
-		// Primary/Core fields
-		"id":           "FieldID",
-		"name":         "FieldName",
-		"api_name":     "FieldAPIName",
-		"label":        "FieldLabel",
-		"plural_label": "FieldPluralLabel",
-		"description":  "FieldDescription",
-
-		// Audit fields
-		"created_date":        "FieldCreatedDate",
-		"created_by_id":       "FieldCreatedByID",
-		"last_modified_date":  "FieldLastModifiedDate",
-		"last_modified_by_id": "FieldLastModifiedByID",
-		"owner_id":            "FieldOwnerID",
-		"is_deleted":          "FieldIsDeleted",
-		"created_by":          "FieldCreatedBy",
-
-		// User fields
-		"email":           "FieldEmail",
-		"username":        "FieldUsername",
-		"password":        "FieldPassword",
-		"first_name":      "FieldFirstName",
-		"last_name":       "FieldLastName",
-		"profile_id":      "FieldProfileID",
-		"role_id":         "FieldRoleID",
-		"is_active":       "FieldIsActive",
-		"last_login_date": "FieldLastLoginDate",
-
-		// Object/Field Metadata
-		"type":         "FieldMetaType",
-		"object_id":    "FieldObjectID",
-		"reference_to": "FieldReferenceTo",
-		"is_custom":    "FieldIsCustom",
-		"is_system":    "FieldIsSystem",
-		"required":     "FieldIsRequired",
-		"unique":       "FieldIsUnique",
-
-		// Flow/Action fields
-		"trigger_object": "FieldTriggerObject",
-		"trigger_type":   "FieldTriggerType",
-		"condition":      "FieldCondition",
-		"config":         "FieldConfig",
-		"status":         "FieldStatus",
-		"sort_order":     "FieldSortOrder",
-
-		// Recycle Bin fields
-		"record_id":       "FieldRecordID",
-		"object_api_name": "FieldObjectAPIName",
-		"record_name":     "FieldRecordName",
-		"deleted_by":      "FieldDeletedBy",
-		"deleted_date":    "FieldDeletedDate",
-
-		// Recent Items fields
-		"user_id":   "FieldUserID",
-		"timestamp": "FieldTimestamp",
-
-		// Config fields
-		"key_name":  "FieldKeyName",
-		"value":     "FieldValue",
-		"is_secret": "FieldIsSecret",
-
-		// Log fields
-		"level":   "FieldLevel",
-		"source":  "FieldSource",
-		"message": "FieldMessage",
-		"details": "FieldDetails",
-
-		// Session fields
-		"token":         "FieldToken",
-		"expires_at":    "FieldExpiresAt",
-		"last_activity": "FieldLastActivity",
-		"ip_address":    "FieldIPAddress",
-		"user_agent":    "FieldUserAgent",
-		"is_revoked":    "FieldIsRevoked",
-
-		// Metadata fields
-		"table_name":     "FieldTableName",
-		"table_type":     "FieldTableType",
-		"category":       "FieldCategory",
-		"is_managed":     "FieldIsManaged",
-		"schema_version": "FieldSchemaVersion",
-	}
 
 	// Generate common fields first (backward compatible)
 	sb.WriteString("// Common field names (backward compatible)\n")
@@ -321,7 +345,7 @@ func generateGoFieldConstants(ctx *genContext, projectRoot string) error {
 		sb.WriteString(")\n\n")
 	}
 
-	outPath := filepath.Join(projectRoot, "backend", "pkg", "constants", "z_generated_fields.go")
+	outPath := filepath.Join(projectRoot, "shared", "pkg", "constants", "z_generated_fields.go")
 	if err := os.WriteFile(outPath, []byte(sb.String()), 0644); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
@@ -398,7 +422,7 @@ func generateGoStructs(ctx *genContext, projectRoot string) error {
 		sb.WriteString("}\n\n")
 	}
 
-	outPath := filepath.Join(projectRoot, "backend", "internal", "domain", "models", "z_generated.go")
+	outPath := filepath.Join(projectRoot, "shared", "pkg", "models", "z_generated.go")
 	if err := os.WriteFile(outPath, []byte(sb.String()), 0644); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
@@ -433,6 +457,38 @@ func generateTypeScript(ctx *genContext, projectRoot string) error {
 	}
 	sb.WriteString("} as const;\n\n")
 	sb.WriteString("export type SystemTableName = typeof SYSTEM_TABLE_NAMES[keyof typeof SYSTEM_TABLE_NAMES];\n\n")
+
+	// Generate common fields first (TypeScript version)
+	sb.WriteString("// ==================== Common Fields ====================\n\n")
+	sb.WriteString("export const COMMON_FIELDS = {\n")
+
+	// Sort keys for deterministic output
+	var commonKeys []string
+	for k := range commonFields {
+		commonKeys = append(commonKeys, k)
+	}
+	sort.Strings(commonKeys)
+
+	for _, field := range commonKeys {
+		// Convert "FieldID" to "ID" for cleaner TS constants
+		constName := commonFields[field]
+		constName = strings.TrimPrefix(constName, "Field")
+		// Special cases to maintain mapping
+		if constName == "APIName" {
+			constName = "API_NAME"
+		} else if constName == "CreatedDate" {
+			constName = "CREATED_DATE"
+		} else if constName == "LastModifiedDate" {
+			constName = "LAST_MODIFIED_DATE"
+		} else if constName == "MetaType" || constName == "Type" {
+			constName = "TYPE"
+		} else {
+			// Convert PascalCase to SNAKE_CASE for TS constants
+			constName = pascalToSnake(constName)
+		}
+		sb.WriteString(fmt.Sprintf("    %s: '%s',\n", strings.ToUpper(constName), field))
+	}
+	sb.WriteString("} as const;\n\n")
 
 	// Generate field constants per table
 	sb.WriteString("// ==================== Field Constants ====================\n\n")
@@ -644,6 +700,27 @@ func snakeToPascal(s string) string {
 	result = strings.ReplaceAll(result, "Sql", "SQL")
 
 	return result
+}
+
+// pascalToSnake converts "CreatedDate" to "created_date" and "ID" to "id"
+func pascalToSnake(s string) string {
+	// Handle special acronyms
+	s = strings.ReplaceAll(s, "ID", "Id")
+	s = strings.ReplaceAll(s, "API", "Api")
+	s = strings.ReplaceAll(s, "UI", "Ui")
+	s = strings.ReplaceAll(s, "URL", "Url")
+	s = strings.ReplaceAll(s, "IP", "Ip")
+	s = strings.ReplaceAll(s, "JSON", "Json")
+	s = strings.ReplaceAll(s, "HTML", "Html")
+
+	var result strings.Builder
+	for i, r := range s {
+		if unicode.IsUpper(r) && i > 0 {
+			result.WriteRune('_')
+		}
+		result.WriteRune(unicode.ToLower(r))
+	}
+	return result.String()
 }
 
 // sqlTypeToGoType converts SQL types to Go types

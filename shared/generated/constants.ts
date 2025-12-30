@@ -23,18 +23,18 @@ export interface ProfileMetadata {
 
 export const SYSTEM_PROFILES: Record<string, ProfileMetadata> = {
     [PROFILE_IDS.SYSTEM_ADMIN]: {
-            "id": "system_admin",
-            "label": "System Administrator",
-            "description": "Full access to all platform features and data. Can modify system configuration.",
-            "is_system": true,
-            "is_super_user": true
+        "id": "system_admin",
+        "label": "System Administrator",
+        "description": "Full access to all platform features and data. Can modify system configuration.",
+        "is_system": true,
+        "is_super_user": true
     },
     [PROFILE_IDS.STANDARD_USER]: {
-            "id": "standard_user",
-            "label": "Standard User",
-            "description": "Default user profile with standard permissions as defined by administrators.",
-            "is_system": true,
-            "is_super_user": false
+        "id": "standard_user",
+        "label": "Standard User",
+        "description": "Default user profile with standard permissions as defined by administrators.",
+        "is_system": true,
+        "is_super_user": false
     }
 };
 
@@ -167,6 +167,8 @@ export interface FieldTypeDefinition {
     isSearchable: boolean;
     isGroupable: boolean;
     isSummable: boolean;
+    validationPattern?: string;
+    validationMessage?: string;
     isFK?: boolean;
     isVirtual?: boolean;
     isSystemOnly?: boolean;

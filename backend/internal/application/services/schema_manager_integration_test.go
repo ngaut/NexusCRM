@@ -45,9 +45,9 @@ func TestSchemaManager_Integration_ACID(t *testing.T) {
 		Category:    "test",
 		Description: "Test Object for ACID",
 		Columns: []schema.ColumnDefinition{
-			{Name: "id", Type: "VARCHAR(36)", Nullable: false, PrimaryKey: true, LogicalType: "ID"}, // Added ID to satisfy check
-			{Name: "name", Type: "VARCHAR(255)", Nullable: false, LogicalType: "Text"},
-			{Name: "amount", Type: "DECIMAL(10,2)", Nullable: true, LogicalType: "Currency"},
+			{Name: constants.FieldID, Type: "VARCHAR(36)", Nullable: false, PrimaryKey: true, LogicalType: "ID"}, // Added ID to satisfy check
+			{Name: constants.FieldName, Type: "VARCHAR(255)", Nullable: false, LogicalType: string(constants.FieldTypeText)},
+			{Name: "amount", Type: "DECIMAL(10,2)", Nullable: true, LogicalType: string(constants.FieldTypeCurrency)},
 		},
 	}
 
@@ -82,16 +82,16 @@ func TestSchemaManager_Integration_ACID(t *testing.T) {
 
 	err = db.QueryRowContext(ctx, checkFieldQuery, objID, "name").Scan(&fieldID, &fieldType)
 	assert.NoError(t, err, "Field 'name' metadata must exist")
-	assert.Equal(t, "Text", fieldType)
+	assert.Equal(t, string(constants.FieldTypeText), fieldType)
 
 	// Check 'amount' field
 	err = db.QueryRowContext(ctx, checkFieldQuery, objID, "amount").Scan(&fieldID, &fieldType)
 	assert.NoError(t, err, "Field 'amount' metadata must exist")
-	assert.Equal(t, "Currency", fieldType)
+	assert.Equal(t, string(constants.FieldTypeCurrency), fieldType)
 
 	// 7. Verify System Fields (Auto-registered)
 	// ID, CreatedDate, etc.
-	err = db.QueryRowContext(ctx, checkFieldQuery, objID, "id").Scan(&fieldID, &fieldType)
+	err = db.QueryRowContext(ctx, checkFieldQuery, objID, constants.FieldID).Scan(&fieldID, &fieldType)
 	assert.NoError(t, err, "System field 'id' metadata must exist")
 
 	t.Log("✅ Integration Test Passed: Table and Metadata created correctly.")

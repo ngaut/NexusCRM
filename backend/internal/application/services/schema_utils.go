@@ -3,11 +3,12 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // NormalizeSObject keys to match schema (case-insensitive) and coerce values to correct type.
@@ -86,6 +87,8 @@ func ToStorageRecord(schema *models.ObjectMetadata, data models.SObject) models.
 				if baseMeta != nil && baseMeta.IsPolymorphic {
 					result[key] = val
 				}
+			} else {
+				log.Printf("🔍 [ToStorageRecord] Field metadata not found for key: %s (Schema: %s)", key, schema.APIName)
 			}
 			continue
 		}
@@ -131,7 +134,9 @@ func ToStorageRecord(schema *models.ObjectMetadata, data models.SObject) models.
 			}
 			// Marshal map/slice to JSON string
 			if bytes, err := json.Marshal(val); err == nil {
-				result[columnName] = string(bytes)
+				jsonStr := string(bytes)
+				log.Printf("🔍 [ToStorageRecord] Marshaled JSON for %s: %s", columnName, jsonStr)
+				result[columnName] = jsonStr
 			}
 			continue
 		}
@@ -215,7 +220,21 @@ func FromStorageRecord(schema *models.ObjectMetadata, record models.SObject, vis
 			}
 		}
 
-		// Boolean hydration is the primary requirement here.
+		// Handle JSON types: Unmarshal string/bytes back to interface{}
+		if field.Type == constants.FieldTypeJSON {
+			var jsonVal interface{}
+			var err error
+
+			if b, ok := val.([]uint8); ok {
+				err = json.Unmarshal(b, &jsonVal)
+			} else if s, ok := val.(string); ok && s != "" {
+				err = json.Unmarshal([]byte(s), &jsonVal)
+			}
+
+			if err == nil && jsonVal != nil {
+				record[field.APIName] = jsonVal
+			}
+		}
 	}
 
 	return record
@@ -247,4 +266,19 @@ func GenerateObjectID(apiName string) string {
 // GenerateFieldID generates a standardized ID for a field
 func GenerateFieldID(objectAPIName, fieldAPIName string) string {
 	return fmt.Sprintf("%s%s_%s", constants.PrefixField, objectAPIName, fieldAPIName)
+}
+
+// GenerateTableID generates a standardized ID for a table
+func GenerateTableID(tableName string) string {
+	return constants.PrefixTable + tableName
+}
+
+// GenerateAutoNumberID generates a standardized ID for an auto-number sequence
+func GenerateAutoNumberID(objectAPIName, fieldAPIName string) string {
+	return fmt.Sprintf("%s%s_%s", constants.PrefixAutoNumber, objectAPIName, fieldAPIName)
+}
+
+// GenerateAppID generates a standardized ID for an app
+func GenerateAppID(apiName string) string {
+	return constants.PrefixApp + apiName
 }

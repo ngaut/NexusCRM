@@ -5,6 +5,7 @@ import { approvalsAPI, ApprovalWorkItem } from '../infrastructure/api/approvals'
 import { useSuccessToast, useErrorToast } from './ui/Toast';
 import { useRuntime } from '../contexts/RuntimeContext';
 import { StepProgressCompact } from './StepProgressIndicator';
+import { APPROVAL_STATUS } from '../core/constants';
 
 interface ApprovalBannerProps {
     objectApiName: string;
@@ -59,7 +60,7 @@ export function ApprovalBanner({
     }, [pendingItem?.flow_instance_id]);
 
     // No pending item = no banner
-    if (!pendingItem || pendingItem.status !== 'Pending') {
+    if (!pendingItem || pendingItem.status !== APPROVAL_STATUS.PENDING) {
         return null;
     }
 

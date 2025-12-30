@@ -112,12 +112,13 @@ type FieldPermission struct {
 
 // SharingRule represents a sharing rule
 type SharingRule struct {
-	ID              string `json:"id"`
-	ObjectAPIName   string `json:"object_api_name"`
-	Name            string `json:"name"`
-	Criteria        string `json:"criteria"`
-	AccessLevel     string `json:"access_level"` // Read, Edit
-	ShareWithRoleID string `json:"share_with_role_id"`
+	ID               string  `json:"id"`
+	ObjectAPIName    string  `json:"object_api_name"`
+	Name             string  `json:"name"`
+	Criteria         string  `json:"criteria"`
+	AccessLevel      string  `json:"access_level"` // Read, Edit
+	ShareWithRoleID  *string `json:"share_with_role_id,omitempty"`
+	ShareWithGroupID *string `json:"share_with_group_id,omitempty"`
 }
 
 // SystemUser represents a user record

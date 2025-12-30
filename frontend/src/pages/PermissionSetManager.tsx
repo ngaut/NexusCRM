@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Key, Plus, Search, Trash2, Edit2, Check, X, Shield } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
 import { SYSTEM_TABLE_NAMES } from '../generated-schema';
+import { COMMON_FIELDS } from '../core/constants';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { PermissionEditorModal, PermissionEntity } from '../components/modals/PermissionEditorModal';
 import { useErrorToast, useSuccessToast } from '../components/ui/Toast';
@@ -57,7 +58,7 @@ export const PermissionSetManager: React.FC = () => {
     const handleUpdate = async () => {
         if (!editingPermSet) return;
         try {
-            await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSET, editingPermSet.id, formData);
+            await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSET, editingPermSet[COMMON_FIELDS.ID] as string, formData);
             successToast('Permission Set updated successfully');
             setEditingPermSet(null);
             setFormData({ name: '', label: '', description: '', is_active: true });
@@ -70,7 +71,7 @@ export const PermissionSetManager: React.FC = () => {
     const handleDelete = async () => {
         if (!deletingPermSet) return;
         try {
-            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSET, deletingPermSet.id);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSET, deletingPermSet[COMMON_FIELDS.ID] as string);
             successToast('Permission Set deleted successfully');
             setDeletingPermSet(null);
             loadPermissionSets();
@@ -150,7 +151,7 @@ export const PermissionSetManager: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredPermSets.map(permSet => (
-                                <tr key={permSet.id} className="hover:bg-slate-50">
+                                <tr key={permSet[COMMON_FIELDS.ID] as string} className="hover:bg-slate-50">
                                     <td className="px-6 py-4 font-medium text-slate-900">{permSet.name}</td>
                                     <td className="px-6 py-4 text-slate-600">{permSet.label}</td>
                                     <td className="px-6 py-4 text-slate-500 max-w-xs truncate">
@@ -169,7 +170,7 @@ export const PermissionSetManager: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 text-right whitespace-nowrap">
                                         <button
-                                            onClick={() => setEditingPermissions({ id: permSet.id, name: permSet.label, type: 'permission_set' })}
+                                            onClick={() => setEditingPermissions({ id: permSet[COMMON_FIELDS.ID] as string, name: permSet.label, type: 'permission_set' })}
                                             className="text-sm font-medium text-purple-600 hover:text-purple-800 mr-3"
                                         >
                                             <Shield size={14} className="inline mr-1" />

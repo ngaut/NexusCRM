@@ -3,6 +3,7 @@ import { User, Calendar, X } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
 import { SObject } from '../types';
 import { SYSTEM_TABLE_NAMES } from '../generated-schema';
+import { COMMON_FIELDS } from '../core/constants';
 
 export interface GlobalFilters {
     ownerId?: string;
@@ -74,7 +75,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange })
                 >
                     <option value="">All Owners</option>
                     {users.map(u => (
-                        <option key={u.id} value={u.id}>{String(u.name || u.username || 'Unknown User')}</option>
+                        <option key={u[COMMON_FIELDS.ID]} value={u[COMMON_FIELDS.ID]}>
+                            {String(u[COMMON_FIELDS.NAME] || u[COMMON_FIELDS.USERNAME] || 'Unknown User')}
+                        </option>
                     ))}
                 </select>
             </div>

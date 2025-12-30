@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -113,13 +113,13 @@ func TestMasterDetail_CascadeDelete(t *testing.T) {
 	projectData := models.SObject{"name": "Alpha Project"}
 	createdProject, err := ps.Insert(ctx, masterObjName, projectData, adminUser)
 	require.NoError(t, err)
-	projectID := createdProject["id"].(string)
+	projectID := createdProject[constants.FieldID].(string)
 
 	// Create Child
 	taskData := models.SObject{"name": "Sub Task 1", "project_id": projectID}
 	createdTask, err := ps.Insert(ctx, detailObjName, taskData, adminUser)
 	require.NoError(t, err)
-	taskID := createdTask["id"].(string)
+	taskID := createdTask[constants.FieldID].(string)
 
 	// Verify Child Exists
 	var count int

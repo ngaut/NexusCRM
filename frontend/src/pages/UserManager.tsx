@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Shield, Plus, Mail, User as UserIcon } from 'lucide-react';
 import { usersAPI } from '../infrastructure/api/users';
 import type { User, Profile } from '../types';
+import { COMMON_FIELDS } from '../core/constants';
 import { PermissionEditorModal } from '../components/modals/PermissionEditorModal';
 import { UserPermissionSetsSection } from '../components/UserPermissionSetsSection';
 import { EffectivePermissionsModal } from '../components/modals/EffectivePermissionsModal';
@@ -118,7 +119,7 @@ export const UserManager: React.FC = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {users.map(user => (
-                                        <tr key={user.id} className="hover:bg-slate-50">
+                                        <tr key={user[COMMON_FIELDS.ID] as string} className="hover:bg-slate-50">
                                             <td className="px-6 py-4 font-medium text-slate-900">
                                                 {user.name}
                                             </td>
@@ -169,7 +170,7 @@ export const UserManager: React.FC = () => {
                                                 <button
                                                     onClick={async () => {
                                                         try {
-                                                            await usersAPI.updateUser(user.id, { is_active: !user.is_active });
+                                                            await usersAPI.updateUser(user[COMMON_FIELDS.ID] as string, { is_active: !user.is_active });
                                                             loadData();
                                                         } catch {
                                                             errorToast("Failed to update user status");
@@ -204,7 +205,7 @@ export const UserManager: React.FC = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {profiles.map(profile => (
-                                        <tr key={profile.id} className="hover:bg-slate-50">
+                                        <tr key={profile[COMMON_FIELDS.ID] as string} className="hover:bg-slate-50">
                                             <td className="px-6 py-4 font-medium text-slate-900">
                                                 {profile.name}
                                             </td>
@@ -259,7 +260,7 @@ export const UserManager: React.FC = () => {
 
             {managingPermissionsUser && (
                 <UserPermissionSetsSection
-                    userId={managingPermissionsUser.id}
+                    userId={managingPermissionsUser[COMMON_FIELDS.ID] as string}
                     userName={managingPermissionsUser.name}
                     isOpen={!!managingPermissionsUser}
                     onClose={() => setManagingPermissionsUser(null)}
@@ -294,7 +295,7 @@ export const UserManager: React.FC = () => {
                 onConfirm={async () => {
                     if (!deletingUser) return;
                     try {
-                        await usersAPI.deleteUser(deletingUser.id);
+                        await usersAPI.deleteUser(deletingUser[COMMON_FIELDS.ID] as string);
                         loadData();
                     } catch {
                         errorToast("Failed to delete user");

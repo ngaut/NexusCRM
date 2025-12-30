@@ -1,4 +1,5 @@
 import { apiClient, APIError } from './client';
+import { API_ENDPOINTS } from './endpoints';
 import type { ObjectPermission, FieldPermission } from '../../types';
 import type { UserSession } from '../../types';
 
@@ -26,7 +27,7 @@ export const authAPI = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
       const response = await apiClient.post<LoginResponse>(
-        '/api/auth/login',
+        API_ENDPOINTS.AUTH.LOGIN,
         credentials,
         false // Login doesn't require auth
       );
@@ -52,7 +53,7 @@ export const authAPI = {
    */
   async logout(): Promise<void> {
     try {
-      await apiClient.post('/api/auth/logout', {});
+      await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {});
     } finally {
       // Always clear token, even if request fails
       apiClient.setToken(null);
@@ -81,7 +82,7 @@ export const authAPI = {
    * Verify if current token is valid
    */
   async verify(): Promise<UserSession> {
-    const response = await apiClient.get<{ success: boolean; user: UserSession }>('/api/auth/me');
+    const response = await apiClient.get<{ success: boolean; user: UserSession }>(API_ENDPOINTS.AUTH.ME);
     return response.user;
   },
 
