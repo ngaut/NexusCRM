@@ -173,8 +173,8 @@ func (c *NexusClient) CreateDashboard(ctx context.Context, dashboard models.Dash
 	return "", fmt.Errorf("created dashboard missing ID")
 }
 
-// CreateSchema creates a new object schema
-func (c *NexusClient) CreateSchema(ctx context.Context, schema models.ObjectMetadata, authToken string) error {
+// CreateObject creates a new object schema
+func (c *NexusClient) CreateObject(ctx context.Context, schema models.ObjectMetadata, authToken string) error {
 	// POST /api/metadata/schemas
 	return c.doRequest(ctx, "POST", "/api/metadata/schemas", schema, nil, authToken)
 }

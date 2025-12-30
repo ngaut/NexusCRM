@@ -21,7 +21,7 @@ const (
 	ToolDeleteRecord    = "delete_record"
 	ToolCreateDashboard = "create_dashboard"
 	// Schema Tools
-	ToolCreateSchema = "create_object"
+	ToolCreateObject = "create_object"
 	ToolCreateField  = "create_field"
 	// Context Tools
 	ToolContextAdd    = "context_add"
@@ -231,7 +231,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 	})
 
 	allTools = append(allTools, mcp.Tool{
-		Name:        ToolCreateSchema,
+		Name:        ToolCreateObject,
 		Description: "Create a new custom object/table. Example: Create a 'Vehicle' object.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
@@ -384,8 +384,8 @@ func (s *ToolBusService) HandleCallTool(ctx context.Context, params json.RawMess
 		return s.handleCreateDashboard(ctx, req)
 	}
 	// Schema Tools
-	if req.Name == ToolCreateSchema {
-		return s.handleCreateSchema(ctx, req)
+	if req.Name == ToolCreateObject {
+		return s.handleCreateObject(ctx, req)
 	}
 	if req.Name == ToolCreateField {
 		return s.handleCreateField(ctx, req)
@@ -709,7 +709,7 @@ func (s *ToolBusService) handleCreateDashboard(ctx context.Context, req mcp.Call
 	}, nil
 }
 
-func (s *ToolBusService) handleCreateSchema(ctx context.Context, req mcp.CallToolParams) (mcp.CallToolResult, error) {
+func (s *ToolBusService) handleCreateObject(ctx context.Context, req mcp.CallToolParams) (mcp.CallToolResult, error) {
 	token, err := s.getAuthToken(ctx)
 	if err != nil {
 		return mcp.CallToolResult{}, err
@@ -733,7 +733,7 @@ func (s *ToolBusService) handleCreateSchema(ctx context.Context, req mcp.CallToo
 		IsCustom:    true,
 	}
 
-	if err := s.client.CreateSchema(ctx, schema, token); err != nil {
+	if err := s.client.CreateObject(ctx, schema, token); err != nil {
 		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to create object: %v", err)}}}, nil
 	}
 
