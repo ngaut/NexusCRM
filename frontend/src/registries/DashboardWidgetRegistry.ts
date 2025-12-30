@@ -35,6 +35,15 @@ class DashboardWidgetRegistryClass extends RegistryBase<React.FC<WidgetRendererP
         this.registerWidget('record-list', RecordListWidget);
         this.registerWidget('kanban', KanbanWidget);
         this.registerWidget('sql-chart', SqlChartWidget);
+
+        // Generic aliases (for backward compatibility with stored widget types)
+        this.registerWidget('Chart', ChartWidget);      // Maps to bar chart by default
+        this.registerWidget('Table', RecordListWidget); // Maps to record list
+        this.registerWidget('Metric', MetricWidget);
+        this.registerWidget('Pie', PieWidget);
+        this.registerWidget('Funnel', FunnelWidget);
+        this.registerWidget('Gauge', GaugeWidget);
+        this.registerWidget('Kanban', KanbanWidget);
     }
 
     registerWidget(type: string, component: React.FC<WidgetRendererProps>) {
