@@ -111,6 +111,16 @@ func TestToSQL(t *testing.T) {
 			expectedArgs: []interface{}{"Open"},
 		},
 		{
+			name:        "unsupported AND keyword",
+			expression:  "status == 'Open' AND assignee_id != null",
+			expectError: true, // Should fail - use && instead of AND
+		},
+		{
+			name:        "unsupported OR keyword",
+			expression:  "status == 'New' OR status == 'Prospecting'",
+			expectError: true, // Should fail - use || instead of OR
+		},
+		{
 			name:        "unsupported node",
 			expression:  "map(Items, {.Price})", // map/lambda not supported in SQL walker yet
 			expectError: true,
