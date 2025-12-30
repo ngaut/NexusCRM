@@ -3,6 +3,8 @@ package models
 import (
 	"database/sql"
 	"time"
+
+	"github.com/nexuscrm/backend/pkg/constants"
 )
 
 // SObject represents a generic record
@@ -102,16 +104,15 @@ type SystemFile struct {
 
 func (f *SystemFile) ToSObject() SObject {
 	return SObject{
-		"id":              f.ID,
-		"target_id":       f.TargetID,
-		"target_object":   f.TargetObject,
-		"organization_id": f.OrganizationID,
-		"filename":        f.Filename,
-		"path":            f.Path,
-		"mime_type":       f.MimeType,
-		"size":            f.Size,
-		"uploaded_by":     f.UploadedBy,
-		"created_date":    f.CreatedDate,
+		constants.FieldID:               f.ID,
+		constants.FieldSysFile_ParentID: f.TargetID,
+		// TargetObject and OrganizationID are not in _System_File table definition
+		constants.FieldSysFile_Name:        f.Filename,
+		constants.FieldSysFile_StoragePath: f.Path,
+		constants.FieldSysFile_MimeType:    f.MimeType,
+		constants.FieldSysFile_SizeBytes:   f.Size,
+		constants.FieldCreatedByID:         f.UploadedBy,
+		constants.FieldCreatedDate:         f.CreatedDate,
 	}
 }
 
@@ -129,18 +130,18 @@ type SystemComment struct {
 
 func (c *SystemComment) ToSObject() SObject {
 	m := SObject{
-		"body":            c.Body,
-		"object_api_name": c.ObjectAPIName,
-		"record_id":       c.RecordID,
-		"is_resolved":     c.IsResolved,
-		"created_by":      c.CreatedBy,
-		"created_date":    c.CreatedDate,
+		constants.FieldSysComment_Body:          c.Body,
+		constants.FieldSysComment_ObjectAPIName: c.ObjectAPIName,
+		constants.FieldSysComment_RecordID:      c.RecordID,
+		constants.FieldSysComment_IsResolved:    c.IsResolved,
+		constants.FieldCreatedByID:              c.CreatedBy,
+		constants.FieldCreatedDate:              c.CreatedDate,
 	}
 	if c.ID != "" {
-		m["id"] = c.ID
+		m[constants.FieldID] = c.ID
 	}
 	if c.ParentCommentID != nil {
-		m["parent_comment_id"] = *c.ParentCommentID
+		m[constants.FieldSysComment_ParentCommentID] = *c.ParentCommentID
 	}
 	return m
 }
@@ -157,12 +158,12 @@ type RecentItem struct {
 
 func (r *RecentItem) ToSObject() SObject {
 	return SObject{
-		"id":              r.ID,
-		"user_id":         r.UserID,
-		"object_api_name": r.ObjectAPIName,
-		"record_id":       r.RecordID,
-		"record_name":     r.RecordName,
-		"timestamp":       r.Timestamp,
+		constants.FieldID:                      r.ID,
+		constants.FieldSysRecent_UserID:        r.UserID,
+		constants.FieldSysRecent_ObjectAPIName: r.ObjectAPIName,
+		constants.FieldSysRecent_RecordID:      r.RecordID,
+		constants.FieldSysRecent_RecordName:    r.RecordName,
+		constants.FieldSysRecent_Timestamp:     r.Timestamp,
 	}
 }
 

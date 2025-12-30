@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Calendar, X } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
 import { SObject } from '../types';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 
 export interface GlobalFilters {
     ownerId?: string;
@@ -29,7 +30,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange })
             try {
                 // If User object doesn't exist, this might fail, so we catch error
                 const records = await dataAPI.query({
-                    objectApiName: 'user',
+                    objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_USER,
                     limit: 50 // Limit to 50 users for now
                 });
                 setUsers(records);

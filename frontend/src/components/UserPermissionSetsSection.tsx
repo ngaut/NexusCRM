@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Key, Plus, X, Loader2, Shield, Trash2, Check } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { useErrorToast, useSuccessToast } from './ui/Toast';
 
 interface PermissionSet {
@@ -51,12 +52,12 @@ export const UserPermissionSetsSection: React.FC<UserPermissionSetsSectionProps>
         try {
             // Load user's current assignments
             const assignmentsRecords = await dataAPI.query({
-                objectApiName: '_system_permissionsetassignment',
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSETASSIGNMENT,
                 filterExpr: `assignee_id == '${userId}'`
             });
 
             // Load all permission sets
-            const permSets = await dataAPI.query({ objectApiName: '_system_permissionset' }) as unknown as PermissionSet[];
+            const permSets = await dataAPI.query({ objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSET }) as unknown as PermissionSet[];
             setAllPermissionSets(permSets);
 
             // Merge permission set data into assignments
@@ -76,7 +77,7 @@ export const UserPermissionSetsSection: React.FC<UserPermissionSetsSectionProps>
     const handleAdd = async (permSetId: string) => {
         setAdding(true);
         try {
-            await dataAPI.createRecord('_system_permissionsetassignment', {
+            await dataAPI.createRecord(SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSETASSIGNMENT, {
                 assignee_id: userId,
                 permission_set_id: permSetId
             });
@@ -94,7 +95,7 @@ export const UserPermissionSetsSection: React.FC<UserPermissionSetsSectionProps>
     const handleRemove = async (assignmentId: string) => {
         setRemovingId(assignmentId);
         try {
-            await dataAPI.deleteRecord('_system_permissionsetassignment', assignmentId);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSETASSIGNMENT, assignmentId);
             successToast('Permission Set removed');
             loadData();
         } catch {

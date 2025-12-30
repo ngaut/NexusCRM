@@ -283,14 +283,14 @@ func assertDefaultAppExists(db *sql.DB, result *AssertionResult) {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "MissingData",
 				Severity:    "warning",
-				Object:      "_System_App",
+				Object:      constants.TableApp,
 				Description: "No applications defined. System will be unusable.",
 			})
 		} else {
 			result.Violations = append(result.Violations, AssertionViolation{
 				Category:    "Configuration",
 				Severity:    "warning",
-				Object:      "_System_App",
+				Object:      constants.TableApp,
 				Description: "No default application set.",
 			})
 		}
@@ -312,7 +312,7 @@ func assertDefaultThemeExists(db *sql.DB, result *AssertionResult) {
 		result.Violations = append(result.Violations, AssertionViolation{
 			Category:    "MissingData",
 			Severity:    "warning",
-			Object:      "_System_Theme",
+			Object:      constants.TableTheme,
 			Description: "No themes defined. UI will not load correctly.",
 		})
 	}
@@ -322,7 +322,7 @@ func assertDefaultThemeExists(db *sql.DB, result *AssertionResult) {
 func assertStandardActionsExist(db *sql.DB, result *AssertionResult) {
 	log.Println("   📋 Checking for standard actions...")
 
-	coreObjects := []string{"Account", "Contact", "Opportunity"}
+	coreObjects := []string{} // Standard objects are now purely meta-driven
 	requiredActions := []string{"Edit", "Delete"}
 
 	for _, obj := range coreObjects {
@@ -361,7 +361,7 @@ func assertSystemAdminProfileExists(db *sql.DB, result *AssertionResult) {
 		result.Violations = append(result.Violations, AssertionViolation{
 			Category:    "MissingSystemData",
 			Severity:    "error",
-			Object:      "_System_Profile",
+			Object:      constants.TableProfile,
 			Description: fmt.Sprintf("Critical: System Admin profile '%s' is missing.", constants.ProfileSystemAdmin),
 		})
 	}
@@ -382,7 +382,7 @@ func assertSystemAdminUserExists(db *sql.DB, result *AssertionResult) {
 		result.Violations = append(result.Violations, AssertionViolation{
 			Category:    "MissingData",
 			Severity:    "error",
-			Object:      "_System_User",
+			Object:      constants.TableUser,
 			Description: "No active System Admin users found. You may be locked out.",
 		})
 	}

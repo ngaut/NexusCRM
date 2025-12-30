@@ -6,6 +6,7 @@ import { feedAPI } from '../infrastructure/api/feed';
 import { formatDistanceToNow } from 'date-fns';
 import { CommentList, Comment } from './feed/CommentList';
 import { AuditLogList, AuditLog } from './feed/AuditLogList';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 
 interface ActivityFeedProps {
     objectApiName: string;
@@ -40,7 +41,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ objectApiName, recor
                 let userMap = new Map<string, string>();
                 if (userIds.length > 0) {
                     const users = await dataAPI.query({
-                        objectApiName: '_System_User',
+                        objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_USER,
                     });
                     users.forEach(u => {
                         let name = (u.name || u.Name || u.full_name || u.Full_Name) as string;
@@ -62,7 +63,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ objectApiName, recor
                     // Fetch attachments for found comments
                     const filePromises = systemComments.map(c =>
                         dataAPI.query({
-                            objectApiName: '_System_File',
+                            objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_FILE,
                             filterExpr: `parent_id == '${c.id}'`,
                             sortField: 'created_date',
                             sortDirection: 'ASC'
@@ -134,7 +135,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ objectApiName, recor
             } else {
                 // History Logic
                 const results = await dataAPI.query({
-                    objectApiName: '_System_AuditLog',
+                    objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_AUDITLOG,
                     filterExpr: `record_id == '${recordId}' && object_api_name == '${objectApiName}'`,
                     sortField: 'changed_at',
                     sortDirection: 'DESC'

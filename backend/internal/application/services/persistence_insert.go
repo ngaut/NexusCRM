@@ -118,7 +118,7 @@ func (ps *PersistenceService) Insert(
 
 // processMentions parses the comment body for mentions and creates notifications
 func (ps *PersistenceService) processMentions(tx *sql.Tx, data models.SObject, sender *models.UserSession) error {
-	body, ok := data["body"].(string)
+	body, ok := data[constants.FieldSysComment_Body].(string)
 	if !ok {
 		return nil
 	}
@@ -149,7 +149,7 @@ func (ps *PersistenceService) processMentions(tx *sql.Tx, data models.SObject, s
 			RecipientID:      userID,
 			Title:            fmt.Sprintf("New mention by %s", sender.Name),
 			Body:             "You were mentioned in a comment.",
-			Link:             fmt.Sprintf("/object/%s/%s", data["object_api_name"], data["record_id"]),
+			Link:             fmt.Sprintf("/object/%s/%s", data[constants.FieldSysComment_ObjectAPIName], data[constants.FieldSysComment_RecordID]),
 			NotificationType: "mention",
 			IsRead:           false,
 			CreatedDate:      time.Now(),

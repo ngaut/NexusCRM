@@ -43,12 +43,6 @@
             "type": "page"
         },
         {
-            "name": "ActivityTimeline",
-            "is_embeddable": true,
-            "description": "Activity Timeline Widget",
-            "type": "widget"
-        },
-        {
             "name": "LayoutEditor",
             "is_embeddable": true,
             "description": "Layout Editor Component",

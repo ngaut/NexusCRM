@@ -3,6 +3,7 @@ import { X, Users, Users2, UserPlus } from 'lucide-react';
 import { dataAPI } from '../../infrastructure/api/data';
 import { useSuccessToast, useErrorToast } from '../../components/ui/Toast';
 import type { SObject } from '../../types';
+import { SYSTEM_TABLE_NAMES } from '../../generated-schema';
 
 // Sub-components
 import { ShareUserSearch, UserOption } from '../sharing/ShareUserSearch';
@@ -49,7 +50,7 @@ export const ShareRecordModal: React.FC<ShareRecordModalProps> = ({
     const fetchShares = useCallback(async () => {
         try {
             const response = await dataAPI.query({
-                objectApiName: '_system_recordshare',
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_RECORDSHARE,
                 filterExpr: `object_api_name == '${objectApiName}' && record_id == '${recordId}'`
             });
             setCurrentShares((response as unknown as ShareEntry[]) || []);
@@ -72,7 +73,7 @@ export const ShareRecordModal: React.FC<ShareRecordModalProps> = ({
         try {
             // Search users
             const usersRes = await dataAPI.query({
-                objectApiName: '_system_user',
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_USER,
                 filterExpr: `username LIKE '%${query}%'`
             });
             const users: UserOption[] = (usersRes || []).map((u: SObject) => ({
@@ -84,7 +85,7 @@ export const ShareRecordModal: React.FC<ShareRecordModalProps> = ({
 
             // Search groups
             const groupsRes = await dataAPI.query({
-                objectApiName: '_system_group',
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_GROUP,
                 filterExpr: `name LIKE '%${query}%'`
             });
             const groups: UserOption[] = (groupsRes || []).map((g: SObject) => ({
@@ -110,7 +111,7 @@ export const ShareRecordModal: React.FC<ShareRecordModalProps> = ({
 
         setLoading(true);
         try {
-            await dataAPI.createRecord('_system_recordshare', {
+            await dataAPI.createRecord(SYSTEM_TABLE_NAMES.SYSTEM_RECORDSHARE, {
                 object_api_name: objectApiName,
                 record_id: recordId,
                 share_with_user_id: selectedEntity.type === 'user' ? selectedEntity.id : null,
@@ -132,7 +133,7 @@ export const ShareRecordModal: React.FC<ShareRecordModalProps> = ({
     // Remove share
     const handleRemoveShare = async (shareId: string) => {
         try {
-            await dataAPI.deleteRecord('_system_recordshare', shareId);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_RECORDSHARE, shareId);
             showSuccess('Share removed');
             fetchShares();
         } catch (err) {

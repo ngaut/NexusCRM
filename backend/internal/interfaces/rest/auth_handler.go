@@ -60,17 +60,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// Return response
 	userData := map[string]interface{}{
-		constants.FieldID:   result.User.ID,
-		constants.FieldName: result.User.Name,
-		"email":             result.User.Email,
-		"profile_id":        result.User.ProfileId,
+		constants.FieldID:        result.User.ID,
+		constants.FieldName:      result.User.Name,
+		constants.FieldEmail:     result.User.Email,
+		constants.FieldProfileID: result.User.ProfileId,
 	}
 
 	// Always include roleId for consistent API contract (value or null)
 	if result.User.RoleId != nil {
-		userData["roleId"] = *result.User.RoleId
+		userData[constants.FieldRoleID] = *result.User.RoleId
 	} else {
-		userData["roleId"] = nil
+		userData[constants.FieldRoleID] = nil
 	}
 
 	c.JSON(http.StatusOK, LoginResponse{
@@ -111,11 +111,11 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 	// But to be consistent with envelope format { "user": ... }
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
-			constants.FieldID:   user.ID,
-			constants.FieldName: user.Name,
-			"email":             user.Email,
-			"profile_id":        user.ProfileId,
-			"role_id":           user.RoleId,
+			constants.FieldID:        user.ID,
+			constants.FieldName:      user.Name,
+			constants.FieldEmail:     user.Email,
+			constants.FieldProfileID: user.ProfileId,
+			constants.FieldRoleID:    user.RoleId,
 		},
 	})
 }

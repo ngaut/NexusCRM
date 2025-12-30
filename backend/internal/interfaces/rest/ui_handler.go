@@ -114,7 +114,7 @@ func (h *UIHandler) GetLayout(c *gin.Context) {
 	layout := h.svc.UIMetadata.GetLayout(objectName, profileID)
 	if layout == nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"message": "Layout for '" + objectName + "' not found",
+			constants.FieldMessage: "Layout for '" + objectName + "' not found",
 		})
 		return
 	}
@@ -134,10 +134,10 @@ func (h *UIHandler) SaveLayout(c *gin.Context) {
 	HandleCreateEnvelope(c, "layout", "Layout saved successfully", &layout, func() error {
 		// Validate required fields
 		if layout.ID == "" {
-			return appErrors.NewValidationError("id", "Layout ID is required")
+			return appErrors.NewValidationError(constants.FieldID, "Layout ID is required")
 		}
 		if layout.ObjectAPIName == "" {
-			return appErrors.NewValidationError("object_api_name", "Object API name is required")
+			return appErrors.NewValidationError(constants.FieldObjectAPIName, "Object API name is required")
 		}
 		return h.svc.UIMetadata.SaveLayout(&layout)
 	})
@@ -169,7 +169,7 @@ func (h *UIHandler) AssignLayoutToProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Layout assigned to profile successfully",
+		constants.FieldMessage: "Layout assigned to profile successfully",
 	})
 }
 
@@ -239,7 +239,7 @@ func (h *UIHandler) CreateListView(c *gin.Context) {
 	var view models.ListView
 	HandleCreateEnvelope(c, "view", "List view created successfully", &view, func() error {
 		if view.ObjectAPIName == "" {
-			return appErrors.NewValidationError("object_api_name", "is required")
+			return appErrors.NewValidationError(constants.FieldObjectAPIName, "is required")
 		}
 		if view.Label == "" {
 			return appErrors.NewValidationError("label", "is required")

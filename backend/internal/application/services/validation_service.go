@@ -236,7 +236,7 @@ func (vs *ValidationService) ValidateFlow(flow *models.Flow, existingFlows []*mo
 		}
 
 		if count > 0 {
-			return errors.NewValidationError("trigger_type", fmt.Sprintf("Object '%s' already has an active flow for trigger '%s'", flow.TriggerObject, flow.TriggerType))
+			return errors.NewValidationError(constants.FieldTriggerType, fmt.Sprintf("Object '%s' already has an active flow for trigger '%s'", flow.TriggerObject, flow.TriggerType))
 		}
 	}
 	return nil
@@ -245,7 +245,7 @@ func (vs *ValidationService) ValidateFlow(flow *models.Flow, existingFlows []*mo
 // ValidateObjectMetadata enforces naming conventions
 func (vs *ValidationService) ValidateObjectMetadata(obj *models.ObjectMetadata) error {
 	if !isSnakeCase(obj.APIName) {
-		return errors.NewValidationError("api_name", fmt.Sprintf("Invalid API name '%s': must be in snake_case (lowercase letters, numbers, underscores)", obj.APIName))
+		return errors.NewValidationError(constants.FieldAPIName, fmt.Sprintf("Invalid API name '%s': must be in snake_case (lowercase letters, numbers, underscores)", obj.APIName))
 	}
 	return nil
 }
@@ -253,7 +253,7 @@ func (vs *ValidationService) ValidateObjectMetadata(obj *models.ObjectMetadata) 
 // ValidateFieldMetadata enforces naming conventions
 func (vs *ValidationService) ValidateFieldMetadata(field *models.FieldMetadata) error {
 	if !isSnakeCase(field.APIName) {
-		return errors.NewValidationError("api_name", fmt.Sprintf("Invalid API name '%s': must be in snake_case (lowercase letters, numbers, underscores)", field.APIName))
+		return errors.NewValidationError(constants.FieldAPIName, fmt.Sprintf("Invalid API name '%s': must be in snake_case (lowercase letters, numbers, underscores)", field.APIName))
 	}
 	return nil
 }

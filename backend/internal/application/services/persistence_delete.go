@@ -178,8 +178,8 @@ func (ps *PersistenceService) cascadeDeleteChildren(ctx context.Context, user *m
 				lookupFieldName := field.APIName
 
 				// Find IDs of children (excluding already deleted)
-				childQuery := fmt.Sprintf("SELECT id FROM %s WHERE `%s` = ? AND %s = false",
-					childObjName, lookupFieldName, constants.FieldIsDeleted)
+				childQuery := fmt.Sprintf("SELECT %s FROM %s WHERE `%s` = ? AND %s = false",
+					constants.FieldID, childObjName, lookupFieldName, constants.FieldIsDeleted)
 
 				var rows *sql.Rows
 				var err error

@@ -104,7 +104,7 @@ func (h *DataHandler) RestoreFromRecycleBin(c *gin.Context) {
 		RespondError(c, http.StatusInternalServerError, fmt.Sprintf("Failed to restore record: %v", err))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Record restored successfully"})
+	c.JSON(http.StatusOK, gin.H{constants.FieldMessage: "Record restored successfully"})
 }
 
 // PurgeFromRecycleBin handles DELETE /api/data/recyclebin/:id
@@ -125,7 +125,7 @@ func (h *DataHandler) GetRecord(c *gin.Context) {
 
 	HandleGetEnvelope(c, "record", func() (interface{}, error) {
 		if !utils.IsValidUUID(id) {
-			return nil, errors.NewValidationError("id", "Invalid ID format")
+			return nil, errors.NewValidationError(constants.FieldID, "Invalid ID format")
 		}
 		// Use formula expression for ID lookup
 		filterExpr := fmt.Sprintf("id == '%s'", id)

@@ -74,21 +74,21 @@ func (s *ApprovalService) Submit(ctx context.Context, req SubmitRequest, user *m
 
 	// Determine approver (Business Logic)
 	var approverID interface{}
-	if process["approver_type"] == "Self" {
+	if process[constants.FieldSysApprovalProcess_ApproverType] == "Self" {
 		approverID = user.ID
 	} else {
-		approverID = process["approver_id"]
+		approverID = process[constants.FieldSysApprovalProcess_ApproverID]
 	}
 
 	// Create work item
 	workItem := models.SObject{
-		"process_id":      process["id"],
-		"object_api_name": req.ObjectAPIName,
-		"record_id":       req.RecordID,
-		"status":          constants.ApprovalStatusPending,
-		"submitted_by_id": user.ID,
-		"approver_id":     approverID,
-		"comments":        req.Comments,
+		constants.FieldSysApprovalWorkItem_ProcessID:     process[constants.FieldID],
+		constants.FieldSysApprovalWorkItem_ObjectAPIName: req.ObjectAPIName,
+		constants.FieldSysApprovalWorkItem_RecordID:      req.RecordID,
+		constants.FieldSysApprovalWorkItem_Status:        constants.ApprovalStatusPending,
+		constants.FieldSysApprovalWorkItem_SubmittedByID: user.ID,
+		constants.FieldSysApprovalWorkItem_ApproverID:    approverID,
+		constants.FieldSysApprovalWorkItem_Comments:      req.Comments,
 	}
 
 	return s.persistence.Insert(ctx, constants.TableApprovalWorkItem, workItem, user)
@@ -106,26 +106,26 @@ func (s *ApprovalService) Reject(ctx context.Context, workItemID, comments strin
 
 // GetPending returns pending approvals for the current user
 func (s *ApprovalService) GetPending(ctx context.Context, user *models.UserSession) ([]models.SObject, error) {
-	filterExpr := fmt.Sprintf("approver_id == '%s' && status == '%s'", user.ID, constants.ApprovalStatusPending)
+	filterExpr := fmt.Sprintf("%s == '%s' && %s == '%s'", constants.FieldSysApprovalWorkItem_ApproverID, user.ID, constants.FieldSysApprovalWorkItem_Status, constants.ApprovalStatusPending)
 	return s.query.QueryWithFilter(
 		ctx,
 		constants.TableApprovalWorkItem,
 		filterExpr,
 		user,
-		"created_date", "DESC",
+		constants.FieldCreatedDate, "DESC",
 		100,
 	)
 }
 
 // GetHistory returns history for a record
 func (s *ApprovalService) GetHistory(ctx context.Context, objectAPIName, recordID string, user *models.UserSession) ([]models.SObject, error) {
-	filterExpr := fmt.Sprintf("object_api_name == '%s' && record_id == '%s'", objectAPIName, recordID)
+	filterExpr := fmt.Sprintf("%s == '%s' && %s == '%s'", constants.FieldSysApprovalWorkItem_ObjectAPIName, objectAPIName, constants.FieldSysApprovalWorkItem_RecordID, recordID)
 	return s.query.QueryWithFilter(
 		ctx,
 		constants.TableApprovalWorkItem,
 		filterExpr,
 		user,
-		"created_date", "DESC",
+		constants.FieldCreatedDate, "DESC",
 		50,
 	)
 }
@@ -146,7 +146,7 @@ func (s *ApprovalService) processAction(ctx context.Context, workItemID, newStat
 			return errors.New("approval work item not found")
 		}
 
-		if item["status"] != constants.ApprovalStatusPending {
+		if item[constants.FieldSysApprovalWorkItem_Status] != constants.ApprovalStatusPending {
 			return errors.New("work item is not pending")
 		}
 
@@ -157,10 +157,10 @@ func (s *ApprovalService) processAction(ctx context.Context, workItemID, newStat
 
 		// Update work item
 		updates := models.SObject{
-			"status":         newStatus,
-			"approved_by_id": user.ID,
-			"approved_date":  time.Now().UTC(),
-			"comments":       comments,
+			constants.FieldSysApprovalWorkItem_Status:       newStatus,
+			constants.FieldSysApprovalWorkItem_ApprovedByID: user.ID,
+			constants.FieldSysApprovalWorkItem_ApprovedDate: time.Now().UTC(),
+			constants.FieldSysApprovalWorkItem_Comments:     comments,
 		}
 
 		// Update using txCtx which carries the transaction
@@ -192,7 +192,7 @@ func (s *ApprovalService) findActiveProcess(ctx context.Context, objectAPIName s
 }
 
 func (s *ApprovalService) hasPendingApproval(ctx context.Context, objectAPIName, recordID string, user *models.UserSession) (bool, error) {
-	filterExpr := fmt.Sprintf("object_api_name == '%s' && record_id == '%s' && status == '%s'", objectAPIName, recordID, constants.ApprovalStatusPending)
+	filterExpr := fmt.Sprintf("%s == '%s' && %s == '%s' && %s == '%s'", constants.FieldSysApprovalWorkItem_ObjectAPIName, objectAPIName, constants.FieldSysApprovalWorkItem_RecordID, recordID, constants.FieldSysApprovalWorkItem_Status, constants.ApprovalStatusPending)
 	existing, err := s.query.QueryWithFilter(
 		ctx,
 		constants.TableApprovalWorkItem,
@@ -208,7 +208,7 @@ func (s *ApprovalService) hasPendingApproval(ctx context.Context, objectAPIName,
 }
 
 func (s *ApprovalService) getWorkItem(ctx context.Context, workItemID string, user *models.UserSession) (models.SObject, error) {
-	filterExpr := fmt.Sprintf("id == '%s'", workItemID)
+	filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldID, workItemID)
 	items, err := s.query.QueryWithFilter(
 		ctx,
 		constants.TableApprovalWorkItem,
@@ -224,7 +224,7 @@ func (s *ApprovalService) getWorkItem(ctx context.Context, workItemID string, us
 }
 
 func (s *ApprovalService) isAuthorizedApprover(item models.SObject, user *models.UserSession) bool {
-	approverID, ok := item["approver_id"].(string)
+	approverID, ok := item[constants.FieldSysApprovalWorkItem_ApproverID].(string)
 	if !ok || approverID == "" {
 		return true // No specific approver set - anyone can approve
 	}
@@ -232,12 +232,12 @@ func (s *ApprovalService) isAuthorizedApprover(item models.SObject, user *models
 }
 
 func (s *ApprovalService) resumeFlowIfNeeded(ctx context.Context, workItem models.SObject, approved bool, user *models.UserSession) {
-	flowInstanceID, ok := workItem["flow_instance_id"].(string)
+	flowInstanceID, ok := workItem[constants.FieldSysApprovalWorkItem_FlowInstanceID].(string)
 	if !ok || flowInstanceID == "" {
 		return
 	}
 
-	flowStepID, ok := workItem["flow_step_id"].(string)
+	flowStepID, ok := workItem[constants.FieldSysApprovalWorkItem_FlowStepID].(string)
 	if !ok || flowStepID == "" {
 		return
 	}

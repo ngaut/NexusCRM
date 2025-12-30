@@ -13,6 +13,9 @@ const (
 
 	// Auth
 	BearerPrefix = "Bearer "
+
+	// Response Keys
+	ResponseError = "error"
 )
 
 // Query parameter constants

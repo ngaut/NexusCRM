@@ -600,7 +600,8 @@
             },
             {
                 "name": "phone",
-                "type": "VARCHAR(40)"
+                "type": "VARCHAR(40)",
+                "nullable": true
             },
             {
                 "name": "profile_id",
@@ -1383,12 +1384,12 @@
     {
         "tableName": "_System_Validation",
         "tableType": "system_metadata",
-        "category": "metadata",
-        "description": "Validation rules for objects",
+        "category": "business_logic",
+        "description": "Validation rule definitions",
         "columns": [
             {
                 "name": "id",
-                "type": "VARCHAR(255)",
+                "type": "VARCHAR(36)",
                 "primaryKey": true
             },
             {
@@ -1413,7 +1414,7 @@
             },
             {
                 "name": "error_message",
-                "type": "TEXT",
+                "type": "VARCHAR(255)",
                 "nullable": false
             },
             {
@@ -3489,6 +3490,155 @@
                     "created_date"
                 ],
                 "name": "idx_outbox_pending"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_Webhook",
+        "tableType": "system_metadata",
+        "category": "integration",
+        "description": "External webhook configurations",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(36)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "url",
+                "type": "VARCHAR(2048)",
+                "nullable": false
+            },
+            {
+                "name": "method",
+                "type": "VARCHAR(10)",
+                "default": "'POST'"
+            },
+            {
+                "name": "headers",
+                "type": "TEXT"
+            },
+            {
+                "name": "auth_type",
+                "type": "VARCHAR(50)"
+            },
+            {
+                "name": "auth_config",
+                "type": "TEXT"
+            },
+            {
+                "name": "is_active",
+                "type": "TINYINT(1)",
+                "default": "1"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_EmailTemplate",
+        "tableType": "system_metadata",
+        "category": "communication",
+        "description": "Email templates for notifications",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(36)",
+                "primaryKey": true
+            },
+            {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "nullable": false,
+                "unique": true
+            },
+            {
+                "name": "subject",
+                "type": "VARCHAR(255)"
+            },
+            {
+                "name": "html_body",
+                "type": "TEXT"
+            },
+            {
+                "name": "text_body",
+                "type": "TEXT"
+            },
+            {
+                "name": "from_name",
+                "type": "VARCHAR(255)"
+            },
+            {
+                "name": "from_email",
+                "type": "VARCHAR(255)"
+            },
+            {
+                "name": "reply_to",
+                "type": "VARCHAR(255)"
+            },
+            {
+                "name": "is_active",
+                "type": "TINYINT(1)",
+                "default": "1"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME"
+            }
+        ]
+    },
+    {
+        "tableName": "_System_FeedItem",
+        "tableType": "system_metadata",
+        "category": "collaboration",
+        "description": "Feed items for chatter and notifications",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(36)",
+                "primaryKey": true
+            },
+            {
+                "name": "parent_id",
+                "type": "VARCHAR(36)",
+                "nullable": false
+            },
+            {
+                "name": "type",
+                "type": "VARCHAR(50)",
+                "nullable": false
+            },
+            {
+                "name": "body",
+                "type": "TEXT"
+            },
+            {
+                "name": "created_by_id",
+                "type": "VARCHAR(36)"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME"
             }
         ]
     }

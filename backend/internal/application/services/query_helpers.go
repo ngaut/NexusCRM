@@ -56,9 +56,9 @@ func (qs *QueryService) hydrateVirtualFields(
 			}
 			if currentUser != nil {
 				ctx.User = map[string]interface{}{
-					constants.FieldID:   currentUser.ID,
-					constants.FieldName: currentUser.Name,
-					"email":             currentUser.Email,
+					constants.FieldID:    currentUser.ID,
+					constants.FieldName:  currentUser.Name,
+					constants.FieldEmail: currentUser.Email,
 				}
 			}
 
@@ -198,8 +198,8 @@ func (qs *QueryService) Calculate(
 
 	// Prepare context
 	userMap := map[string]interface{}{
-		"Id":   user.ID,
-		"Name": user.Name,
+		constants.FieldID:   user.ID,
+		constants.FieldName: user.Name,
 	}
 
 	// Normalize record keys to match schema field names (case-insensitive match)

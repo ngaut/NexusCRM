@@ -1,6 +1,7 @@
 #!/bin/bash
 # tests/e2e/suites/07-recyclebin.sh
 # Recycle Bin Operations Tests
+# REFACTORED: Uses dynamically created test objects instead of hardcoded Lead
 
 set +e
 SUITE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -9,6 +10,16 @@ source "$SUITE_DIR/../lib/helpers.sh"
 source "$SUITE_DIR/../lib/api.sh"
 
 SUITE_NAME="Recycle Bin Operations"
+
+# Helper for unique names
+TS=$(date +%s)
+TEST_OBJ="recycle_test_$TS"
+
+test_cleanup() {
+    echo "Cleaning up test object..."
+    api_delete "/api/metadata/schemas/$TEST_OBJ" > /dev/null 2>&1
+}
+trap test_cleanup EXIT
 
 run_suite() {
     section_header "$SUITE_NAME"
@@ -19,32 +30,56 @@ run_suite() {
         return 1
     fi
 
+    setup_test_object
     test_recycle_bin_lifecycle
+}
+
+setup_test_object() {
+    echo "Setup: Creating test object '$TEST_OBJ'..."
+    
+    local response=$(api_post "/api/metadata/schemas" "{
+        \"label\": \"$TEST_OBJ\",
+        \"plural_label\": \"${TEST_OBJ}s\",
+        \"api_name\": \"$TEST_OBJ\",
+        \"description\": \"E2E Recycle Bin Test Object\",
+        \"is_custom\": true,
+        \"searchable\": true
+    }")
+    
+    if echo "$response" | grep -q "\"api_name\":\"$TEST_OBJ\""; then
+        echo "  ✓ Test object created: $TEST_OBJ"
+    else
+        echo "  ✗ Failed to create test object"
+        echo "  Response: $response"
+        return 1
+    fi
+    
+    sleep 1  # Allow caches to refresh
 }
 
 test_recycle_bin_lifecycle() {
     echo "Test 7.1: Full Recycle Bin Lifecycle (Create -> Delete -> Restore -> Purge)"
     
     # 1. Create a Record to be deleted
-    echo "  Creating temporary Lead..."
-    local create_payload='{"name": "Recycle Bin Test", "company": "Recycle Co", "email": "recycle@test.co", "status": "New"}'
-    local response=$(api_post "/api/data/lead" "$create_payload")
+    echo "  Creating temporary record..."
+    local create_payload="{\"name\": \"Recycle Bin Test Record\"}"
+    local response=$(api_post "/api/data/$TEST_OBJ" "$create_payload")
     local record_id=$(json_extract "$response" "id")
     
     if [ -z "$record_id" ] || [ "$record_id" == "null" ]; then
-        test_failed "Setup: Create Lead failed" "$response"
+        test_failed "Setup: Create record failed" "$response"
         return
     fi
-    test_passed "Setup: Created Lead (ID: $record_id)"
+    test_passed "Setup: Created record (ID: $record_id)"
 
     # 2. Soft Delete the Record
-    echo "  Soft deleting lead..."
-    local status=$(get_status_code "DELETE" "/api/data/lead/$record_id")
+    echo "  Soft deleting record..."
+    local status=$(get_status_code "DELETE" "/api/data/$TEST_OBJ/$record_id")
     if [ "$status" != "200" ] && [ "$status" != "204" ]; then
          test_failed "Soft Delete failed" "HTTP $status"
          return
     fi
-    test_passed "Soft Deleted Lead"
+    test_passed "Soft Deleted Record"
 
     # 3. Verify in Recycle Bin (My Scope)
     echo "  Verifying in Recycle Bin (Scope: Mine)..."
@@ -75,7 +110,7 @@ test_recycle_bin_lifecycle() {
     fi
     
     # Verify it's back in Data API
-    response=$(api_get "/api/data/lead/$record_id")
+    response=$(api_get "/api/data/$TEST_OBJ/$record_id")
     local check_id=$(json_extract "$response" "id")
     if [ "$check_id" == "$record_id" ]; then
         test_passed "Restored record accessible via API"
@@ -85,7 +120,7 @@ test_recycle_bin_lifecycle() {
 
     # 6. Delete Again for Purge
     echo "  Deleting again for purge testing..."
-    api_delete "/api/data/lead/$record_id" > /dev/null
+    api_delete "/api/data/$TEST_OBJ/$record_id" > /dev/null
 
     # 7. Purge (Permanent Delete)
     echo "  Purging record..."
@@ -107,7 +142,7 @@ test_recycle_bin_lifecycle() {
     fi
     
     # Should not be in Data API (404)
-    status=$(get_status_code "GET" "/api/data/lead/$record_id")
+    status=$(get_status_code "GET" "/api/data/$TEST_OBJ/$record_id")
     if [ "$status" == "404" ]; then
         test_passed "Record 404s in Data API (Permanently Deleted)"
     else

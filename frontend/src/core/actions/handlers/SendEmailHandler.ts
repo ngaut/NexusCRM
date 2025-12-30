@@ -8,8 +8,8 @@
  */
 
 import { ActionHandlerModule } from '../ActionHandlerTypes';
-import { SYSTEM_TABLES } from '../../constants/SystemObjects';
 import { SObject } from '../../../types';
+import { SYSTEM_TABLE_NAMES } from '../../../generated-schema';
 
 export const handler: ActionHandlerModule = {
     handler: {
@@ -64,7 +64,7 @@ export const handler: ActionHandlerModule = {
 
                 // Load template from metadata if templateName is provided
                 if (templateName) {
-                    const templates = await db.query(SYSTEM_TABLES.EMAIL_TEMPLATE, {
+                    const templates = await db.query(SYSTEM_TABLE_NAMES.SYSTEM_EMAILTEMPLATE, {
                         name: templateName,
                         is_active: true
                     }, tx);
@@ -119,7 +119,7 @@ export const handler: ActionHandlerModule = {
                     ? `${subject}\n\n${body.substring(0, 200)}${body.length > 200 ? '...' : ''}`
                     : `${subject}\n\n${body}`;
 
-                await db.persistence.insert('feed_item', {
+                await db.persistence.insert(SYSTEM_TABLE_NAMES.SYSTEM_FEEDITEM, {
                     body: `📧 Email sent to ${recipientEmail}:\n\n${emailPreview}`,
                     parent_id: record.id,
                     type: 'TrackedChange'

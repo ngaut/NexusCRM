@@ -62,15 +62,15 @@ func (s *FlowInstanceService) CreateInstance(ctx context.Context, flow *models.F
 
 	// Convert to SObject for persistence
 	data := models.SObject{
-		"flow_id":         instance.FlowID,
-		"object_api_name": instance.ObjectAPIName,
-		"record_id":       instance.RecordID,
-		"status":          instance.Status,
-		"started_date":    instance.StartedDate,
-		"context_data":    "{}",
+		constants.FieldSysFlowInstance_FlowID:        instance.FlowID,
+		constants.FieldSysFlowInstance_ObjectAPIName: instance.ObjectAPIName,
+		constants.FieldSysFlowInstance_RecordID:      instance.RecordID,
+		constants.FieldSysFlowInstance_Status:        instance.Status,
+		constants.FieldSysFlowInstance_StartedDate:   instance.StartedDate,
+		constants.FieldSysFlowInstance_ContextData:   "{}",
 	}
 	if instance.CreatedByID != nil {
-		data["created_by_id"] = *instance.CreatedByID
+		data[constants.FieldCreatedByID] = *instance.CreatedByID
 	}
 
 	created, err := s.persistence.Insert(ctx, constants.TableFlowInstance, data, user)
@@ -78,7 +78,7 @@ func (s *FlowInstanceService) CreateInstance(ctx context.Context, flow *models.F
 		return nil, fmt.Errorf("failed to create flow instance: %w", err)
 	}
 
-	instance.ID = created.GetString("id")
+	instance.ID = created.GetString(constants.FieldID)
 	log.Printf("✅ FlowInstance created: %s for flow %s on %s/%s", instance.ID, flow.ID, objectAPIName, recordID)
 	return instance, nil
 }
@@ -100,9 +100,9 @@ func (s *FlowInstanceService) PauseInstance(ctx context.Context, instanceID, cur
 
 	now := time.Now().UTC()
 	updates := models.SObject{
-		"status":          models.FlowInstanceStatusPaused,
-		"current_step_id": currentStepID,
-		"paused_date":     now,
+		constants.FieldSysFlowInstance_Status:        models.FlowInstanceStatusPaused,
+		constants.FieldSysFlowInstance_CurrentStepID: currentStepID,
+		constants.FieldSysFlowInstance_PausedDate:    now,
 	}
 
 	if err := s.persistence.Update(ctx, constants.TableFlowInstance, instanceID, updates, user); err != nil {
@@ -129,9 +129,9 @@ func (s *FlowInstanceService) ResumeInstance(ctx context.Context, instanceID, ne
 	}
 
 	updates := models.SObject{
-		"status":          models.FlowInstanceStatusRunning,
-		"current_step_id": nextStepID,
-		"paused_date":     nil, // Clear paused date
+		constants.FieldSysFlowInstance_Status:        models.FlowInstanceStatusRunning,
+		constants.FieldSysFlowInstance_CurrentStepID: nextStepID,
+		constants.FieldSysFlowInstance_PausedDate:    nil, // Clear paused date
 	}
 
 	if err := s.persistence.Update(ctx, constants.TableFlowInstance, instanceID, updates, user); err != nil {
@@ -159,8 +159,8 @@ func (s *FlowInstanceService) CompleteInstance(ctx context.Context, instanceID s
 
 	now := time.Now().UTC()
 	updates := models.SObject{
-		"status":         models.FlowInstanceStatusCompleted,
-		"completed_date": now,
+		constants.FieldSysFlowInstance_Status:        models.FlowInstanceStatusCompleted,
+		constants.FieldSysFlowInstance_CompletedDate: now,
 	}
 
 	if err := s.persistence.Update(ctx, constants.TableFlowInstance, instanceID, updates, user); err != nil {
@@ -187,8 +187,8 @@ func (s *FlowInstanceService) FailInstance(ctx context.Context, instanceID, reas
 	}
 
 	updates := models.SObject{
-		"status":       models.FlowInstanceStatusFailed,
-		"context_data": fmt.Sprintf(`{"error": "%s"}`, reason),
+		constants.FieldSysFlowInstance_Status:      models.FlowInstanceStatusFailed,
+		constants.FieldSysFlowInstance_ContextData: fmt.Sprintf(`{"error": "%s"}`, reason),
 	}
 
 	if err := s.persistence.Update(ctx, constants.TableFlowInstance, instanceID, updates, user); err != nil {
@@ -201,7 +201,7 @@ func (s *FlowInstanceService) FailInstance(ctx context.Context, instanceID, reas
 
 // GetInstance retrieves a flow instance by ID
 func (s *FlowInstanceService) GetInstance(ctx context.Context, instanceID string, user *models.UserSession) (*models.FlowInstance, error) {
-	filterExpr := fmt.Sprintf("id == '%s'", instanceID)
+	filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldID, instanceID)
 	records, err := s.query.QueryWithFilter(ctx, constants.TableFlowInstance, filterExpr, user, "", "", 1)
 	if err != nil {
 		return nil, err
@@ -216,7 +216,7 @@ func (s *FlowInstanceService) GetInstance(ctx context.Context, instanceID string
 // GetInstanceByWorkItem finds the flow instance linked to an approval work item
 func (s *FlowInstanceService) GetInstanceByWorkItem(ctx context.Context, workItemID string, user *models.UserSession) (*models.FlowInstance, error) {
 	// First get the work item to find the flow_instance_id
-	filterExpr := fmt.Sprintf("id == '%s'", workItemID)
+	filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldID, workItemID)
 	workItems, err := s.query.QueryWithFilter(ctx, constants.TableApprovalWorkItem, filterExpr, user, "", "", 1)
 	if err != nil {
 		return nil, err
@@ -225,7 +225,7 @@ func (s *FlowInstanceService) GetInstanceByWorkItem(ctx context.Context, workIte
 		return nil, nil
 	}
 
-	instanceID, ok := workItems[0]["flow_instance_id"].(string)
+	instanceID, ok := workItems[0][constants.FieldSysApprovalWorkItem_FlowInstanceID].(string)
 	if !ok || instanceID == "" {
 		return nil, nil // No linked flow instance
 	}
@@ -235,7 +235,7 @@ func (s *FlowInstanceService) GetInstanceByWorkItem(ctx context.Context, workIte
 
 // GetFlowSteps retrieves all steps for a flow, ordered by step_order
 func (s *FlowInstanceService) GetFlowSteps(ctx context.Context, flowID string, user *models.UserSession) ([]*models.FlowStep, error) {
-	filterExpr := fmt.Sprintf("flow_id == '%s'", flowID)
+	filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldSysFlowStep_FlowID, flowID)
 	records, err := s.query.QueryWithFilter(ctx, constants.TableFlowStep, filterExpr, user, "step_order", "ASC", 100)
 	if err != nil {
 		return nil, err
@@ -256,7 +256,7 @@ func (s *FlowInstanceService) GetFlowSteps(ctx context.Context, flowID string, u
 
 // GetStep retrieves a single step by ID
 func (s *FlowInstanceService) GetStep(ctx context.Context, stepID string, user *models.UserSession) (*models.FlowStep, error) {
-	filterExpr := fmt.Sprintf("id == '%s'", stepID)
+	filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldID, stepID)
 	records, err := s.query.QueryWithFilter(ctx, constants.TableFlowStep, filterExpr, user, "", "", 1)
 	if err != nil {
 		return nil, err
@@ -345,7 +345,7 @@ func (s *FlowInstanceService) ResumeAfterApproval(
 		}
 
 		// Get record data
-		filterExprRecord := fmt.Sprintf("id == '%s'", instance.RecordID)
+		filterExprRecord := fmt.Sprintf("%s == '%s'", constants.FieldID, instance.RecordID)
 		records, err := s.query.QueryWithFilter(txCtx, instance.ObjectAPIName, filterExprRecord, user, "", "", 1)
 		if err != nil || len(records) == 0 {
 			return fmt.Errorf("failed to load record %s/%s: %w", instance.ObjectAPIName, instance.RecordID, err)

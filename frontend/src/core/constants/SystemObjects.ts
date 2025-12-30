@@ -1,14 +1,19 @@
 /**
  * System Objects - Re-exported from generated constants
  * 
- * This file re-exports object-related constants from the auto-generated
- * shared constants. The single source of truth is shared/constants/system.json.
+ * Table names are from system_tables.json via generated-schema.ts (SSOT)
+ * Other constants from shared/generated/constants.ts
  */
 
+// Table names from SSOT (system_tables.json)
+import { SYSTEM_TABLE_NAMES, type SystemTableName } from '../../generated-schema';
+export { SYSTEM_TABLE_NAMES, type SystemTableName };
+
+// Backward-compatible alias (prefer SYSTEM_TABLE_NAMES for new code)
+export const SYSTEM_TABLES = SYSTEM_TABLE_NAMES;
+
+// Object categorization and standard objects from shared constants
 export {
-    SYSTEM_TABLES,
-    type SystemTableName,
-    isSystemTable,
     STANDARD_OBJECTS,
     type StandardObjectName,
     isStandardObject,
@@ -18,12 +23,13 @@ export {
     getObjectCategory,
 } from '../../../../shared/generated/constants';
 
-
+// Helper function using SSOT table names
+export function isSystemTable(objectApiName: string): boolean {
+    return objectApiName.startsWith('_System_');
+}
 
 // Re-import for local use
 import {
-    SYSTEM_TABLES,
     STANDARD_OBJECTS,
-    type SystemTableName,
     type StandardObjectName
 } from '../../../../shared/generated/constants';

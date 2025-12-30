@@ -133,8 +133,8 @@ func (ps *PersistenceService) validatePolymorphicLookups(ctx context.Context, da
 // checkRecordExists checks if a record exists by ID (bypassing permissions for validation)
 func (ps *PersistenceService) checkRecordExists(ctx context.Context, objectName string, id string) (bool, error) {
 	queryP := query.From(objectName).
-		Select([]string{"id"}).
-		Where("id = ?", id).
+		Select([]string{constants.FieldID}).
+		Where(constants.FieldID+" = ?", id).
 		Limit(1).
 		Build()
 

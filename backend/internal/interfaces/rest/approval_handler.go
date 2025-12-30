@@ -3,6 +3,7 @@ package rest
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
+	"github.com/nexuscrm/backend/pkg/constants"
 )
 
 // ApprovalHandler handles approval process API endpoints
@@ -68,8 +69,8 @@ func (h *ApprovalHandler) Submit(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"success":      true,
-		"message":      "Record submitted for approval",
-		"work_item_id": workItem["id"],
+		constants.FieldMessage:      "Record submitted for approval",
+		"work_item_id": workItem[constants.FieldID],
 	})
 }
 
@@ -89,7 +90,7 @@ func (h *ApprovalHandler) Approve(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"success": true,
-		"message": "Approval granted",
+		constants.FieldMessage: "Approval granted",
 	})
 }
 
@@ -109,7 +110,7 @@ func (h *ApprovalHandler) Reject(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"success": true,
-		"message": "Approval rejected",
+		constants.FieldMessage: "Approval rejected",
 	})
 }
 
@@ -157,7 +158,7 @@ func (h *ApprovalHandler) CheckProcess(c *gin.Context) {
 
 	processName := ""
 	if process != nil {
-		if name, ok := process["name"].(string); ok {
+		if name, ok := process[constants.FieldName].(string); ok {
 			processName = name
 		}
 	}

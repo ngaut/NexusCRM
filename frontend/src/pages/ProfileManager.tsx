@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, AlertCircle, Edit, Trash2, X, Save, Shield } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 
 interface Profile {
@@ -32,7 +33,7 @@ const ProfileManager: React.FC = () => {
         try {
             setLoading(true);
             const records = await dataAPI.query<Profile>({
-                objectApiName: '_System_Profile',
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_PROFILE,
                 sortField: 'name',
                 sortDirection: 'ASC'
             });
@@ -73,7 +74,7 @@ const ProfileManager: React.FC = () => {
     const confirmDelete = async () => {
         if (!profileToDelete) return;
         try {
-            await dataAPI.deleteRecord('_System_Profile', profileToDelete.id);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_PROFILE, profileToDelete.id);
             setDeleteModalOpen(false);
             setProfileToDelete(null);
             loadProfiles();
@@ -93,9 +94,9 @@ const ProfileManager: React.FC = () => {
             setError(null);
 
             if (editingProfile) {
-                await dataAPI.updateRecord('_System_Profile', editingProfile.id, formData);
+                await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_PROFILE, editingProfile.id, formData);
             } else {
-                await dataAPI.createRecord<Profile>('_System_Profile', formData);
+                await dataAPI.createRecord<Profile>(SYSTEM_TABLE_NAMES.SYSTEM_PROFILE, formData);
             }
 
             setShowModal(false);

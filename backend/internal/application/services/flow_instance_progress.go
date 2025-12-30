@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/backend/pkg/constants"
 )
 
 // FlowInstanceProgress contains instance data with computed step progress
@@ -98,23 +99,23 @@ func (s *FlowInstanceService) GetInstanceProgress(ctx context.Context, instanceI
 // Helper: Convert SObject to FlowInstance
 func (s *FlowInstanceService) sobjectToFlowInstance(data models.SObject) (*models.FlowInstance, error) {
 	instance := &models.FlowInstance{
-		ID:            data.GetString("id"),
-		FlowID:        data.GetString("flow_id"),
-		ObjectAPIName: data.GetString("object_api_name"),
-		RecordID:      data.GetString("record_id"),
-		Status:        data.GetString("status"),
+		ID:            data.GetString(constants.FieldID),
+		FlowID:        data.GetString(constants.FieldSysFlowInstance_FlowID),
+		ObjectAPIName: data.GetString(constants.FieldSysFlowInstance_ObjectAPIName),
+		RecordID:      data.GetString(constants.FieldSysFlowInstance_RecordID),
+		Status:        data.GetString(constants.FieldSysFlowInstance_Status),
 	}
 
-	if stepID, ok := data["current_step_id"].(string); ok && stepID != "" {
+	if stepID, ok := data[constants.FieldSysFlowInstance_CurrentStepID].(string); ok && stepID != "" {
 		instance.CurrentStepID = &stepID
 	}
 
-	if createdByID, ok := data["created_by_id"].(string); ok && createdByID != "" {
+	if createdByID, ok := data[constants.FieldCreatedByID].(string); ok && createdByID != "" {
 		instance.CreatedByID = &createdByID
 	}
 
 	// Parse context_data JSON
-	if contextStr, ok := data["context_data"].(string); ok && contextStr != "" {
+	if contextStr, ok := data[constants.FieldSysFlowInstance_ContextData].(string); ok && contextStr != "" {
 		var contextData map[string]interface{}
 		if err := json.Unmarshal([]byte(contextStr), &contextData); err == nil {
 			instance.ContextData = contextData
@@ -122,13 +123,13 @@ func (s *FlowInstanceService) sobjectToFlowInstance(data models.SObject) (*model
 	}
 
 	// Parse dates
-	if started, ok := data["started_date"].(time.Time); ok {
+	if started, ok := data[constants.FieldSysFlowInstance_StartedDate].(time.Time); ok {
 		instance.StartedDate = started
 	}
-	if paused, ok := data["paused_date"].(time.Time); ok {
+	if paused, ok := data[constants.FieldSysFlowInstance_PausedDate].(time.Time); ok {
 		instance.PausedDate = &paused
 	}
-	if completed, ok := data["completed_date"].(time.Time); ok {
+	if completed, ok := data[constants.FieldSysFlowInstance_CompletedDate].(time.Time); ok {
 		instance.CompletedDate = &completed
 	}
 
@@ -138,42 +139,42 @@ func (s *FlowInstanceService) sobjectToFlowInstance(data models.SObject) (*model
 // Helper: Convert SObject to FlowStep
 func (s *FlowInstanceService) sobjectToFlowStep(data models.SObject) (*models.FlowStep, error) {
 	step := &models.FlowStep{
-		ID:       data.GetString("id"),
-		FlowID:   data.GetString("flow_id"),
-		StepName: data.GetString("step_name"),
-		StepType: data.GetString("step_type"),
+		ID:       data.GetString(constants.FieldID),
+		FlowID:   data.GetString(constants.FieldSysFlowStep_FlowID),
+		StepName: data.GetString(constants.FieldSysFlowStep_StepName),
+		StepType: data.GetString(constants.FieldSysFlowStep_StepType),
 	}
 
 	// Handle step_order - database may return int, int64, or float64
-	if order, ok := data["step_order"].(float64); ok {
+	if order, ok := data[constants.FieldSysFlowStep_StepOrder].(float64); ok {
 		step.StepOrder = int(order)
-	} else if order, ok := data["step_order"].(int64); ok {
+	} else if order, ok := data[constants.FieldSysFlowStep_StepOrder].(int64); ok {
 		step.StepOrder = int(order)
-	} else if order, ok := data["step_order"].(int); ok {
+	} else if order, ok := data[constants.FieldSysFlowStep_StepOrder].(int); ok {
 		step.StepOrder = order
 	}
 
 	// Optional fields
-	if actionType, ok := data["action_type"].(string); ok && actionType != "" {
+	if actionType, ok := data[constants.FieldSysFlowStep_ActionType].(string); ok && actionType != "" {
 		step.ActionType = &actionType
 	}
-	if entryCondition, ok := data["entry_condition"].(string); ok && entryCondition != "" {
+	if entryCondition, ok := data[constants.FieldSysFlowStep_EntryCondition].(string); ok && entryCondition != "" {
 		step.EntryCondition = &entryCondition
 	}
-	if onSuccess, ok := data["on_success_step"].(string); ok && onSuccess != "" {
+	if onSuccess, ok := data[constants.FieldSysFlowStep_OnSuccessStep].(string); ok && onSuccess != "" {
 		step.OnSuccessStep = &onSuccess
 	}
-	if onFailure, ok := data["on_failure_step"].(string); ok && onFailure != "" {
+	if onFailure, ok := data[constants.FieldSysFlowStep_OnFailureStep].(string); ok && onFailure != "" {
 		step.OnFailureStep = &onFailure
 	}
 
 	// Parse action_config JSON
-	if configStr, ok := data["action_config"].(string); ok && configStr != "" {
+	if configStr, ok := data[constants.FieldSysFlowStep_ActionConfig].(string); ok && configStr != "" {
 		var config map[string]interface{}
 		if err := json.Unmarshal([]byte(configStr), &config); err == nil {
 			step.ActionConfig = config
 		}
-	} else if config, ok := data["action_config"].(map[string]interface{}); ok {
+	} else if config, ok := data[constants.FieldSysFlowStep_ActionConfig].(map[string]interface{}); ok {
 		step.ActionConfig = config
 	}
 

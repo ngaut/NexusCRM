@@ -7,6 +7,7 @@ import { MetadataRecordForm } from '../components/MetadataRecordForm';
 import { Button } from '../components/ui/Button';
 import { ArrowLeft } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { formatApiError } from '../core/utils/errorHandling';
 
 export const ObjectView: React.FC = () => {
@@ -61,9 +62,9 @@ export const ObjectView: React.FC = () => {
 
     // Redirect system objects to their dedicated Setup pages
     const systemObjectRedirects: Record<string, string> = {
-        '_system_flow': '/setup/flows',
-        '_system_sharingrule': '/setup/sharing-rules',
-        '_system_group': '/setup/groups',
+        [SYSTEM_TABLE_NAMES.SYSTEM_FLOW]: '/setup/flows',
+        [SYSTEM_TABLE_NAMES.SYSTEM_SHARINGRULE]: '/setup/sharing-rules',
+        [SYSTEM_TABLE_NAMES.SYSTEM_GROUP]: '/setup/groups',
     };
 
     if (isCreate && objectApiName && systemObjectRedirects[objectApiName]) {

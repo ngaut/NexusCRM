@@ -54,12 +54,12 @@ func (h *UserHandler) Register(c *gin.Context) {
 
 	// We can manually construct the success response to match envelope style
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "User created successfully",
+		constants.FieldMessage: "User created successfully",
 		"user": gin.H{
-			constants.FieldID:   user.ID,
-			constants.FieldName: user.Name,
-			"email":             user.Email,
-			"profile_id":        user.ProfileID,
+			constants.FieldID:        user.ID,
+			constants.FieldName:      user.Name,
+			constants.FieldEmail:     user.Email,
+			constants.FieldProfileID: user.ProfileID,
 		},
 	})
 }
@@ -323,13 +323,13 @@ func (h *UserHandler) CreatePermissionSet(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Permission Set created successfully",
+		constants.FieldMessage: "Permission Set created successfully",
 		"permission_set": gin.H{
-			"id":          id,
-			"name":        req.Name,
-			"label":       req.Label,
-			"description": req.Description,
-			"is_active":   true,
+			constants.FieldID:   id,
+			constants.FieldName: req.Name,
+			"label":             req.Label,
+			"description":       req.Description,
+			"is_active":         true,
 		},
 	})
 }

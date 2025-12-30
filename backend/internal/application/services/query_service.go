@@ -80,7 +80,7 @@ func (qs *QueryService) QueryWithFilter(
 	// Exclude deleted (only if field exists)
 	hasIsDeleted := false
 	for _, f := range schema.Fields {
-		if strings.EqualFold(f.APIName, "is_deleted") {
+		if strings.EqualFold(f.APIName, constants.FieldIsDeleted) {
 			hasIsDeleted = true
 			break
 		}
@@ -167,7 +167,7 @@ func (qs *QueryService) SearchSingleObject(ctx context.Context, objectName strin
 	if nameField == "" {
 		// Fallback: look for 'name' column
 		for _, f := range schema.Fields {
-			if strings.EqualFold(f.APIName, "name") {
+			if strings.EqualFold(f.APIName, constants.FieldName) {
 				nameField = f.APIName
 				break
 			}
@@ -183,7 +183,7 @@ func (qs *QueryService) SearchSingleObject(ctx context.Context, objectName strin
 		}
 	}
 
-	fieldsToSelect := []string{"id"}
+	fieldsToSelect := []string{constants.FieldID}
 	if nameField != "" {
 		fieldsToSelect = append(fieldsToSelect, nameField)
 	}
@@ -224,10 +224,10 @@ func (qs *QueryService) SearchSingleObject(ctx context.Context, objectName strin
 	}
 
 	// Post-process to ensure 'name' property exists for frontend compatibility
-	if nameField != "" && nameField != "name" {
+	if nameField != "" && nameField != constants.FieldName {
 		for _, row := range results {
 			if val, ok := row[nameField]; ok {
-				row["name"] = val
+				row[constants.FieldName] = val
 			}
 		}
 	}

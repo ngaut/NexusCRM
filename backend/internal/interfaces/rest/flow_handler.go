@@ -191,7 +191,7 @@ func (h *FlowHandler) executeCreateRecord(
 		return nil, nil
 	}
 
-	targetObject := getStringFromConfig(flow.ActionConfig, "target_object")
+	targetObject := getStringFromConfig(flow.ActionConfig, constants.ConfigTargetObject)
 	if targetObject == "" {
 		return nil, nil
 	}
@@ -211,7 +211,7 @@ func (h *FlowHandler) executeCreateRecord(
 	}
 
 	return map[string]interface{}{
-		"created_id":    created["id"],
+		"created_id":    created[constants.FieldID],
 		"target_object": targetObject,
 	}, nil
 }
@@ -274,7 +274,7 @@ func buildRecordFromConfig(context map[string]interface{}, actionConfig map[stri
 	}
 
 	// Apply field_mappings (overrides context)
-	if fieldMap, ok := actionConfig["field_mappings"].(map[string]interface{}); ok {
+	if fieldMap, ok := actionConfig[constants.ConfigFieldMappings].(map[string]interface{}); ok {
 		for field, value := range fieldMap {
 			record[field] = value
 		}

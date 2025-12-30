@@ -7,6 +7,7 @@
  */
 
 import { ActionHandlerModule } from '../ActionHandlerTypes';
+import { SYSTEM_TABLE_NAMES, FIELDS_SYSTEM_FEEDITEM } from '../../../generated-schema';
 
 export const handler: ActionHandlerModule = {
     handler: {
@@ -29,10 +30,10 @@ export const handler: ActionHandlerModule = {
 
         handler: async (db, record, config, flowName, tx, _, currentUser) => {
             const message = `🔔 [ALERT] ${config.message || 'System Notification'}`;
-            await db.persistence.insert('feed_item', {
-                body: message,
-                parent_id: record.id,
-                type: 'TextPost'
+            await db.persistence.insert(SYSTEM_TABLE_NAMES.SYSTEM_FEEDITEM, {
+                [FIELDS_SYSTEM_FEEDITEM.BODY]: message,
+                [FIELDS_SYSTEM_FEEDITEM.PARENT_ID]: record.id,
+                [FIELDS_SYSTEM_FEEDITEM.TYPE]: 'TextPost'
             }, currentUser || null, tx);
         }
     }

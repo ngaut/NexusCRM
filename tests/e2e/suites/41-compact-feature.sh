@@ -27,17 +27,16 @@ test_compact_endpoint() {
     echo "Test 41.1: Compact Context Endpoint"
     
     # Construct a conversation payload with enough content
-    conversation_json='{
-        "messages": [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there"},
-            {"role": "user", "content": "Tell me about Go."},
-            {"role": "assistant", "content": "Go is a programming language."},
-            {"role": "user", "content": "Is it fast?"},
-            {"role": "assistant", "content": "Yes, it is compiled and efficient."}
-        ]
-    }'
+    # Construct a conversation payload with enough content to trigger compaction savings
+    # Generate a long conversation to ensure summary is smaller than raw history
+    local messages='[{"role": "system", "content": "You are a helpful assistant."}'
+    for i in {1..20}; do
+        messages+=",{\"role\": \"user\", \"content\": \"Tell me about Go features and why it is fast iteration $i\"}"
+        messages+=",{\"role\": \"assistant\", \"content\": \"Go is a compiled, concurrently garbage-collected language that is known for its simplicity and efficiency. It has goroutines for concurrency. iteration $i\"}"
+    done
+    messages+=']'
+    
+    conversation_json="{\"messages\": $messages}"
 
     echo "  Sending POST /api/agent/compact..."
     response=$(api_post "/api/agent/compact" "$conversation_json")

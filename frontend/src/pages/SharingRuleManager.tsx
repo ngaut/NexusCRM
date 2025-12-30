@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Plus, Search, Trash2, Edit2 } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
 import { metadataAPI } from '../infrastructure/api/metadata';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { useErrorToast, useSuccessToast } from '../components/ui/Toast';
 import { FormulaEditor } from '../components/formula/FormulaEditor';
@@ -58,11 +59,11 @@ export const SharingRuleManager: React.FC = () => {
         setLoading(true);
         try {
             // Load sharing rules
-            const rulesRecords = await dataAPI.query({ objectApiName: '_system_sharingrule' });
+            const rulesRecords = await dataAPI.query({ objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_SHARINGRULE });
             setRules(rulesRecords as unknown as SharingRule[]);
 
             // Load roles for dropdown
-            const rolesRecords = await dataAPI.query({ objectApiName: '_system_role' });
+            const rolesRecords = await dataAPI.query({ objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_ROLE });
             setRoles(rolesRecords as unknown as Role[]);
 
             // Load objects for dropdown
@@ -77,7 +78,7 @@ export const SharingRuleManager: React.FC = () => {
 
     const handleCreate = async () => {
         try {
-            await dataAPI.createRecord('_system_sharingrule', formData);
+            await dataAPI.createRecord(SYSTEM_TABLE_NAMES.SYSTEM_SHARINGRULE, formData);
             successToast('Sharing rule created successfully');
             setShowCreateModal(false);
             resetForm();
@@ -90,7 +91,7 @@ export const SharingRuleManager: React.FC = () => {
     const handleUpdate = async () => {
         if (!editingRule) return;
         try {
-            await dataAPI.updateRecord('_system_sharingrule', editingRule.id, formData);
+            await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_SHARINGRULE, editingRule.id, formData);
             successToast('Sharing rule updated successfully');
             setEditingRule(null);
             resetForm();
@@ -103,7 +104,7 @@ export const SharingRuleManager: React.FC = () => {
     const handleDelete = async () => {
         if (!deletingRule) return;
         try {
-            await dataAPI.deleteRecord('_system_sharingrule', deletingRule.id);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_SHARINGRULE, deletingRule.id);
             successToast('Sharing rule deleted successfully');
             setDeletingRule(null);
             loadData();

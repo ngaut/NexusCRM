@@ -8,6 +8,7 @@ import { dataAPI } from '../../infrastructure/api/data';
 import { feedAPI } from '../../infrastructure/api/feed';
 import { filesAPI } from '../../infrastructure/api/files';
 import { useRuntime } from '../../contexts/RuntimeContext';
+import { SYSTEM_TABLE_NAMES } from '../../generated-schema';
 
 interface Attachment {
     id: string;
@@ -83,7 +84,7 @@ export const CommentList: React.FC<CommentListProps> = ({ objectApiName, recordI
             // Create Attachments
             if (pendingAttachments.length > 0) {
                 await Promise.all(pendingAttachments.map(f =>
-                    dataAPI.createRecord('_System_File', {
+                    dataAPI.createRecord(SYSTEM_TABLE_NAMES.SYSTEM_FILE, {
                         parent_id: commentRes.id,
                         name: f.name,
                         storage_path: f.path,
@@ -139,7 +140,7 @@ export const CommentList: React.FC<CommentListProps> = ({ objectApiName, recordI
                         {!isReply && !c.is_resolved && (
                             <button onClick={() => {
                                 // handle resolve
-                                dataAPI.updateRecord('_System_Comment', c.id, { is_resolved: true }).then(onRefresh);
+                                dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_COMMENT, c.id, { is_resolved: true }).then(onRefresh);
                             }} className="text-xs text-slate-500 hover:text-green-600 font-medium">Resolve</button>
                         )}
                     </div>

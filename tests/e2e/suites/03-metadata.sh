@@ -24,7 +24,7 @@ test_get_all_apps() {
     
     local response=$(api_get "/api/metadata/apps")
     if echo "$response" | grep -q '"apps"' && echo "$response" | grep -q '\['; then
-        local app_count=$(echo "$response" | grep -o '"api_name"' | wc -l)
+        local app_count=$(echo "$response" | grep -o '"id"' | wc -l)
         test_passed "GET /api/metadata/apps returns app list ($app_count apps)"
     else
         test_failed "GET /api/metadata/apps" "$response"
@@ -46,14 +46,14 @@ test_get_all_schemas() {
 
 test_get_specific_schema() {
     echo ""
-    echo "Test 3.3: Get Specific Schema (Account)"
+    echo "Test 3.3: Get Specific Schema (User)"
     
-    local response=$(api_get "/api/metadata/schemas/Account")
-    if echo "$response" | grep -q '"schema"' && echo "$response" | grep -q '"Account"'; then
-        local field_count=$(echo "$response" | grep -o '"name"' | wc -l)
-        test_passed "GET /api/metadata/schemas/Account returns Account schema ($field_count fields)"
+    local response=$(api_get "/api/metadata/schemas/_System_User")
+    if echo "$response" | grep -q '"schema"' && echo "$response" | grep -q '"_System_User"'; then
+        local field_count=$(echo "$response" | grep -o '"api_name"' | wc -l)
+        test_passed "GET /api/metadata/schemas/_System_User returns User schema ($field_count fields)"
     else
-        test_failed "GET /api/metadata/schemas/Account" "$response"
+        test_failed "GET /api/metadata/schemas/_System_User" "$response"
     fi
 }
 

@@ -9,10 +9,10 @@ func TestIsSystemTable(t *testing.T) {
 		tableName string
 		want      bool
 	}{
-		{"_System_Object", true},
-		{"_System_Field", true},
-		{"_System_User", true},
-		{"_System_Custom", true},
+		{TableObject, true},
+		{TableField, true},
+		{TableUser, true},
+		{"_System_Custom", true}, // Tests prefix detection for any _System_ table
 		{"Custom_Object", false},
 		{"User", false},
 		{"system_lower", false},

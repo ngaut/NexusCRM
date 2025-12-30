@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Key, Plus, Search, Trash2, Edit2, Check, X, Shield } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { PermissionEditorModal, PermissionEntity } from '../components/modals/PermissionEditorModal';
 import { useErrorToast, useSuccessToast } from '../components/ui/Toast';
@@ -32,7 +33,7 @@ export const PermissionSetManager: React.FC = () => {
     const loadPermissionSets = async () => {
         setLoading(true);
         try {
-            const records = await dataAPI.query({ objectApiName: '_system_permissionset' });
+            const records = await dataAPI.query({ objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSET });
             setPermissionSets(records as unknown as PermissionSet[]);
         } catch {
             errorToast('Failed to load permission sets');
@@ -43,7 +44,7 @@ export const PermissionSetManager: React.FC = () => {
 
     const handleCreate = async () => {
         try {
-            await dataAPI.createRecord('_system_permissionset', formData);
+            await dataAPI.createRecord(SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSET, formData);
             successToast('Permission Set created successfully');
             setShowCreateModal(false);
             setFormData({ name: '', label: '', description: '', is_active: true });
@@ -56,7 +57,7 @@ export const PermissionSetManager: React.FC = () => {
     const handleUpdate = async () => {
         if (!editingPermSet) return;
         try {
-            await dataAPI.updateRecord('_system_permissionset', editingPermSet.id, formData);
+            await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSET, editingPermSet.id, formData);
             successToast('Permission Set updated successfully');
             setEditingPermSet(null);
             setFormData({ name: '', label: '', description: '', is_active: true });
@@ -69,7 +70,7 @@ export const PermissionSetManager: React.FC = () => {
     const handleDelete = async () => {
         if (!deletingPermSet) return;
         try {
-            await dataAPI.deleteRecord('_system_permissionset', deletingPermSet.id);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSET, deletingPermSet.id);
             successToast('Permission Set deleted successfully');
             setDeletingPermSet(null);
             loadPermissionSets();

@@ -56,12 +56,6 @@ func main() {
 		log.Fatalf("Failed to initialize system data: %v", err)
 	}
 
-	// Initialize standard objects - Creates tables and metadata
-	// SchemaManager auto-registers all objects in _System_Table during creation
-	if err := bootstrap.InitializeStandardObjects(svcMgr.Metadata); err != nil {
-		log.Printf("⚠️  Warning: Failed to initialize standard objects: %v", err)
-	}
-
 	// Initialize standard actions - Ensures Edit/Delete actions exist for core objects
 	if err := bootstrap.InitializeStandardActions(svcMgr.Metadata); err != nil {
 		log.Printf("⚠️  Warning: Failed to initialize standard actions: %v", err)
@@ -72,14 +66,14 @@ func main() {
 		log.Printf("⚠️  Warning: Failed to initialize permissions: %v", err)
 	}
 
-	// Initialize standard apps and tabs
-	if err := bootstrap.InitializeApps(svcMgr); err != nil {
-		log.Printf("⚠️  Warning: Failed to initialize apps: %v", err)
-	}
-
 	// Initialize standard themes
 	if err := bootstrap.InitializeThemes(svcMgr); err != nil {
 		log.Printf("⚠️  Warning: Failed to initialize themes: %v", err)
+	}
+
+	// Initialize standard apps and tabs
+	if err := bootstrap.InitializeApps(svcMgr); err != nil {
+		log.Printf("⚠️  Warning: Failed to initialize apps: %v", err)
 	}
 
 	// Initialize UI components

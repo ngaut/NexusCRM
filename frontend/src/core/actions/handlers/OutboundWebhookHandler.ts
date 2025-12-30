@@ -8,8 +8,8 @@
  */
 
 import { ActionHandlerModule, TiDBServiceManager } from '../ActionHandlerTypes';
-import { SYSTEM_TABLES } from '../../constants/SystemObjects';
 import { SObject } from '../../../types';
+import { SYSTEM_TABLE_NAMES } from '../../../generated-schema';
 
 export const handler: ActionHandlerModule = {
     handler: {
@@ -43,7 +43,7 @@ export const handler: ActionHandlerModule = {
 
                 // Load webhook from metadata if webhookName is provided
                 if (config.webhookName) {
-                    const webhooks = await db.query(SYSTEM_TABLES.WEBHOOK, {
+                    const webhooks = await db.query(SYSTEM_TABLE_NAMES.SYSTEM_WEBHOOK, {
                         name: config.webhookName,
                         is_active: true
                     }, tx) as unknown[]; // db.query returns unknown[], safe to cast to array access, but items are unknown

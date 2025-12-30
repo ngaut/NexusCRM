@@ -146,17 +146,6 @@ func InitializeThemes(sm *services.ServiceManager) error {
 	}
 
 	for _, theme := range data.Themes {
-		// Use UpsertTheme logic
-		if _, err := sm.UIMetadata.GetActiveTheme(); err != nil {
-			// This check is a bit weak, UpsertTheme handles existence check.
-			// But GetActiveTheme returns only ONE.
-			// We should just call UpsertTheme.
-		}
-
-		// Actually, MetadataService.UpsertTheme is what we need to call.
-		// UIMetadataService exposes GetActiveTheme, but not Upsert (yet).
-		// I should just call UpsertTheme on MetadataService directly if I can, or add Upsert to UIMetadata.
-		// sm.Metadata is available.
 		if err := sm.Metadata.UpsertTheme(&theme); err != nil {
 			log.Printf("   ⚠️  Failed to ensure theme %s: %v", theme.Name, err)
 		} else {
@@ -205,23 +194,8 @@ func InitializeSetupPages(sm *services.ServiceManager) error {
 	// Read setup_pages.json
 	filePath := "internal/bootstrap/setup_pages.json"
 
-	// Try to locate relative to where binary is run, usually repo root in dev
-	// In production, might need better asset handling or embedding like others.
-	// Actually, wait, inconsistent - other funcs use embedding (//go:embed).
-	// I should use embedding to be consistent and safe!
-
-	// Let's use reading for now as I can't easily add go:embed without re-reading imports and top level vars
-	// Wait, I can just use os.ReadFile.
-
-	// BETTER APPROACH: match the existing pattern with go:embed if possible, but that requires editing top of file.
-	// Given replace_file_content limitations, adding a new function at the bottom reading the file is safer for now.
-	// I will use os.ReadFile.
-
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		// Fallback to try relative to cmd/server if running there?
-		// Or assume running from root.
-		// Let's check if file exists, if not log warning.
 		log.Printf("   ⚠️  Setup pages seed file not found at %s (skipping)", filePath)
 		return nil
 	}

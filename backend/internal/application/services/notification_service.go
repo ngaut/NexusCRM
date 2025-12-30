@@ -24,13 +24,13 @@ func NewNotificationService(persistence *PersistenceService, query *QueryService
 func (s *NotificationService) GetMyNotifications(ctx context.Context, user *models.UserSession) ([]models.SystemNotification, error) {
 	// Query _System_Notification where recipient_id = user.ID
 	// Using formula expression for filtering
-	filterExpr := fmt.Sprintf("recipient_id == '%s'", user.ID)
+	filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldSysNotification_RecipientID, user.ID)
 	results, err := s.query.QueryWithFilter(
 		ctx,
-		"_System_Notification",
+		constants.TableNotification,
 		filterExpr,
 		user,
-		"created_date",
+		constants.FieldCreatedDate,
 		"DESC",
 		20,
 	)
@@ -50,30 +50,30 @@ func (s *NotificationService) GetMyNotifications(ctx context.Context, user *mode
 // MarkAsRead marks a notification as read
 func (s *NotificationService) MarkAsRead(ctx context.Context, id string, user *models.UserSession) error {
 	updates := map[string]interface{}{
-		"is_read": true,
+		constants.FieldSysNotification_IsRead: true,
 	}
-	return s.persistence.Update(ctx, "_System_Notification", id, updates, user)
+	return s.persistence.Update(ctx, constants.TableNotification, id, updates, user)
 }
 
 // CreateNotification creates a notification (System internal use usually, but exposed for testing/admin)
 func (s *NotificationService) CreateNotification(ctx context.Context, notification models.SystemNotification, user *models.UserSession) error {
 	data := notification.ToSObject()
 	// Ensure is_read is false default
-	data["is_read"] = false
+	data[constants.FieldSysNotification_IsRead] = false
 
-	_, err := s.persistence.Insert(ctx, "_System_Notification", data, user)
+	_, err := s.persistence.Insert(ctx, constants.TableNotification, data, user)
 	return err
 }
 
 func (s *NotificationService) mapToNotification(record models.SObject) *models.SystemNotification {
 	return &models.SystemNotification{
 		ID:               record.GetString(constants.FieldID),
-		RecipientID:      record.GetString("recipient_id"),
-		Title:            record.GetString("title"),
-		Body:             record.GetString("body"),
-		Link:             record.GetString("link"),
-		NotificationType: record.GetString("notification_type"),
-		IsRead:           record.GetBool("is_read"),
+		RecipientID:      record.GetString(constants.FieldSysNotification_RecipientID),
+		Title:            record.GetString(constants.FieldSysNotification_Title),
+		Body:             record.GetString(constants.FieldSysNotification_Body),
+		Link:             record.GetString(constants.FieldSysNotification_Link),
+		NotificationType: record.GetString(constants.FieldSysNotification_NotificationType),
+		IsRead:           record.GetBool(constants.FieldSysNotification_IsRead),
 		CreatedDate:      record.GetTime(constants.FieldCreatedDate),
 	}
 }

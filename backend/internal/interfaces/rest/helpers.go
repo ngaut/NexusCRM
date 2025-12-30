@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/domain/models"
 	"github.com/nexuscrm/backend/pkg/auth"
+	"github.com/nexuscrm/backend/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
 )
 
@@ -58,7 +59,7 @@ func HandleGetEnvelope(c *gin.Context, key string, action func() (interface{}, e
 }
 
 // HandleCreateEnvelope executes a create action and returns the object wrapped + message
-// Response: { "message": successMsg, [key]: obj } (key omitted if empty)
+// Response: { constants.FieldMessage: successMsg, [key]: obj } (key omitted if empty)
 func HandleCreateEnvelope(c *gin.Context, key string, successMsg string, obj interface{}, action func() error) {
 	if !BindJSON(c, obj) {
 		return
@@ -67,7 +68,7 @@ func HandleCreateEnvelope(c *gin.Context, key string, successMsg string, obj int
 		RespondError(c, errors.GetHTTPStatus(err), err.Error())
 		return
 	}
-	response := gin.H{"message": successMsg}
+	response := gin.H{constants.FieldMessage: successMsg}
 	if key != "" {
 		response[key] = obj
 	}
@@ -75,7 +76,7 @@ func HandleCreateEnvelope(c *gin.Context, key string, successMsg string, obj int
 }
 
 // HandleUpdateEnvelope executes an update action and returns the object wrapped + message
-// Response: { "message": successMsg, [key]: obj } (key omitted if empty)
+// Response: { constants.FieldMessage: successMsg, [key]: obj } (key omitted if empty)
 func HandleUpdateEnvelope(c *gin.Context, key string, successMsg string, obj interface{}, action func() error) {
 	if !BindJSON(c, obj) {
 		return
@@ -84,7 +85,7 @@ func HandleUpdateEnvelope(c *gin.Context, key string, successMsg string, obj int
 		RespondError(c, errors.GetHTTPStatus(err), err.Error())
 		return
 	}
-	response := gin.H{"message": successMsg}
+	response := gin.H{constants.FieldMessage: successMsg}
 	if key != "" {
 		response[key] = obj
 	}
@@ -92,11 +93,11 @@ func HandleUpdateEnvelope(c *gin.Context, key string, successMsg string, obj int
 }
 
 // HandleDeleteEnvelope executes a delete action and returns a success message
-// Response: { "message": successMsg }
+// Response: { constants.FieldMessage: successMsg }
 func HandleDeleteEnvelope(c *gin.Context, successMsg string, action func() error) {
 	if err := action(); err != nil {
 		RespondError(c, errors.GetHTTPStatus(err), err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": successMsg})
+	c.JSON(http.StatusOK, gin.H{constants.FieldMessage: successMsg})
 }

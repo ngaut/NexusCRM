@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nexuscrm/backend/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/formula"
 )
 
@@ -174,8 +175,8 @@ func (h *FormulaHandler) ClearCache(c *gin.Context) {
 	h.engine.ClearCache()
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Formula cache cleared successfully",
+		"success":              true,
+		constants.FieldMessage: "Formula cache cleared successfully",
 	})
 }
 

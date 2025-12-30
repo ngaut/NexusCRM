@@ -98,14 +98,14 @@ export const GlobalSearch: React.FC = () => {
 
 
     const getRecordSecondaryInfo = (record: SObject) => {
-        // Collect secondary info to display (e.g. Email, Account, Phone)
+        // Collect secondary info to display (e.g. Email, Phone, or other common identifiers)
         const parts = [];
 
+        // Common high-priority secondary fields
         if (record.email) parts.push(String(record.email));
         if (record.phone) parts.push(String(record.phone));
-        if (record.account_name) parts.push(String(record.account_name));
-        if (record.stage_name) parts.push(String(record.stage_name));
-        if (record.status) parts.push(String(record.status));
+        if (record.company) parts.push(String(record.company));
+        if (record.title) parts.push(String(record.title));
 
         return parts.join(' • ');
     };

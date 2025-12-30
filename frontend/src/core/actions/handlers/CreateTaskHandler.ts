@@ -44,12 +44,15 @@ export const handler: ActionHandlerModule = {
         ],
 
         handler: async (db, record, config, flowName, tx, _, currentUser) => {
+            const subject = (config.subject as string) || `Auto: Follow up on ${record['name'] || 'Record'}`;
+            const priority = (config.priority as string) || 'Normal';
+
             await db.persistence.insert('task', {
-                subject: (config.subject as string) || `Auto: Follow up on ${record['name'] || 'Record'}`,
-                status: 'Not Started',
-                priority: (config.priority as string) || 'Normal',
-                related_to: record.id,
-                due_date: new Date(Date.now() + (parseInt(String(config.daysDue || '1')) || 1) * 86400000)
+                'subject': subject,
+                'status': 'Not Started',
+                'priority': priority,
+                'what_id': record.id,
+                'due_date': new Date(Date.now() + (parseInt(String(config.daysDue || '1')) || 1) * 86400000)
                     .toISOString()
                     .split('T')[0]
             }, currentUser || null, tx);

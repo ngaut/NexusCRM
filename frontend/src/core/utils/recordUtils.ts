@@ -43,23 +43,34 @@ export function getRecordDisplayName(record: SObject, schema?: ObjectMetadata): 
 
 /**
  * Identifies the field to use for the Path/Status visualizer.
- * Checks for standard status/stage fields.
+ * 1. Checks schema.path_field
+ * 2. Fallback to common status fields
  */
 export function getPathField(schema: ObjectMetadata): import('../../types').FieldMetadata | undefined {
+    // 1. Explicit metadata
+    if (schema.path_field) {
+        const field = schema.fields.find(f => f.api_name === schema.path_field);
+        if (field) return field;
+    }
+
+    // 2. Heuristic fallback
     return schema.fields.find(f =>
-        f.api_name === 'stage_name' ||
         f.api_name === 'status' ||
+        f.api_name === 'stage_name' ||
         f.api_name === 'lifecycle_stage'
     );
 }
 
 /**
  * Identifies key fields to show in highlights panels or headers.
- * Filters out system fields but includes important ones like Owner, Amount, Status.
+ * 1. Uses compact_layout if defined in metadata
+ * 2. Filters out system fields but includes important business ones
  */
 export function getHighlightFields(schema: ObjectMetadata, count: number = 5): import('../../types').FieldMetadata[] {
+    // Note: compact_layout is on PageLayout, but we often want a quick heuristic on the schema too.
+    // We'll stick to a smarter heuristic here.
     return schema.fields
-        .filter(f => !f.is_system || ['owner_id', 'amount', 'stage_name', 'status'].includes(f.api_name))
+        .filter(f => !f.is_system || f.is_name_field)
         .slice(0, count);
 }
 

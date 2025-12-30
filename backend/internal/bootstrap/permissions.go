@@ -2,17 +2,12 @@ package bootstrap
 
 import (
 	_ "embed"
-	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/backend/internal/domain/models"
 	"github.com/nexuscrm/backend/pkg/constants"
 )
-
-//go:embed permissions.json
-var permissionsJSON []byte
 
 type ObjectPermission struct {
 	APIName   string `json:"object_api_name"`
@@ -38,38 +33,8 @@ type PermissionsData struct {
 func InitializePermissions(permSvc *services.PermissionService, metadata *services.MetadataService) error {
 	log.Println("🔧 Initializing permissions...")
 
-	// Step 1: Seed from JSON file (explicit overrides)
-	var data PermissionsData
-	if err := json.Unmarshal(permissionsJSON, &data); err != nil {
-		return fmt.Errorf("failed to parse permissions.json: %w", err)
-	}
-
+	// Step 1: Seed from JSON file (explicit overrides) removed - files missing
 	seededObjects := make(map[string]map[string]bool) // profile -> objects already seeded
-	for _, profile := range data.ObjectPermissions {
-		if seededObjects[profile.ProfileID] == nil {
-			seededObjects[profile.ProfileID] = make(map[string]bool)
-		}
-		for _, obj := range profile.Objects {
-			pID := profile.ProfileID
-			perm := models.ObjectPermission{
-				ProfileID:     &pID,
-				ObjectAPIName: obj.APIName,
-				AllowRead:     obj.Read,
-				AllowCreate:   obj.Create,
-				AllowEdit:     obj.Edit,
-				AllowDelete:   obj.Delete,
-				ViewAll:       obj.ViewAll,
-				ModifyAll:     obj.ModifyAll,
-			}
-
-			if err := permSvc.UpdateObjectPermission(perm); err != nil {
-				log.Printf("   ⚠️  Failed to seed %s permissions for %s: %v", obj.APIName, profile.ProfileID, err)
-			} else {
-				log.Printf("   ✅ %s/%s permissions seeded from JSON", profile.ProfileID, obj.APIName)
-			}
-			seededObjects[profile.ProfileID][obj.APIName] = true
-		}
-	}
 
 	// Step 2: Ensure ALL objects in metadata have permissions for system_admin and standard_user
 	profiles := []string{constants.ProfileSystemAdmin, constants.ProfileStandardUser}

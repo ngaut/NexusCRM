@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/backend/pkg/constants"
 	appErrors "github.com/nexuscrm/backend/pkg/errors"
 )
 
@@ -160,5 +161,5 @@ func (h *ActionHandler) ExecuteAction(c *gin.Context) {
 	}
 
 	// Return Action Result
-	c.JSON(http.StatusOK, gin.H{"message": "Action executed successfully"})
+	c.JSON(http.StatusOK, gin.H{constants.FieldMessage: "Action executed successfully"})
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
+	"github.com/nexuscrm/backend/pkg/constants"
 )
 
 type FileHandler struct {
@@ -49,9 +50,9 @@ func (h *FileHandler) Upload(c *gin.Context) {
 
 	// Return path (relative)
 	c.JSON(http.StatusOK, gin.H{
-		"path": path,
-		"name": file.Filename,
-		"size": file.Size,
-		"mime": file.Header.Get("Content-Type"),
+		"path":                           path,
+		constants.FieldName:              file.Filename,
+		constants.FieldSysFile_SizeBytes: file.Size,
+		constants.FieldSysFile_MimeType:  file.Header.Get("Content-Type"),
 	})
 }

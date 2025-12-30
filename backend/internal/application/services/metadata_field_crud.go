@@ -36,7 +36,7 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 	// Master-Detail Validation/Enforcement
 	if field.IsMasterDetail {
 		if field.Type != constants.FieldTypeLookup {
-			return errors.NewValidationError("type", "Master-Detail relationship is only valid for Lookup fields")
+			return errors.NewValidationError(constants.FieldMetaType, "Master-Detail relationship is only valid for Lookup fields")
 		}
 		// Enforce defaults for Master-Detail
 		field.Required = true

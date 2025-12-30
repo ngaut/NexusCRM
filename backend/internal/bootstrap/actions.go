@@ -30,12 +30,14 @@ func InitializeStandardActions(metadataService *services.MetadataService) error 
 		return fmt.Errorf("failed to parse standard_actions.json: %w", err)
 	}
 
-	coreObjects := []string{"account", "contact", "opportunity", "lead", "project", "task"}
+	// Step 2: Ensure 'Edit' and 'Delete' exist for ALL objects in metadata
+	schemas := metadataService.GetSchemas()
+	log.Printf("   ...Ensuring %d standard actions for %d objects...", len(actions), len(schemas))
 
-	for _, objName := range coreObjects {
+	for _, schema := range schemas {
 		for _, action := range actions {
 			newAction := &models.ActionMetadata{
-				ObjectAPIName: objName,
+				ObjectAPIName: schema.APIName,
 				Name:          action.Name,
 				Label:         action.Label,
 				Type:          action.Type,
@@ -46,10 +48,8 @@ func InitializeStandardActions(metadataService *services.MetadataService) error 
 				// Only log if it's not a duplicate/exists error
 				errStr := err.Error()
 				if !strings.Contains(errStr, "already exists") {
-					log.Printf("   ⚠️  Failed to create action %s.%s: %v", objName, action.Name, err)
+					log.Printf("   ⚠️  Failed to create action %s.%s: %v", schema.APIName, action.Name, err)
 				}
-			} else {
-				log.Printf("   ✅ Action created: %s.%s", objName, action.Name)
 			}
 		}
 	}

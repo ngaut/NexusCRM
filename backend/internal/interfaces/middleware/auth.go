@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/backend/pkg/auth"
+	"github.com/nexuscrm/backend/pkg/constants"
 )
 
 // RequireAuth is a middleware that validates JWT tokens
@@ -16,8 +17,8 @@ func RequireAuth(authSvc *services.AuthService) gin.HandlerFunc {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error":   "Unauthorized",
-				"message": "No authorization token provided",
+				constants.ResponseError: "Unauthorized",
+				constants.FieldMessage:  "No authorization token provided",
 			})
 			c.Abort()
 			return
@@ -27,8 +28,8 @@ func RequireAuth(authSvc *services.AuthService) gin.HandlerFunc {
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error":   "Unauthorized",
-				"message": "Invalid authorization header format",
+				constants.ResponseError: "Unauthorized",
+				constants.FieldMessage:  "Invalid authorization header format",
 			})
 			c.Abort()
 			return
@@ -42,8 +43,8 @@ func RequireAuth(authSvc *services.AuthService) gin.HandlerFunc {
 			// Determine status code based on error type?
 			// For now, 401 is safe for all session failures
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error":   "Unauthorized",
-				"message": err.Error(),
+				constants.ResponseError: "Unauthorized",
+				constants.FieldMessage:  err.Error(),
 			})
 			c.Abort()
 			return
@@ -66,8 +67,8 @@ func RequireSystemAdmin() gin.HandlerFunc {
 		userInterface, exists := c.Get("user")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error":   "Unauthorized",
-				"message": "User not authenticated",
+				constants.ResponseError: "Unauthorized",
+				constants.FieldMessage:  "User not authenticated",
 			})
 			c.Abort()
 			return
@@ -76,8 +77,8 @@ func RequireSystemAdmin() gin.HandlerFunc {
 		user := userInterface.(auth.UserSession)
 		if !user.IsSuperUser() {
 			c.JSON(http.StatusForbidden, gin.H{
-				"error":   "Forbidden",
-				"message": "Only System Administrators can access this resource",
+				constants.ResponseError: "Forbidden",
+				constants.FieldMessage:  "Only System Administrators can access this resource",
 			})
 			c.Abort()
 			return

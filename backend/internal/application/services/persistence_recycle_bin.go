@@ -35,7 +35,7 @@ func (ps *PersistenceService) GetRecycleBinItems(ctx context.Context, currentUse
 		builder.Where(constants.FieldDeletedBy+" = ?", currentUser.Name)
 	}
 
-	binQ := builder.OrderBy("deleted_date", "DESC").Build()
+	binQ := builder.OrderBy(constants.FieldSysRecycleBin_DeletedDate, "DESC").Build()
 
 	records, err := ExecuteQuery(ctx, ps.db, binQ)
 	if err != nil {
@@ -167,7 +167,7 @@ func (ps *PersistenceService) Purge(
 
 func (ps *PersistenceService) getRecycleBinRecord(ctx context.Context, recordId string) (string, error) {
 	binQ := query.From(constants.TableRecycleBin).
-		Select([]string{"object_api_name"}).
+		Select([]string{constants.FieldSysRecycleBin_ObjectAPIName}).
 		Where(constants.FieldRecordID+" = ?", recordId).
 		Limit(1).
 		Build()
@@ -181,7 +181,7 @@ func (ps *PersistenceService) getRecycleBinRecord(ctx context.Context, recordId 
 		return "", fmt.Errorf("record not found in recycle bin")
 	}
 
-	objectName, ok := binRecords[0]["object_api_name"].(string)
+	objectName, ok := binRecords[0][constants.FieldSysRecycleBin_ObjectAPIName].(string)
 	if !ok {
 		return "", fmt.Errorf("invalid object_api_name in recycle bin")
 	}

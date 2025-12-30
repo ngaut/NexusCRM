@@ -195,15 +195,15 @@ func (fe *FlowExecutor) executeActionLogic(ctx context.Context, actionType strin
 		strings.EqualFold(triggerType, constants.TriggerBeforeUpdate) ||
 		strings.EqualFold(triggerType, constants.TriggerBeforeDelete)
 
-	switch strings.ToLower(actionType) {
-	case "action":
+	if strings.EqualFold(actionType, constants.ActionTypeExecuteAction) {
 		// Execute an action by ID from config
 		if actionID, ok := config[constants.ConfigActionID].(string); ok {
 			return fe.actionSvc.ExecuteAction(ctx, actionID, payload.Record, payload.CurrentUser)
 		}
 		return fmt.Errorf("flow action missing action_id in config")
+	}
 
-	case "updaterecord":
+	if strings.EqualFold(actionType, constants.ActionTypeUpdateRecord) {
 		// Update the current record with specified field values
 		fieldMappings, ok := config[constants.ConfigFieldMappings].(map[string]interface{})
 
@@ -229,7 +229,7 @@ func (fe *FlowExecutor) executeActionLogic(ctx context.Context, actionType strin
 
 			// Otherwise (AFTER trigger), we must perform a database update via ActionService
 			targetObject := payload.ObjectAPIName
-			recordID := payload.Record.GetString("id")
+			recordID := payload.Record.GetString(constants.FieldID)
 			action := &models.ActionMetadata{
 				Type:         constants.ActionTypeUpdateRecord,
 				TargetObject: &targetObject,
@@ -242,8 +242,9 @@ func (fe *FlowExecutor) executeActionLogic(ctx context.Context, actionType strin
 			return fe.actionSvc.ExecuteActionDirect(ctx, action, payload.Record, payload.CurrentUser)
 		}
 		return fmt.Errorf("flow updateRecord missing field_mappings in config")
+	}
 
-	case "createrecord":
+	if strings.EqualFold(actionType, constants.ActionTypeCreateRecord) {
 		// Create a new record
 		if targetObject, ok := config[constants.ConfigTargetObject].(string); ok {
 			action := &models.ActionMetadata{
@@ -254,33 +255,36 @@ func (fe *FlowExecutor) executeActionLogic(ctx context.Context, actionType strin
 			return fe.actionSvc.ExecuteActionDirect(ctx, action, payload.Record, payload.CurrentUser)
 		}
 		return fmt.Errorf("flow createRecord missing target_object in config")
+	}
 
-	case "sendemail":
+	if strings.EqualFold(actionType, constants.ActionTypeSendEmail) {
 		// Send email
 		action := &models.ActionMetadata{
 			Type:   constants.ActionTypeSendEmail,
 			Config: config,
 		}
 		return fe.actionSvc.ExecuteActionDirect(ctx, action, payload.Record, payload.CurrentUser)
+	}
 
-	case "callwebhook":
+	if strings.EqualFold(actionType, constants.ActionTypeCallWebhook) {
 		// Call webhook
 		action := &models.ActionMetadata{
 			Type:   constants.ActionTypeCallWebhook,
 			Config: config,
 		}
 		return fe.actionSvc.ExecuteActionDirect(ctx, action, payload.Record, payload.CurrentUser)
+	}
 
-	case "submitforapproval":
+	if strings.EqualFold(actionType, constants.ActionTypeSubmitForApproval) {
 		return fe.executeApprovalLogic(ctx, config, flowID, payload)
+	}
 
-	case "":
+	if actionType == "" {
 		// For multi-step root flow, do nothing here (handled by executeMultiStepFlow caller)
 		return nil
-
-	default:
-		return fmt.Errorf("unknown flow action type: %s", actionType)
 	}
+
+	return fmt.Errorf("unknown flow action type: %s", actionType)
 }
 
 // executeMultiStepFlow starts a multi-step flow and executes the first step
@@ -290,7 +294,7 @@ func (fe *FlowExecutor) executeMultiStepFlow(ctx context.Context, flow *models.F
 	}
 
 	// Create Instance
-	instance, err := fe.flowInstanceManager.CreateInstance(ctx, flow, payload.ObjectAPIName, payload.Record.GetString("id"), payload.CurrentUser)
+	instance, err := fe.flowInstanceManager.CreateInstance(ctx, flow, payload.ObjectAPIName, payload.Record.GetString(constants.FieldID), payload.CurrentUser)
 	if err != nil {
 		return fmt.Errorf("failed to create flow instance: %w", err)
 	}
@@ -362,13 +366,13 @@ func (fe *FlowExecutor) executeApprovalStep(ctx context.Context, instance *model
 
 	// Resolve approver using shared helper
 	approverID := fe.resolveApproverID(config, payload)
-	recordID := payload.Record.GetString("id")
+	recordID := payload.Record.GetString(constants.FieldID)
 
 	// Build work item with flow context
 	workItem := fe.buildApprovalWorkItem(payload.ObjectAPIName, recordID, approverID, config, payload.CurrentUser)
-	workItem["process_id"] = instance.FlowID
-	workItem["flow_instance_id"] = instance.ID
-	workItem["flow_step_id"] = step.ID
+	workItem[constants.FieldSysApprovalWorkItem_ProcessID] = instance.FlowID
+	workItem[constants.FieldSysApprovalWorkItem_FlowInstanceID] = instance.ID
+	workItem[constants.FieldSysApprovalWorkItem_FlowStepID] = step.ID
 
 	// Pause instance before creating work item
 	if err := fe.flowInstanceManager.PauseInstance(ctx, instance.ID, step.ID, payload.CurrentUser); err != nil {
@@ -393,14 +397,14 @@ func (fe *FlowExecutor) executeApprovalLogic(ctx context.Context, config map[str
 
 	// Resolve approver using shared helper
 	approverID := fe.resolveApproverID(config, payload)
-	recordID := payload.Record.GetString("id")
+	recordID := payload.Record.GetString(constants.FieldID)
 	if recordID == "" {
 		return fmt.Errorf("cannot submit for approval: record has no ID")
 	}
 
 	// Build base work item
 	workItem := fe.buildApprovalWorkItem(payload.ObjectAPIName, recordID, approverID, config, payload.CurrentUser)
-	workItem["process_id"] = flowID
+	workItem[constants.FieldSysApprovalWorkItem_ProcessID] = flowID
 
 	// For multistep flows, create instance and find approval step
 	if flowID != "" && fe.flowInstanceManager != nil {
@@ -410,14 +414,14 @@ func (fe *FlowExecutor) executeApprovalLogic(ctx context.Context, config map[str
 			if err != nil {
 				return fmt.Errorf("failed to create flow instance: %w", err)
 			}
-			workItem["flow_instance_id"] = instance.ID
+			workItem[constants.FieldSysApprovalWorkItem_FlowInstanceID] = instance.ID
 
 			// Find and link to approval step, then pause
 			steps, err := fe.flowInstanceManager.GetFlowSteps(ctx, flow.ID, payload.CurrentUser)
 			if err == nil {
 				for _, step := range steps {
 					if step.StepType == constants.FlowStepTypeApproval {
-						workItem["flow_step_id"] = step.ID
+						workItem[constants.FieldSysApprovalWorkItem_FlowStepID] = step.ID
 						if err := fe.flowInstanceManager.PauseInstance(ctx, instance.ID, step.ID, payload.CurrentUser); err != nil {
 							log.Printf("⚠️ Failed to pause flow instance: %v", err)
 						}
@@ -434,7 +438,7 @@ func (fe *FlowExecutor) executeApprovalLogic(ctx context.Context, config map[str
 		return fmt.Errorf("failed to create approval work item: %w", err)
 	}
 
-	log.Printf("✅ Created approval work item %s for %s/%s", created.GetString("id"), payload.ObjectAPIName, recordID)
+	log.Printf("✅ Created approval work item %s for %s/%s", created.GetString(constants.FieldID), payload.ObjectAPIName, recordID)
 	return nil
 }
 
@@ -463,20 +467,20 @@ func (fe *FlowExecutor) resolveApproverID(config map[string]interface{}, payload
 // buildApprovalWorkItem creates base work item SObject with common fields
 func (fe *FlowExecutor) buildApprovalWorkItem(objectAPIName, recordID string, approverID *string, config map[string]interface{}, user *models.UserSession) models.SObject {
 	workItem := models.SObject{
-		"object_api_name": objectAPIName,
-		"record_id":       recordID,
-		"status":          constants.ApprovalStatusPending,
-		"submitted_date":  time.Now(),
+		constants.FieldSysApprovalWorkItem_ObjectAPIName: objectAPIName,
+		constants.FieldSysApprovalWorkItem_RecordID:      recordID,
+		constants.FieldSysApprovalWorkItem_Status:        constants.ApprovalStatusPending,
+		constants.FieldSysApprovalWorkItem_SubmittedDate: time.Now(),
 	}
 	if user != nil {
-		workItem["submitted_by_id"] = user.ID
+		workItem[constants.FieldSysApprovalWorkItem_SubmittedByID] = user.ID
 	}
 	if approverID != nil {
-		workItem["approver_id"] = *approverID
+		workItem[constants.FieldSysApprovalWorkItem_ApproverID] = *approverID
 	}
 
 	if comments := GetConfigString(config, constants.ConfigComments); comments != "" {
-		workItem["comments"] = comments
+		workItem[constants.FieldSysApprovalWorkItem_Comments] = comments
 	}
 	return workItem
 }

@@ -28,7 +28,7 @@ type CreateUserRequest struct {
 func (s *AuthService) CreateUser(req CreateUserRequest) (*models.UserSession, error) {
 	// 1. Validate Email
 	if !auth.IsValidEmail(req.Email) {
-		return nil, errors.NewValidationError("email", "Invalid email format")
+		return nil, errors.NewValidationError(constants.FieldEmail, "Invalid email format")
 	}
 
 	// 2. Validate Password
@@ -43,7 +43,7 @@ func (s *AuthService) CreateUser(req CreateUserRequest) (*models.UserSession, er
 		return nil, fmt.Errorf("database error: %w", err)
 	}
 	if exists {
-		return nil, errors.NewConflictError("User", "email", req.Email)
+		return nil, errors.NewConflictError(constants.TableUser, constants.FieldEmail, req.Email)
 	}
 
 	// 4. Hash Password
@@ -129,7 +129,7 @@ func (s *AuthService) UpdateUser(userID string, req UpdateUserRequest) error {
 
 	if req.Email != "" {
 		if !auth.IsValidEmail(req.Email) {
-			return errors.NewValidationError("email", "Invalid email format")
+			return errors.NewValidationError(constants.FieldEmail, "Invalid email format")
 		}
 
 		// Check for email uniqueness
@@ -139,7 +139,7 @@ func (s *AuthService) UpdateUser(userID string, req UpdateUserRequest) error {
 			return fmt.Errorf("database error checking email: %w", err)
 		}
 		if emailExists {
-			return errors.NewConflictError("User", constants.FieldEmail, req.Email)
+			return errors.NewConflictError(constants.TableUser, constants.FieldEmail, req.Email)
 		}
 
 		updates = append(updates, fmt.Sprintf("%s = ?", constants.FieldEmail))
@@ -232,19 +232,19 @@ func (s *AuthService) GetUsers() ([]map[string]interface{}, error) {
 		}
 
 		user := map[string]interface{}{
-			constants.FieldID:       id,
-			constants.FieldUsername: username,
-			constants.FieldName:     username, // Alias for UI
-			"email":                 email,
-			"profile_id":            profileID,
-			"is_active":             isActive,
-			"last_login":            nil,
+			constants.FieldID:            id,
+			constants.FieldUsername:      username,
+			constants.FieldName:          username, // Alias for UI
+			constants.FieldEmail:         email,
+			constants.FieldProfileID:     profileID,
+			constants.FieldIsActive:      isActive,
+			constants.FieldLastLoginDate: nil,
 		}
 		if createdDate.Valid {
-			user["createdDate"] = createdDate.Time
+			user[constants.FieldCreatedDate] = createdDate.Time
 		}
 		if lastLogin.Valid {
-			user["last_login"] = lastLogin.Time
+			user[constants.FieldLastLoginDate] = lastLogin.Time
 		}
 		users = append(users, user)
 	}
@@ -273,13 +273,13 @@ func (s *AuthService) GetProfiles() ([]map[string]interface{}, error) {
 		}
 
 		profile := map[string]interface{}{
-			constants.FieldID:   id,
-			constants.FieldName: name,
-			"description":       "",
-			"is_system":         true,
+			constants.FieldID:          id,
+			constants.FieldName:        name,
+			constants.FieldDescription: "",
+			constants.FieldIsSystem:    true,
 		}
 		if description.Valid {
-			profile["description"] = description.String
+			profile[constants.FieldDescription] = description.String
 		}
 		profiles = append(profiles, profile)
 	}

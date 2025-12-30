@@ -7,6 +7,7 @@
  */
 
 import { ActionHandlerModule } from '../ActionHandlerTypes';
+import { SYSTEM_TABLE_NAMES, FIELDS_SYSTEM_FEEDITEM } from '../../../generated-schema';
 
 export const handler: ActionHandlerModule = {
     handler: {
@@ -28,10 +29,10 @@ export const handler: ActionHandlerModule = {
         ],
 
         handler: async (db, record, config, flowName, tx, _, currentUser) => {
-            await db.persistence.insert('feed_item', {
-                body: config.message || `System Notification: Automation rule "${flowName}" was triggered.`,
-                parent_id: record.id,
-                type: 'TrackedChange'
+            await db.persistence.insert(SYSTEM_TABLE_NAMES.SYSTEM_FEEDITEM, {
+                [FIELDS_SYSTEM_FEEDITEM.BODY]: config.message || `System Notification: Automation rule "${flowName}" was triggered.`,
+                [FIELDS_SYSTEM_FEEDITEM.PARENT_ID]: record.id,
+                [FIELDS_SYSTEM_FEEDITEM.TYPE]: 'TrackedChange'
             }, currentUser || null, tx);
         }
     }

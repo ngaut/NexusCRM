@@ -7,8 +7,6 @@ import { Dashboard } from '../pages/Dashboard';
 import { ObjectView } from '../pages/ObjectView';
 import FlowsPage from '../pages/FlowsPage';
 import { ObjectManager } from '../pages/ObjectManager';
-import { ActivityTimeline } from '../components/ActivityTimeline';
-
 // Admin/Setup Components
 import { UserManager } from '../pages/UserManager';
 import { AppManager } from '../pages/AppManager';
@@ -117,8 +115,6 @@ class ComponentRegistryClass extends RegistryBase<React.ComponentType<any>> {
         // Note: Setup is NOT registered here to avoid circular dependency
         // Setup uses ComponentRegistry for dynamic page rendering
 
-        // Widget Components (embeddable)
-        this.register('ActivityTimeline', ActivityTimeline);
 
         // Admin/Setup Components (non-embeddable)
         this.register('AppManager', AppManager);

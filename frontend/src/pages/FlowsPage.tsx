@@ -3,6 +3,7 @@ import { Plus, Zap, AlertCircle, ShieldCheck } from 'lucide-react';
 import { flowsApi } from '../infrastructure/api/flows';
 import { metadataAPI } from '../infrastructure/api/metadata';
 import { dataAPI } from '../infrastructure/api/data';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { useSchemas } from '../core/hooks/useMetadata';
 import FlowBuilderModal from '../components/modals/FlowBuilderModal';
 import { FlowExecutionModal } from '../components/modals/FlowExecutionModal';
@@ -122,7 +123,7 @@ const FlowsPage: React.FC = () => {
         try {
             setLoadingApprovals(true);
             const records = await dataAPI.query<ApprovalProcess>({
-                objectApiName: '_System_ApprovalProcess',
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_APPROVALPROCESS,
                 sortField: 'created_date',
                 sortDirection: 'DESC'
             });
@@ -150,9 +151,9 @@ const FlowsPage: React.FC = () => {
             setApprovalError(null);
 
             if (editingProcess) {
-                await dataAPI.updateRecord('_System_ApprovalProcess', editingProcess.id, formData);
+                await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_APPROVALPROCESS, editingProcess.id, formData);
             } else {
-                await dataAPI.createRecord<ApprovalProcess>('_System_ApprovalProcess', formData);
+                await dataAPI.createRecord<ApprovalProcess>(SYSTEM_TABLE_NAMES.SYSTEM_APPROVALPROCESS, formData);
             }
 
             loadApprovals();
@@ -166,7 +167,7 @@ const FlowsPage: React.FC = () => {
     const confirmDeleteApproval = async () => {
         if (!processToDelete) return;
         try {
-            await dataAPI.deleteRecord('_System_ApprovalProcess', processToDelete.id);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_APPROVALPROCESS, processToDelete.id);
             setDeleteApprovalModalOpen(false);
             setProcessToDelete(null);
             loadApprovals();

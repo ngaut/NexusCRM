@@ -25,7 +25,7 @@ func (s *FeedService) CreateComment(ctx context.Context, comment models.SystemCo
 	data := comment.ToSObject()
 
 	// Create using Persistence Service
-	record, err := s.persistence.Insert(ctx, "_System_Comment", data, user)
+	record, err := s.persistence.Insert(ctx, constants.TableComment, data, user)
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +37,13 @@ func (s *FeedService) CreateComment(ctx context.Context, comment models.SystemCo
 // GetComments gets comments for a record
 func (s *FeedService) GetComments(ctx context.Context, recordID string, user *models.UserSession) ([]models.SystemComment, error) {
 	// Use formula expression for filtering
-	filterExpr := fmt.Sprintf("record_id == '%s'", recordID)
+	filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldSysComment_RecordID, recordID)
 	results, err := s.query.QueryWithFilter(
 		ctx,
-		"_System_Comment",
+		constants.TableComment,
 		filterExpr,
 		user,
-		"created_date",
+		constants.FieldCreatedDate,
 		"DESC",
 		50,
 	)
@@ -63,16 +63,16 @@ func (s *FeedService) GetComments(ctx context.Context, recordID string, user *mo
 func (s *FeedService) mapToComment(record models.SObject) *models.SystemComment {
 	return &models.SystemComment{
 		ID:            record.GetString(constants.FieldID),
-		Body:          record.GetString("body"),
-		RecordID:      record.GetString("record_id"),
-		ObjectAPIName: record.GetString("object_api_name"),
+		Body:          record.GetString(constants.FieldSysComment_Body),
+		RecordID:      record.GetString(constants.FieldSysComment_RecordID),
+		ObjectAPIName: record.GetString(constants.FieldSysComment_ObjectAPIName),
 		ParentCommentID: func() *string {
-			if v := record.GetString("parent_comment_id"); v != "" {
+			if v := record.GetString(constants.FieldSysComment_ParentCommentID); v != "" {
 				return &v
 			}
 			return nil
 		}(),
-		IsResolved:  record.GetBool("is_resolved"),
+		IsResolved:  record.GetBool(constants.FieldSysComment_IsResolved),
 		CreatedBy:   record.GetString(constants.FieldCreatedByID),
 		CreatedDate: record.GetTime(constants.FieldCreatedDate),
 	}

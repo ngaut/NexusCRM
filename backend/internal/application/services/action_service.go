@@ -189,8 +189,8 @@ func (as *ActionService) executeSteps(ctx context.Context, steps []interface{}, 
 			return fmt.Errorf("invalid step config format")
 		}
 
-		stepID, _ := stepConfig["id"].(string)
-		stepType, _ := stepConfig["type"].(string)
+		stepID, _ := stepConfig[constants.FieldID].(string)
+		stepType, _ := stepConfig[constants.FieldSysAction_Type].(string)
 
 		if stepID == "" || stepType == "" {
 			return fmt.Errorf("step must have id and type")

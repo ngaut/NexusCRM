@@ -3,6 +3,7 @@ import { X, Zap, AlertCircle, Save, Layers } from 'lucide-react';
 import { Flow } from '../../infrastructure/api/flows';
 import { dataAPI } from '../../infrastructure/api/data';
 import { SObject } from '../../types';
+import { SYSTEM_TABLE_NAMES } from '../../generated-schema';
 import { useSchemas } from '../../core/hooks/useMetadata';
 import { actionAPI, ActionMetadata } from '../../infrastructure/api/actions';
 import { FLOW_STATUS, FlowStatus } from '../../core/constants/FlowConstants';
@@ -57,7 +58,7 @@ const FlowBuilderModal: React.FC<FlowBuilderModalProps> = ({
             }
             try {
                 const records = await dataAPI.query({
-                    objectApiName: '_System_ApprovalProcess',
+                    objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_APPROVALPROCESS,
                     filterExpr: `object_api_name == '${triggerObject}' && is_active == true`,
                     limit: 1
                 });

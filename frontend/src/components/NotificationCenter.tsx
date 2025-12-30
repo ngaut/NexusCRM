@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Check } from 'lucide-react';
+import { Bell, Check, Trash2, X } from 'lucide-react';
+import { SObject } from '../types';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { dataAPI } from '../infrastructure/api/data';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 
-interface Notification {
-    id: string;
+interface Notification extends SObject {
     recipient_id: string;
     title: string;
     body: string;
@@ -24,7 +25,7 @@ export const NotificationCenter: React.FC = () => {
     const fetchNotifications = async () => {
         try {
             const results = await dataAPI.query({
-                objectApiName: '_System_Notification',
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_NOTIFICATION,
                 sortField: 'created_date',
                 sortDirection: 'DESC',
                 filterExpr: "recipient_id == 'CURRENT_USER'"
@@ -68,10 +69,11 @@ const NotificationCenterInner: React.FC = () => {
         if (!user?.id) return;
         try {
             const results = await dataAPI.query({
-                objectApiName: '_System_Notification',
-                filterExpr: `recipient_id == '${user.id}'`,
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_NOTIFICATION,
+                filterExpr: `owner_id == '${user.id}' AND is_read == false`,
                 sortField: 'created_date',
-                sortDirection: 'DESC'
+                sortDirection: 'DESC',
+                limit: 50
             });
 
             // Hydrate
@@ -84,8 +86,16 @@ const NotificationCenterInner: React.FC = () => {
                 is_read: !!r.is_read,
                 created_date: r.created_date as string
             }));
-
             setNotifications(mapped);
+
+            // Mark as read immediately on open? Or just fetch?
+            // Actually, we usually want to verify we have unread ones.
+            const count = await dataAPI.query({
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_NOTIFICATION,
+                filterExpr: `owner_id == '${user.id}' AND is_read == false`,
+                limit: 1 // Just need to know if > 0
+            });
+
         } catch {
             // Notification load failure - handled via empty state
         }
@@ -95,7 +105,7 @@ const NotificationCenterInner: React.FC = () => {
 
     const handleMarkAsRead = async (id: string) => {
         try {
-            await dataAPI.updateRecord('_System_Notification', id, { is_read: true });
+            await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_NOTIFICATION, id, { is_read: true });
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
         } catch {
             // Mark as read failure - silently continue
@@ -153,7 +163,7 @@ const NotificationCenterInner: React.FC = () => {
                                 {notifications.map(n => (
                                     <div
                                         key={n.id}
-                                        className={`px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer ${!n.is_read ? 'bg-blue-50/30' : ''}`}
+                                        className={`px - 4 py - 3 border - b border - slate - 50 hover: bg - slate - 50 transition - colors cursor - pointer ${!n.is_read ? 'bg-blue-50/30' : ''} `}
                                         onClick={() => {
                                             if (n.link) {
                                                 navigate(n.link);
@@ -164,7 +174,7 @@ const NotificationCenterInner: React.FC = () => {
                                     >
                                         <div className="flex gap-3">
                                             <div className="flex-1">
-                                                <p className={`text-sm ${!n.is_read ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>
+                                                <p className={`text - sm ${!n.is_read ? 'font-semibold text-slate-900' : 'text-slate-700'} `}>
                                                     {n.title}
                                                 </p>
                                                 <p className="text-xs text-slate-500 mt-1 line-clamp-2">{n.body}</p>

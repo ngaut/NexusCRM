@@ -1,53 +1,19 @@
 {
     "apps": [
         {
-            "id": "app_Sales",
-            "label": "Sales",
-            "description": "Sales Management",
-            "icon": "TrendingUp",
+            "id": "nexus_crm",
+            "label": "Nexus CRM",
+            "icon": "LayoutDashboard",
+            "description": "Standard CRM application",
             "is_default": true,
+            "is_active": true,
             "navigation_items": [
                 {
-                    "id": "dashboards_hub",
+                    "id": "item_dashboard",
+                    "label": "Dashboard",
+                    "icon": "BarChart3",
                     "type": "page",
-                    "label": "Dashboards",
-                    "page_url": "/dashboards",
-                    "icon": "LayoutDashboard"
-                },
-                {
-                    "id": "lead",
-                    "type": "object",
-                    "label": "Leads",
-                    "object_api_name": "lead",
-                    "icon": "User"
-                },
-                {
-                    "id": "account",
-                    "type": "object",
-                    "label": "Accounts",
-                    "object_api_name": "account",
-                    "icon": "Building"
-                },
-                {
-                    "id": "contact",
-                    "type": "object",
-                    "label": "Contacts",
-                    "object_api_name": "contact",
-                    "icon": "Users"
-                },
-                {
-                    "id": "opportunity",
-                    "type": "object",
-                    "label": "Opportunities",
-                    "object_api_name": "opportunity",
-                    "icon": "DollarSign"
-                },
-                {
-                    "id": "project",
-                    "type": "object",
-                    "label": "Projects",
-                    "object_api_name": "project",
-                    "icon": "Briefcase"
+                    "page_url": "/dashboard"
                 }
             ]
         }

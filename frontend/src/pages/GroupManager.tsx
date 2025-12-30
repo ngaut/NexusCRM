@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Search, Trash2, Edit2, Mail } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { useErrorToast, useSuccessToast } from '../components/ui/Toast';
 import type { Group, GroupMember, User } from '../types';
@@ -30,7 +31,7 @@ export const GroupManager: React.FC = () => {
     const loadGroups = async () => {
         setLoading(true);
         try {
-            const records = await dataAPI.query<Group>({ objectApiName: '_system_group' });
+            const records = await dataAPI.query<Group>({ objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_GROUP });
             setGroups(records);
         } catch {
             errorToast('Failed to load groups');
@@ -43,13 +44,13 @@ export const GroupManager: React.FC = () => {
         try {
             // Load group members
             const membersRecords = await dataAPI.query<GroupMember>({
-                objectApiName: '_system_groupmember',
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_GROUPMEMBER,
                 filterExpr: `group_id == '${groupId}'`
             });
             setMembers(membersRecords);
 
             // Load all users
-            const allUsers = await dataAPI.query<User>({ objectApiName: '_system_user' });
+            const allUsers = await dataAPI.query<User>({ objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_USER });
             setAvailableUsers(allUsers);
 
             // Map member user IDs to user objects
@@ -62,7 +63,7 @@ export const GroupManager: React.FC = () => {
 
     const handleCreate = async (formData: GroupFormData) => {
         try {
-            await dataAPI.createRecord('_system_group', formData as unknown as Record<string, unknown>);
+            await dataAPI.createRecord(SYSTEM_TABLE_NAMES.SYSTEM_GROUP, formData as unknown as Record<string, unknown>);
             successToast('Group created successfully');
             setShowCreateModal(false);
             loadGroups();
@@ -74,7 +75,7 @@ export const GroupManager: React.FC = () => {
     const handleUpdate = async (formData: GroupFormData) => {
         if (!editingGroup) return;
         try {
-            await dataAPI.updateRecord('_system_group', editingGroup.id, formData as unknown as Record<string, unknown>);
+            await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_GROUP, editingGroup.id, formData as unknown as Record<string, unknown>);
             successToast('Group updated successfully');
             setEditingGroup(null);
             loadGroups();
@@ -86,7 +87,7 @@ export const GroupManager: React.FC = () => {
     const handleDelete = async () => {
         if (!deletingGroup) return;
         try {
-            await dataAPI.deleteRecord('_system_group', deletingGroup.id);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_GROUP, deletingGroup.id);
             successToast('Group deleted successfully');
             setDeletingGroup(null);
             loadGroups();
@@ -98,7 +99,7 @@ export const GroupManager: React.FC = () => {
     const addMember = async (userId: string) => {
         if (!managingMembersFor) return;
         try {
-            await dataAPI.createRecord('_system_groupmember', {
+            await dataAPI.createRecord(SYSTEM_TABLE_NAMES.SYSTEM_GROUPMEMBER, {
                 group_id: managingMembersFor.id,
                 user_id: userId
             });
@@ -111,7 +112,7 @@ export const GroupManager: React.FC = () => {
 
     const removeMember = async (memberId: string) => {
         try {
-            await dataAPI.deleteRecord('_system_groupmember', memberId);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_GROUPMEMBER, memberId);
             successToast('Member removed');
             if (managingMembersFor) {
                 loadMembers(managingMembersFor.id);
