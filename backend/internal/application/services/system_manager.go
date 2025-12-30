@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nexuscrm/backend/internal/domain/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
-	"github.com/nexuscrm/backend/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/query"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -392,7 +392,7 @@ func (sm *SystemManager) BatchUpsertProfiles(profiles []models.Profile) error {
 }
 
 // BatchUpsertUsers inserts multiple users using direct SQL for performance during bootstrap
-// Includes hardcoded hash optimization for default password "Admin123!"
+// Uses a dynamic cache for password hashing to avoid redundant BCrypt calls for identical passwords
 func (sm *SystemManager) BatchUpsertUsers(users []models.SystemUser) error {
 	if len(users) == 0 {
 		return nil

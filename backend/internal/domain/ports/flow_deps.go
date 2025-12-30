@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // FlowInstanceManager manages flow instance lifecycle.

@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // FieldType is defined in pkg/constants

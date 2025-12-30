@@ -1,8 +1,6 @@
 module github.com/nexuscrm/backend
 
-go 1.24
-
-toolchain go1.24.3
+go 1.24.3
 
 require (
 	github.com/expr-lang/expr v1.17.6
@@ -18,6 +16,8 @@ require (
 )
 
 replace github.com/nexuscrm/mcp => ../mcp
+
+replace github.com/nexuscrm/shared => ../shared
 
 require (
 	github.com/bytedance/sonic v1.14.0 // indirect
@@ -37,6 +37,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/nexuscrm/shared v0.0.0
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pingcap/errors v0.11.5-0.20250523034308-74f78ae071ee // indirect
 	github.com/pingcap/failpoint v0.0.0-20240528011301-b51a646c7c86 // indirect

@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
-	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/pkg/auth"
 )
 

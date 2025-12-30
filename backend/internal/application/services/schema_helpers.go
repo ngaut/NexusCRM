@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nexuscrm/backend/internal/domain/models"
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // Helper methods to eliminate redundancy and ensuring consistency in metadata persistence

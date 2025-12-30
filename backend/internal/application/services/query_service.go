@@ -6,12 +6,12 @@ import (
 
 	"strings"
 
-	"github.com/nexuscrm/backend/internal/domain/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
-	"github.com/nexuscrm/backend/pkg/constants"
 	pkgErrors "github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/formula"
 	"github.com/nexuscrm/backend/pkg/query"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // QueryService handles all query operations with formula hydration
@@ -38,36 +38,32 @@ func NewQueryService(
 	}
 }
 
-// QueryWithFilter executes a query with a formula expression filter
-func (qs *QueryService) QueryWithFilter(
+// Query executes a query based on a QueryRequest
+func (qs *QueryService) Query(
 	ctx context.Context,
-	objectName string,
-	filterExpr string,
+	req models.QueryRequest,
 	currentUser *models.UserSession,
-	orderBy string,
-	orderDirection string,
-	limit int,
 ) ([]models.SObject, error) {
 	// Check permissions
-	if !qs.permissions.CheckObjectPermissionWithUser(objectName, constants.PermRead, currentUser) {
-		return nil, fmt.Errorf("insufficient permissions to read %s", objectName)
+	if !qs.permissions.CheckObjectPermissionWithUser(req.ObjectAPIName, constants.PermRead, currentUser) {
+		return nil, fmt.Errorf("insufficient permissions to read %s", req.ObjectAPIName)
 	}
 
-	schema := qs.metadata.GetSchema(objectName)
+	schema := qs.metadata.GetSchema(req.ObjectAPIName)
 	if schema == nil {
-		return nil, pkgErrors.NewNotFoundError("Object", objectName)
+		return nil, pkgErrors.NewNotFoundError("Object", req.ObjectAPIName)
 	}
 
 	// Build query
-	builder := query.From(objectName).WithMetadata(schema)
+	builder := query.From(req.ObjectAPIName).WithMetadata(schema)
 
 	// Start with system fields from metadata
-	visibleFields := qs.metadata.GetSystemFields(objectName)
+	visibleFields := qs.metadata.GetSystemFields(req.ObjectAPIName)
 
 	// Add custom fields that are visible
 	for _, field := range schema.Fields {
 		isSystem := field.IsSystem || field.IsNameField
-		if !isSystem && qs.permissions.CheckFieldVisibilityWithUser(objectName, field.APIName, currentUser) {
+		if !isSystem && qs.permissions.CheckFieldVisibilityWithUser(req.ObjectAPIName, field.APIName, currentUser) {
 			visibleFields = append(visibleFields, field.APIName)
 			if field.IsPolymorphic {
 				visibleFields = append(visibleFields, GetPolymorphicTypeColumnName(field.APIName))
@@ -89,9 +85,18 @@ func (qs *QueryService) QueryWithFilter(
 		builder.ExcludeDeleted()
 	}
 
+	// Apply criteria
+	if len(req.Criteria) > 0 {
+		for _, c := range req.Criteria {
+			// Quote field name and use provided operator
+			condition := fmt.Sprintf("`%s`.`%s` %s ?", req.ObjectAPIName, c.Field, c.Op)
+			builder.Where(condition, c.Val)
+		}
+	}
+
 	// Apply formula expression filter
-	if filterExpr != "" {
-		sqlWhere, args, err := formula.ToSQL(filterExpr)
+	if req.FilterExpr != "" {
+		sqlWhere, args, err := formula.ToSQL(req.FilterExpr)
 		if err != nil {
 			return nil, fmt.Errorf("invalid filter expression: %w", err)
 		}
@@ -99,11 +104,12 @@ func (qs *QueryService) QueryWithFilter(
 	}
 
 	// Apply sorting
-	if orderBy != "" {
-		builder.OrderBy(orderBy, orderDirection)
+	if req.SortField != "" {
+		builder.OrderBy(req.SortField, req.SortDirection)
 	}
 
 	// Apply limit
+	limit := req.Limit
 	if limit <= 0 {
 		limit = 20
 	}
@@ -121,6 +127,26 @@ func (qs *QueryService) QueryWithFilter(
 	results = qs.hydrateVirtualFields(ctx, results, schema, visibleFields, currentUser)
 
 	return results, nil
+}
+
+// QueryWithFilter executes a query with a formula expression filter
+func (qs *QueryService) QueryWithFilter(
+	ctx context.Context,
+	objectName string,
+	filterExpr string,
+	currentUser *models.UserSession,
+	orderBy string,
+	orderDirection string,
+	limit int,
+) ([]models.SObject, error) {
+	req := models.QueryRequest{
+		ObjectAPIName: objectName,
+		FilterExpr:    filterExpr,
+		SortField:     orderBy,
+		SortDirection: orderDirection,
+		Limit:         limit,
+	}
+	return qs.Query(ctx, req, currentUser)
 }
 
 // SearchSingleObject searches within a single object

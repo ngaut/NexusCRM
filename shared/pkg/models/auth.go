@@ -4,16 +4,17 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // UserSession represents an authenticated user session
 type UserSession struct {
-	ID        string  `json:"id"`
-	Name      string  `json:"name"`
-	Email     *string `json:"email,omitempty"`
-	ProfileID string  `json:"profile_id"`
-	RoleID    *string `json:"role_id,omitempty"`
+	ID            string  `json:"id"`
+	Name          string  `json:"name"`
+	Email         *string `json:"email,omitempty"`
+	ProfileID     string  `json:"profile_id"`
+	RoleID        *string `json:"role_id,omitempty"`
+	IsSystemAdmin bool    `json:"is_system_admin"`
 }
 
 // ToMap converts UserSession to a map for formula context

@@ -8,8 +8,8 @@ import (
 	"log"
 
 	"github.com/nexuscrm/backend/internal/domain/events"
-	"github.com/nexuscrm/backend/internal/domain/models"
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // GetAllObjects returns all object definitions visible to the user

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/pkg/query"
 	"github.com/nexuscrm/backend/pkg/utils"
 )

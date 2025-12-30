@@ -7,10 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
-	"github.com/nexuscrm/backend/internal/domain/models"
-	"github.com/nexuscrm/backend/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/utils"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 type DataHandler struct {
@@ -21,35 +21,22 @@ func NewDataHandler(svc *services.ServiceManager) *DataHandler {
 	return &DataHandler{svc: svc}
 }
 
-// QueryRequest represents a query request
-type QueryRequest struct {
-	ObjectApiName string `json:"object_api_name" binding:"required"`
-	FilterExpr    string `json:"filter_expr"` // Formula expression for filtering
-	SortField     string `json:"sort_field"`
-	SortDirection string `json:"sort_direction"`
-	Limit         int    `json:"limit"`
-}
-
 // Query handles POST /api/data/query
 func (h *DataHandler) Query(c *gin.Context) {
 	user := GetUserFromContext(c)
-	var req QueryRequest
+	var req models.QueryRequest
 	if !BindJSON(c, &req) {
 		return
 	}
 
 	// Normalize object API name from JSON body
-	req.ObjectApiName = strings.ToLower(req.ObjectApiName)
+	req.ObjectAPIName = strings.ToLower(req.ObjectAPIName)
 
 	HandleGetEnvelope(c, "records", func() (interface{}, error) {
-		return h.svc.QuerySvc.QueryWithFilter(
+		return h.svc.QuerySvc.Query(
 			c.Request.Context(),
-			req.ObjectApiName,
-			req.FilterExpr,
+			req,
 			user,
-			req.SortField,
-			req.SortDirection,
-			req.Limit,
 		)
 	})
 }

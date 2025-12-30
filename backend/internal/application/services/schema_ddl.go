@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/nexuscrm/backend/internal/domain/schema"
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/formula"
 )
 

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/domain"
-	"github.com/nexuscrm/backend/internal/domain/models"
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // FlowInstanceService manages flow instance lifecycle (create, pause, resume, complete)

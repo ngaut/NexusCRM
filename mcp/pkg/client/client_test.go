@@ -88,4 +88,65 @@ func TestCreateRecord(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "new-id-123", id)
+
+	// Test case 2: "record" envelope (Backend Standard)
+	server2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Success",
+			"record": map[string]interface{}{
+				"id": "record-id-456",
+			},
+		})
+	}))
+	defer server2.Close()
+
+	client2 := NewNexusClient(server2.URL)
+	id2, err := client2.CreateRecord(context.Background(), "Account", map[string]interface{}{"name": "Another Account"}, "test-token")
+	assert.NoError(t, err)
+	assert.Equal(t, "record-id-456", id2)
+}
+
+func TestSearchObject(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/api/data/search/Account", r.URL.Path)
+		assert.Equal(t, "GET", r.Method)
+		assert.Equal(t, "Acme", r.URL.Query().Get("term"))
+
+		response := map[string]interface{}{
+			"records": []models.SObject{
+				{"id": "1", "name": "Acme Corp"},
+			},
+		}
+		json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := NewNexusClient(server.URL)
+	results, err := client.SearchObject(context.Background(), "Account", "Acme", "test-token")
+
+	assert.NoError(t, err)
+	assert.Len(t, results, 1)
+	assert.Equal(t, "Acme Corp", results[0]["name"])
+}
+
+func TestGetRecord(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/api/data/Account/123", r.URL.Path)
+		assert.Equal(t, "GET", r.Method)
+
+		response := map[string]interface{}{
+			"record": models.SObject{
+				"id": "123", "name": "Acme Corp",
+			},
+		}
+		json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := NewNexusClient(server.URL)
+	record, err := client.GetRecord(context.Background(), "Account", "123", "test-token")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "123", record["id"])
+	assert.Equal(t, "Acme Corp", record["name"])
 }

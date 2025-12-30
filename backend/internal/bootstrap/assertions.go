@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // AssertionViolation represents a single design violation

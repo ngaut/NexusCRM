@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nexuscrm/backend/internal/domain/models"
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
+	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/stretchr/testify/assert"
 )
 

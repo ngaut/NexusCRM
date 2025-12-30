@@ -1,7 +1,7 @@
 package services
 
 import (
-	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // EnrichWithSystemFields adds standard system fields to an object schema if they are missing.

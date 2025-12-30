@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nexuscrm/backend/internal/domain/models"
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
+	"github.com/nexuscrm/shared/pkg/constants"
 	appErrors "github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/query"
 )

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // SObject represents a generic record
@@ -63,14 +63,21 @@ type AnalyticsQuery struct {
 	FilterExpr    string  `json:"filter_expr,omitempty"` // Formula expression for filtering
 }
 
+// QueryCriterion represents a single query filter criterion
+type QueryCriterion struct {
+	Field string      `json:"field"`
+	Op    string      `json:"op"`
+	Val   interface{} `json:"val"`
+}
+
 // QueryRequest represents a generic query request
 type QueryRequest struct {
-	ObjectAPIName string                 `json:"object_api_name" binding:"required"`
-	Criteria      map[string]interface{} `json:"criteria,omitempty"`
-	FilterExpr    string                 `json:"filter_expr,omitempty"` // Formula expression for filtering
-	SortField     string                 `json:"sort_field,omitempty"`
-	SortDirection string                 `json:"sort_direction,omitempty"`
-	Limit         int                    `json:"limit,omitempty"`
+	ObjectAPIName string           `json:"object_api_name" binding:"required"`
+	Criteria      []QueryCriterion `json:"criteria,omitempty"`
+	FilterExpr    string           `json:"filter_expr,omitempty"` // Formula expression for filtering
+	SortField     string           `json:"sort_field,omitempty"`
+	SortDirection string           `json:"sort_direction,omitempty"`
+	Limit         int              `json:"limit,omitempty"`
 }
 
 // SearchRequest represents a search request

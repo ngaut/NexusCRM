@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/backend/pkg/formula"
 )

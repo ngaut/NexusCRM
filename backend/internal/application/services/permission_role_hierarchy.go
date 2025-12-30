@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // ==================== Role Hierarchy ====================

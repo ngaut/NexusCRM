@@ -7,7 +7,7 @@ import (
 	"log"
 
 	"github.com/nexuscrm/backend/internal/application/services"
-	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 //go:embed flows.json

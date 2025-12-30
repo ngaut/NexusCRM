@@ -155,14 +155,10 @@ func main() {
 			return nil
 		}
 		// Map backend user to MCP user
-		email := ""
-		if user.Email != nil {
-			email = *user.Email
-		}
 		return &mcp_models.UserSession{
 			ID:            user.ID,
 			Name:          user.Name,
-			Email:         email,
+			Email:         user.Email,
 			ProfileID:     user.ProfileID,
 			IsSystemAdmin: user.IsSuperUser(),
 		}

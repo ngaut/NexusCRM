@@ -7,11 +7,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/nexuscrm/backend/internal/domain/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
-	"github.com/nexuscrm/backend/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/formula"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // PermissionService handles permission checks for objects and fields.
@@ -187,8 +187,8 @@ func (ps *PermissionService) CheckObjectPermissionWithUser(objectAPIName string,
 		return false
 	}
 
-	// SuperUser bypass - system_admin has full access
-	if constants.IsSuperUser(user.ProfileID) {
+	// SuperUser bypass - system_admin or IsSystemAdmin flag has full access
+	if user.IsSystemAdmin || constants.IsSuperUser(user.ProfileID) {
 		return true
 	}
 
@@ -244,7 +244,7 @@ func (ps *PermissionService) CheckFieldEditabilityWithUser(objectAPIName, fieldA
 	}
 
 	// SuperUser bypass
-	if constants.IsSuperUser(user.ProfileID) {
+	if user.IsSystemAdmin || constants.IsSuperUser(user.ProfileID) {
 		return true
 	}
 
@@ -269,7 +269,7 @@ func (ps *PermissionService) CheckFieldVisibilityWithUser(objectAPIName, fieldAP
 	}
 
 	// SuperUser bypass
-	if constants.IsSuperUser(user.ProfileID) {
+	if user.IsSystemAdmin || constants.IsSuperUser(user.ProfileID) {
 		return true
 	}
 
@@ -307,7 +307,7 @@ func (ps *PermissionService) GetEffectiveSchema(schema *models.ObjectMetadata, u
 	effectiveSchema.Fields = make([]models.FieldMetadata, 0, len(schema.Fields))
 
 	// Super users see all fields
-	if user != nil && constants.IsSuperUser(user.ProfileID) {
+	if user != nil && (user.IsSystemAdmin || constants.IsSuperUser(user.ProfileID)) {
 		return schema
 	}
 

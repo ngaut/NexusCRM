@@ -3,7 +3,7 @@ package services
 import (
 	"sync"
 
-	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ActionHandler is the interface for pluggable action handlers.

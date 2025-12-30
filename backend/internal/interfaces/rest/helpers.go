@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nexuscrm/backend/internal/domain/models"
 	"github.com/nexuscrm/backend/pkg/auth"
-	"github.com/nexuscrm/backend/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // GetUserFromContext extracts the authenticated user from gin.Context
@@ -21,11 +21,12 @@ func GetUserFromContext(c *gin.Context) *models.UserSession {
 	// The middleware stores auth.UserSession, need to convert to models.UserSession
 	authUser := userInterface.(auth.UserSession)
 	return &models.UserSession{
-		ID:        authUser.ID,
-		Name:      authUser.Name,
-		Email:     &authUser.Email, // Convert string to *string
-		ProfileID: authUser.ProfileId,
-		RoleID:    authUser.RoleId,
+		ID:            authUser.ID,
+		Name:          authUser.Name,
+		Email:         &authUser.Email, // Convert string to *string
+		ProfileID:     authUser.ProfileId,
+		RoleID:        authUser.RoleId,
+		IsSystemAdmin: authUser.IsSuperUser(),
 	}
 }
 

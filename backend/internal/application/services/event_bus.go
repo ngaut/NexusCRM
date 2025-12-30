@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/domain/events"
-	"github.com/nexuscrm/backend/internal/domain/models"
+	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/domain/ports"
 )
 

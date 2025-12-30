@@ -10,7 +10,7 @@ import (
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/backend/pkg/auth"
-	"github.com/nexuscrm/backend/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // EnsureTestUser creates or updates the E2E test user
