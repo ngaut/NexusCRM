@@ -70,7 +70,7 @@ const NotificationCenterInner: React.FC = () => {
         try {
             const results = await dataAPI.query({
                 objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_NOTIFICATION,
-                filterExpr: `owner_id == '${user.id}' AND is_read == false`,
+                filterExpr: `recipient_id == '${user.id}' && is_read == false`,
                 sortField: 'created_date',
                 sortDirection: 'DESC',
                 limit: 50
@@ -92,7 +92,7 @@ const NotificationCenterInner: React.FC = () => {
             // Actually, we usually want to verify we have unread ones.
             const count = await dataAPI.query({
                 objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_NOTIFICATION,
-                filterExpr: `owner_id == '${user.id}' AND is_read == false`,
+                filterExpr: `recipient_id == '${user.id}' && is_read == false`,
                 limit: 1 // Just need to know if > 0
             });
 
