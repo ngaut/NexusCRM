@@ -68,3 +68,13 @@ type DashboardCreate struct {
 	Layout      string            `json:"layout,omitempty"` // two-column, grid, etc.
 	Widgets     []DashboardWidget `json:"widgets"`
 }
+
+// AppConfig represents an application configuration (navigation group)
+type AppConfig struct {
+	ID          string   `json:"id,omitempty"`
+	Name        string   `json:"name"` // API Name
+	Label       string   `json:"label"`
+	Description string   `json:"description,omitempty"`
+	NavItems    []string `json:"nav_items"` // List of object API names
+	Icon        string   `json:"icon,omitempty"`
+}

@@ -173,6 +173,32 @@ func (c *NexusClient) CreateDashboard(ctx context.Context, dashboard models.Dash
 	return "", fmt.Errorf("created dashboard missing ID")
 }
 
+// CreateApp creates a new application configuration
+func (c *NexusClient) CreateApp(ctx context.Context, app models.AppConfig, authToken string) (string, error) {
+	// POST /api/metadata/apps
+	var rawResp map[string]interface{}
+	if err := c.doRequest(ctx, "POST", "/api/metadata/apps", app, &rawResp, authToken); err != nil {
+		return "", err
+	}
+
+	// Check "app" -> "id"
+	if dataVal, ok := rawResp["app"]; ok {
+		if dataMap, ok := dataVal.(map[string]interface{}); ok {
+			if id, ok := dataMap["id"].(string); ok {
+				return id, nil
+			}
+		}
+	}
+
+	// Check "id" at top level
+	if id, ok := rawResp["id"].(string); ok {
+		return id, nil
+	}
+
+	// Fallback: If no ID returned but no error, assume success (though ID is preferred)
+	return "", nil
+}
+
 // CreateObject creates a new object schema
 func (c *NexusClient) CreateObject(ctx context.Context, schema models.ObjectMetadata, authToken string) error {
 	// POST /api/metadata/objects

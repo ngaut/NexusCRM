@@ -23,6 +23,7 @@ const (
 	// Schema Tools
 	ToolCreateObject = "create_object"
 	ToolCreateField  = "create_field"
+	ToolCreateApp    = "create_app"
 	// Context Tools
 	ToolContextAdd    = "context_add"
 	ToolContextRemove = "context_remove"
@@ -389,6 +390,9 @@ func (s *ToolBusService) HandleCallTool(ctx context.Context, params json.RawMess
 	}
 	if req.Name == ToolCreateField {
 		return s.handleCreateField(ctx, req)
+	}
+	if req.Name == ToolCreateApp {
+		return s.handleCreateApp(ctx, req)
 	}
 
 	// Context Tools
@@ -797,4 +801,50 @@ func getStringFromMap(m map[string]interface{}, key string) string {
 		return v
 	}
 	return ""
+}
+
+func (s *ToolBusService) handleCreateApp(ctx context.Context, req mcp.CallToolParams) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	name, ok1 := req.Arguments["name"].(string)
+	label, ok2 := req.Arguments["label"].(string)
+
+	if !ok1 || !ok2 {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "name and label are required"}}}, nil
+	}
+
+	description, _ := req.Arguments["description"].(string)
+	
+	var navItems []string
+	if items, ok := req.Arguments["nav_items"].([]interface{}); ok {
+		for _, item := range items {
+			if str, ok := item.(string); ok {
+				navItems = append(navItems, str)
+			}
+		}
+	}
+
+	app := models.AppConfig{
+		Name:        name,
+		Label:       label,
+		Description: description,
+		NavItems:    navItems,
+	}
+
+	id, err := s.client.CreateApp(ctx, app, token)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to create app: %v", err)}}}, nil
+	}
+
+	msg := fmt.Sprintf("Successfully created app '%s' (%s)", label, name)
+	if id != "" {
+		msg += fmt.Sprintf(" with ID: %s", id)
+	}
+
+	return mcp.CallToolResult{
+		Content: []mcp.Content{{Type: "text", Text: msg}},
+	}, nil
 }
