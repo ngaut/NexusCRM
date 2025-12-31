@@ -74,7 +74,7 @@ echo "🧪 Test 2: Add Widgets via UPDATE (JSON Patch)..."
 WIDGETS_JSON='[
     {
         "id": "widget1",
-        "type": "Metric",
+        "type": "metric",
         "title": "Total Sales",
         "config": {
             "object_api_name": "sales_metric",
@@ -86,7 +86,7 @@ WIDGETS_JSON='[
     {
         "id": "widget2",
         "title": "Sales by Region",
-        "type": "Chart",
+        "type": "chart-bar",
         "config": {
             "object_api_name": "sales_metric",
             "chartType": "bar",
@@ -149,7 +149,7 @@ NEW_WIDGETS_JSON='[
     {
         "id": "widget2",
         "title": "Sales by Region",
-        "type": "Chart",
+        "type": "chart-bar",
         "config": {
             "object_api_name": "sales_metric",
             "chartType": "bar",
@@ -162,7 +162,7 @@ NEW_WIDGETS_JSON='[
     {
         "id": "widget3",
         "title": "Recent Sales",
-        "type": "Table",
+        "type": "record-list",
         "config": {
             "object_api_name": "sales_metric",
             "fields": ["name", "region", "amount", "quarter"],
