@@ -214,26 +214,3 @@ func InitializeSetupPages(sm *services.ServiceManager) error {
 
 	return nil
 }
-
-//go:embed dashboards.json
-var dashboardsJSON []byte
-
-// InitializeDashboards ensures default dashboards exist
-func InitializeDashboards(sm *services.ServiceManager) error {
-	log.Println("🔧 Initializing dashboards...")
-
-	var dashboards []models.DashboardConfig
-	if err := json.Unmarshal(dashboardsJSON, &dashboards); err != nil {
-		return fmt.Errorf("failed to parse dashboards.json: %w", err)
-	}
-
-	for _, dashboard := range dashboards {
-		if err := sm.Metadata.UpsertDashboard(&dashboard); err != nil {
-			log.Printf("   ⚠️  Failed to ensure dashboard %s: %v", dashboard.ID, err)
-		} else {
-			log.Printf("   ✅ %s dashboard ensured", dashboard.ID)
-		}
-	}
-
-	return nil
-}

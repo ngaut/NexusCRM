@@ -7,15 +7,7 @@
             "description": "Standard CRM application",
             "is_default": true,
             "is_active": true,
-            "navigation_items": [
-                {
-                    "id": "item_dashboard",
-                    "label": "Dashboard",
-                    "icon": "LayoutDashboard",
-                    "type": "dashboard",
-                    "dashboard_id": "sales_dashboard"
-                }
-            ]
+            "navigation_items": []
         }
     ]
 }

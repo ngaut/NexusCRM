@@ -78,50 +78,6 @@ func (ms *MetadataService) CreateDashboard(dashboard *models.DashboardConfig) er
 	return nil
 }
 
-// UpsertDashboard creates a dashboard if it doesn't exist, or updates it if it does
-func (ms *MetadataService) UpsertDashboard(dashboard *models.DashboardConfig) error {
-	ms.mu.Lock()
-	defer ms.mu.Unlock()
-
-	if dashboard.Label == "" {
-		return fmt.Errorf("dashboard label is required")
-	}
-
-	if dashboard.ID == "" {
-		dashboard.ID = GenerateID()
-	}
-
-	widgetsJSON, err := MarshalJSONOrDefault(dashboard.Widgets, "[]")
-	if err != nil {
-		return fmt.Errorf("failed to marshal widgets: %w", err)
-	}
-
-	layout := "two-column"
-	description := ""
-	if dashboard.Description != nil {
-		description = *dashboard.Description
-	}
-
-	// Check if dashboard exists
-	existing, _ := ms.queryDashboard(dashboard.ID)
-	if existing != nil {
-		// Update
-		query := fmt.Sprintf("UPDATE %s SET name = ?, description = ?, layout = ?, widgets = ? WHERE id = ?", constants.TableDashboard)
-		if _, err := ms.db.Exec(query, dashboard.Label, description, layout, string(widgetsJSON), dashboard.ID); err != nil {
-			return fmt.Errorf("failed to update dashboard: %w", err)
-		}
-	} else {
-		// Insert
-		query := fmt.Sprintf("INSERT INTO %s (id, name, description, layout, widgets) VALUES (?, ?, ?, ?, ?)", constants.TableDashboard)
-		_, err = ms.db.Exec(query, dashboard.ID, dashboard.Label, description, layout, widgetsJSON)
-		if err != nil {
-			return fmt.Errorf("failed to insert dashboard: %w", err)
-		}
-	}
-
-	return nil
-}
-
 // UpdateDashboard updates an existing dashboard
 func (ms *MetadataService) UpdateDashboard(id string, updates *models.DashboardConfig) error {
 	ms.mu.Lock()

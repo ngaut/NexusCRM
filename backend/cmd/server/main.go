@@ -72,11 +72,6 @@ func main() {
 		log.Printf("⚠️  Warning: Failed to initialize themes: %v", err)
 	}
 
-	// Initialize default dashboards (before apps so nav items can reference them)
-	if err := bootstrap.InitializeDashboards(svcMgr); err != nil {
-		log.Printf("⚠️  Warning: Failed to initialize dashboards: %v", err)
-	}
-
 	// Initialize standard apps and tabs
 	if err := bootstrap.InitializeApps(svcMgr); err != nil {
 		log.Printf("⚠️  Warning: Failed to initialize apps: %v", err)
