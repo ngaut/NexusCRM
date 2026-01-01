@@ -47,7 +47,13 @@ export const MessageList: React.FC<MessageListProps> = ({
             )}
 
             {buildDisplayItems(messages).map((item, idx) => {
-                // Render Tool Block
+                // Skip ToolBlock during active streaming - processSteps shows live progress
+                // This prevents duplicate display of "X operations completed" alongside "Running X operations..."
+                if ('type' in item && item.type === 'tool_block' && isLoading) {
+                    return null;
+                }
+
+                // Render Tool Block (only when not loading)
                 if ('type' in item && item.type === 'tool_block') {
                     return <ToolExecutionSummary key={item.id} block={item as ToolBlock} formatToolName={formatToolName} />;
                 }
@@ -68,20 +74,17 @@ export const MessageList: React.FC<MessageListProps> = ({
                 return <MessageBubble key={`msg-${idx}`} msg={msg} />;
             })}
 
-            {/* Process Steps - Collapsible Summary */}
-            {processSteps.length > 0 && (
+            {/* Process Steps - Collapsible Summary (only during active loading) */}
+            {isLoading && processSteps.length > 0 && (
                 <div className="ml-12">
                     <button
                         onClick={() => setIsProcessExpanded(!isProcessExpanded)}
                         className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-full text-xs text-slate-600 font-medium transition-colors"
                     >
-                        {isLoading && <Loader2 size={12} className="animate-spin" />}
+                        <Loader2 size={12} className="animate-spin" />
                         {isProcessExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                         <span>
-                            {isLoading
-                                ? `Running ${processSteps.length} operation${processSteps.length > 1 ? 's' : ''}...`
-                                : `${processSteps.length} operation${processSteps.length > 1 ? 's' : ''} completed`
-                            }
+                            {`Running ${processSteps.length} operation${processSteps.length > 1 ? 's' : ''}...`}
                         </span>
                     </button>
 

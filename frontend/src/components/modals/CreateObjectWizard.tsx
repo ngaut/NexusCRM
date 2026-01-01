@@ -41,17 +41,21 @@ export function CreateObjectWizard({ isOpen, onClose, onSuccess }: CreateObjectW
         setLabel(value);
 
         if (UI_CONFIG.ENABLE_AUTO_FILL_API_NAME) {
-            // Convert to PascalCase API name
+            // Convert to snake_case API name
             const generated = value
-                .split(/\s+/)
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                .join('_')
-                .replace(/[^a-zA-Z0-9_]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '_')
+                .replace(/^_|_$/g, '')
                 .substring(0, 40);
             setApiName(generated);
         }
 
         // Simple pluralization (always auto-fill plural)
+        if (!value) {
+            setPluralLabel('');
+            return;
+        }
+
         if (value.endsWith('s') || value.endsWith('x') || value.endsWith('ch') || value.endsWith('sh')) {
             setPluralLabel(value + 'es');
         } else if (value.endsWith('y') && !/[aeiou]y$/i.test(value)) {

@@ -33,7 +33,7 @@ OBJ_RES=$(curl -s -X POST $API_URL/api/metadata/objects \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "api_name": "Project__c",
+    "api_name": "project__c",
     "label": "Project",
     "plural_label": "Projects",
     "description": "Project Tracking",
@@ -56,7 +56,7 @@ FIELD_RES=$(curl -s -X POST $API_URL/api/metadata/objects/project__c/fields \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "api_name": "Budget__c",
+    "api_name": "budget__c",
     "label": "Budget",
     "type": "Currency", 
     "required": true
@@ -68,7 +68,7 @@ FIELD_RES=$(curl -s -X POST $API_URL/api/metadata/objects/project__c/fields \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "api_name": "Start_Date__c",
+    "api_name": "start_date__c",
     "label": "Start Date",
     "type": "Date"
   }')
@@ -79,7 +79,7 @@ FIELD_RES=$(curl -s -X POST $API_URL/api/metadata/objects/project__c/fields \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "api_name": "Status__c",
+    "api_name": "status__c",
     "label": "Status",
     "type": "Picklist",
     "options": [
@@ -98,9 +98,9 @@ REC_RES=$(curl -s -X POST $API_URL/api/data/project__c \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Q4 Marketing Campaign",
-    "Budget__c": 50000.00,
-    "Start_Date__c": "2025-10-01",
-    "Status__c": "Planned"
+    "budget__c": 50000.00,
+    "start_date__c": "2025-10-01",
+    "status__c": "Planned"
   }')
 
 REC_ID=$(echo $REC_RES | jq -r .record.id)
@@ -115,7 +115,7 @@ echo "5. Retrieving Record..."
 GET_RES=$(curl -s -X GET $API_URL/api/data/project__c/$REC_ID \
   -H "Authorization: Bearer $TOKEN")
 
-RETRIEVED_BUDGET=$(echo $GET_RES | jq -r .record.Budget__c)
+RETRIEVED_BUDGET=$(echo $GET_RES | jq -r .record.budget__c)
 if [ "$RETRIEVED_BUDGET" != "50000" ] && [ "$RETRIEVED_BUDGET" != "50000.00" ]; then 
     echo "⚠️  Warning: Expected Budget 50000, got $RETRIEVED_BUDGET"
 fi

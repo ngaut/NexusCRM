@@ -298,7 +298,7 @@ export const AppStudio: React.FC = () => {
             {/* Top Bar */}
             <header className="bg-white border-b border-slate-200 h-14 flex items-center justify-between px-4 flex-shrink-0 z-10">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate('/setup/apps')} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
+                    <button onClick={() => navigate('/setup/app-manager')} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
                         <ArrowLeft size={20} />
                     </button>
                     <div className="flex items-center gap-3">

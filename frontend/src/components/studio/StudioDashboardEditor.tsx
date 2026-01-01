@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useErrorToast } from '../ui/Toast';
 import { metadataAPI } from '../../infrastructure/api/metadata';
 import { DashboardConfig, WidgetConfig, ObjectMetadata } from '../../types';
+import { WIDGET_SIZE_DEFAULTS, DEFAULT_WIDGET_SIZE } from '../../core/constants/widgets';
 import { DashboardPalette } from './dashboard/DashboardPalette';
 import { DashboardInspector } from './dashboard/DashboardInspector';
+import { DashboardWidgetSkeleton } from '../ui/LoadingSkeleton';
 import { Layout } from 'react-grid-layout';
 
 // Sub-components
@@ -97,22 +99,8 @@ export const StudioDashboardEditor: React.FC<StudioDashboardEditorProps> = ({ da
         const newId = `w_${Date.now()}`;
         const defaultTitle = widgetType === 'text' ? 'Text Block' : 'New Widget';
 
-        // Better default sizes for each widget type
-        const sizeDefaults: Record<string, { w: number, h: number }> = {
-            'metric': { w: 3, h: 2 },
-            'chart-bar': { w: 4, h: 3 },
-            'chart-line': { w: 4, h: 3 },
-            'chart-pie': { w: 3, h: 3 },
-            'chart-funnel': { w: 4, h: 3 },
-            'chart-gauge': { w: 3, h: 3 },
-            'record-list': { w: 6, h: 4 },
-            'kanban': { w: 12, h: 5 },
-            'sql-chart': { w: 6, h: 4 },
-            'text': { w: 4, h: 2 },
-            'image': { w: 3, h: 3 }
-        };
-        const defaultW = sizeDefaults[widgetType]?.w || 4;
-        const defaultH = sizeDefaults[widgetType]?.h || 3;
+        const defaultW = WIDGET_SIZE_DEFAULTS[widgetType]?.w || DEFAULT_WIDGET_SIZE.w;
+        const defaultH = WIDGET_SIZE_DEFAULTS[widgetType]?.h || DEFAULT_WIDGET_SIZE.h;
 
         const newWidget: WidgetConfig = {
             id: newId,
@@ -146,22 +134,8 @@ export const StudioDashboardEditor: React.FC<StudioDashboardEditorProps> = ({ da
             widgetType === 'image' ? 'New Image' :
                 'New Widget';
 
-        // Better default sizes for each widget type
-        const sizeDefaults: Record<string, { w: number, h: number }> = {
-            'metric': { w: 3, h: 2 },
-            'chart-bar': { w: 4, h: 3 },
-            'chart-line': { w: 4, h: 3 },
-            'chart-pie': { w: 3, h: 3 },
-            'chart-funnel': { w: 4, h: 3 },
-            'chart-gauge': { w: 3, h: 3 },
-            'record-list': { w: 6, h: 4 },
-            'kanban': { w: 12, h: 5 },
-            'sql-chart': { w: 6, h: 4 },
-            'text': { w: 12, h: 2 },
-            'image': { w: 3, h: 3 }
-        };
-        const defaultW = sizeDefaults[widgetType]?.w || 4;
-        const defaultH = sizeDefaults[widgetType]?.h || 3;
+        const defaultW = WIDGET_SIZE_DEFAULTS[widgetType]?.w || DEFAULT_WIDGET_SIZE.w;
+        const defaultH = WIDGET_SIZE_DEFAULTS[widgetType]?.h || DEFAULT_WIDGET_SIZE.h;
 
         const newWidget: WidgetConfig = {
             id: newId,
@@ -194,7 +168,15 @@ export const StudioDashboardEditor: React.FC<StudioDashboardEditorProps> = ({ da
         setSelectedWidgetId(null);
     };
 
-    if (loading) return <div className="h-full flex items-center justify-center text-slate-500">Loading editor...</div>;
+    if (loading) return (
+        <div className="h-full flex items-center justify-center bg-slate-100 p-8">
+            <div className="grid grid-cols-3 gap-6 w-full max-w-4xl">
+                <DashboardWidgetSkeleton />
+                <DashboardWidgetSkeleton />
+                <DashboardWidgetSkeleton />
+            </div>
+        </div>
+    );
 
     const selectedWidget = widgets.find(w => w.id === selectedWidgetId) || null;
 

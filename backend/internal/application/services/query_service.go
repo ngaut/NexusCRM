@@ -299,7 +299,24 @@ func (qs *QueryService) RunAnalytics(ctx context.Context, analyticsQuery models.
 		return nil, fmt.Errorf("access denied: cannot read %s", objectName)
 	}
 
-	builder := query.From(objectName).ExcludeDeleted()
+	schema := qs.metadata.GetSchema(objectName)
+	if schema == nil {
+		return nil, pkgErrors.NewNotFoundError("Object", objectName)
+	}
+
+	builder := query.From(objectName)
+
+	// Check for is_deleted field
+	hasIsDeleted := false
+	for _, f := range schema.Fields {
+		if strings.EqualFold(f.APIName, constants.FieldIsDeleted) {
+			hasIsDeleted = true
+			break
+		}
+	}
+	if hasIsDeleted {
+		builder.ExcludeDeleted()
+	}
 
 	// Apply filter expression using formula engine
 	if analyticsQuery.FilterExpr != "" {

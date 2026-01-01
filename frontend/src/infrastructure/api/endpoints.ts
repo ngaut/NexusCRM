@@ -37,8 +37,8 @@ export const API_ENDPOINTS = {
         FIELD: (objectApiName: string, fieldApiName: string) => `/api/metadata/objects/${objectApiName}/fields/${fieldApiName}`,
     },
     DATA: {
-        RECORDS: (objectName: string) => `/api/data/objects/${objectName}`,
-        RECORD: (objectName: string, id: string) => `/api/data/objects/${objectName}/${id}`,
+        RECORDS: (objectName: string) => `/api/data/${objectName}`,
+        RECORD: (objectName: string, id: string) => `/api/data/${objectName}/${id}`,
         QUERY: '/api/data/query',
         SEARCH: '/api/data/search',
         SEARCH_OBJECT: (objectApiName: string) => `/api/data/search/${encodeURIComponent(objectApiName)}`,

@@ -3,6 +3,7 @@ package schema
 // ColumnDefinition represents a single column in a table
 type ColumnDefinition struct {
 	Name             string   `json:"name"`
+	Label            string   `json:"label,omitempty"` // User-friendly label (defaults to Title Cased Name)
 	Type             string   `json:"type"`
 	LogicalType      string   `json:"logical_type,omitempty"` // Optional: Override logical type (e.g. Password, Picklist)
 	PrimaryKey       bool     `json:"primary_key,omitempty"`
@@ -41,6 +42,7 @@ type TableDefinition struct {
 	TableName     string                 `json:"table_name"`
 	TableType     string                 `json:"table_type"` // system_core, system_metadata, custom_object
 	Category      string                 `json:"category"`   // auth, metadata, crm, etc.
+	Label         string                 `json:"label,omitempty"`
 	Description   string                 `json:"description"`
 	IsManaged     bool                   `json:"is_managed,omitempty"`
 	SchemaVersion string                 `json:"schema_version,omitempty"`

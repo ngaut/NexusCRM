@@ -202,7 +202,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 style={({ isActive }) => isActive ? { backgroundColor: 'var(--color-brand)' } : {}}
                             >
                                 <Trash2 size={20} className="shrink-0" />
-                                {!showLabels && <span>Recycle Bin</span>}
+                                {showLabels && <span>Recycle Bin</span>}
                             </NavLink>
                         );
                         return (!showLabels) ? (

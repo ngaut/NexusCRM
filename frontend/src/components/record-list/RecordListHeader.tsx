@@ -54,20 +54,22 @@ export const RecordListHeader: React.FC<RecordListHeaderProps> = ({
     const { hasObjectPermission } = usePermissions();
 
     return (
-        <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
                 {/* List View Selector */}
-                <div className="relative">
+                <div className="relative w-full sm:w-auto">
                     <button
                         onClick={() => setViewDropdownOpen(!viewDropdownOpen)}
-                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                        <List size={16} />
-                        {selectedView ? selectedView.label : 'All Records'}
+                        <div className="flex items-center gap-2">
+                            <List size={16} />
+                            {selectedView ? selectedView.label : 'All Records'}
+                        </div>
                         <ChevronDown size={16} />
                     </button>
                     {viewDropdownOpen && (
-                        <div className="absolute left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                        <div className="absolute left-0 mt-1 w-full sm:w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50">
                             <div className="py-1">
                                 <button
                                     onClick={() => {
@@ -113,10 +115,10 @@ export const RecordListHeader: React.FC<RecordListHeaderProps> = ({
                     )}
                 </div>
 
-                <span className="text-sm text-gray-500">({recordsCount})</span>
+                <div className="hidden sm:inline text-sm text-gray-500">({recordsCount})</div>
 
                 {/* List Search Input */}
-                <div className="relative ml-4 flex-1 max-w-xs">
+                <div className="relative w-full sm:w-auto sm:ml-4 flex-1 sm:max-w-xs">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search size={14} className="text-gray-400" />
                     </div>
@@ -129,28 +131,31 @@ export const RecordListHeader: React.FC<RecordListHeaderProps> = ({
                     />
                 </div>
 
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={<RefreshCw className="w-4 h-4" />}
-                    onClick={onRefresh}
-                >
-                    Refresh
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={<RefreshCw className="w-4 h-4" />}
+                        onClick={onRefresh}
+                        className="flex-1 sm:flex-none justify-center"
+                    >
+                        Refresh
+                    </Button>
 
-                {/* Filter Component */}
-                <ListFilters
-                    objectApiName={objectMetadata.api_name}
-                    fields={objectMetadata.fields || []}
-                    activeFilterExpr={activeFilterExpr}
-                    onFiltersChange={(expr) => {
-                        setActiveFilterExpr(expr);
-                        setSelectedView(null);
-                    }}
-                />
+                    {/* Filter Component */}
+                    <ListFilters
+                        objectApiName={objectMetadata.api_name}
+                        fields={objectMetadata.fields || []}
+                        activeFilterExpr={activeFilterExpr}
+                        onFiltersChange={(expr) => {
+                            setActiveFilterExpr(expr);
+                            setSelectedView(null);
+                        }}
+                    />
+                </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
                 {customActions.map((action, idx) => (
                     <Button
                         key={idx}
@@ -170,6 +175,8 @@ export const RecordListHeader: React.FC<RecordListHeaderProps> = ({
                         size="sm"
                         icon={<Plus className="w-4 h-4" />}
                         onClick={onCreateNew}
+                        className="flex-1 sm:flex-none justify-center"
+                        fullWidth
                     >
                         New {objectMetadata.label}
                     </Button>

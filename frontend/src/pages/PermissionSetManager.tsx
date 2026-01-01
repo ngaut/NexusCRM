@@ -6,6 +6,8 @@ import { COMMON_FIELDS } from '../core/constants';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { PermissionEditorModal, PermissionEntity } from '../components/modals/PermissionEditorModal';
 import { useErrorToast, useSuccessToast } from '../components/ui/Toast';
+import { RecordListSkeleton } from '../components/ui/LoadingSkeleton';
+import { EmptyState } from '../components/ui/EmptyState';
 import type { PermissionSet } from '../types';
 
 export const PermissionSetManager: React.FC = () => {
@@ -133,7 +135,9 @@ export const PermissionSetManager: React.FC = () => {
             {/* Permission Sets Table */}
             <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                 {loading ? (
-                    <div className="text-center py-8 text-slate-500">Loading...</div>
+                    <div className="p-6">
+                        <RecordListSkeleton rows={5} columns={5} />
+                    </div>
                 ) : filteredPermSets.length === 0 ? (
                     <div className="text-center py-8 text-slate-500">
                         {searchQuery ? 'No permission sets match your search.' : 'No permission sets created yet.'}

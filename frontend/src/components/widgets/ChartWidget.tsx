@@ -76,6 +76,11 @@ export const ChartWidget: React.FC<WidgetRendererProps> = ({ title, config, data
             <div className="flex-1 w-full relative" style={{ height: 300, minHeight: 300 }}>
                 {loading ? (
                     <div className="w-full h-full flex items-center justify-center text-slate-400"><Loader2 className="animate-spin mr-2" /> Loading...</div>
+                ) : (!data || (Array.isArray(data) && data.length === 0)) ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                        <Loader2 size={32} className="mb-2 opacity-20" /> {/* Reuse loader icon or use something else generic like BarChart2 */}
+                        <span className="text-sm font-medium">No Data Available</span>
+                    </div>
                 ) : (
                     <ResponsiveContainer width="100%" height="100%">
                         {config.type === 'chart-pie' ? (

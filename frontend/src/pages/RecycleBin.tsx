@@ -7,11 +7,21 @@ import { useRuntime } from '../contexts/RuntimeContext';
 import { COMMON_FIELDS } from '../core/constants';
 import type { RecycleBinItem } from '../types';
 
+import { useSchemas } from '../core/hooks/useMetadata';
+
 export const RecycleBin: React.FC = () => {
     const [items, setItems] = useState<RecycleBinItem[]>([]);
     const [loading, setLoading] = useState(true);
     const { success, error: showError } = useNotification();
     const { user } = useRuntime();
+    const { schemas } = useSchemas();
+
+    // Helper to get object label
+    const getObjectLabel = (apiName: string) => {
+        if (!apiName) return '';
+        const schema = schemas.find(s => s.api_name.toLowerCase() === apiName.toLowerCase());
+        return schema?.label || apiName;
+    };
 
     // Filter State
     const [scope, setScope] = useState<'mine' | 'all'>('mine');
@@ -157,7 +167,9 @@ export const RecycleBin: React.FC = () => {
                                             </button>
                                         </td>
                                         <td className="p-4 font-medium text-slate-900">{item.record_name}</td>
-                                        <td className="p-4 font-mono text-xs text-slate-500 bg-slate-100 rounded px-2 w-fit">{item[COMMON_FIELDS.OBJECT_API_NAME]}</td>
+                                        <td className="p-4 font-mono text-xs text-slate-500 bg-slate-100 rounded px-2 w-fit">
+                                            {getObjectLabel(item[COMMON_FIELDS.OBJECT_API_NAME])}
+                                        </td>
                                         <td className="p-4 text-slate-500">{new Date(item[COMMON_FIELDS.DELETED_DATE] as string).toLocaleString()}</td>
                                         <td className="p-4 text-slate-500">{item[COMMON_FIELDS.DELETED_BY]}</td>
                                     </tr>

@@ -163,6 +163,9 @@ const DynamicSetupRoutes: React.FC = () => {
             <Route path="/objects/:objectApiName" element={<ObjectDetailRoute />} />
             <Route path="/objects/:objectApiName/layout" element={<LayoutEditorRoute />} />
 
+            {/* Explicit Object Manager Route to prevent 404s (BUG-007 fix) */}
+            <Route path="/objects" element={<ObjectManagerRoute />} />
+
             {/* Catch-all for unknown routes */}
             <Route path="*" element={
                 <div className="text-center p-12 text-slate-500">
@@ -183,6 +186,11 @@ const ObjectDetailRoute: React.FC = () => {
 const LayoutEditorRoute: React.FC = () => {
     const Component = ComponentRegistry.get('LayoutEditor');
     return Component ? <Component /> : null;
+};
+
+const ObjectManagerRoute: React.FC = () => {
+    const Component = ComponentRegistry.get('ObjectManager');
+    return Component ? <Component /> : <NotImplemented componentName="ObjectManager" pageLabel="Object Manager" />;
 };
 
 // ============================================================================

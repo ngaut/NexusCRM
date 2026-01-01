@@ -100,7 +100,7 @@ export const ContextUsageStats: React.FC<ContextUsageStatsProps> = ({
                 <button
                     onClick={onCompact}
                     disabled={isLoading}
-                    className="mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-300 text-[11px] font-medium rounded-lg transition-colors disabled:opacity-50"
+                    className="mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-600 text-[11px] font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
                     <Minimize2 size={12} />
                     Compact Conversation

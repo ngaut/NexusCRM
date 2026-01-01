@@ -4,6 +4,8 @@ import { dataAPI } from '../infrastructure/api/data';
 import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { COMMON_FIELDS } from '../core/constants';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
+import { RecordListSkeleton } from '../components/ui/LoadingSkeleton';
+import { EmptyState } from '../components/ui/EmptyState';
 
 interface Profile {
     id: string;
@@ -136,19 +138,20 @@ const ProfileManager: React.FC = () => {
 
             {/* Error */}
             {error && (
-                <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 
-                rounded-lg flex items-center gap-2 text-red-700 dark:text-red-400">
-                    <AlertCircle className="w-5 h-5" />
-                    {error}
-                </div>
+                <EmptyState
+                    variant="error"
+                    title="Error Loading Profiles"
+                    description={error}
+                    action={{ label: 'Retry', onClick: loadProfiles }}
+                />
             )}
 
             {/* Content */}
             {loading ? (
-                <div className="flex items-center justify-center py-12">
-                    <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden p-6">
+                    <RecordListSkeleton rows={5} columns={4} />
                 </div>
-            ) : profiles.length === 0 ? (
+            ) : profiles.length === 0 && !error ? (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed 
                 border-gray-200 dark:border-gray-700">
                     <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />

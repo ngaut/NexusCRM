@@ -215,7 +215,7 @@ func (s *AgentService) ChatStream(ctx context.Context, req ChatRequest, eventCha
 	}
 
 	// Max agent reasoning steps (not tool count, but LLM call iterations)
-	maxAgentSteps := 50
+	maxAgentSteps := 100
 
 	// ReAct Loop with Streaming
 	for i := 0; i < maxAgentSteps; i++ {

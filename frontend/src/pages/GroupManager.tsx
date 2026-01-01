@@ -4,6 +4,8 @@ import { dataAPI } from '../infrastructure/api/data';
 import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { useErrorToast, useSuccessToast } from '../components/ui/Toast';
+import { RecordListSkeleton } from '../components/ui/LoadingSkeleton';
+import { EmptyState } from '../components/ui/EmptyState';
 import type { Group, GroupMember, User } from '../types';
 
 // Sub-components
@@ -170,7 +172,9 @@ export const GroupManager: React.FC = () => {
             {/* Groups Table */}
             <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                 {loading ? (
-                    <div className="text-center py-8 text-slate-500">Loading...</div>
+                    <div className="p-6">
+                        <RecordListSkeleton rows={5} columns={5} />
+                    </div>
                 ) : filteredGroups.length === 0 ? (
                     <div className="text-center py-8 text-slate-500">
                         {searchQuery ? 'No groups match your search.' : 'No groups created yet.'}

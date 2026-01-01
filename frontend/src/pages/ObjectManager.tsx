@@ -254,7 +254,8 @@ export const ObjectManager: React.FC = () => {
                                             const newFormData = { ...formData, label };
                                             // Only auto-fill if config allows and user hasn't manually edited
                                             if (!apiNameTouched && UI_CONFIG.ENABLE_AUTO_FILL_API_NAME) {
-                                                newFormData.api_name = label.replace(/[^a-zA-Z0-9]/g, '');
+                                                // Convert to snake_case API name (consistent with other components)
+                                                newFormData.api_name = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
                                             }
                                             setFormData(newFormData);
                                         }}
@@ -283,8 +284,6 @@ export const ObjectManager: React.FC = () => {
                                 <input
                                     type="text"
                                     required
-                                    pattern="^[A-Z][a-zA-Z0-9]*$"
-                                    title="Must start with uppercase letter and contain only alphanumeric characters"
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
                                     value={formData.api_name}
                                     onChange={e => {
@@ -292,7 +291,7 @@ export const ObjectManager: React.FC = () => {
                                         setApiNameTouched(true);
                                     }}
                                 />
-                                <p className="text-xs text-slate-500 mt-1">Must start with uppercase letter (e.g., Project)</p>
+                                <p className="text-xs text-slate-500 mt-1">Unique identifier used in URLs and API</p>
                             </div>
 
                             <div>

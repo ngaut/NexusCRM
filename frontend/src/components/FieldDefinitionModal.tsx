@@ -178,8 +178,8 @@ export const FieldDefinitionModal: React.FC<FieldDefinitionModalProps> = ({
                                     const newFormData = { ...formData, label };
                                     // Only auto-fill if config allows and not editing
                                     if (!editingField && UI_CONFIG.ENABLE_AUTO_FILL_API_NAME) {
-                                        const generatedApiName = label.replace(/[^a-zA-Z0-9]/g, '');
-                                        newFormData.api_name = generatedApiName.charAt(0).toUpperCase() + generatedApiName.slice(1);
+                                        // Convert to snake_case API name (consistent with other components)
+                                        newFormData.api_name = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
                                     }
                                     setFormData(newFormData);
                                 }}

@@ -16,6 +16,7 @@ type TableDefinitionJSON struct {
 	TableName   string           `json:"tableName"`
 	TableType   string           `json:"tableType"`
 	Category    string           `json:"category"`
+	Label       string           `json:"label,omitempty"`
 	Description string           `json:"description"`
 	Columns     []ColumnJSON     `json:"columns"`
 	Indices     []IndexJSON      `json:"indices,omitempty"`
@@ -25,6 +26,7 @@ type TableDefinitionJSON struct {
 type ColumnJSON struct {
 	Name          string `json:"name"`
 	Type          string `json:"type"`
+	Label         string `json:"label,omitempty"`
 	PrimaryKey    bool   `json:"primaryKey,omitempty"`
 	Nullable      bool   `json:"nullable,omitempty"`
 	Unique        bool   `json:"unique,omitempty"`
@@ -62,6 +64,7 @@ func GetSystemTableDefinitions() []schema.TableDefinition {
 			TableName:   jd.TableName,
 			TableType:   jd.TableType,
 			Category:    jd.Category,
+			Label:       jd.Label,
 			Description: jd.Description,
 		}
 
@@ -70,6 +73,7 @@ func GetSystemTableDefinitions() []schema.TableDefinition {
 			col := schema.ColumnDefinition{
 				Name:          jc.Name,
 				Type:          jc.Type,
+				Label:         jc.Label,
 				PrimaryKey:    jc.PrimaryKey,
 				Nullable:      jc.Nullable,
 				Unique:        jc.Unique,

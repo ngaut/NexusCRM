@@ -46,6 +46,11 @@ func EstimateTokens(messages []llm.Message) int {
 // MaxToolResultLength is the maximum length for tool results before truncation
 const MaxToolResultLength = 500
 
+// MaxActiveToolResultLength is the maximum length for tool results in the *active* context window.
+// This is larger than the archive limit because we want the agent to see recent results,
+// but we still must prevent infinite expansion (e.g. cat huge_file.txt)
+const MaxActiveToolResultLength = 2000
+
 // MicroCompact prunes verbose tool call arguments and results while preserving essential information.
 // This is a lightweight operation that doesn't require LLM calls.
 func MicroCompact(messages []llm.Message) []llm.Message {
@@ -200,6 +205,20 @@ func (c *Compactor) Compact(ctx context.Context, req CompactRequest) (*CompactRe
 	}
 
 	activeMessages := messages[cutoffIndex:]
+	// Clone activeMessages to prevent mutation of the input slice (side effect)
+	activeMessages = append([]llm.Message(nil), activeMessages...)
+
+	// Safety Pruning for Active Messages
+	// Even though these are "active", we cannot allow a single massive tool output to blow up the context.
+	// We apply a generous but strict limit to tool outputs in the active window.
+	for i, msg := range activeMessages {
+		if msg.Role == "tool" && len(msg.Content) > MaxActiveToolResultLength {
+			// Create a copy to modify
+			newMsg := msg
+			newMsg.Content = msg.Content[:MaxActiveToolResultLength] + fmt.Sprintf("...[truncated active tool result: %d chars omitted]", len(msg.Content)-MaxActiveToolResultLength)
+			activeMessages[i] = newMsg
+		}
+	}
 
 	// Step 3: Apply MicroCompact ONLY to the archive messages (before summarization)
 	// We don't want to MicroCompact active messages!

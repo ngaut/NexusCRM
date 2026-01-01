@@ -69,7 +69,7 @@ export const UI_CONFIG = {
      * When false: API Name must be entered manually
      * Default: false (disabled to prevent browser autofill conflicts)
      */
-    ENABLE_AUTO_FILL_API_NAME: process.env.REACT_APP_ENABLE_AUTO_FILL_API_NAME === 'true',
+    ENABLE_AUTO_FILL_API_NAME: process.env.REACT_APP_ENABLE_AUTO_FILL_API_NAME !== 'false',
 } as const;
 
 /**

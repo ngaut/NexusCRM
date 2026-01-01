@@ -4,6 +4,9 @@ import { useObjectMetadata, useLayout } from '../core/hooks/useMetadata';
 import { MetadataRecordList } from '../components/MetadataRecordList';
 import { MetadataRecordDetail } from '../components/MetadataRecordDetail';
 import { MetadataRecordForm } from '../components/MetadataRecordForm';
+import { MetadataAwareSkeleton } from '../components/ui/LoadingSkeleton';
+import { EmptyState } from '../components/ui/EmptyState';
+import { TableObject } from '../constants';
 import { Button } from '../components/ui/Button';
 import { ArrowLeft } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
@@ -57,8 +60,19 @@ export const ObjectView: React.FC = () => {
     const mode = isCreate ? 'Create' : (isEditing ? 'Edit' : 'Detail');
     const { layout } = useLayout(objectApiName || '', mode);
 
-    if (metaLoading) return <div className="p-8 text-center text-slate-500">Loading metadata...</div>;
-    if (metaError || !metadata) return <div className="p-8 text-center text-red-500">Error: {metaError?.message || 'Object not found'}</div>;
+    if (metaLoading) return (
+        <div className="max-w-7xl mx-auto p-6">
+            <MetadataAwareSkeleton fieldCount={5} layout="list" />
+        </div>
+    );
+    if (metaError || !metadata) return (
+        <EmptyState
+            variant="error"
+            title="Error Loading Object"
+            description={metaError?.message || 'Object not found'}
+            action={{ label: 'Retry', onClick: () => window.location.reload() }}
+        />
+    );
 
     // Redirect system objects to their dedicated Setup pages
     const systemObjectRedirects: Record<string, string> = {

@@ -119,7 +119,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 
 	allTools = append(allTools, mcp.Tool{
 		Name:        ToolQueryObject,
-		Description: "Query records from a specific object using a filter formula. Use 'filter' to specify conditions like \"status = 'Open'\" or \"amount > 1000\". Multiple conditions can be separated by AND.",
+		Description: "Query business data records from a specific object. For dashboards use list_dashboards, for apps use list_apps instead.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -151,7 +151,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 
 	allTools = append(allTools, mcp.Tool{
 		Name:        ToolCreateRecord,
-		Description: "Create a new record in any object/table. Use describe_object first to see required fields.",
+		Description: "Create a new business data record (e.g., Account, Contact, Lead). Use describe_object first to see required fields. DO NOT use for system objects - use dedicated tools (create_dashboard, create_app, create_object, create_field) instead.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -170,7 +170,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 
 	allTools = append(allTools, mcp.Tool{
 		Name:        ToolUpdateRecord,
-		Description: "Update an existing record. Use search_records first to find the record ID.",
+		Description: "Update an existing business data record (e.g., Account, Contact, Lead). DO NOT use for system objects - use dedicated tools (update_dashboard, update_app, update_object, update_field) instead.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -193,7 +193,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 
 	allTools = append(allTools, mcp.Tool{
 		Name:        ToolDeleteRecord,
-		Description: "Delete a record. Use search_records first to find the record ID. This action cannot be undone.",
+		Description: "Delete a business data record (e.g., Account, Contact, Lead). Moves to recycle bin. DO NOT use for system objects like _System_Dashboard, _System_App, etc. - use their dedicated tools (delete_dashboard, delete_app) instead.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -261,7 +261,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 
 	allTools = append(allTools, mcp.Tool{
 		Name:        ToolCreateObject,
-		Description: "Create a new custom object/table. Example: Create a 'Vehicle' object.",
+		Description: "Create a new custom object/table. Example: Create a 'Vehicle' object. NOTE: After creating an object, you may want to use 'update_app' to add it to the navigation menu so users can see it.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -498,7 +498,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 
 	allTools = append(allTools, mcp.Tool{
 		Name:        ToolGetRecord,
-		Description: "Retrieve a specific record by its ID. Use this when you have a record ID and need its full data.",
+		Description: "Retrieve a specific business data record by its ID. For dashboards use get_dashboard, for apps use the list_apps tool instead.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -562,12 +562,13 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 
 	allTools = append(allTools, mcp.Tool{
 		Name:        ToolUpdateApp,
-		Description: "Update an application configuration (label, icon, description, navigation).",
+		Description: "Update an application configuration (label, icon, description, navigation). Use this to add objects, dashboards, or web links to the app's sidebar menu.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
 				"id": map[string]interface{}{
-					"type": "string",
+					"type":        "string",
+					"description": "App ID (e.g. 'nexus_crm')",
 				},
 				"label": map[string]interface{}{
 					"type": "string",
@@ -580,12 +581,103 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 				},
 				"navigation_items": map[string]interface{}{
 					"type": "array",
+					"description": `List of navigation items. Each item has a 'type' that determines required fields:
+- type='object': Links to an object list view. Requires 'object_api_name' (e.g. 'account', 'contact').
+- type='dashboard': Links to a dashboard. Requires 'dashboard_id'.
+- type='web': External web link. Requires 'page_url' (e.g. 'https://example.com' or '/dashboard').
+All items require 'type' and 'label'. Examples:
+  {"type": "object", "label": "Accounts", "object_api_name": "account"}
+  {"type": "dashboard", "label": "Sales Metrics", "dashboard_id": "dash-123"}
+  {"type": "web", "label": "Help Center", "page_url": "https://help.example.com"}`,
 					"items": map[string]interface{}{
 						"type": "object",
+						"properties": map[string]interface{}{
+							"type": map[string]interface{}{
+								"type":        "string",
+								"enum":        []string{"object", "dashboard", "web"},
+								"description": "Type of navigation item: 'object' for data tables, 'dashboard' for analytics, 'web' for external links",
+							},
+							"label": map[string]interface{}{
+								"type":        "string",
+								"description": "Display label in the navigation menu",
+							},
+							"object_api_name": map[string]interface{}{
+								"type":        "string",
+								"description": "Required if type='object'. The API name of the object (e.g. 'account', 'contact', 'opportunity')",
+							},
+							"dashboard_id": map[string]interface{}{
+								"type":        "string",
+								"description": "Required if type='dashboard'. The ID of the dashboard to link to",
+							},
+							"page_url": map[string]interface{}{
+								"type":        "string",
+								"description": "Required if type='web'. URL for external link (e.g. 'https://help.example.com')",
+							},
+							"icon": map[string]interface{}{
+								"type":        "string",
+								"description": "Lucide icon name (e.g. 'Database', 'LayoutDashboard', 'Globe')",
+							},
+						},
+						"required": []string{"type", "label"},
 					},
 				},
 			},
 			"required": []string{"id"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolCreateApp,
+		Description: "Create a new application with navigation menu. Navigation can include objects (data tables), dashboards, and web links.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"name": map[string]interface{}{
+					"type":        "string",
+					"description": "Unique app ID (snake_case, e.g. 'sales_app')",
+				},
+				"label": map[string]interface{}{
+					"type":        "string",
+					"description": "Display name (e.g. 'Sales App')",
+				},
+				"description": map[string]interface{}{
+					"type": "string",
+				},
+				"icon": map[string]interface{}{
+					"type":        "string",
+					"description": "Lucide icon name (e.g. 'Layers', 'Briefcase')",
+				},
+				"navigation_items": map[string]interface{}{
+					"type": "array",
+					"description": `List of navigation items. Can be simple strings (object API names) or full objects.
+Simple: ["account", "contact"] - creates object links with auto-labels.
+Full objects for more control:
+  {"type": "object", "label": "Accounts", "object_api_name": "account"}
+  {"type": "dashboard", "label": "Metrics", "dashboard_id": "dash-123"}
+  {"type": "web", "label": "Docs", "page_url": "https://docs.example.com"}`,
+					"items": map[string]interface{}{
+						"anyOf": []interface{}{
+							map[string]interface{}{
+								"type":        "string",
+								"description": "Object API name (shorthand for type='object')",
+							},
+							map[string]interface{}{
+								"type": "object",
+								"properties": map[string]interface{}{
+									"type":            map[string]interface{}{"type": "string", "enum": []string{"object", "dashboard", "web"}, "description": "'object'=data table, 'dashboard'=analytics, 'web'=external link"},
+									"label":           map[string]interface{}{"type": "string", "description": "Menu display label"},
+									"object_api_name": map[string]interface{}{"type": "string", "description": "For type='object': API name (e.g. 'account')"},
+									"dashboard_id":    map[string]interface{}{"type": "string", "description": "For type='dashboard': Dashboard ID"},
+									"page_url":        map[string]interface{}{"type": "string", "description": "For type='web': External URL"},
+									"icon":            map[string]interface{}{"type": "string", "description": "Lucide icon name"},
+								},
+								"required": []string{"type", "label"},
+							},
+						},
+					},
+				},
+			},
+			"required": []string{"name", "label"},
 		},
 	})
 
@@ -642,6 +734,125 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 				"id": map[string]interface{}{
 					"type":        "string",
 					"description": "Recycle bin item ID",
+				},
+			},
+			"required": []string{"id"},
+		},
+	})
+
+	// Dashboard Management Tools
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolListDashboards,
+		Description: "List all dashboards in the system. Use this to find dashboard IDs for get_dashboard, update_dashboard, or delete_dashboard.",
+		InputSchema: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolGetDashboard,
+		Description: "Get a specific dashboard by ID including its widgets configuration.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"id": map[string]interface{}{
+					"type":        "string",
+					"description": "Dashboard ID",
+				},
+			},
+			"required": []string{"id"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolUpdateDashboard,
+		Description: "Update an existing dashboard's name, description, layout, or widgets.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"id": map[string]interface{}{
+					"type":        "string",
+					"description": "Dashboard ID to update",
+				},
+				"label": map[string]interface{}{
+					"type":        "string",
+					"description": "New dashboard name/label",
+				},
+				"description": map[string]interface{}{
+					"type":        "string",
+					"description": "New description",
+				},
+				"layout": map[string]interface{}{
+					"type":        "string",
+					"description": "Layout: 'two-column', 'grid', or 'single'",
+				},
+				"widgets": map[string]interface{}{
+					"type":        "array",
+					"description": "Updated widgets array",
+				},
+			},
+			"required": []string{"id"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolDeleteDashboard,
+		Description: "Delete a dashboard. Use list_dashboards to find dashboard IDs first.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"id": map[string]interface{}{
+					"type":        "string",
+					"description": "Dashboard ID to delete",
+				},
+			},
+			"required": []string{"id"},
+		},
+	})
+
+	// Formula & Theme Tools
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolCalculateFormula,
+		Description: "Evaluate a formula expression with optional record context.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"expression": map[string]interface{}{
+					"type":        "string",
+					"description": "Formula expression to evaluate",
+				},
+				"object_name": map[string]interface{}{
+					"type":        "string",
+					"description": "Optional: object context for field references",
+				},
+				"record_id": map[string]interface{}{
+					"type":        "string",
+					"description": "Optional: record ID for field value substitution",
+				},
+			},
+			"required": []string{"expression"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolListThemes,
+		Description: "List all available UI themes.",
+		InputSchema: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolActivateTheme,
+		Description: "Activate a UI theme by ID. Only one theme can be active at a time.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"id": map[string]interface{}{
+					"type":        "string",
+					"description": "Theme ID to activate",
 				},
 			},
 			"required": []string{"id"},
@@ -1151,14 +1362,36 @@ func (s *ToolBusService) handleCreateApp(ctx context.Context, req mcp.CallToolPa
 	description, _ := req.Arguments["description"].(string)
 
 	var navItems []models.NavigationItem
-	if items, ok := req.Arguments["nav_items"].([]interface{}); ok {
+	itemsRaw := req.Arguments["navigation_items"]
+
+	if items, ok := itemsRaw.([]interface{}); ok {
 		for _, item := range items {
+			// Handle string input (API Name alias)
 			if str, ok := item.(string); ok {
 				navItems = append(navItems, models.NavigationItem{
 					Type:          "object",
 					ObjectAPIName: str,
-					Label:         str, // Default label to API name
+					Label:         str, // Default label to API name (will be humanized by UI if needed)
 				})
+				continue
+			}
+
+			// Handle object input (Full definition)
+			if mapVal, ok := item.(map[string]interface{}); ok {
+				var navItem models.NavigationItem
+				// We need to carefully convert map to struct
+				// Using json marshal/unmarshal is the safest lazy way
+				jsonBytes, _ := json.Marshal(mapVal)
+				if err := json.Unmarshal(jsonBytes, &navItem); err == nil {
+					// Validate required fields based on type
+					if navItem.Type == "" {
+						navItem.Type = "object" // Default
+					}
+					// Ensure ID is generated if missing (backend might handle this, but let's be safe)
+					// Actually backend/models structure probably uses DB ID.
+					// We'll let backend handle ID generation.
+					navItems = append(navItems, navItem)
+				}
 			}
 		}
 	}

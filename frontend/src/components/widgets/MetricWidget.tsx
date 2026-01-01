@@ -61,7 +61,7 @@ export const MetricWidget: React.FC<WidgetRendererProps> = ({ title, config, dat
                 </div>
             </div>
             <div>
-                {loading ? <div className="h-8 w-16 bg-slate-100 animate-pulse rounded"></div> : <h3 className="text-3xl font-bold text-slate-900">{typeof data === 'number' ? data.toLocaleString() : String(data)}</h3>}
+                {loading ? <div className="h-8 w-16 bg-slate-100 animate-pulse rounded"></div> : <h3 className="text-3xl font-bold text-slate-900">{data === null || data === undefined ? '--' : (typeof data === 'number' ? data.toLocaleString() : String(data))}</h3>}
             </div>
         </div>
     );

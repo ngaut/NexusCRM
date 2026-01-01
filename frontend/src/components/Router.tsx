@@ -7,6 +7,7 @@ import { Setup } from '../pages/Setup';
 import { AppStudio } from '../pages/AppStudio';
 import { RecycleBin } from '../pages/RecycleBin';
 import { ApprovalQueue } from '../pages/ApprovalQueue';
+import { NotFound } from '../pages/NotFound';
 
 interface RouterProps {
   onToggleAI: () => void;
@@ -37,7 +38,7 @@ export function Router({ onToggleAI }: RouterProps) {
         <Route path="/approvals" element={<ApprovalQueue />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

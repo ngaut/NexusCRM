@@ -7,99 +7,118 @@
         "columns": [
             {
                 "name": "id",
+                "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
             {
                 "name": "api_name",
+                "label": "API Name",
                 "type": "VARCHAR(255)",
                 "nullable": false,
                 "unique": true
             },
             {
                 "name": "table_type",
+                "label": "Table Type",
                 "type": "VARCHAR(50)",
                 "nullable": false,
                 "default": "'custom_object'"
             },
             {
                 "name": "label",
+                "label": "Label",
                 "type": "VARCHAR(255)",
                 "nullable": false
             },
             {
                 "name": "plural_label",
+                "label": "Plural Label",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "app_id",
+                "label": "App",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "icon",
+                "label": "Icon",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "description",
+                "label": "Description",
                 "type": "TEXT"
             },
             {
                 "name": "theme_color",
+                "label": "Theme Color",
                 "type": "VARCHAR(20)",
                 "nullable": true
             },
             {
                 "name": "is_custom",
+                "label": "Custom Object",
                 "type": "TINYINT(1)",
                 "default": "0"
             },
             {
                 "name": "sharing_model",
+                "label": "Sharing Model",
                 "type": "VARCHAR(50)",
                 "default": "'ReadWrite'"
             },
             {
                 "name": "path_field",
+                "label": "Path Field",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "list_fields",
+                "label": "List Fields",
                 "type": "JSON",
                 "nullable": true
             },
             {
                 "name": "is_deleted",
+                "label": "Deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
                 "name": "owner_id",
+                "label": "Owner",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "created_by_id",
+                "label": "Created By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "last_modified_by_id",
+                "label": "Last Modified By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "created_date",
+                "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
+                "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
@@ -121,188 +140,225 @@
         "columns": [
             {
                 "name": "id",
+                "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
             {
                 "name": "object_id",
+                "label": "Object",
                 "type": "VARCHAR(255)",
                 "nullable": false
             },
             {
                 "name": "api_name",
+                "label": "API Name",
                 "type": "VARCHAR(255)",
                 "nullable": false
             },
             {
                 "name": "label",
+                "label": "Label",
                 "type": "VARCHAR(255)",
                 "nullable": false
             },
             {
                 "name": "type",
+                "label": "Type",
                 "type": "VARCHAR(50)",
                 "nullable": false
             },
             {
                 "name": "required",
+                "label": "Required",
                 "type": "TINYINT(1)",
                 "default": "0"
             },
             {
                 "name": "unique",
+                "label": "Unique",
                 "type": "TINYINT(1)",
                 "default": "0"
             },
             {
                 "name": "is_system",
+                "label": "System Field",
                 "type": "TINYINT(1)",
                 "default": "0"
             },
             {
                 "name": "is_name_field",
+                "label": "Name Field",
                 "type": "TINYINT(1)",
                 "default": "0"
             },
             {
                 "name": "indexed",
+                "label": "Indexed",
                 "type": "TINYINT(1)",
                 "default": "0"
             },
             {
                 "name": "options",
+                "label": "Options",
                 "type": "JSON",
                 "nullable": true
             },
             {
                 "name": "reference_to",
+                "label": "Reference To",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "delete_rule",
+                "label": "Delete Rule",
                 "type": "VARCHAR(50)",
                 "nullable": true
             },
             {
                 "name": "formula",
+                "label": "Formula",
                 "type": "TEXT",
                 "nullable": true
             },
             {
                 "name": "return_type",
+                "label": "Return Type",
                 "type": "VARCHAR(50)",
                 "nullable": true
             },
             {
                 "name": "default_value",
+                "label": "Default Value",
                 "type": "TEXT",
                 "nullable": true
             },
             {
                 "name": "help_text",
+                "label": "Help Text",
                 "type": "TEXT",
                 "nullable": true
             },
             {
                 "name": "description",
+                "label": "Description",
                 "type": "TEXT",
                 "nullable": true
             },
             {
                 "name": "track_history",
+                "label": "Track History",
                 "type": "TINYINT(1)",
                 "default": "0"
             },
             {
                 "name": "min_value",
+                "label": "Min Value",
                 "type": "DECIMAL(18,4)",
                 "nullable": true
             },
             {
                 "name": "max_value",
+                "label": "Max Value",
                 "type": "DECIMAL(18,4)",
                 "nullable": true
             },
             {
                 "name": "min_length",
+                "label": "Min Length",
                 "type": "INT",
                 "nullable": true
             },
             {
                 "name": "max_length",
+                "label": "Max Length",
                 "type": "INT",
                 "nullable": true
             },
             {
                 "name": "regex",
+                "label": "Regex Pattern",
                 "type": "TEXT",
                 "nullable": true
             },
             {
                 "name": "regex_message",
+                "label": "Regex Message",
                 "type": "TEXT",
                 "nullable": true
             },
             {
                 "name": "validator",
+                "label": "Validator",
                 "type": "TEXT",
                 "nullable": true
             },
             {
                 "name": "controlling_field",
+                "label": "Controlling Field",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "picklist_dependency",
+                "label": "Picklist Dependency",
                 "type": "JSON",
                 "nullable": true
             },
             {
                 "name": "rollup_config",
+                "label": "Rollup Config",
                 "type": "JSON",
                 "nullable": true
             },
             {
                 "name": "is_master_detail",
+                "label": "Master-Detail",
                 "type": "TINYINT(1)",
                 "default": "0"
             },
             {
                 "name": "relationship_name",
+                "label": "Relationship Name",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "is_deleted",
+                "label": "Deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
                 "name": "owner_id",
+                "label": "Owner",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "created_by_id",
+                "label": "Created By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "last_modified_by_id",
+                "label": "Last Modified By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "created_date",
+                "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
+                "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
@@ -343,51 +399,61 @@
         "columns": [
             {
                 "name": "id",
+                "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
             {
                 "name": "table_name",
+                "label": "Table Name",
                 "type": "VARCHAR(255)",
                 "nullable": false,
                 "unique": true
             },
             {
                 "name": "table_type",
+                "label": "Table Type",
                 "type": "ENUM('system_core', 'system_metadata', 'custom_object')",
                 "nullable": false
             },
             {
                 "name": "category",
+                "label": "Category",
                 "type": "VARCHAR(50)"
             },
             {
                 "name": "description",
+                "label": "Description",
                 "type": "TEXT"
             },
             {
                 "name": "is_managed",
+                "label": "Managed",
                 "type": "TINYINT(1)",
                 "default": "1"
             },
             {
                 "name": "schema_version",
+                "label": "Schema Version",
                 "type": "VARCHAR(50)",
                 "default": "'1.0.0'"
             },
             {
                 "name": "created_by",
+                "label": "Created By (Legacy)",
                 "type": "VARCHAR(255)",
                 "default": "'bootstrap'"
             },
             {
                 "name": "created_date",
+                "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
+                "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
@@ -419,58 +485,69 @@
         "columns": [
             {
                 "name": "id",
+                "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
             {
                 "name": "name",
+                "label": "Profile Name",
                 "type": "VARCHAR(255)",
                 "nullable": false,
                 "unique": true
             },
             {
                 "name": "description",
+                "label": "Description",
                 "type": "TEXT"
             },
             {
                 "name": "is_active",
+                "label": "Active",
                 "type": "TINYINT(1)",
                 "default": "1"
             },
             {
                 "name": "is_system",
+                "label": "System Profile",
                 "type": "TINYINT(1)",
                 "default": "0"
             },
             {
                 "name": "is_deleted",
+                "label": "Deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
                 "name": "owner_id",
+                "label": "Owner",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "created_by_id",
+                "label": "Created By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "last_modified_by_id",
+                "label": "Last Modified By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
                 "name": "created_date",
+                "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
+                "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
@@ -485,21 +562,25 @@
         "columns": [
             {
                 "name": "id",
+                "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
             {
                 "name": "name",
+                "label": "Role Name",
                 "type": "VARCHAR(255)",
                 "nullable": false,
                 "unique": true
             },
             {
                 "name": "description",
+                "label": "Description",
                 "type": "TEXT"
             },
             {
                 "name": "parent_role_id",
+                "label": "Parent Role",
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
@@ -507,17 +588,20 @@
             },
             {
                 "name": "is_active",
+                "label": "Active",
                 "type": "TINYINT(1)",
                 "default": "1"
             },
             {
                 "name": "is_deleted",
+                "label": "Deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
                 "name": "owner_id",
+                "label": "Owner",
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
@@ -525,6 +609,7 @@
             },
             {
                 "name": "created_by_id",
+                "label": "Created By",
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
@@ -532,6 +617,7 @@
             },
             {
                 "name": "last_modified_by_id",
+                "label": "Last Modified By",
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
@@ -539,12 +625,14 @@
             },
             {
                 "name": "created_date",
+                "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
+                "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
@@ -573,11 +661,13 @@
         "columns": [
             {
                 "name": "id",
+                "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
             {
                 "name": "username",
+                "label": "Username",
                 "type": "VARCHAR(255)",
                 "nullable": false,
                 "unique": true,
@@ -585,6 +675,7 @@
             },
             {
                 "name": "email",
+                "label": "Email Address",
                 "type": "VARCHAR(255)",
                 "nullable": false,
                 "unique": true,
@@ -592,25 +683,30 @@
             },
             {
                 "name": "password",
+                "label": "Password",
                 "type": "VARCHAR(255)",
                 "nullable": false,
                 "logicalType": "Password"
             },
             {
                 "name": "first_name",
+                "label": "First Name",
                 "type": "VARCHAR(100)"
             },
             {
                 "name": "last_name",
+                "label": "Last Name",
                 "type": "VARCHAR(100)"
             },
             {
                 "name": "phone",
+                "label": "Phone",
                 "type": "VARCHAR(40)",
                 "nullable": true
             },
             {
                 "name": "profile_id",
+                "label": "Profile",
                 "type": "VARCHAR(255)",
                 "nullable": false,
                 "logicalType": "Lookup",
@@ -618,6 +714,7 @@
             },
             {
                 "name": "role_id",
+                "label": "Role",
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
@@ -625,17 +722,20 @@
             },
             {
                 "name": "is_active",
+                "label": "Active",
                 "type": "TINYINT(1)",
                 "default": "1"
             },
             {
                 "name": "is_deleted",
+                "label": "Deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
                 "name": "owner_id",
+                "label": "Owner",
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
@@ -643,6 +743,7 @@
             },
             {
                 "name": "created_by_id",
+                "label": "Created By",
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
@@ -650,6 +751,7 @@
             },
             {
                 "name": "last_modified_by_id",
+                "label": "Last Modified By",
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
@@ -657,17 +759,20 @@
             },
             {
                 "name": "last_login_date",
+                "label": "Last Login",
                 "type": "DATETIME",
                 "nullable": true
             },
             {
                 "name": "created_date",
+                "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
+                "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
@@ -3040,7 +3145,7 @@
         "tableName": "_System_TeamMember",
         "tableType": "system_core",
         "category": "auth",
-        "description": "Account and Opportunity team members",
+        "description": "Generic record team members",
         "columns": [
             {
                 "name": "id",

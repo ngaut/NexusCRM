@@ -5,11 +5,13 @@ import { metadataAPI } from '../infrastructure/api/metadata';
 import { useApp } from '../contexts/AppContext';
 import { LayoutDashboard, TrendingUp, Settings, Plus, Edit, Trash2, ArrowLeft, RefreshCw, Clock } from 'lucide-react';
 import type { DashboardConfig, WidgetConfig } from '../types';
+import { WIDGET_SIZE_DEFAULTS, DEFAULT_WIDGET_SIZE } from '../core/constants/widgets';
 import { FilterBar, GlobalFilters } from '../components/FilterBar';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { useErrorToast } from '../components/ui/Toast';
+import { DashboardWidgetSkeleton } from '../components/ui/LoadingSkeleton';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -91,7 +93,13 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  if (loading && !dashboards.length) return <div className="p-6">Loading...</div>;
+  if (loading && !dashboards.length) return (
+    <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <DashboardWidgetSkeleton />
+      <DashboardWidgetSkeleton />
+      <DashboardWidgetSkeleton />
+    </div>
+  );
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50/50 min-h-screen flex flex-col">
@@ -241,21 +249,7 @@ export const Dashboard: React.FC = () => {
               className="layout"
               layouts={{
                 lg: currentDashboard.widgets?.map((w: WidgetConfig) => {
-                  // Better default sizes based on widget type
-                  const sizeDefaults: Record<string, { w: number, h: number }> = {
-                    'metric': { w: 3, h: 2 },
-                    'chart-bar': { w: 4, h: 3 },
-                    'chart-line': { w: 4, h: 3 },
-                    'chart-pie': { w: 3, h: 3 },
-                    'chart-funnel': { w: 4, h: 3 },
-                    'chart-gauge': { w: 3, h: 3 },
-                    'sql-chart': { w: 6, h: 4 },
-                    'record-list': { w: 6, h: 4 },
-                    'kanban': { w: 12, h: 5 },
-                    'text': { w: 4, h: 2 },
-                    'image': { w: 3, h: 3 }
-                  };
-                  const defaults = sizeDefaults[w.type] || { w: 4, h: 3 };
+                  const defaults = WIDGET_SIZE_DEFAULTS[w.type] || DEFAULT_WIDGET_SIZE;
 
                   const width = w.w || defaults.w;
                   const height = w.h || defaults.h;

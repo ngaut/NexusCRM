@@ -26,7 +26,7 @@ export function ToolExecutionSummary({ block, formatToolName }: ToolExecutionSum
                     <AlertCircle size={14} className="text-amber-500" />
                 )}
                 <span>
-                    {toolCount} tool{toolCount !== 1 ? 's' : ''} executed
+                    {toolCount} operation{toolCount !== 1 ? 's' : ''} completed
                 </span>
                 {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </button>

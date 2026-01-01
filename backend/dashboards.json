@@ -1,0 +1,1 @@
+{"dashboards":[{"id":"895e264f-251f-4ea2-aebe-ef24a7c3529d","label":"Sales Dashboard","description":"","layout":"two-column","widgets":[{"id":"w_1767145356622","title":"Total _System_Users","type":"metric","query":{"object_api_name":"_System_User","operation":"count","field":null,"group_by":null},"x":0,"y":0,"w":3,"h":2}]}]}

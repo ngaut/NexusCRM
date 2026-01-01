@@ -221,7 +221,7 @@
         "isSearchable": true,
         "isGroupable": false,
         "isSummable": false,
-        "validationPattern": "^\\+?[1-9]\\d{1,14}$",
+        "validationPattern": "^\\+?[0-9\\-\\.\\(\\)\\s]{3,30}$",
         "validationMessage": "invalid phone format",
         "operators": [
             "equals",

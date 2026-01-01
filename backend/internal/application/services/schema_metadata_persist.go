@@ -187,16 +187,25 @@ func (sm *SchemaManager) PrepareFieldForBatch(tableName string, col schema.Colum
 		fieldType = col.LogicalType
 	}
 
-	isNameField := strings.EqualFold(col.Name, constants.FieldName)
+	isNameField := strings.EqualFold(col.Name, constants.FieldName) || col.IsNameField
 	isSystem := sm.IsSystemColumn(col.Name)
 	required := !col.Nullable && !isSystem
+
+	label := col.Label
+	if label == "" {
+		// Auto-humanize: replace underscores with spaces and Title Case
+		// e.g. "created_by_id" -> "Created By Id"
+		// We can also strip "_id" suffix if desired, but for now simple humanization is safer
+		name := strings.ReplaceAll(col.Name, "_", " ")
+		label = strings.Title(name) // Standard Go strings.Title (or use a better caser if available)
+	}
 
 	f := FieldWithContext{
 		ObjectID: objectID,
 		FieldID:  fieldID,
 		Field: &models.FieldMetadata{
 			APIName:     col.Name,
-			Label:       col.Name,
+			Label:       label,
 			Type:        models.FieldType(fieldType),
 			Required:    required,
 			Unique:      col.Unique,

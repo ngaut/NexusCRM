@@ -9,6 +9,8 @@ import { EffectivePermissionsModal } from '../components/modals/EffectivePermiss
 import { UserEditorModal } from '../components/modals/UserEditorModal';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { useErrorToast } from '../components/ui/Toast';
+import { RecordListSkeleton } from '../components/ui/LoadingSkeleton';
+import { EmptyState } from '../components/ui/EmptyState';
 
 export const UserManager: React.FC = () => {
     const errorToast = useErrorToast();
@@ -101,9 +103,14 @@ export const UserManager: React.FC = () => {
 
                 <div className="p-6">
                     {loading ? (
-                        <div className="text-center py-8 text-slate-500">Loading...</div>
+                        <RecordListSkeleton rows={5} columns={6} />
                     ) : error ? (
-                        <div className="text-center py-8 text-red-500">{error}</div>
+                        <EmptyState
+                            variant="error"
+                            title="Error Loading Users"
+                            description={error}
+                            action={{ label: 'Retry', onClick: loadData }}
+                        />
                     ) : activeTab === 'users' ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">

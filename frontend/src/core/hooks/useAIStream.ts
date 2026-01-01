@@ -3,7 +3,6 @@ import { agentApi, ChatMessage, StreamEvent, CompactRequest } from '../../infras
 import { ProcessStep } from '../../components/ai/types';
 
 const STORAGE_KEY_MESSAGES = 'nexus_ai_messages';
-const STORAGE_KEY_PROCESS = 'nexus_ai_process_steps';
 
 export function useAIStream() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -14,13 +13,11 @@ export function useAIStream() {
 
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    // Persistence
+    // Persistence - only persist messages, not transient process steps
     useEffect(() => {
         try {
             const savedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
-            const savedProcess = localStorage.getItem(STORAGE_KEY_PROCESS);
             if (savedMessages) setMessages(JSON.parse(savedMessages));
-            if (savedProcess) setProcessSteps(JSON.parse(savedProcess));
         } catch (e) {
             console.error('Failed to load persisted AI state:', e);
         }
@@ -30,9 +27,8 @@ export function useAIStream() {
         localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
     }, [messages]);
 
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY_PROCESS, JSON.stringify(processSteps));
-    }, [processSteps]);
+    // Note: processSteps are NOT persisted - they are transient streaming state
+    // and already captured in message history as tool_calls/tool results
 
     // Token Calculation
     const conversationTokens = useMemo(() => {
@@ -247,7 +243,6 @@ export function useAIStream() {
         setProcessSteps([]);
         setStreamingContent('');
         localStorage.removeItem(STORAGE_KEY_MESSAGES);
-        localStorage.removeItem(STORAGE_KEY_PROCESS);
     };
 
     // Exposed primarily for ContextPanel interactions
