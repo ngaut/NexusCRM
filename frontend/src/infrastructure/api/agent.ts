@@ -158,4 +158,45 @@ export const agentApi = {
 
         return controller;
     },
+
+    // Conversation persistence
+    getConversation: async (id?: string): Promise<ConversationResponse> => {
+        const query = id ? `?id=${id}` : '';
+        return await apiClient.get<ConversationResponse>(`${API_ENDPOINTS.AGENT.CONVERSATION}${query}`);
+    },
+
+    saveConversation: async (messages: ChatMessage[], conversationId?: string, title?: string): Promise<{ id: string; status: string }> => {
+        return await apiClient.post<{ id: string; status: string }>(API_ENDPOINTS.AGENT.CONVERSATION, {
+            messages,
+            conversation_id: conversationId,
+            title,
+        });
+    },
+
+    clearConversation: async (): Promise<void> => {
+        await apiClient.delete(API_ENDPOINTS.AGENT.CONVERSATION);
+    },
+
+    // Multiple conversations
+    listConversations: async (): Promise<{ conversations: ConversationSummary[] }> => {
+        return await apiClient.get<{ conversations: ConversationSummary[] }>(API_ENDPOINTS.AGENT.CONVERSATIONS);
+    },
+
+    deleteConversation: async (id: string): Promise<void> => {
+        await apiClient.delete(`${API_ENDPOINTS.AGENT.CONVERSATIONS}/${id}`);
+    },
 };
+
+export interface ConversationSummary {
+    id: string;
+    title: string;
+    is_active: boolean;
+    created_date: string;
+    last_modified_date: string;
+}
+
+export interface ConversationResponse {
+    conversation: { id: string; title: string } | null;
+    messages: ChatMessage[];
+}
+

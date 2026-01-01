@@ -72,6 +72,8 @@ export const API_ENDPOINTS = {
         CHAT_STREAM: '/api/agent/chat/stream',
         CONTEXT: (query: string) => `/api/agent/context${query}`,
         COMPACT: '/api/agent/compact',
+        CONVERSATION: '/api/agent/conversation',
+        CONVERSATIONS: '/api/agent/conversations',
     },
     FEED: {
         RECORD: (recordId: string) => `/api/feed/${encodeURIComponent(recordId)}`,

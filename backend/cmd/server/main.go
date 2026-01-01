@@ -414,6 +414,13 @@ func main() {
 			agent.POST("/chat/stream", agentHandler.ChatStream)
 			agent.GET("/context", agentHandler.GetContext)
 			agent.POST("/compact", agentHandler.CompactContext)
+			// Conversation persistence
+			agent.GET("/conversation", agentHandler.GetConversation)
+			agent.POST("/conversation", agentHandler.SaveConversation)
+			agent.DELETE("/conversation", agentHandler.ClearConversation)
+			// Multiple conversations
+			agent.GET("/conversations", agentHandler.ListConversations)
+			agent.DELETE("/conversations/:id", agentHandler.DeleteConversation)
 		}
 	}
 

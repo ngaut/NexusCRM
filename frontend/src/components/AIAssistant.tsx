@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Database, MessageSquarePlus } from 'lucide-react';
+import { X, Sparkles, Database, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { ContextPanel } from './ai/ContextPanel';
 import { InputArea } from './ai/InputArea';
 import { MessageList } from './ai/MessageList';
+import { ConversationSidebar } from './ai/ConversationSidebar';
 import { Z_LAYERS } from '../core/constants/zIndex';
 import { useResizable } from '../core/hooks/useResizable';
 import { useAIStream } from '../core/hooks/useAIStream';
@@ -18,7 +19,6 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
   const [input, setInput] = useState('');
   const [isContextPanelOpen, setIsContextPanelOpen] = useState(false);
 
-  // Hooks
   const {
     width: panelWidth,
     startResizing: handleResizeStart
@@ -36,7 +36,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
     initialWidth: 320,
     minWidth: 320,
     maxWidth: 800,
-    direction: 'right'
+    direction: 'left'
   });
 
   const {
@@ -52,7 +52,14 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
     clearChat,
     compactMessages,
     conversationTokens,
-    summaryInfo
+    summaryInfo,
+    currentConversationId,
+    conversations,
+    isSidebarOpen,
+    setIsSidebarOpen,
+    newChat,
+    selectConversation,
+    deleteConversation,
   } = useAIStream();
 
   const {
@@ -62,7 +69,6 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
     updateFilesFromToolResult
   } = useAIContext();
 
-  // Listen for tool results that update context
   useEffect(() => {
     const lastStep = [...processSteps].reverse().find(s => s.type === 'tool_result' && !s.isError);
     if (lastStep && lastStep.toolName === 'context_list' && lastStep.toolResult) {
@@ -115,18 +121,16 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
   - \`/remove <file>\`: Remove files from context
   - \`/list\`: List active files
   - \`/compact [keep X]\`: Compact conversation history
-  - \`/clear\`: Clear chat history (UI only)
+  - \`/clear\`: Clear chat history
   - \`/help\`: Show this help`
           } as ChatMessage]);
           setInput('');
           return;
         default:
-          // Treat unknown commands as normal messages for now, or add specific error handling
           break;
       }
     }
 
-    // Default message
     sendMessage(input);
     setInput('');
   };
@@ -137,23 +141,101 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
 
   if (!isOpen) return null;
 
+  const sidebarWidth = isSidebarOpen ? 220 : 36;
+  const totalWidth = sidebarWidth + panelWidth + (isContextPanelOpen ? contextPanelWidth : 0);
+
   return (
     <div
       className="fixed right-0 top-0 h-full bg-white/98 backdrop-blur-xl shadow-2xl border-l border-slate-200/50 flex animate-fade-in"
-      style={{ width: isContextPanelOpen ? `${panelWidth + contextPanelWidth}px` : `${panelWidth}px`, zIndex: Z_LAYERS.PANEL }}
+      style={{ width: `${totalWidth}px`, zIndex: Z_LAYERS.PANEL }}
     >
-      {/* Context Panel Resize Handle (Left Edge) - Only visible when Context Panel is open */}
+      {/* 1. Conversation Sidebar (left-most) */}
+      <ConversationSidebar
+        conversations={conversations}
+        currentConversationId={currentConversationId}
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        onSelectConversation={selectConversation}
+        onNewChat={newChat}
+        onDeleteConversation={deleteConversation}
+        isLoading={isLoading}
+      />
+
+      {/* 2. Main Chat Area (center) */}
+      <div className="flex flex-col h-full flex-1 relative border-l border-slate-200">
+        <div
+          onMouseDown={handleResizeStart}
+          className="absolute left-0 top-0 h-full w-2 cursor-ew-resize hover:bg-indigo-500/20 transition-colors z-10 group -ml-1"
+        >
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-slate-300 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
+
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80 bg-white">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              title={isSidebarOpen ? 'Collapse history' : 'Expand history'}
+            >
+              {isSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeft size={16} />}
+            </button>
+            <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-2 rounded-xl shadow-md shadow-purple-500/20">
+              <Sparkles size={20} className="text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-800">Nexus AI</h3>
+              <p className="text-[11px] text-slate-400">Your CRM assistant</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setIsContextPanelOpen(!isContextPanelOpen)}
+              className={`p-2 rounded-lg transition-all ${isContextPanelOpen ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600'}`}
+              title="Toggle Context Panel"
+            >
+              <Database size={18} />
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-all text-slate-400 hover:text-slate-600"
+              title="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        <MessageList
+          messages={messages}
+          isLoading={isLoading}
+          streamingContent={streamingContent}
+          processSteps={processSteps}
+          isProcessExpanded={isProcessExpanded}
+          setIsProcessExpanded={setIsProcessExpanded}
+          onPromptSelect={handlePromptSelect}
+        />
+
+        <InputArea
+          input={input}
+          isLoading={isLoading}
+          setInput={setInput}
+          handleSubmit={handleSubmit}
+          handleCancel={cancelStream}
+        />
+      </div>
+
+      {/* 3. Context Panel (right-most, when open) */}
       {isContextPanelOpen && (
         <div
           onMouseDown={handleContextResizeStart}
-          className="absolute left-0 top-0 h-full w-2 cursor-ew-resize hover:bg-indigo-500/20 transition-colors group -ml-1"
-          style={{ zIndex: Z_LAYERS.MODAL }}
+          className="absolute right-0 top-0 h-full w-2 cursor-ew-resize hover:bg-indigo-500/20 transition-colors group"
+          style={{ zIndex: Z_LAYERS.MODAL, right: contextPanelWidth - 4 }}
         >
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-indigo-300 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" />
         </div>
       )}
 
-      {/* Context Panel (Left of Chat) */}
       <ContextPanel
         width={contextPanelWidth}
         files={activeFiles}
@@ -174,86 +256,12 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         tokensSaved={summaryInfo.tokensSaved}
         isLoading={isLoading}
         onClose={() => setIsContextPanelOpen(false)}
-        onRemoveFile={(path) => {
-          setInput(`/remove ${path}`);
-        }}
-        onRemoveMessage={(index) => {
-          setMessages(prev => prev.filter((_, i) => i !== index));
-        }}
-        onAddFiles={() => {
-          setInput('/add ');
-        }}
+        onRemoveFile={(path) => setInput(`/remove ${path}`)}
+        onRemoveMessage={(index) => setMessages(prev => prev.filter((_, i) => i !== index))}
+        onAddFiles={() => setInput('/add ')}
         onCompact={() => compactMessages()}
         onRefresh={refreshContext}
       />
-
-      {/* Main Chat Area */}
-      <div className="flex flex-col h-full flex-1 relative border-l border-slate-200">
-
-        {/* Resize Handle */}
-        <div
-          onMouseDown={handleResizeStart}
-          className="absolute left-0 top-0 h-full w-2 cursor-ew-resize hover:bg-indigo-500/20 transition-colors z-10 group -ml-1"
-        >
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-slate-300 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80 bg-white">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-2 rounded-xl shadow-md shadow-purple-500/20">
-              <Sparkles size={20} className="text-white" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-800">Nexus AI</h3>
-              <p className="text-[11px] text-slate-400">Your CRM assistant</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={clearChat}
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
-              title="New conversation"
-            >
-              <MessageSquarePlus size={18} />
-            </button>
-            <button
-              onClick={() => setIsContextPanelOpen(!isContextPanelOpen)}
-              className={`p-2 rounded-lg transition-all ${isContextPanelOpen ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600'}`}
-              title="Toggle Context Panel"
-            >
-              <Database size={18} />
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-all text-slate-400 hover:text-slate-600"
-              title="Close"
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* Messages */}
-        <MessageList
-          messages={messages}
-          isLoading={isLoading}
-          streamingContent={streamingContent}
-          processSteps={processSteps}
-          isProcessExpanded={isProcessExpanded}
-          setIsProcessExpanded={setIsProcessExpanded}
-          onPromptSelect={handlePromptSelect}
-        />
-
-        {/* Input */}
-        <InputArea
-          input={input}
-          isLoading={isLoading}
-          setInput={setInput}
-          handleSubmit={handleSubmit}
-          handleCancel={cancelStream}
-        />
-      </div>
     </div>
   );
 }

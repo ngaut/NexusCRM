@@ -3755,5 +3755,47 @@
                 "type": "DATETIME"
             }
         ]
+    },
+    {
+        "tableName": "_System_AI_Conversation",
+        "tableType": "system_core",
+        "category": "ai",
+        "description": "Persisted AI conversation history per user",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "user_id",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "title",
+                "type": "VARCHAR(255)",
+                "default": "'AI Conversation'"
+            },
+            {
+                "name": "messages",
+                "type": "JSON"
+            },
+            {
+                "name": "is_active",
+                "type": "BOOLEAN",
+                "default": "1"
+            },
+            {
+                "name": "created_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "last_modified_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            }
+        ]
     }
 ]

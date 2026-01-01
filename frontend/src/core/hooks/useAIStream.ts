@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { agentApi, ChatMessage, StreamEvent, CompactRequest } from '../../infrastructure/api/agent';
+import { agentApi, ChatMessage, StreamEvent, CompactRequest, ConversationSummary } from '../../infrastructure/api/agent';
 import { ProcessStep } from '../../components/ai/types';
 
 const STORAGE_KEY_MESSAGES = 'nexus_ai_messages';
@@ -10,22 +10,79 @@ export function useAIStream() {
     const [isLoading, setIsLoading] = useState(false);
     const [streamingContent, setStreamingContent] = useState<string>('');
     const [isProcessExpanded, setIsProcessExpanded] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
+
+    // Multi-conversation state
+    const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+    const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const abortControllerRef = useRef<AbortController | null>(null);
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Persistence - only persist messages, not transient process steps
+    // Load conversations list and active conversation on mount
     useEffect(() => {
-        try {
-            const savedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
-            if (savedMessages) setMessages(JSON.parse(savedMessages));
-        } catch (e) {
-            console.error('Failed to load persisted AI state:', e);
-        }
+        const loadConversations = async () => {
+            try {
+                // Load conversation list
+                const listResponse = await agentApi.listConversations();
+                setConversations(listResponse.conversations || []);
+
+                // Load active conversation
+                const response = await agentApi.getConversation();
+                if (response.conversation) {
+                    setCurrentConversationId(response.conversation.id);
+                    setMessages(response.messages as ChatMessage[]);
+                } else {
+                    // Fallback to localStorage for migration
+                    const savedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
+                    if (savedMessages) {
+                        const parsed = JSON.parse(savedMessages);
+                        setMessages(parsed);
+                        // Migrate to server
+                        const result = await agentApi.saveConversation(parsed);
+                        setCurrentConversationId(result.id);
+                        // Refresh list
+                        const newList = await agentApi.listConversations();
+                        setConversations(newList.conversations || []);
+                    }
+                }
+            } catch {
+                // Fallback to localStorage if API fails
+                const savedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
+                if (savedMessages) setMessages(JSON.parse(savedMessages));
+            } finally {
+                setIsInitialized(true);
+            }
+        };
+        loadConversations();
     }, []);
 
+    // Auto-save to server when messages change (debounced)
     useEffect(() => {
+        if (!isInitialized || messages.length === 0) return;
+
+        // Also save to localStorage as backup
         localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
-    }, [messages]);
+
+        // Debounce server save to avoid too many requests
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(async () => {
+            try {
+                const result = await agentApi.saveConversation(messages, currentConversationId || undefined);
+                if (!currentConversationId && result.id) {
+                    setCurrentConversationId(result.id);
+                }
+                // Refresh conversation list
+                const listResponse = await agentApi.listConversations();
+                setConversations(listResponse.conversations || []);
+            } catch { }
+        }, 2000);
+
+        return () => {
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        };
+    }, [messages, isInitialized, currentConversationId]);
 
     // Note: processSteps are NOT persisted - they are transient streaming state
     // and already captured in message history as tool_calls/tool results
@@ -242,8 +299,55 @@ export function useAIStream() {
         setMessages([]);
         setProcessSteps([]);
         setStreamingContent('');
+        setCurrentConversationId(null);
         localStorage.removeItem(STORAGE_KEY_MESSAGES);
+        agentApi.clearConversation().catch(() => { });
     };
+
+    // Create a new conversation
+    const newChat = useCallback(async () => {
+        // Clear current state
+        setMessages([]);
+        setProcessSteps([]);
+        setStreamingContent('');
+        setCurrentConversationId(null);
+        localStorage.removeItem(STORAGE_KEY_MESSAGES);
+    }, []);
+
+    // Select and load a specific conversation
+    const selectConversation = useCallback(async (id: string) => {
+        if (id === currentConversationId) return;
+
+        try {
+            const response = await agentApi.getConversation(id);
+            if (response.conversation) {
+                setMessages(response.messages as ChatMessage[]);
+                setCurrentConversationId(response.conversation.id);
+                setProcessSteps([]);
+                setStreamingContent('');
+                localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(response.messages));
+            }
+        } catch (error) {
+            console.error('Failed to load conversation:', error);
+        }
+    }, [currentConversationId]);
+
+    // Delete a specific conversation
+    const deleteConversation = useCallback(async (id: string) => {
+        try {
+            await agentApi.deleteConversation(id);
+            // Update list
+            setConversations(prev => prev.filter(c => c.id !== id));
+            // If deleting current conversation, clear it
+            if (id === currentConversationId) {
+                setMessages([]);
+                setCurrentConversationId(null);
+                localStorage.removeItem(STORAGE_KEY_MESSAGES);
+            }
+        } catch (error) {
+            console.error('Failed to delete conversation:', error);
+        }
+    }, [currentConversationId]);
 
     // Exposed primarily for ContextPanel interactions
     const compactMessages = async (keepInstruction?: string) => {
@@ -257,7 +361,7 @@ export function useAIStream() {
             const response = await agentApi.compact(compactRequest);
             setMessages(response.messages);
         } catch (err) {
-            console.error(err);
+            console.error('Failed to compact messages:', err);
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 content: `❌ Failed to compact context: ${err instanceof Error ? err.message : 'Unknown error'}`
@@ -283,6 +387,14 @@ export function useAIStream() {
         clearChat,
         compactMessages,
         conversationTokens,
-        summaryInfo
+        summaryInfo,
+        // Multi-conversation
+        currentConversationId,
+        conversations,
+        isSidebarOpen,
+        setIsSidebarOpen,
+        newChat,
+        selectConversation,
+        deleteConversation,
     };
 }
