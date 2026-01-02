@@ -245,6 +245,14 @@ func (s *AgentService) ChatStream(ctx context.Context, req ChatRequest, eventCha
 		messages = append(messages, assistantMsg)
 
 		if len(assistantMsg.ToolCalls) > 0 {
+
+			// Emit thinking if LLM provided reasoning text
+			if assistantMsg.ReasoningContent != "" {
+				emit(StreamEvent{Type: EventThinking, Content: assistantMsg.ReasoningContent})
+			} else if assistantMsg.Content != "" {
+				emit(StreamEvent{Type: EventThinking, Content: assistantMsg.Content})
+			}
+
 			for _, tc := range assistantMsg.ToolCalls {
 				// Emit tool call event
 				emit(StreamEvent{

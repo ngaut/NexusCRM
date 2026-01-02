@@ -47,4 +47,3 @@ class DashboardWidgetRegistryClass extends RegistryBase<React.FC<WidgetRendererP
 }
 
 export const DashboardWidgetRegistry = new DashboardWidgetRegistryClass();
-

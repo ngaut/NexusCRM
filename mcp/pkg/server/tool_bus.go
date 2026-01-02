@@ -235,21 +235,26 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 				},
 				"widgets": map[string]interface{}{
 					"type":        "array",
-					"description": "Array of widget configurations. Each widget should have: title (string), type ('list', 'chart', 'metric', 'sql_chart'). For 'list' type: object, filter, columns. For 'chart' type: object, chart_type ('pie', 'bar', 'line'), group_by, agg_function ('count', 'sum', 'avg'). For 'metric' type: object, agg_field, agg_function. For 'sql_chart': sql query string.",
+					"description": "Array of widget configurations. Valid widget types: 'metric' (count/sum/avg of a field), 'chart-bar', 'chart-pie', 'chart-line' (grouped data), 'record-list' (table view), 'kanban' (board view), 'sql-chart' (custom SQL). Each widget requires: title, type. For charts: query.object_api_name, query.operation ('count', 'sum', 'avg'), query.group_by. For metric: query.object_api_name, query.operation, query.field. For record-list/kanban: query.object_api_name.",
 					"items": map[string]interface{}{
 						"type": "object",
 						"properties": map[string]interface{}{
-							"title":        map[string]interface{}{"type": "string", "description": "Widget title"},
-							"type":         map[string]interface{}{"type": "string", "description": "'list', 'chart', 'metric', or 'sql_chart'"},
-							"object":       map[string]interface{}{"type": "string", "description": "Target object API name"},
-							"filter":       map[string]interface{}{"type": "string", "description": "Filter expression"},
-							"columns":      map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}, "description": "Columns"},
-							"chart_type":   map[string]interface{}{"type": "string", "description": "'pie', 'bar', 'line'"},
-							"group_by":     map[string]interface{}{"type": "string", "description": "Field to group by"},
-							"agg_field":    map[string]interface{}{"type": "string", "description": "Field to aggregate"},
-							"agg_function": map[string]interface{}{"type": "string", "description": "'count', 'sum', 'avg', 'min', 'max'"},
-							"sql":          map[string]interface{}{"type": "string", "description": "SQL query for sql_chart type"},
-							"size":         map[string]interface{}{"type": "string", "description": "'small', 'medium', 'large'"},
+							"title": map[string]interface{}{"type": "string", "description": "Widget title"},
+							"type":  map[string]interface{}{"type": "string", "enum": []string{"metric", "chart-bar", "chart-pie", "chart-line", "chart-funnel", "record-list", "kanban", "sql-chart"}, "description": "Widget type"},
+							"query": map[string]interface{}{
+								"type": "object",
+								"properties": map[string]interface{}{
+									"object_api_name": map[string]interface{}{"type": "string", "description": "Target object API name (e.g., 'opportunity', 'lead')"},
+									"operation":       map[string]interface{}{"type": "string", "enum": []string{"count", "sum", "avg", "min", "max", "group_by"}, "description": "Aggregation operation"},
+									"field":           map[string]interface{}{"type": "string", "description": "Field to aggregate (for sum/avg)"},
+									"group_by":        map[string]interface{}{"type": "string", "description": "Group by field (for charts)"},
+									"filter_expr":     map[string]interface{}{"type": "string", "description": "Optional filter expression"},
+								},
+							},
+							"config": map[string]interface{}{
+								"type":        "object",
+								"description": "Widget-specific config (e.g., chart_type, columns for list)",
+							},
 						},
 						"required": []string{"title", "type"},
 					},
@@ -315,7 +320,8 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 					"description": "Field type. Use 'Formula' for calculated fields.",
 				},
 				"required": map[string]interface{}{
-					"type": "boolean",
+					"type":        "boolean",
+					"description": "Whether the field is required (default false)",
 				},
 				"options": map[string]interface{}{
 					"type":        "array",
@@ -436,7 +442,8 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 				},
 				"operation": map[string]interface{}{
 					"type":        "string",
-					"description": "The analytics operation (count, sum, avg, group_by)",
+					"enum":        []string{"count", "sum", "avg", "min", "max", "group_by"},
+					"description": "Aggregation operation",
 				},
 				"field": map[string]interface{}{
 					"type":        "string",
@@ -457,7 +464,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 
 	allTools = append(allTools, mcp.Tool{
 		Name:        ToolListApps,
-		Description: "List all application configurations, including their navigation items.",
+		Description: "List all application configurations, including their navigation items. Call this FIRST when you need to add items to an app's navigation/sidebar - you need the app ID for update_app.",
 		InputSchema: map[string]interface{}{
 			"type":       "object",
 			"properties": map[string]interface{}{},
@@ -486,10 +493,12 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 			"type": "object",
 			"properties": map[string]interface{}{
 				"object_name": map[string]interface{}{
-					"type": "string",
+					"type":        "string",
+					"description": "API name of the object (e.g., 'account')",
 				},
 				"field_name": map[string]interface{}{
-					"type": "string",
+					"type":        "string",
+					"description": "API name of the field to delete",
 				},
 			},
 			"required": []string{"object_name", "field_name"},
@@ -522,13 +531,16 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 			"type": "object",
 			"properties": map[string]interface{}{
 				"object_name": map[string]interface{}{
-					"type": "string",
+					"type":        "string",
+					"description": "API name of the object to update",
 				},
 				"label": map[string]interface{}{
-					"type": "string",
+					"type":        "string",
+					"description": "New display label",
 				},
 				"description": map[string]interface{}{
-					"type": "string",
+					"type":        "string",
+					"description": "New description",
 				},
 			},
 			"required": []string{"object_name"},
@@ -542,18 +554,21 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 			"type": "object",
 			"properties": map[string]interface{}{
 				"object_name": map[string]interface{}{
-					"type": "string",
+					"type":        "string",
+					"description": "API name of the object containing the field",
 				},
 				"field_name": map[string]interface{}{
-					"type": "string",
+					"type":        "string",
+					"description": "API name of the field to update",
 				},
 				"label": map[string]interface{}{
-					"type": "string",
+					"type":        "string",
+					"description": "New display label",
 				},
 				"options": map[string]interface{}{
 					"type":        "array",
 					"items":       map[string]interface{}{"type": "string"},
-					"description": "For Picklist types",
+					"description": "New picklist options (for Picklist type fields)",
 				},
 			},
 			"required": []string{"object_name", "field_name"},
@@ -562,7 +577,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 
 	allTools = append(allTools, mcp.Tool{
 		Name:        ToolUpdateApp,
-		Description: "Update an application configuration (label, icon, description, navigation). Use this to add objects, dashboards, or web links to the app's sidebar menu.",
+		Description: "Update an application configuration. Use this to add objects, dashboards, or web links to the app's navigation/sidebar/menu (also called 'navigator items'). WORKFLOW: 1) First call list_apps to get the app ID, 2) Then call update_app with navigation_items array. NOTE: navigation_items REPLACES all existing items, so include both old and new items.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -632,7 +647,7 @@ All items require 'type' and 'label'. Examples:
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"name": map[string]interface{}{
+				"id": map[string]interface{}{
 					"type":        "string",
 					"description": "Unique app ID (snake_case, e.g. 'sales_app')",
 				},
@@ -677,7 +692,7 @@ Full objects for more control:
 					},
 				},
 			},
-			"required": []string{"name", "label"},
+			"required": []string{"id", "label"},
 		},
 	})
 
@@ -688,7 +703,8 @@ Full objects for more control:
 			"type": "object",
 			"properties": map[string]interface{}{
 				"id": map[string]interface{}{
-					"type": "string",
+					"type":        "string",
+					"description": "App ID to delete (e.g., 'sales_app')",
 				},
 			},
 			"required": []string{"id"},
@@ -1184,55 +1200,74 @@ func (s *ToolBusService) handleCreateDashboard(ctx context.Context, req mcp.Call
 		layout = "two-column"
 	}
 
+	// Valid widget types (must match frontend DashboardWidgetRegistry)
+	validWidgetTypes := map[string]bool{
+		"metric": true, "chart-bar": true, "chart-pie": true, "chart-line": true,
+		"chart-funnel": true, "chart-gauge": true, "record-list": true, "kanban": true, "sql-chart": true,
+	}
+
 	// Convert widgets to proper struct
 	var widgets []models.DashboardWidget
-	for _, w := range widgetsRaw {
+	for i, w := range widgetsRaw {
 		widgetMap, ok := w.(map[string]interface{})
 		if !ok {
 			continue
 		}
+		widgetType := getStringFromMap(widgetMap, "type")
+		widgetTitle := getStringFromMap(widgetMap, "title")
+
+		// Validate widget type
+		if widgetType == "" {
+			return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Widget %d ('%s'): type is required. Valid types: metric, chart-bar, chart-pie, chart-line, chart-funnel, chart-gauge, record-list, kanban, sql-chart", i+1, widgetTitle)}}}, nil
+		}
+		if !validWidgetTypes[widgetType] {
+			return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Widget %d ('%s'): invalid type '%s'. Valid types: metric, chart-bar, chart-pie, chart-line, chart-funnel, chart-gauge, record-list, kanban, sql-chart", i+1, widgetTitle, widgetType)}}}, nil
+		}
+
 		widget := models.DashboardWidget{
-			Title:  getStringFromMap(widgetMap, "title"),
-			Type:   getStringFromMap(widgetMap, "type"),
+			Title:  widgetTitle,
+			Type:   widgetType,
 			Config: make(map[string]interface{}),
 		}
 
 		query := models.AnalyticsQuery{}
 
-		if v := getStringFromMap(widgetMap, "object"); v != "" {
-			query.ObjectAPIName = v
-		}
-		if v := getStringFromMap(widgetMap, "filter"); v != "" {
-			query.FilterExpr = v
-		}
-		if cols, ok := widgetMap["columns"].([]interface{}); ok {
-			var colStrings []string
-			for _, c := range cols {
-				if cs, ok := c.(string); ok {
-					colStrings = append(colStrings, cs)
-				}
+		// Parse query object
+		if queryMap, ok := widgetMap["query"].(map[string]interface{}); ok {
+			if v := getStringFromMap(queryMap, "object_api_name"); v != "" {
+				query.ObjectAPIName = v
 			}
-			widget.Config["columns"] = colStrings
+			if v := getStringFromMap(queryMap, "operation"); v != "" {
+				query.Operation = v
+			}
+			if v := getStringFromMap(queryMap, "field"); v != "" {
+				query.Field = &v
+			}
+			if v := getStringFromMap(queryMap, "group_by"); v != "" {
+				query.GroupBy = &v
+			}
+			if v := getStringFromMap(queryMap, "filter_expr"); v != "" {
+				query.FilterExpr = v
+			}
 		}
-		if v := getStringFromMap(widgetMap, "chart_type"); v != "" {
-			widget.Config["chart_type"] = v
-		}
-		if v := getStringFromMap(widgetMap, "group_by"); v != "" {
-			val := v
-			query.GroupBy = &val
-		}
-		if v := getStringFromMap(widgetMap, "agg_field"); v != "" {
-			val := v
-			query.Field = &val
-		}
-		if v := getStringFromMap(widgetMap, "agg_function"); v != "" {
-			query.Operation = v
-		}
-		if v := getStringFromMap(widgetMap, "sql"); v != "" {
-			widget.Config["sql"] = v
-		}
-		if v := getStringFromMap(widgetMap, "size"); v != "" {
-			widget.Config["size"] = v
+
+		// Parse config options
+		if configMap, ok := widgetMap["config"].(map[string]interface{}); ok {
+			if cols, ok := configMap["columns"].([]interface{}); ok {
+				var colStrings []string
+				for _, c := range cols {
+					if cs, ok := c.(string); ok {
+						colStrings = append(colStrings, cs)
+					}
+				}
+				widget.Config["columns"] = colStrings
+			}
+			if v := getStringFromMap(configMap, "chart_type"); v != "" {
+				widget.Config["chart_type"] = v
+			}
+			if v := getStringFromMap(configMap, "sql"); v != "" {
+				widget.Config["sql"] = v
+			}
 		}
 
 		widget.Query = query
@@ -1352,14 +1387,18 @@ func (s *ToolBusService) handleCreateApp(ctx context.Context, req mcp.CallToolPa
 		return mcp.CallToolResult{}, err
 	}
 
-	name, ok1 := req.Arguments["name"].(string)
+	appID, ok1 := req.Arguments["id"].(string)
 	label, ok2 := req.Arguments["label"].(string)
 
-	if !ok1 || !ok2 {
-		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "name and label are required"}}}, nil
+	if !ok1 || appID == "" {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "id is required (e.g., 'sales_app')"}}}, nil
+	}
+	if !ok2 || label == "" {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "label is required (e.g., 'Sales App')"}}}, nil
 	}
 
 	description, _ := req.Arguments["description"].(string)
+	icon, _ := req.Arguments["icon"].(string)
 
 	var navItems []models.NavigationItem
 	itemsRaw := req.Arguments["navigation_items"]
@@ -1397,8 +1436,10 @@ func (s *ToolBusService) handleCreateApp(ctx context.Context, req mcp.CallToolPa
 	}
 
 	app := models.AppConfig{
+		ID:              appID,
 		Label:           label,
 		Description:     description,
+		Icon:            icon,
 		NavigationItems: navItems,
 	}
 
@@ -1407,7 +1448,7 @@ func (s *ToolBusService) handleCreateApp(ctx context.Context, req mcp.CallToolPa
 		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to create app: %v", err)}}}, nil
 	}
 
-	msg := fmt.Sprintf("Successfully created app '%s' (%s)", label, name)
+	msg := fmt.Sprintf("Successfully created app '%s' (%s)", label, appID)
 	if id != "" {
 		msg += fmt.Sprintf(" with ID: %s", id)
 	}

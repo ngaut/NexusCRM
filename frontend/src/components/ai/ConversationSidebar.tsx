@@ -79,6 +79,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                                         className="delete-button"
                                         onClick={(e) => {
                                             e.stopPropagation();
+                                            e.preventDefault();
                                             onDeleteConversation(conv.id);
                                         }}
                                         title="Delete conversation"

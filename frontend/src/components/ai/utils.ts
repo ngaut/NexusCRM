@@ -1,6 +1,6 @@
 
 import { ChatMessage } from '../../infrastructure/api/agent';
-import { DisplayItem, ToolBlock, ProcessStep } from './types';
+import { DisplayItem, ToolBlock, ProcessStep, ThinkingBlock } from './types';
 
 export const formatToolName = (name: string) => {
     return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -84,6 +84,16 @@ export const buildDisplayItems = (messages: ChatMessage[]): DisplayItem[] => {
         if (systemMessages.has(i) || consumedToolResults.has(i)) continue;
 
         const msg = messages[i];
+
+        // 1. Render Thinking Block if reasoning exists
+        if (msg.role === 'assistant' && msg.reasoning_content) {
+            displayItems.push({
+                type: 'thinking_block',
+                id: `think-${i}`,
+                content: msg.reasoning_content,
+                timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
+            });
+        }
 
         // Handle Assistant with Tool Calls
         if (msg.role === 'assistant' && msg.tool_calls && msg.tool_calls.length > 0) {

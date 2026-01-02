@@ -8,6 +8,16 @@ import (
 	"github.com/nexuscrm/shared/pkg/models"
 )
 
+// normalizeWidgets ensures all widgets have IDs
+func normalizeWidgets(widgets []models.WidgetConfig) []models.WidgetConfig {
+	for i := range widgets {
+		if widgets[i].ID == "" {
+			widgets[i].ID = GenerateID()
+		}
+	}
+	return widgets
+}
+
 // ==================== Dashboard Methods ====================
 
 // GetDashboards returns all dashboards
@@ -52,6 +62,9 @@ func (ms *MetadataService) CreateDashboard(dashboard *models.DashboardConfig) er
 	if existing != nil {
 		return fmt.Errorf("dashboard with ID '%s' already exists", dashboard.ID)
 	}
+
+	// Normalize widgets: ensure IDs and map legacy types
+	dashboard.Widgets = normalizeWidgets(dashboard.Widgets)
 
 	widgetsJSON, err := MarshalJSONOrDefault(dashboard.Widgets, "[]")
 	if err != nil {
@@ -99,6 +112,9 @@ func (ms *MetadataService) UpdateDashboard(id string, updates *models.DashboardC
 	}
 
 	existing.ID = id
+
+	// Normalize widgets: ensure IDs and map legacy types
+	existing.Widgets = normalizeWidgets(existing.Widgets)
 
 	widgetsJSON, err := MarshalJSONOrDefault(existing.Widgets, "[]")
 	if err != nil {

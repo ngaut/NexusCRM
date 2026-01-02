@@ -18,6 +18,7 @@ export interface ChatMessage {
     tool_calls?: ToolCall[];
     tool_call_id?: string;
     timestamp?: string; // ISO timestamp string from backend
+    reasoning_content?: string; // Internal thinking/chain-of-thought
 }
 
 export interface ChatRequest {

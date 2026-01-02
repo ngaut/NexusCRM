@@ -15,6 +15,8 @@ type Message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 	Name    string `json:"name,omitempty"`
+	// ReasoningContent captures internal thinking from models like DeepSeek/Nemotron
+	ReasoningContent string `json:"reasoning_content,omitempty"`
 	// ToolCallID is required for tool response messages
 	ToolCallID string `json:"tool_call_id,omitempty"`
 	// FunctionCall support omitted in favor of standard 'tools' if supported,

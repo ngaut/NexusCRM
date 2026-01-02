@@ -46,33 +46,60 @@ export const MessageList: React.FC<MessageListProps> = ({
                 <EmptyState onPromptSelect={onPromptSelect} />
             )}
 
-            {buildDisplayItems(messages).map((item, idx) => {
-                // Skip ToolBlock during active streaming - processSteps shows live progress
-                // This prevents duplicate display of "X operations completed" alongside "Running X operations..."
-                if ('type' in item && item.type === 'tool_block' && isLoading) {
-                    return null;
-                }
+            {(() => {
+                const displayItems = buildDisplayItems(messages);
+                return displayItems.map((item, idx) => {
+                    // Skip ToolBlock during active streaming ONLY if it's the last item
+                    // This preserves history while preventing duplicate display of the current active operation
+                    if ('type' in item && item.type === 'tool_block' && isLoading && idx === displayItems.length - 1) {
+                        return null;
+                    }
 
-                // Render Tool Block (only when not loading)
-                if ('type' in item && item.type === 'tool_block') {
-                    return <ToolExecutionSummary key={item.id} block={item as ToolBlock} formatToolName={formatToolName} />;
-                }
+                    // Render Tool Block (only when not loading)
+                    if ('type' in item && item.type === 'tool_block') {
+                        return <ToolExecutionSummary key={item.id} block={item as ToolBlock} formatToolName={formatToolName} />;
+                    }
 
-                // Render Summary Block
-                if ('type' in item && item.type === 'summary_block') {
-                    return <ConversationSummaryCard
-                        key={item.id}
-                        summary={item.summary}
-                        stats={item.stats}
-                        compactedAt={item.compactedAt}
-                        timestamp={item.timestamp}
-                    />;
-                }
+                    // Render Summary Block
+                    if ('type' in item && item.type === 'summary_block') {
+                        return <ConversationSummaryCard
+                            key={item.id}
+                            summary={item.summary}
+                            stats={item.stats}
+                            compactedAt={item.compactedAt}
+                            timestamp={item.timestamp}
+                        />;
+                    }
 
-                // Render Chat Message
-                const msg = item as ChatMessage;
-                return <MessageBubble key={`msg-${idx}`} msg={msg} />;
-            })}
+                    // Render Thinking Block (Persistent History)
+                    if ('type' in item && item.type === 'thinking_block') {
+                        // Don't render "Complete" thinking blocks if we are currently loading and this is the very last item,
+                        // because the live active process steps are already showing the "Thinking..." spinner.
+                        // However, we DO want to show it if it's from a previous turn.
+                        if (isLoading && idx === displayItems.length - 1) {
+                            return null;
+                        }
+
+                        return <div className="ml-12 mb-2" key={item.id}>
+                            <ProcessStepCard
+                                step={{
+                                    id: item.id,
+                                    type: 'thinking',
+                                    content: 'Thinking Process', // Or use item.content if we want to show full text relative to a toggle
+                                    toolResult: item.content, // Pass full thinking text as result so it can be expanded/viewed
+                                    isDone: true,
+                                    timestamp: item.timestamp
+                                }}
+                                formatToolName={formatToolName}
+                            />
+                        </div>;
+                    }
+
+                    // Render Chat Message
+                    const msg = item as ChatMessage;
+                    return <MessageBubble key={`msg-${idx}`} msg={msg} />;
+                })
+            })()}
 
             {/* Process Steps - Collapsible Summary (only during active loading) */}
             {isLoading && processSteps.length > 0 && (

@@ -3795,6 +3795,12 @@
                 "name": "last_modified_date",
                 "type": "DATETIME",
                 "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            },
+            {
+                "name": "is_deleted",
+                "type": "TINYINT(1)",
+                "default": "0",
+                "nullable": false
             }
         ]
     }

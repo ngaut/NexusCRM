@@ -37,4 +37,11 @@ export interface SummaryBlock {
     timestamp: Date;
 }
 
-export type DisplayItem = ChatMessage | ToolBlock | SummaryBlock;
+export interface ThinkingBlock {
+    type: 'thinking_block';
+    id: string;
+    content: string;
+    timestamp: Date;
+}
+
+export type DisplayItem = ChatMessage | ToolBlock | SummaryBlock | ThinkingBlock;

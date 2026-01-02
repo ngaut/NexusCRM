@@ -159,14 +159,16 @@
 
 .delete-button {
     opacity: 0;
-    background: transparent;
+    background: rgba(139, 92, 246, 0.3);
     border: none;
-    color: var(--ai-text-secondary, #888);
+    color: var(--ai-text-primary, #fff);
     cursor: pointer;
-    padding: 4px;
+    padding: 6px 8px;
     font-size: 12px;
     border-radius: 4px;
     transition: all 0.15s ease;
+    position: relative;
+    z-index: 10;
 }
 
 .conversation-item:hover .delete-button {

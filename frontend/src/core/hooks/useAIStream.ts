@@ -9,6 +9,7 @@ export function useAIStream() {
     const [processSteps, setProcessSteps] = useState<ProcessStep[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [streamingContent, setStreamingContent] = useState<string>('');
+    const [accumulatedThinking, setAccumulatedThinking] = useState<string>('');
     const [isProcessExpanded, setIsProcessExpanded] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
 
@@ -116,36 +117,50 @@ export function useAIStream() {
 
         switch (event.type) {
             case 'thinking':
+                const thinkContent = event.content || 'Thinking...';
+                setAccumulatedThinking(prev => prev + thinkContent);
                 setProcessSteps(prev => [
-                    ...prev.filter(s => s.type !== 'thinking'),
+                    ...prev,
                     {
                         id: stepId,
                         type: 'thinking',
-                        content: event.content || 'Thinking...',
+                        content: thinkContent,
                         timestamp: new Date()
                     }
                 ]);
                 break;
 
             case 'tool_call':
-                setProcessSteps(prev => [
-                    ...prev.filter(s => s.type !== 'thinking'),
-                    {
-                        id: stepId,
-                        type: 'tool_call',
-                        content: `Calling ${event.tool_name}`,
-                        toolName: event.tool_name,
-                        toolArgs: event.tool_args,
-                        timestamp: new Date()
-                    }
-                ]);
+                setProcessSteps(prev => {
+                    // Mark any active thinking steps as done
+                    const steps = prev.map(s =>
+                        s.type === 'thinking' && !s.isDone
+                            ? { ...s, isDone: true }
+                            : s
+                    );
+
+                    return [
+                        ...steps,
+                        {
+                            id: stepId,
+                            type: 'tool_call',
+                            content: `Calling ${event.tool_name}`,
+                            toolName: event.tool_name,
+                            toolArgs: event.tool_args,
+                            timestamp: new Date()
+                        }
+                    ];
+                });
 
                 if (event.tool_name && event.tool_args) {
                     setMessages(prev => {
                         const lastMsg = prev[prev.length - 1];
+                        // If the last message is an assistant message and already has tool_calls, we append to it.
+                        // We also need to ensure we preserve/update the reasoning_content on this message.
                         if (lastMsg && lastMsg.role === 'assistant' && lastMsg.tool_calls) {
                             return [...prev.slice(0, -1), {
                                 ...lastMsg,
+                                reasoning_content: accumulatedThinking, // Persist accumulated thinking
                                 tool_calls: [...lastMsg.tool_calls, {
                                     id: event.tool_call_id || `call_${Date.now()}`,
                                     type: 'function',
@@ -156,9 +171,11 @@ export function useAIStream() {
                                 }]
                             }];
                         } else {
+                            // New assistant message frame
                             return [...prev, {
                                 role: 'assistant',
                                 content: '',
+                                reasoning_content: accumulatedThinking, // Persist accumulated thinking
                                 tool_calls: [{
                                     id: event.tool_call_id || `call_${Date.now()}`,
                                     type: 'function',
@@ -191,6 +208,7 @@ export function useAIStream() {
                                 type: 'tool_result' as const,
                                 toolResult: event.tool_result,
                                 isError: event.is_error,
+                                isDone: true,
                                 content: event.is_error
                                     ? `${event.tool_name} failed`
                                     : `${event.tool_name} completed`
@@ -212,8 +230,19 @@ export function useAIStream() {
                 break;
 
             case 'content':
-                setProcessSteps(prev => prev.filter(s => s.type !== 'thinking'));
+                setProcessSteps(prev => prev.map(s =>
+                    s.type === 'thinking' && !s.isDone
+                        ? { ...s, isDone: true }
+                        : s
+                ));
                 setStreamingContent(prev => prev + (event.content || ''));
+
+                // Also update the message list if we are streaming the final response, 
+                // ensuring reasoning is attached if it exists (though usually content stream is separate)
+                // Note: We don't usually update 'messages' for streaming content until 'done', 
+                // but if we wanted real-time persistence of reasoning + content, we'd do it here.
+                // For now, streamingContent handles the visual part, but let's make sure 
+                // the final 'done' event captures it, or we rely on 'streamingContent' visual.
                 break;
 
             case 'done':
@@ -245,6 +274,7 @@ export function useAIStream() {
                         type: 'thinking' as const,
                         content: event.content || `Context auto-compacted (${event.tokens_before?.toLocaleString()} → ${event.tokens_after?.toLocaleString()} tokens)`,
                         timestamp: new Date(),
+                        isDone: true
                     }
                 ]);
                 break;
@@ -261,13 +291,14 @@ export function useAIStream() {
         setIsLoading(true);
         setProcessSteps([]);
         setStreamingContent('');
+        setAccumulatedThinking('');
         setIsProcessExpanded(true);
 
         abortControllerRef.current = agentApi.chatStream(
             { messages: newHistory },
             handleStreamEvent,
             (error) => {
-                console.error('Stream error:', error);
+                console.warn('Stream error:', error);
                 setIsLoading(false);
                 setMessages(prev => [
                     ...prev,
@@ -328,7 +359,7 @@ export function useAIStream() {
                 localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(response.messages));
             }
         } catch (error) {
-            console.error('Failed to load conversation:', error);
+            console.warn('Failed to load conversation:', error);
         }
     }, [currentConversationId]);
 
@@ -345,7 +376,7 @@ export function useAIStream() {
                 localStorage.removeItem(STORAGE_KEY_MESSAGES);
             }
         } catch (error) {
-            console.error('Failed to delete conversation:', error);
+            console.warn('Failed to delete conversation:', error);
         }
     }, [currentConversationId]);
 
@@ -361,7 +392,7 @@ export function useAIStream() {
             const response = await agentApi.compact(compactRequest);
             setMessages(response.messages);
         } catch (err) {
-            console.error('Failed to compact messages:', err);
+            console.warn('Failed to compact messages:', err);
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 content: `❌ Failed to compact context: ${err instanceof Error ? err.message : 'Unknown error'}`
