@@ -75,8 +75,8 @@ export const DashboardInspector: React.FC<DashboardInspectorProps> = ({
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Content (Markdown)</label>
                             <textarea
-                                value={selectedWidget.content || ''}
-                                onChange={(e) => onUpdate({ content: e.target.value })}
+                                value={typeof selectedWidget.config?.content === 'string' ? selectedWidget.config.content : ''}
+                                onChange={(e) => onUpdate({ config: { ...selectedWidget.config, content: e.target.value } })}
                                 rows={6}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500"
                                 placeholder="# Heading..."
@@ -89,8 +89,8 @@ export const DashboardInspector: React.FC<DashboardInspectorProps> = ({
                             <label className="block text-sm font-medium text-slate-700 mb-1">Image URL</label>
                             <input
                                 type="text"
-                                value={selectedWidget.imageUrl || ''}
-                                onChange={(e) => onUpdate({ imageUrl: e.target.value })}
+                                value={typeof selectedWidget.config?.imageUrl === 'string' ? selectedWidget.config.imageUrl : ''}
+                                onChange={(e) => onUpdate({ config: { ...selectedWidget.config, imageUrl: e.target.value } })}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                                 placeholder="https://..."
                             />

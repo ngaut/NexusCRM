@@ -19,15 +19,17 @@ ensure_standard_objects_exist() {
             "list_fields": ["name", "industry", "type", "website", "phone"]
         }' > /dev/null
         
-        # Core Fields
-        api_post "/api/metadata/objects/account/fields" '{"api_name": "name", "label": "Account Name", "type": "Text", "required": true, "is_name_field": true}' > /dev/null
-        api_post "/api/metadata/objects/account/fields" '{"api_name": "industry", "label": "Industry", "type": "Select", "options": ["Technology", "Finance", "Healthcare"]}' > /dev/null
-        api_post "/api/metadata/objects/account/fields" '{"api_name": "type", "label": "Type", "type": "Select", "options": ["Customer", "Partner", "Prospect"]}' > /dev/null
-        api_post "/api/metadata/objects/account/fields" '{"api_name": "website", "label": "Website", "type": "URL"}' > /dev/null
-        api_post "/api/metadata/objects/account/fields" '{"api_name": "annual_revenue", "label": "Annual Revenue", "type": "Currency"}' > /dev/null
-        api_post "/api/metadata/objects/account/fields" '{"api_name": "phone", "label": "Phone", "type": "Phone"}' > /dev/null
-        api_post "/api/metadata/objects/account/fields" '{"api_name": "theme_color", "label": "Theme Color", "type": "Text"}' > /dev/null
+
     fi
+        
+    # Core Fields (Idempotent: Try to create, ignore if exists)
+    api_post "/api/metadata/objects/account/fields" '{"api_name": "name", "label": "Account Name", "type": "Text", "required": true, "is_name_field": true}' > /dev/null
+    api_post "/api/metadata/objects/account/fields" '{"api_name": "industry", "label": "Industry", "type": "Select", "options": ["Technology", "Finance", "Healthcare"]}' > /dev/null
+    api_post "/api/metadata/objects/account/fields" '{"api_name": "type", "label": "Type", "type": "Select", "options": ["Customer", "Partner", "Prospect"]}' > /dev/null
+    api_post "/api/metadata/objects/account/fields" '{"api_name": "website", "label": "Website", "type": "URL"}' > /dev/null
+    api_post "/api/metadata/objects/account/fields" '{"api_name": "annual_revenue", "label": "Annual Revenue", "type": "Currency"}' > /dev/null
+    api_post "/api/metadata/objects/account/fields" '{"api_name": "phone", "label": "Phone", "type": "Phone"}' > /dev/null
+    api_post "/api/metadata/objects/account/fields" '{"api_name": "theme_color", "label": "Theme Color", "type": "Text"}' > /dev/null
 
     # CONTACT
     if ! api_get "/api/metadata/objects/contact" | grep -q '"api_name":"contact"'; then

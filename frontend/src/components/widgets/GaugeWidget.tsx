@@ -17,7 +17,7 @@ export const GaugeWidget: React.FC<WidgetRendererProps> = ({ title, config, data
             // Apply Global Filters
             if (globalFilters) {
                 const parts: string[] = [];
-                if (queryWithFilters.filterExpr) parts.push(`(${queryWithFilters.filterExpr})`);
+                if (queryWithFilters.filter_expr) parts.push(`(${queryWithFilters.filter_expr})`);
 
                 if (globalFilters.ownerId) {
                     parts.push(`${FieldOwnerID} == '${globalFilters.ownerId}'`);
@@ -29,7 +29,7 @@ export const GaugeWidget: React.FC<WidgetRendererProps> = ({ title, config, data
                     parts.push(`${FieldCreatedDate} <= '${globalFilters.endDate}'`);
                 }
                 if (parts.length > 0) {
-                    queryWithFilters.filterExpr = parts.join(' && ');
+                    queryWithFilters.filter_expr = parts.join(' && ');
                 }
             }
 

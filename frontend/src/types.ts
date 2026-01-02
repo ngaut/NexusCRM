@@ -312,7 +312,7 @@ export interface AnalyticsQuery {
   operation: 'count' | 'sum' | 'avg' | 'group_by';
   field?: string; // The field to sum/avg or group by
   group_by?: string;
-  filterExpr?: string;
+  filter_expr?: string;
 }
 
 export interface ChartDataEntry {
@@ -347,7 +347,7 @@ export interface WidgetConfig {
   title: string;
   type: string; // dynamic type (was 'metric' | 'chart-bar' | ...)
   query?: AnalyticsQuery; // Optional now? Or just used for standard widgets
-  sql?: string; // For SQL Widgets
+  config: Record<string, unknown>; // Flexible config for widget-specific settings (SQL, Markdown content, etc.)
 
   // React-Grid-Layout props
   x?: number;
@@ -356,8 +356,6 @@ export interface WidgetConfig {
   h?: number;
   icon?: string;
   color?: string;
-  content?: string; // For Text/Markdown widgets
-  imageUrl?: string; // For Image widgets
 }
 
 export interface DashboardConfig {

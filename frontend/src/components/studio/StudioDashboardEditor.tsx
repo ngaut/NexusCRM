@@ -111,8 +111,10 @@ export const StudioDashboardEditor: React.FC<StudioDashboardEditorProps> = ({ da
             y: layoutItem.y,
             w: defaultW,
             h: defaultH,
-            content: widgetType === 'text' ? '### New Text Block\nDouble click inspector to edit.' : undefined,
-            imageUrl: widgetType === 'image' ? 'https://via.placeholder.com/300' : undefined
+            config: {
+                content: widgetType === 'text' ? '### New Text Block\nDouble click inspector to edit.' : undefined,
+                imageUrl: widgetType === 'image' ? 'https://via.placeholder.com/300' : undefined
+            }
         };
 
         setWidgets(prev => [...prev, newWidget]);
@@ -146,8 +148,10 @@ export const StudioDashboardEditor: React.FC<StudioDashboardEditorProps> = ({ da
             y: maxY, // Put at bottom
             w: defaultW,
             h: defaultH,
-            content: widgetType === 'text' ? '### New Text Block\nDouble click inspector to edit.' : undefined,
-            imageUrl: widgetType === 'image' ? 'https://via.placeholder.com/300' : undefined
+            config: {
+                content: widgetType === 'text' ? '### New Text Block\nDouble click inspector to edit.' : undefined,
+                imageUrl: widgetType === 'image' ? 'https://via.placeholder.com/300' : undefined
+            }
         };
         setWidgets(prev => [...prev, newWidget]);
         setSelectedWidgetId(newId);

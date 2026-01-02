@@ -27,19 +27,22 @@ export const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
 }) => {
 
     const renderWidgetContent = (widget: WidgetConfig) => {
+
         // Special Non-Data Widgets
         if (widget.type === 'text') {
+            const content = typeof widget.config?.content === 'string' ? widget.config.content : '';
             return (
                 <div className="p-4 h-full overflow-auto prose prose-sm max-w-none">
-                    <ReactMarkdown>{widget.content || ''}</ReactMarkdown>
+                    <ReactMarkdown>{content}</ReactMarkdown>
                 </div>
             );
         }
         if (widget.type === 'image') {
+            const imageUrl = typeof widget.config?.imageUrl === 'string' ? widget.config.imageUrl : '';
             return (
                 <div className="h-full w-full flex items-center justify-center overflow-hidden bg-slate-50">
-                    {widget.imageUrl ? (
-                        <img src={widget.imageUrl} alt={widget.title} className="max-w-full max-h-full object-contain" />
+                    {imageUrl ? (
+                        <img src={imageUrl} alt={widget.title} className="max-w-full max-h-full object-contain" />
                     ) : (
                         <div className="text-slate-400">No Image URL</div>
                     )}

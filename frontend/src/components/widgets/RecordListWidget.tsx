@@ -65,7 +65,7 @@ export const RecordListWidget: React.FC<WidgetRendererProps> = ({
                     <div className="h-full overflow-auto p-2">
                         <MetadataRecordList
                             objectMetadata={schema}
-                            filterExpr={config.query?.filterExpr}
+                            filterExpr={config.query?.filter_expr}
                         />
                     </div>
                 ) : (

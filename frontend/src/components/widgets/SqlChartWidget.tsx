@@ -18,8 +18,9 @@ export const SqlChartWidget: React.FC<WidgetRendererProps> = ({
     const { user } = useRuntime();
     const isAdmin = user?.profile_id === 'system_admin' || user?.role_id === 'admin';
 
-    // SQL can be in config.sql (frontend direct) OR config.config.sql (from backend JSON)
-    const configuredSql = config.sql || (config as { config?: { sql?: string } }).config?.sql || '';
+    // SQL is in config.config.sql (mapped from backend JSON)
+    const rawSql = config.config?.sql;
+    const configuredSql = typeof rawSql === 'string' ? rawSql : '';
 
     const [data, setData] = useState<Record<string, unknown>[]>([]);
     const [loading, setLoading] = useState(false);
@@ -68,8 +69,14 @@ export const SqlChartWidget: React.FC<WidgetRendererProps> = ({
 
 
             // Save the SQL back to config if it changed and we have the callback
-            if (sqlInput !== config.sql && onConfigUpdate) {
-                onConfigUpdate({ sql: sqlInput });
+            if (sqlInput !== configuredSql && onConfigUpdate) {
+                // Update the nested config map
+                onConfigUpdate({
+                    config: {
+                        ...config.config,
+                        sql: sqlInput
+                    }
+                });
             }
 
             const result = await analyticsAPI.executeAdminQuery(finalSql, finalParams);
