@@ -253,8 +253,14 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 							},
 							"config": map[string]interface{}{
 								"type":        "object",
-								"description": "Widget-specific config (e.g., chart_type, columns for list)",
+								"description": "Widget-specific config (e.g., chart_type, columns, sql, content, imageUrl)",
 							},
+							"x":     map[string]interface{}{"type": "integer", "description": "Grid X position (0-11)"},
+							"y":     map[string]interface{}{"type": "integer", "description": "Grid Y position"},
+							"w":     map[string]interface{}{"type": "integer", "description": "Grid Width (1-12)"},
+							"h":     map[string]interface{}{"type": "integer", "description": "Grid Height"},
+							"icon":  map[string]interface{}{"type": "string", "description": "Icon name (e.g. 'Users')"},
+							"color": map[string]interface{}{"type": "string", "description": "Widget accent color (hex or name)"},
 						},
 						"required": []string{"title", "type"},
 					},
@@ -290,6 +296,18 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 					"type":        "string",
 					"enum":        []string{"Private", "PublicRead", "PublicReadWrite"},
 					"description": "Object sharing model (default Private)",
+				},
+				"icon": map[string]interface{}{
+					"type":        "string",
+					"description": "Lucide icon name (e.g. 'Box', 'User')",
+				},
+				"theme_color": map[string]interface{}{
+					"type":        "string",
+					"description": "Theme color hex code or name (e.g. '#FF0000', 'blue')",
+				},
+				"enable_hierarchy_sharing": map[string]interface{}{
+					"type":        "boolean",
+					"description": "Use hierarchy for sharing access",
 				},
 			},
 			"required": []string{"api_name", "label", "plural_label"},
@@ -541,6 +559,27 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 				"description": map[string]interface{}{
 					"type":        "string",
 					"description": "New description",
+				},
+				"plural_label": map[string]interface{}{
+					"type":        "string",
+					"description": "New plural label",
+				},
+				"icon": map[string]interface{}{
+					"type":        "string",
+					"description": "New icon name",
+				},
+				"theme_color": map[string]interface{}{
+					"type":        "string",
+					"description": "New theme color",
+				},
+				"sharing_model": map[string]interface{}{
+					"type":        "string",
+					"enum":        []string{"Private", "PublicRead", "PublicReadWrite"},
+					"description": "New sharing model",
+				},
+				"enable_hierarchy_sharing": map[string]interface{}{
+					"type":        "boolean",
+					"description": "Enable/Disable hierarchy sharing",
 				},
 			},
 			"required": []string{"object_name"},
@@ -1178,116 +1217,25 @@ func (s *ToolBusService) handleCreateDashboard(ctx context.Context, req mcp.Call
 		return mcp.CallToolResult{}, err
 	}
 
-	// Parse required fields
-	name, ok := req.Arguments["name"].(string)
-	if !ok || name == "" {
-		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "name is required"}}}, nil
-	}
-
-	widgetsRaw, ok := req.Arguments["widgets"].([]interface{})
-	if !ok {
-		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "widgets array is required"}}}, nil
-	}
-
-	// Parse optional fields
-	description, _ := req.Arguments["description"].(string)
-	label, _ := req.Arguments["label"].(string)
-	if label == "" {
-		label = name
-	}
-	layout, _ := req.Arguments["layout"].(string)
-	if layout == "" {
-		layout = "two-column"
-	}
-
-	// Valid widget types (must match frontend DashboardWidgetRegistry)
-	validWidgetTypes := map[string]bool{
-		"metric": true, "chart-bar": true, "chart-pie": true, "chart-line": true,
-		"chart-funnel": true, "chart-gauge": true, "record-list": true, "kanban": true, "sql-chart": true,
-	}
-
-	// Convert widgets to proper struct
-	var widgets []models.DashboardWidget
-	for i, w := range widgetsRaw {
-		widgetMap, ok := w.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		widgetType := getStringFromMap(widgetMap, "type")
-		widgetTitle := getStringFromMap(widgetMap, "title")
-
-		// Validate widget type
-		if widgetType == "" {
-			return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Widget %d ('%s'): type is required. Valid types: metric, chart-bar, chart-pie, chart-line, chart-funnel, chart-gauge, record-list, kanban, sql-chart", i+1, widgetTitle)}}}, nil
-		}
-		if !validWidgetTypes[widgetType] {
-			return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Widget %d ('%s'): invalid type '%s'. Valid types: metric, chart-bar, chart-pie, chart-line, chart-funnel, chart-gauge, record-list, kanban, sql-chart", i+1, widgetTitle, widgetType)}}}, nil
-		}
-
-		widget := models.DashboardWidget{
-			Title:  widgetTitle,
-			Type:   widgetType,
-			Config: make(map[string]interface{}),
-		}
-
-		query := models.AnalyticsQuery{}
-
-		// Parse query object
-		if queryMap, ok := widgetMap["query"].(map[string]interface{}); ok {
-			if v := getStringFromMap(queryMap, "object_api_name"); v != "" {
-				query.ObjectAPIName = v
-			}
-			if v := getStringFromMap(queryMap, "operation"); v != "" {
-				query.Operation = v
-			}
-			if v := getStringFromMap(queryMap, "field"); v != "" {
-				query.Field = &v
-			}
-			if v := getStringFromMap(queryMap, "group_by"); v != "" {
-				query.GroupBy = &v
-			}
-			if v := getStringFromMap(queryMap, "filter_expr"); v != "" {
-				query.FilterExpr = v
-			}
-		}
-
-		// Parse config options
-		if configMap, ok := widgetMap["config"].(map[string]interface{}); ok {
-			if cols, ok := configMap["columns"].([]interface{}); ok {
-				var colStrings []string
-				for _, c := range cols {
-					if cs, ok := c.(string); ok {
-						colStrings = append(colStrings, cs)
-					}
-				}
-				widget.Config["columns"] = colStrings
-			}
-			if v := getStringFromMap(configMap, "chart_type"); v != "" {
-				widget.Config["chart_type"] = v
-			}
-			if v := getStringFromMap(configMap, "sql"); v != "" {
-				widget.Config["sql"] = v
-			}
-		}
-
-		widget.Query = query
-		widgets = append(widgets, widget)
-	}
-
-	dashboard := models.DashboardCreate{
-		Label:       label,
-		Description: &description,
-		Layout:      layout,
-		Widgets:     widgets,
-	}
-
-	id, err := s.client.CreateDashboard(ctx, dashboard, token)
+	// Root Fix: Use JSON serialization to robustly map all fields (including layout, config, content)
+	// instead of manual extraction which causes data loss.
+	jsonBytes, err := json.Marshal(req.Arguments)
 	if err != nil {
-		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Create dashboard failed: %v", err)}}}, nil
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to parse params: %v", err)}}}, nil
+	}
+
+	var startDashboard models.DashboardCreate
+	if err := json.Unmarshal(jsonBytes, &startDashboard); err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Invalid dashboard parameters: %v", err)}}}, nil
+	}
+
+	id, err := s.client.CreateDashboard(ctx, startDashboard, token)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to create dashboard: %v", err)}}}, nil
 	}
 
 	return mcp.CallToolResult{
-		Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully created dashboard '%s' with ID: %s", name, id)}},
+		Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully created dashboard '%s' (ID: %s)", startDashboard.Label, id)}},
 	}, nil
 }
 
@@ -1297,30 +1245,26 @@ func (s *ToolBusService) handleCreateObject(ctx context.Context, req mcp.CallToo
 		return mcp.CallToolResult{}, err
 	}
 
-	apiName, ok1 := req.Arguments["api_name"].(string)
-	label, ok2 := req.Arguments["label"].(string)
-	pluralLabel, ok3 := req.Arguments["plural_label"].(string)
-
-	if !ok1 || !ok2 || !ok3 {
-		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "api_name, label, and plural_label are required"}}}, nil
+	// Root Fix: Use JSON serialization
+	jsonBytes, err := json.Marshal(req.Arguments)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to parse params: %v", err)}}}, nil
 	}
 
-	description, _ := req.Arguments["description"].(string)
-
-	schema := models.ObjectMetadata{
-		APIName:     apiName,
-		Label:       label,
-		PluralLabel: pluralLabel,
-		Description: &description,
-		IsCustom:    true,
+	var schema models.ObjectMetadata
+	if err := json.Unmarshal(jsonBytes, &schema); err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Invalid object parameters: %v", err)}}}, nil
 	}
+
+	// Ensure IsCustom is defaults to true unless specified (backend usually handles logic, but nice to be explicit)
+	schema.IsCustom = true
 
 	if err := s.client.CreateObject(ctx, schema, token); err != nil {
 		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to create object: %v", err)}}}, nil
 	}
 
 	return mcp.CallToolResult{
-		Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully created object '%s' (%s)", label, apiName)}},
+		Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully created object '%s' (%s)", schema.Label, schema.APIName)}},
 	}, nil
 }
 
@@ -1596,13 +1540,26 @@ func (s *ToolBusService) handleUpdateObject(ctx context.Context, arguments map[s
 		return mcp.CallToolResult{}, err
 	}
 
-	objectName, _ := arguments["object_name"].(string)
-	var schema models.ObjectMetadata
-	if label, ok := arguments["label"].(string); ok {
-		schema.Label = label
+	objectName, ok := arguments["object_name"].(string)
+	if !ok || objectName == "" {
+		// Fallback check if 'api_name' was used (common AI mistake due to create_object usage)
+		if n, ok := arguments["api_name"].(string); ok {
+			objectName = n
+		} else {
+			return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "object_name is required"}}}, nil
+		}
 	}
-	if desc, ok := arguments["description"].(string); ok {
-		schema.Description = &desc
+
+	// Root Fix: Use JSON serialization
+	// Note: We strip object_name/api_name from map? No need, extra fields ignored by Unmarshal or overwrite APIName field which is fine. (we use objectName var for URL)
+	jsonBytes, err := json.Marshal(arguments)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to parse params: %v", err)}}}, nil
+	}
+
+	var schema models.ObjectMetadata
+	if err := json.Unmarshal(jsonBytes, &schema); err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Invalid update parameters: %v", err)}}}, nil
 	}
 
 	if err := s.client.UpdateObject(ctx, objectName, schema, token); err != nil {
