@@ -54,10 +54,12 @@ test_create_scheduled_job() {
     }'
     
     local flow_res=$(api_post "/api/metadata/flows" "$flow_payload")
-    SCHEDULED_JOB_ID=$(json_extract "$flow_res" "id")
+    
+    # Extract ID from nested data.id
+    SCHEDULED_JOB_ID=$(echo "$flow_res" | jq -r '.data.id // .id // empty' 2>/dev/null)
     
     if [ -z "$SCHEDULED_JOB_ID" ]; then
-        echo "  Could not create scheduled job"
+        echo "  Could not extract job ID"
         echo "  Response: $flow_res"
         test_passed "Scheduled job creation attempted"
         return
@@ -72,10 +74,10 @@ test_list_scheduled_jobs() {
     echo ""
     echo "Test 50.2: List Scheduled Jobs"
     
-    # Query flows with trigger_type = schedule
+    # Query flows with trigger_type == 'schedule' (note: == not =)
     local query_payload='{
         "object_api_name": "_system_flow",
-        "filter_expr": "trigger_type = '\''schedule'\''"
+        "filter_expr": "trigger_type == '\''schedule'\''"
     }'
     
     local query_res=$(api_post "/api/data/query" "$query_payload")
@@ -145,7 +147,7 @@ test_update_schedule() {
         "schedule_timezone": "America/New_York"
     }'
     
-    local update_res=$(api_put "/api/metadata/flows/$SCHEDULED_JOB_ID" "$update_payload")
+    local update_res=$(api_patch "/api/metadata/flows/$SCHEDULED_JOB_ID" "$update_payload")
     
     # Verify update by getting the flow again
     local flow_res=$(api_get "/api/metadata/flows/$SCHEDULED_JOB_ID")
