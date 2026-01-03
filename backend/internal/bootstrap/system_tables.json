@@ -1634,6 +1634,37 @@
                 "default": "false"
             },
             {
+                "name": "schedule",
+                "type": "VARCHAR(100)",
+                "nullable": true,
+                "label": "Schedule (Cron)"
+            },
+            {
+                "name": "schedule_timezone",
+                "type": "VARCHAR(100)",
+                "nullable": true,
+                "default": "'UTC'",
+                "label": "Schedule Timezone"
+            },
+            {
+                "name": "last_run_at",
+                "type": "DATETIME",
+                "nullable": true,
+                "label": "Last Run At"
+            },
+            {
+                "name": "next_run_at",
+                "type": "DATETIME",
+                "nullable": true,
+                "label": "Next Run At"
+            },
+            {
+                "name": "is_running",
+                "type": "BOOLEAN",
+                "default": "false",
+                "label": "Is Running"
+            },
+            {
                 "name": "last_modified_date",
                 "type": "DATETIME",
                 "nullable": false,

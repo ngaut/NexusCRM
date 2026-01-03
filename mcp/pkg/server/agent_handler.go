@@ -16,13 +16,21 @@ import (
 	"github.com/nexuscrm/mcp/pkg/llm"
 	"github.com/nexuscrm/mcp/pkg/mcp"
 	"github.com/nexuscrm/mcp/pkg/models"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
+
+// ObjectAIConversation is the system object for storing AI conversations
+const ObjectAIConversation = constants.TableAIConversation
+
+// maxTitleLength is the maximum length for auto-generated conversation titles
+const maxTitleLength = 50
 
 type AgentHandler struct {
 	agentSvc      *agent.AgentService
 	compactor     *compactor.Compactor
 	contextStore  *contextstore.ContextStore
 	userExtractor func(c *gin.Context) *models.UserSession
+	nexusClient   *client.NexusClient
 }
 
 func NewAgentHandler(userExtractor func(c *gin.Context) *models.UserSession, contextStore *contextstore.ContextStore) *AgentHandler {
@@ -48,7 +56,60 @@ func NewAgentHandler(userExtractor func(c *gin.Context) *models.UserSession, con
 		compactor:     agentSvc.GetCompactor(), // Reuse compactor from AgentService
 		contextStore:  contextStore,
 		userExtractor: userExtractor,
+		nexusClient:   nexusClient,
 	}
+}
+
+// extractUserAndToken extracts and validates user session and auth token from request
+func (h *AgentHandler) extractUserAndToken(c *gin.Context) (*models.UserSession, string, error) {
+	user := h.userExtractor(c)
+	if user == nil {
+		return nil, "", fmt.Errorf("unauthorized")
+	}
+	token, err := h.getAuthToken(c)
+	if err != nil {
+		return nil, "", err
+	}
+	return user, token, nil
+}
+
+// getAuthToken extracts the auth token from cookie or header
+func (h *AgentHandler) getAuthToken(c *gin.Context) (string, error) {
+	// Extract Token (Cookie or Header)
+	token, err := c.Cookie("auth_token")
+	if err != nil || token == "" {
+		// Try Header
+		authHeader := c.GetHeader("Authorization")
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			token = authHeader[7:]
+		}
+	}
+	if token == "" {
+		return "", fmt.Errorf("unauthorized")
+	}
+	return token, nil
+}
+
+// verifyOwnership checks if the record belongs to the specified user
+func verifyOwnership(record models.SObject, userID string) bool {
+	return record[constants.FieldUserID] == userID
+}
+
+// generateConversationTitle generates a title from the first user message
+func generateConversationTitle(messages []interface{}) string {
+	for _, msg := range messages {
+		if msgMap, ok := msg.(map[string]interface{}); ok {
+			if msgMap["role"] == "user" {
+				if content, ok := msgMap["content"].(string); ok {
+					if len(content) > maxTitleLength {
+						return content[:maxTitleLength-3] + "..."
+					}
+					return content
+				}
+			}
+		}
+	}
+	return "New Conversation"
 }
 
 // ChatStream handles SSE streaming for agent chat
@@ -67,20 +128,10 @@ func (h *AgentHandler) ChatStream(c *gin.Context) {
 	}
 	req.User = user
 
-	// Extract Token (Cookie or Header)
-	token, err := c.Cookie("auth_token")
-	if err != nil || token == "" {
-		// Try Header
-		authHeader := c.GetHeader("Authorization")
-		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
-			token = authHeader[7:]
-		}
-	}
+	// Extract Token using helper
+	token, _ := h.getAuthToken(c)
 
 	// Create Context with User AND Token for ToolBus (with cancellation)
-	// Note: We use "user" and "auth_token" keys.
-	// We pass the MCP user object itself into context if needed by tools,
-	// though tools mostly rely on auth_token.
 	ctxValue := context.WithValue(c.Request.Context(), mcp.ContextKeyUser, user)
 	ctxValue = context.WithValue(ctxValue, mcp.ContextKeyAuthToken, token)
 	ctx, cancel := context.WithCancel(ctxValue)
@@ -153,23 +204,6 @@ func (h *AgentHandler) GetContext(c *gin.Context) {
 	})
 }
 
-// getAuthToken extracts the auth token from cookie or header
-func (h *AgentHandler) getAuthToken(c *gin.Context) (string, error) {
-	// Extract Token (Cookie or Header)
-	token, err := c.Cookie("auth_token")
-	if err != nil || token == "" {
-		// Try Header
-		authHeader := c.GetHeader("Authorization")
-		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
-			token = authHeader[7:]
-		}
-	}
-	if token == "" {
-		return "", fmt.Errorf("unauthorized")
-	}
-	return token, nil
-}
-
 // CompactContext compacts conversation history to reduce token usage
 func (h *AgentHandler) CompactContext(c *gin.Context) {
 	var req compactor.CompactRequest
@@ -209,46 +243,35 @@ func (h *AgentHandler) CompactContext(c *gin.Context) {
 // If id query param provided, loads that specific conversation
 // Otherwise loads the active (most recent) conversation
 func (h *AgentHandler) GetConversation(c *gin.Context) {
-	user := h.userExtractor(c)
-	if user == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	token, err := h.getAuthToken(c)
+	user, token, err := h.extractUserAndToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-
-	apiBaseURL := "http://localhost:3001"
-	if url := os.Getenv("API_BASE_URL"); url != "" {
-		apiBaseURL = url
-	}
-	nexusClient := client.NewNexusClient(apiBaseURL)
 
 	convID := c.Query("id")
 	var record models.SObject
 
 	if convID != "" {
 		// Load specific conversation by ID
-		record, err = nexusClient.GetRecord(c.Request.Context(), "_System_AI_Conversation", convID, token)
+		record, err = h.nexusClient.GetRecord(c.Request.Context(), ObjectAIConversation, convID, token)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "conversation not found"})
 			return
 		}
 		// Verify ownership
-		if record["user_id"] != user.ID {
+		if !verifyOwnership(record, user.ID) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "not your conversation"})
 			return
 		}
 	} else {
 		// Load most recent active conversation
 		queryReq := models.QueryRequest{
-			ObjectAPIName: "_System_AI_Conversation",
+			ObjectAPIName: ObjectAIConversation,
 			FilterExpr:    fmt.Sprintf("user_id == '%s' && is_active == true", user.ID),
 			Limit:         1,
 		}
-		records, err := nexusClient.Query(c.Request.Context(), queryReq, token)
+		records, err := h.nexusClient.Query(c.Request.Context(), queryReq, token)
 		if err != nil || len(records) == 0 {
 			c.JSON(http.StatusOK, gin.H{
 				"conversation": nil,
@@ -274,7 +297,7 @@ func (h *AgentHandler) GetConversation(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"conversation": gin.H{
-			"id":    record["id"],
+			"id":    record[constants.FieldID],
 			"title": record["title"],
 		},
 		"messages": messages,
@@ -285,12 +308,7 @@ func (h *AgentHandler) GetConversation(c *gin.Context) {
 // If conversation_id provided, updates that conversation
 // If no conversation_id, creates new conversation (sets as active)
 func (h *AgentHandler) SaveConversation(c *gin.Context) {
-	user := h.userExtractor(c)
-	if user == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	token, err := h.getAuthToken(c)
+	user, token, err := h.extractUserAndToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -306,23 +324,17 @@ func (h *AgentHandler) SaveConversation(c *gin.Context) {
 		return
 	}
 
-	apiBaseURL := "http://localhost:3001"
-	if url := os.Getenv("API_BASE_URL"); url != "" {
-		apiBaseURL = url
-	}
-	nexusClient := client.NewNexusClient(apiBaseURL)
-
 	messagesJSON, _ := json.Marshal(req.Messages)
 
 	if req.ConversationID != "" {
 		// Update existing conversation
 		// Verify ownership first
-		record, err := nexusClient.GetRecord(c.Request.Context(), "_System_AI_Conversation", req.ConversationID, token)
+		record, err := h.nexusClient.GetRecord(c.Request.Context(), ObjectAIConversation, req.ConversationID, token)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "conversation not found"})
 			return
 		}
-		if record["user_id"] != user.ID {
+		if !verifyOwnership(record, user.ID) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "not your conversation"})
 			return
 		}
@@ -333,7 +345,7 @@ func (h *AgentHandler) SaveConversation(c *gin.Context) {
 		if req.Title != "" {
 			updateData["title"] = req.Title
 		}
-		err = nexusClient.UpdateRecord(c.Request.Context(), "_System_AI_Conversation", req.ConversationID, updateData, token)
+		err = h.nexusClient.UpdateRecord(c.Request.Context(), ObjectAIConversation, req.ConversationID, updateData, token)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -343,48 +355,32 @@ func (h *AgentHandler) SaveConversation(c *gin.Context) {
 		// Create new conversation
 		// First, deactivate any currently active conversations
 		queryReq := models.QueryRequest{
-			ObjectAPIName: "_System_AI_Conversation",
-			FilterExpr:    fmt.Sprintf("user_id == '%s' && is_active == true", user.ID),
+			ObjectAPIName: ObjectAIConversation,
+			FilterExpr:    fmt.Sprintf("%s == '%s' && %s == true", constants.FieldUserID, user.ID, constants.FieldIsActive),
 			Limit:         10,
 		}
-		activeRecords, _ := nexusClient.Query(c.Request.Context(), queryReq, token)
+		activeRecords, _ := h.nexusClient.Query(c.Request.Context(), queryReq, token)
 		for _, rec := range activeRecords {
-			if id, ok := rec["id"].(string); ok {
-				nexusClient.UpdateRecord(c.Request.Context(), "_System_AI_Conversation", id, map[string]interface{}{
-					"is_active": false,
+			if id, ok := rec[constants.FieldID].(string); ok {
+				h.nexusClient.UpdateRecord(c.Request.Context(), ObjectAIConversation, id, map[string]interface{}{
+					constants.FieldIsActive: false,
 				}, token)
 			}
 		}
 
-		// Create new active conversation
+		// Generate title if not provided
 		title := req.Title
-		if title == "" && len(req.Messages) > 0 {
-			// Auto-generate title from first user message
-			for _, msg := range req.Messages {
-				if msgMap, ok := msg.(map[string]interface{}); ok {
-					if msgMap["role"] == "user" {
-						if content, ok := msgMap["content"].(string); ok {
-							title = content
-							if len(title) > 50 {
-								title = title[:47] + "..."
-							}
-							break
-						}
-					}
-				}
-			}
-		}
 		if title == "" {
-			title = "New Conversation"
+			title = generateConversationTitle(req.Messages)
 		}
 
 		createData := map[string]interface{}{
-			"user_id":   user.ID,
-			"title":     title,
-			"messages":  string(messagesJSON),
-			"is_active": true,
+			constants.FieldUserID:   user.ID,
+			"title":                 title,
+			"messages":              string(messagesJSON),
+			constants.FieldIsActive: true,
 		}
-		id, err := nexusClient.CreateRecord(c.Request.Context(), "_System_AI_Conversation", createData, token)
+		id, err := h.nexusClient.CreateRecord(c.Request.Context(), ObjectAIConversation, createData, token)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -395,33 +391,22 @@ func (h *AgentHandler) SaveConversation(c *gin.Context) {
 
 // ClearConversation clears the current user's conversation
 func (h *AgentHandler) ClearConversation(c *gin.Context) {
-	user := h.userExtractor(c)
-	if user == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	token, err := h.getAuthToken(c)
+	user, token, err := h.extractUserAndToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	apiBaseURL := "http://localhost:3001"
-	if url := os.Getenv("API_BASE_URL"); url != "" {
-		apiBaseURL = url
-	}
-	nexusClient := client.NewNexusClient(apiBaseURL)
-
-	// Find and delete the active conversation
+	// Find and clear the active conversation
 	queryReq := models.QueryRequest{
-		ObjectAPIName: "_System_AI_Conversation",
-		FilterExpr:    fmt.Sprintf("user_id == '%s' && is_active == true", user.ID),
+		ObjectAPIName: ObjectAIConversation,
+		FilterExpr:    fmt.Sprintf("%s == '%s' && %s == true", constants.FieldUserID, user.ID, constants.FieldIsActive),
 		Limit:         1,
 	}
-	records, _ := nexusClient.Query(c.Request.Context(), queryReq, token)
+	records, _ := h.nexusClient.Query(c.Request.Context(), queryReq, token)
 
 	if len(records) > 0 {
-		convID, ok := records[0]["id"].(string)
+		convID, ok := records[0][constants.FieldID].(string)
 		if !ok {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid conversation id"})
 			return
@@ -430,7 +415,7 @@ func (h *AgentHandler) ClearConversation(c *gin.Context) {
 		updateData := map[string]interface{}{
 			"messages": "[]",
 		}
-		nexusClient.UpdateRecord(c.Request.Context(), "_System_AI_Conversation", convID, updateData, token)
+		h.nexusClient.UpdateRecord(c.Request.Context(), ObjectAIConversation, convID, updateData, token)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "cleared"})
@@ -438,32 +423,21 @@ func (h *AgentHandler) ClearConversation(c *gin.Context) {
 
 // ListConversations returns all conversations for the current user
 func (h *AgentHandler) ListConversations(c *gin.Context) {
-	user := h.userExtractor(c)
-	if user == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	token, err := h.getAuthToken(c)
+	user, token, err := h.extractUserAndToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	apiBaseURL := "http://localhost:3001"
-	if url := os.Getenv("API_BASE_URL"); url != "" {
-		apiBaseURL = url
-	}
-	nexusClient := client.NewNexusClient(apiBaseURL)
-
 	queryReq := models.QueryRequest{
-		ObjectAPIName: "_System_AI_Conversation",
+		ObjectAPIName: ObjectAIConversation,
 		FilterExpr:    fmt.Sprintf("user_id == '%s'", user.ID),
 		SortField:     "last_modified_date",
 		SortDirection: "desc",
 		Limit:         100,
 	}
 
-	records, err := nexusClient.Query(c.Request.Context(), queryReq, token)
+	records, err := h.nexusClient.Query(c.Request.Context(), queryReq, token)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"conversations": []interface{}{}})
 		return
@@ -473,11 +447,11 @@ func (h *AgentHandler) ListConversations(c *gin.Context) {
 	conversations := make([]gin.H, 0, len(records))
 	for _, record := range records {
 		conv := gin.H{
-			"id":                 record["id"],
-			"title":              record["title"],
-			"is_active":          record["is_active"],
-			"created_date":       record["created_date"],
-			"last_modified_date": record["last_modified_date"],
+			constants.FieldID:               record[constants.FieldID],
+			"title":                         record["title"],
+			constants.FieldIsActive:         record[constants.FieldIsActive],
+			constants.FieldCreatedDate:      record[constants.FieldCreatedDate],
+			constants.FieldLastModifiedDate: record[constants.FieldLastModifiedDate],
 		}
 		conversations = append(conversations, conv)
 	}
@@ -487,12 +461,7 @@ func (h *AgentHandler) ListConversations(c *gin.Context) {
 
 // DeleteConversation deletes a specific conversation
 func (h *AgentHandler) DeleteConversation(c *gin.Context) {
-	user := h.userExtractor(c)
-	if user == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	token, err := h.getAuthToken(c)
+	user, token, err := h.extractUserAndToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -504,25 +473,19 @@ func (h *AgentHandler) DeleteConversation(c *gin.Context) {
 		return
 	}
 
-	apiBaseURL := "http://localhost:3001"
-	if url := os.Getenv("API_BASE_URL"); url != "" {
-		apiBaseURL = url
-	}
-	nexusClient := client.NewNexusClient(apiBaseURL)
-
 	// Verify ownership before delete
-	record, err := nexusClient.GetRecord(c.Request.Context(), "_System_AI_Conversation", convID, token)
+	record, err := h.nexusClient.GetRecord(c.Request.Context(), ObjectAIConversation, convID, token)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "conversation not found"})
 		return
 	}
-	if record["user_id"] != user.ID {
+	if !verifyOwnership(record, user.ID) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "not your conversation"})
 		return
 	}
 
 	// Delete the conversation
-	err = nexusClient.DeleteRecord(c.Request.Context(), "_System_AI_Conversation", convID, token)
+	err = h.nexusClient.DeleteRecord(c.Request.Context(), ObjectAIConversation, convID, token)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -22,6 +22,8 @@ api_login "admin@test.com" "Admin123!"
 
 # 1. Create Object 'car'
 echo "🚗 Creating Car object..."
+# Ensure clean state from previous failed runs
+delete_schema "car" > /dev/null 2>&1 || true
 ensure_schema "car" "Car" "Cars"
 
 # 2. Add Price (Currency)

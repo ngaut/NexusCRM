@@ -12,12 +12,19 @@ type Flow struct {
 	FlowType         string                 `json:"flow_type"` // simple, multistep
 	Description      *string                `json:"description,omitempty"`
 	TriggerObject    string                 `json:"trigger_object"`
-	TriggerType      string                 `json:"trigger_type"` // beforeCreate, afterCreate, etc.
+	TriggerType      string                 `json:"trigger_type"` // beforeCreate, afterCreate, schedule, etc.
 	TriggerCondition string                 `json:"trigger_condition"`
 	ActionType       string                 `json:"action_type"`
 	ActionConfig     map[string]interface{} `json:"action_config,omitempty"`
 	LastModified     string                 `json:"last_modified"`
 	Steps            []FlowStep             `json:"steps,omitempty"` // For multi-step flows
+
+	// Schedule Configuration (for trigger_type = "schedule")
+	Schedule         *string    `json:"schedule,omitempty"`          // Cron expression: "0 9 * * *"
+	ScheduleTimezone *string    `json:"schedule_timezone,omitempty"` // e.g., "America/New_York", defaults to UTC
+	LastRunAt        *time.Time `json:"last_run_at,omitempty"`       // Last successful execution
+	NextRunAt        *time.Time `json:"next_run_at,omitempty"`       // Next scheduled execution
+	IsRunning        bool       `json:"is_running"`                  // Prevents concurrent execution
 }
 
 // FlowStep represents a step within a multi-step flow

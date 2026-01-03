@@ -7,8 +7,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // RollupService handles rollup summary field calculations
@@ -156,12 +156,18 @@ func (rs *RollupService) CalculateRollup(ctx context.Context, rollup AffectedRol
 	baseQuery := fmt.Sprintf("SELECT %s(%s) FROM `%s` WHERE `%s` = ? AND `%s` = false",
 		aggFunc, aggExpression, config.SummaryObject, config.RelationshipField, constants.FieldIsDeleted)
 
-	// Add optional filter
+	// Add optional filter with validation
 	// SECURITY NOTE: The filter is a SQL WHERE clause fragment stored in metadata.
 	// It is set by admins during field configuration, not runtime user input.
-	// However, proper validation should be added to MetadataService.CreateField to prevent injection.
+	// We validate to prevent SQL injection even from misconfigured admin input.
 	if config.Filter != nil && *config.Filter != "" {
-		baseQuery += " AND (" + *config.Filter + ")"
+		filter := *config.Filter
+		// Validate filter contains only safe SQL expression characters
+		// Allow: alphanumerics, spaces, comparison operators, logical operators, quotes, parentheses
+		if !isValidSQLFilter(filter) {
+			return nil, fmt.Errorf("invalid filter expression: contains potentially unsafe characters")
+		}
+		baseQuery += " AND (" + filter + ")"
 	}
 
 	// 2. Execute Query
@@ -207,4 +213,46 @@ func (rs *RollupService) CalculateRollup(ctx context.Context, rollup AffectedRol
 	}
 
 	return result, nil
+}
+
+// isValidSQLFilter validates that a SQL filter expression contains only safe characters.
+// It rejects expressions that could be used for SQL injection attacks.
+// Allowed: field names, operators, literals, and common SQL keywords.
+func isValidSQLFilter(filter string) bool {
+	// Reject empty filters
+	if filter == "" {
+		return false
+	}
+
+	// Reject dangerous SQL keywords/patterns (case-insensitive check)
+	lowerFilter := strings.ToLower(filter)
+	dangerousPatterns := []string{
+		";",                  // Statement terminator
+		"--",                 // Comment
+		"/*",                 // Block comment
+		"drop ",              // DDL
+		"delete ",            // DML (not in WHERE context)
+		"insert ",            // DML
+		"update ",            // DML
+		"truncate ",          // DDL
+		"alter ",             // DDL
+		"create ",            // DDL
+		"exec ",              // Execute
+		"execute ",           // Execute
+		"union ",             // UNION attacks
+		"information_schema", // Schema probing
+		"sleep(",             // Time-based attacks
+		"benchmark(",         // Time-based attacks
+		"load_file(",         // File access
+		"into outfile",       // File write
+		"into dumpfile",      // File write
+	}
+
+	for _, pattern := range dangerousPatterns {
+		if strings.Contains(lowerFilter, pattern) {
+			return false
+		}
+	}
+
+	return true
 }

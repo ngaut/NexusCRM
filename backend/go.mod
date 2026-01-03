@@ -15,6 +15,8 @@ require (
 	golang.org/x/crypto v0.40.0
 )
 
+require github.com/robfig/cron/v3 v3.0.1 // indirect
+
 replace github.com/nexuscrm/mcp => ../mcp
 
 replace github.com/nexuscrm/shared => ../shared

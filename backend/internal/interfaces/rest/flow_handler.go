@@ -1,11 +1,13 @@
 package rest
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
-	"github.com/nexuscrm/shared/pkg/models"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // FlowHandler handles flow management API endpoints
@@ -163,8 +165,6 @@ func (h *FlowHandler) executeFlowAction(
 	req *ExecuteFlowRequest,
 	user *models.UserSession,
 ) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
-
 	switch flow.ActionType {
 	case "create_record":
 		return h.executeCreateRecord(c, flow, req, user)
@@ -173,10 +173,8 @@ func (h *FlowHandler) executeFlowAction(
 		return h.executeUpdateRecord(c, flow, req, user)
 
 	default:
-		// No-op for unsupported action types
-		result["action_type"] = flow.ActionType
-		result["message"] = "Action type not implemented for REST invocation"
-		return result, nil
+		// Return error for unsupported action types to fail fast and inform caller
+		return nil, fmt.Errorf("action type '%s' is not supported for REST invocation. Supported types: create_record, update_record", flow.ActionType)
 	}
 }
 

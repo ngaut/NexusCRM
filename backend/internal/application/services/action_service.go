@@ -1,15 +1,20 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"strings"
+	"time"
 
-	"github.com/nexuscrm/shared/pkg/models"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/formula"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ActionService handles execution of metadata-driven actions
@@ -254,38 +259,66 @@ func (as *ActionService) executeSendEmail(ctx context.Context, action *models.Ac
 // executeCallWebhook calls a webhook based on action configuration
 func (as *ActionService) executeCallWebhook(ctx context.Context, action *models.ActionMetadata, actionCtx *ActionContext) error {
 	// Extract webhook configuration
-	url, err := as.getConfigValue(action.Config, constants.ConfigURL, actionCtx, action.ObjectAPIName)
+	urlValue, err := as.getConfigValue(action.Config, constants.ConfigURL, actionCtx, action.ObjectAPIName)
 	if err != nil {
 		return fmt.Errorf("failed to get webhook URL: %w", err)
 	}
+	url := fmt.Sprintf("%v", urlValue)
 
-	method, err := as.getConfigValue(action.Config, constants.ConfigMethod, actionCtx, action.ObjectAPIName)
+	methodValue, err := as.getConfigValue(action.Config, constants.ConfigMethod, actionCtx, action.ObjectAPIName)
 	if err != nil {
 		// Default to POST if not specified
-		method = "POST"
+		methodValue = "POST"
+	}
+	method := strings.ToUpper(fmt.Sprintf("%v", methodValue))
+
+	// Validate method
+	if method != "GET" && method != "POST" && method != "PUT" && method != "PATCH" && method != "DELETE" {
+		return fmt.Errorf("invalid HTTP method: %s", method)
 	}
 
-	// Optional payload (used when webhook integration is implemented)
-	payload, _ := as.getConfigValue(action.Config, constants.ConfigPayload, actionCtx, action.ObjectAPIName)
+	// Build request body from payload config
+	var bodyReader io.Reader
+	if payload, err := as.getConfigValue(action.Config, constants.ConfigPayload, actionCtx, action.ObjectAPIName); err == nil && payload != nil {
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return fmt.Errorf("failed to serialize webhook payload: %w", err)
+		}
+		bodyReader = bytes.NewReader(payloadBytes)
+	}
 
-	// Optional headers (used when webhook integration is implemented)
-	headers, _ := GetConfigMap(action.Config, constants.ConfigHeaders)
-	_, _ = payload, headers // Silence unused warnings - will be used when webhook is implemented
+	// Create HTTP request
+	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
+	if err != nil {
+		return fmt.Errorf("failed to create webhook request: %w", err)
+	}
 
-	// User details for logging
-	userName := constants.DefaultUserName
-	userEmail := constants.DefaultUserEmail
-	if actionCtx.User != nil {
-		userName = actionCtx.User.Name
-		if actionCtx.User.Email != nil {
-			userEmail = *actionCtx.User.Email
+	// Set default content type
+	req.Header.Set("Content-Type", "application/json")
+
+	// Add custom headers if specified
+	if headers, ok := GetConfigMap(action.Config, constants.ConfigHeaders); ok {
+		for headerName, headerValue := range headers {
+			req.Header.Set(headerName, fmt.Sprintf("%v", headerValue))
 		}
 	}
 
-	// For now, log the webhook details
-	// In production, this would make actual HTTP requests
-	log.Printf("🔗 WEBHOOK ACTION TRIGGERED: URL=%v Method=%v Triggered by: %s (%s)", url, method, userName, userEmail)
+	// Execute the webhook with a reasonable timeout
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("⚠️ WEBHOOK FAILED: URL=%s Method=%s Error=%v", url, method, err)
+		return fmt.Errorf("webhook request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
 
+	// Check response status
+	if resp.StatusCode >= 400 {
+		log.Printf("⚠️ WEBHOOK ERROR RESPONSE: URL=%s Status=%d", url, resp.StatusCode)
+		return fmt.Errorf("webhook returned error status: %d", resp.StatusCode)
+	}
+
+	log.Printf("✅ WEBHOOK SUCCESS: URL=%s Method=%s Status=%d", url, method, resp.StatusCode)
 	return nil
 }
 

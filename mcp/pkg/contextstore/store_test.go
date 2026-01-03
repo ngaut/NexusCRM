@@ -2,7 +2,6 @@ package contextstore
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -15,7 +14,7 @@ func TestContextStore_SaveLoad(t *testing.T) {
 	defer os.Remove(tmpStoreFile)
 
 	// Create a temporary file to be added to context
-	tmpContentFile, err := ioutil.TempFile("", "test_content_*.go")
+	tmpContentFile, err := os.CreateTemp("", "test_content_*.go")
 	if err != nil {
 		t.Fatalf("Failed to create temp content file: %v", err)
 	}
@@ -71,7 +70,7 @@ func TestContextStore_Concurrency(t *testing.T) {
 	defer os.Remove(tmpStoreFile)
 
 	// Create a dummy file to read
-	tmpContentFile, _ := ioutil.TempFile("", "dummy_*.txt")
+	tmpContentFile, _ := os.CreateTemp("", "dummy_*.txt")
 	tmpContentFile.WriteString("dummy content")
 	tmpContentFile.Close()
 	defer os.Remove(tmpContentFile.Name())

@@ -52,11 +52,17 @@ const (
 	ToolDeleteApp       = "delete_app"
 	ToolDeleteDashboard = "delete_dashboard"
 	// New Management Tools
-	ToolListDashboards   = "list_dashboards"
-	ToolGetDashboard     = "get_dashboard"
-	ToolCalculateFormula = "calculate_formula"
-	ToolListThemes       = "list_themes"
-	ToolActivateTheme    = "activate_theme"
+	ToolListDashboards     = "list_dashboards"
+	ToolGetDashboard       = "get_dashboard"
+	ToolCalculateFormula   = "calculate_formula"
+	ToolListThemes         = "list_themes"
+	ToolActivateTheme      = "activate_theme"
+	ToolAddDashboardWidget = "add_dashboard_widget"
+	// Scheduled Jobs Tools
+	ToolListScheduledJobs  = "list_scheduled_jobs"
+	ToolCreateScheduledJob = "create_scheduled_job"
+	ToolUpdateSchedule     = "update_schedule"
+	ToolRunJobNow          = "run_job_now"
 )
 
 type ToolBusService struct {
@@ -233,40 +239,53 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 					"description": "Layout type: 'two-column', 'grid', or 'single'",
 					"default":     "two-column",
 				},
-				"widgets": map[string]interface{}{
-					"type":        "array",
-					"description": "Array of widget configurations. Valid widget types: 'metric' (count/sum/avg of a field), 'chart-bar', 'chart-pie', 'chart-line' (grouped data), 'record-list' (table view), 'kanban' (board view), 'sql-chart' (custom SQL). Each widget requires: title, type. For charts: query.object_api_name, query.operation ('count', 'sum', 'avg'), query.group_by. For metric: query.object_api_name, query.operation, query.field. For record-list/kanban: query.object_api_name.",
-					"items": map[string]interface{}{
-						"type": "object",
-						"properties": map[string]interface{}{
-							"title": map[string]interface{}{"type": "string", "description": "Widget title"},
-							"type":  map[string]interface{}{"type": "string", "enum": []string{"metric", "chart-bar", "chart-pie", "chart-line", "chart-funnel", "record-list", "kanban", "sql-chart"}, "description": "Widget type"},
-							"query": map[string]interface{}{
-								"type": "object",
-								"properties": map[string]interface{}{
-									"object_api_name": map[string]interface{}{"type": "string", "description": "Target object API name (e.g., 'opportunity', 'lead')"},
-									"operation":       map[string]interface{}{"type": "string", "enum": []string{"count", "sum", "avg", "min", "max", "group_by"}, "description": "Aggregation operation"},
-									"field":           map[string]interface{}{"type": "string", "description": "Field to aggregate (for sum/avg)"},
-									"group_by":        map[string]interface{}{"type": "string", "description": "Group by field (for charts)"},
-									"filter_expr":     map[string]interface{}{"type": "string", "description": "Optional filter expression"},
-								},
+			},
+
+			"required": []string{"name"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolAddDashboardWidget,
+		Description: "Add a widget to an existing dashboard.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"dashboard_id": map[string]interface{}{
+					"type":        "string",
+					"description": "ID of the dashboard to modify",
+				},
+				"widget": map[string]interface{}{
+					"type":        "object",
+					"description": "Widget configuration",
+					"properties": map[string]interface{}{
+						"title": map[string]interface{}{"type": "string", "description": "Widget title"},
+						"type":  map[string]interface{}{"type": "string", "enum": []string{"metric", "chart-bar", "chart-pie", "chart-line", "chart-funnel", "record-list", "kanban", "sql-chart"}, "description": "Widget type"},
+						"query": map[string]interface{}{
+							"type": "object",
+							"properties": map[string]interface{}{
+								"object_api_name": map[string]interface{}{"type": "string", "description": "Target object API name (e.g., 'opportunity', 'lead')"},
+								"operation":       map[string]interface{}{"type": "string", "enum": []string{"count", "sum", "avg", "min", "max", "group_by"}, "description": "Aggregation operation"},
+								"field":           map[string]interface{}{"type": "string", "description": "Field to aggregate (for sum/avg)"},
+								"group_by":        map[string]interface{}{"type": "string", "description": "Group by field (for charts)"},
+								"filter_expr":     map[string]interface{}{"type": "string", "description": "Optional filter expression"},
 							},
-							"config": map[string]interface{}{
-								"type":        "object",
-								"description": "Widget-specific config (e.g., chart_type, columns, sql, content, imageUrl)",
-							},
-							"x":     map[string]interface{}{"type": "integer", "description": "Grid X position (0-11)"},
-							"y":     map[string]interface{}{"type": "integer", "description": "Grid Y position"},
-							"w":     map[string]interface{}{"type": "integer", "description": "Grid Width (1-12)"},
-							"h":     map[string]interface{}{"type": "integer", "description": "Grid Height"},
-							"icon":  map[string]interface{}{"type": "string", "description": "Icon name (e.g. 'Users')"},
-							"color": map[string]interface{}{"type": "string", "description": "Widget accent color (hex or name)"},
 						},
-						"required": []string{"title", "type"},
+						"config": map[string]interface{}{
+							"type":        "object",
+							"description": "Widget-specific config (e.g., chart_type, columns, sql, content, imageUrl)",
+						},
+						"x":     map[string]interface{}{"type": "integer", "description": "Grid X position (0-11)"},
+						"y":     map[string]interface{}{"type": "integer", "description": "Grid Y position"},
+						"w":     map[string]interface{}{"type": "integer", "description": "Grid Width (1-12)"},
+						"h":     map[string]interface{}{"type": "integer", "description": "Grid Height"},
+						"icon":  map[string]interface{}{"type": "string", "description": "Icon name (e.g. 'Users')"},
+						"color": map[string]interface{}{"type": "string", "description": "Widget accent color (hex or name)"},
 					},
+					"required": []string{"title", "type"},
 				},
 			},
-			"required": []string{"name", "widgets"},
+			"required": []string{"dashboard_id", "widget"},
 		},
 	})
 
@@ -914,6 +933,93 @@ Full objects for more control:
 		},
 	})
 
+	// Scheduled Jobs Tools
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolListScheduledJobs,
+		Description: "List all scheduled jobs (flows with trigger_type='schedule'). Returns job name, schedule (cron expression), last run time, next run time, and status.",
+		InputSchema: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolCreateScheduledJob,
+		Description: "Create a new scheduled job. This creates a flow that runs on a cron schedule. Common schedules: '0 9 * * *' (daily at 9AM), '*/15 * * * *' (every 15 mins), '0 0 1 * *' (monthly).",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"name": map[string]interface{}{
+					"type":        "string",
+					"description": "Name of the scheduled job",
+				},
+				"schedule": map[string]interface{}{
+					"type":        "string",
+					"description": "Cron expression (5 fields: minute hour day-of-month month day-of-week)",
+				},
+				"action_type": map[string]interface{}{
+					"type":        "string",
+					"description": "Type of action to execute: 'update_field', 'call_webhook', 'send_email'",
+				},
+				"action_config": map[string]interface{}{
+					"type":        "object",
+					"description": "Configuration for the action (depends on action_type)",
+				},
+				"timezone": map[string]interface{}{
+					"type":        "string",
+					"description": "Optional timezone for schedule (default: UTC). Example: 'America/New_York'",
+				},
+				"description": map[string]interface{}{
+					"type":        "string",
+					"description": "Optional description of what this job does",
+				},
+			},
+			"required": []string{"name", "schedule", "action_type", "action_config"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolUpdateSchedule,
+		Description: "Update the schedule of an existing scheduled job. Can also enable/disable the job.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"job_id": map[string]interface{}{
+					"type":        "string",
+					"description": "ID of the scheduled job to update",
+				},
+				"schedule": map[string]interface{}{
+					"type":        "string",
+					"description": "New cron expression (optional)",
+				},
+				"timezone": map[string]interface{}{
+					"type":        "string",
+					"description": "New timezone (optional)",
+				},
+				"status": map[string]interface{}{
+					"type":        "string",
+					"description": "Set to 'Active' to enable or 'Inactive' to disable",
+				},
+			},
+			"required": []string{"job_id"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolRunJobNow,
+		Description: "Manually trigger a scheduled job to run immediately, regardless of its schedule.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"job_id": map[string]interface{}{
+					"type":        "string",
+					"description": "ID of the scheduled job to run",
+				},
+			},
+			"required": []string{"job_id"},
+		},
+	})
+
 	return mcp.ListToolsResult{Tools: allTools}, nil
 }
 
@@ -940,6 +1046,8 @@ func (s *ToolBusService) HandleCallTool(ctx context.Context, params json.RawMess
 		return s.handleDeleteRecord(ctx, req)
 	case ToolCreateDashboard:
 		return s.handleCreateDashboard(ctx, req)
+	case ToolAddDashboardWidget:
+		return s.handleAddDashboardWidget(ctx, req)
 	case ToolSearchRecords:
 		return s.handleSearchRecords(ctx, req)
 	case ToolSearchObject:
@@ -996,6 +1104,14 @@ func (s *ToolBusService) HandleCallTool(ctx context.Context, params json.RawMess
 		return s.handleListThemes(ctx, req.Arguments)
 	case ToolActivateTheme:
 		return s.handleActivateTheme(ctx, req.Arguments)
+	case ToolListScheduledJobs:
+		return s.handleListScheduledJobs(ctx, req.Arguments)
+	case ToolCreateScheduledJob:
+		return s.handleCreateScheduledJob(ctx, req.Arguments)
+	case ToolUpdateSchedule:
+		return s.handleUpdateSchedule(ctx, req.Arguments)
+	case ToolRunJobNow:
+		return s.handleRunJobNow(ctx, req.Arguments)
 	default:
 		return nil, &mcp.Error{Code: mcp.ErrMethodNotFound, Message: fmt.Sprintf("Tool '%s' not found", req.Name)}
 	}
@@ -1239,6 +1355,51 @@ func (s *ToolBusService) handleCreateDashboard(ctx context.Context, req mcp.Call
 	}, nil
 }
 
+func (s *ToolBusService) handleAddDashboardWidget(ctx context.Context, req mcp.CallToolParams) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	dashboardID, ok := req.Arguments["dashboard_id"].(string)
+	if !ok || dashboardID == "" {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "dashboard_id is required"}}}, nil
+	}
+
+	widgetMap, ok := req.Arguments["widget"].(map[string]interface{})
+	if !ok {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "widget configuration is required"}}}, nil
+	}
+
+	// Unmarshal widget
+	widgetBytes, err := json.Marshal(widgetMap)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to marshal widget: %v", err)}}}, nil
+	}
+	var widget models.DashboardWidget
+	if err := json.Unmarshal(widgetBytes, &widget); err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Invalid widget format: %v", err)}}}, nil
+	}
+
+	// Fetch Dashboard
+	dashboard, err := s.client.GetDashboard(ctx, dashboardID, token)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to fetch dashboard: %v", err)}}}, nil
+	}
+
+	// Append
+	dashboard.Widgets = append(dashboard.Widgets, widget)
+
+	// Update
+	if err := s.client.UpdateDashboard(ctx, dashboardID, *dashboard, token); err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to update dashboard: %v", err)}}}, nil
+	}
+
+	return mcp.CallToolResult{
+		Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully added widget '%s' to dashboard", widget.Title)}},
+	}, nil
+}
+
 func (s *ToolBusService) handleCreateObject(ctx context.Context, req mcp.CallToolParams) (mcp.CallToolResult, error) {
 	token, err := s.getAuthToken(ctx)
 	if err != nil {
@@ -1319,6 +1480,14 @@ func (s *ToolBusService) handleCreateField(ctx context.Context, req mcp.CallTool
 }
 
 func getStringFromMap(m map[string]interface{}, key string) string {
+	if v, ok := m[key].(string); ok {
+		return v
+	}
+	return ""
+}
+
+// getStringFromSObject extracts a string field from models.SObject
+func getStringFromSObject(m models.SObject, key string) string {
 	if v, ok := m[key].(string); ok {
 		return v
 	}
@@ -1832,4 +2001,208 @@ func (s *ToolBusService) handleActivateTheme(ctx context.Context, arguments map[
 		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Error activating theme: %v", err)}}}, nil
 	}
 	return mcp.CallToolResult{Content: []mcp.Content{{Type: "text", Text: "Theme activated successfully"}}}, nil
+}
+
+// handleListScheduledJobs returns all scheduled jobs (flows with trigger_type='schedule')
+func (s *ToolBusService) handleListScheduledJobs(ctx context.Context, arguments map[string]interface{}) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	// Query _system_flow with trigger_type = 'schedule'
+	req := models.QueryRequest{
+		ObjectAPIName: "_system_flow",
+		FilterExpr:    "trigger_type = 'schedule'",
+		Limit:         100,
+	}
+	records, err := s.client.Query(ctx, req, token)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Error querying scheduled jobs: %v", err)}}}, nil
+	}
+
+	// Format response for better readability
+	type ScheduledJob struct {
+		ID               string  `json:"id"`
+		Name             string  `json:"name"`
+		Schedule         string  `json:"schedule"`
+		ScheduleTimezone string  `json:"schedule_timezone"`
+		LastRunAt        *string `json:"last_run_at,omitempty"`
+		NextRunAt        *string `json:"next_run_at,omitempty"`
+		Status           string  `json:"status"`
+		IsRunning        bool    `json:"is_running"`
+		ActionType       string  `json:"action_type"`
+	}
+
+	var jobs []ScheduledJob
+	for _, rec := range records {
+		job := ScheduledJob{
+			ID:         getStringFromSObject(rec, "id"),
+			Name:       getStringFromSObject(rec, "name"),
+			Schedule:   getStringFromSObject(rec, "schedule"),
+			Status:     getStringFromSObject(rec, "status"),
+			ActionType: getStringFromSObject(rec, "action_type"),
+		}
+		if tz := getStringFromSObject(rec, "schedule_timezone"); tz != "" {
+			job.ScheduleTimezone = tz
+		}
+		if lastRun := getStringFromSObject(rec, "last_run_at"); lastRun != "" {
+			job.LastRunAt = &lastRun
+		}
+		if nextRun := getStringFromSObject(rec, "next_run_at"); nextRun != "" {
+			job.NextRunAt = &nextRun
+		}
+		if running, ok := rec["is_running"].(bool); ok {
+			job.IsRunning = running
+		}
+		jobs = append(jobs, job)
+	}
+
+	result := map[string]interface{}{
+		"total_jobs": len(jobs),
+		"jobs":       jobs,
+	}
+	jsonBytes, _ := json.MarshalIndent(result, "", "  ")
+	return mcp.CallToolResult{Content: []mcp.Content{{Type: "text", Text: string(jsonBytes)}}}, nil
+}
+
+// handleCreateScheduledJob creates a new scheduled flow
+func (s *ToolBusService) handleCreateScheduledJob(ctx context.Context, arguments map[string]interface{}) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	// Extract required parameters
+	name, _ := arguments["name"].(string)
+	schedule, _ := arguments["schedule"].(string)
+	actionType, _ := arguments["action_type"].(string)
+	actionConfig, _ := arguments["action_config"].(map[string]interface{})
+
+	if name == "" || schedule == "" || actionType == "" {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "Missing required parameters: name, schedule, action_type"}}}, nil
+	}
+
+	// Validate cron expression format (basic check)
+	cronPattern := regexp.MustCompile(`^(\*|[0-9,\-\/]+)\s+(\*|[0-9,\-\/]+)\s+(\*|[0-9,\-\/]+)\s+(\*|[0-9,\-\/]+)\s+(\*|[0-9,\-\/]+)$`)
+	if !cronPattern.MatchString(schedule) {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Invalid cron expression: '%s'. Expected format: 'minute hour day-of-month month day-of-week'", schedule)}}}, nil
+	}
+
+	// Build flow record
+	flowData := map[string]interface{}{
+		"name":         name,
+		"trigger_type": "schedule",
+		"schedule":     schedule,
+		"action_type":  actionType,
+		"flow_type":    "simple",
+		"status":       "Active",
+	}
+
+	if actionConfig != nil {
+		flowData["action_config"] = actionConfig
+	}
+
+	// Optional timezone
+	if timezone, ok := arguments["timezone"].(string); ok && timezone != "" {
+		flowData["schedule_timezone"] = timezone
+	}
+
+	// Optional description
+	if description, ok := arguments["description"].(string); ok && description != "" {
+		flowData["description"] = description
+	}
+
+	// Optional trigger_object (some actions need it)
+	flowData["trigger_object"] = "_system_config" // Default object for scheduled jobs
+
+	// Create the flow
+	jobID, err := s.client.CreateRecord(ctx, "_system_flow", flowData, token)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Error creating scheduled job: %v", err)}}}, nil
+	}
+
+	jsonBytes, _ := json.MarshalIndent(map[string]interface{}{
+		"success": true,
+		"message": fmt.Sprintf("Scheduled job '%s' created successfully", name),
+		"job_id":  jobID,
+	}, "", "  ")
+	return mcp.CallToolResult{Content: []mcp.Content{{Type: "text", Text: string(jsonBytes)}}}, nil
+}
+
+// handleUpdateSchedule updates an existing scheduled job
+func (s *ToolBusService) handleUpdateSchedule(ctx context.Context, arguments map[string]interface{}) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	jobID, _ := arguments["job_id"].(string)
+	if jobID == "" {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "Missing required parameter: job_id"}}}, nil
+	}
+
+	// Build update data
+	updateData := make(map[string]interface{})
+
+	if schedule, ok := arguments["schedule"].(string); ok && schedule != "" {
+		// Validate cron expression
+		cronPattern := regexp.MustCompile(`^(\*|[0-9,\-\/]+)\s+(\*|[0-9,\-\/]+)\s+(\*|[0-9,\-\/]+)\s+(\*|[0-9,\-\/]+)\s+(\*|[0-9,\-\/]+)$`)
+		if !cronPattern.MatchString(schedule) {
+			return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Invalid cron expression: '%s'", schedule)}}}, nil
+		}
+		updateData["schedule"] = schedule
+		// Clear next_run_at so scheduler recalculates
+		updateData["next_run_at"] = nil
+	}
+
+	if timezone, ok := arguments["timezone"].(string); ok && timezone != "" {
+		updateData["schedule_timezone"] = timezone
+	}
+
+	if status, ok := arguments["status"].(string); ok && status != "" {
+		if status != "Active" && status != "Inactive" {
+			return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "Status must be 'Active' or 'Inactive'"}}}, nil
+		}
+		updateData["status"] = status
+	}
+
+	if len(updateData) == 0 {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "No updates provided. Specify schedule, timezone, or status."}}}, nil
+	}
+
+	// Update the flow
+	err = s.client.UpdateRecord(ctx, "_system_flow", jobID, updateData, token)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Error updating scheduled job: %v", err)}}}, nil
+	}
+
+	jsonBytes, _ := json.MarshalIndent(map[string]interface{}{
+		"success": true,
+		"message": "Scheduled job updated successfully",
+		"job_id":  jobID,
+	}, "", "  ")
+	return mcp.CallToolResult{Content: []mcp.Content{{Type: "text", Text: string(jsonBytes)}}}, nil
+}
+
+// handleRunJobNow triggers a scheduled job to run immediately
+func (s *ToolBusService) handleRunJobNow(ctx context.Context, arguments map[string]interface{}) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	jobID, _ := arguments["job_id"].(string)
+	if jobID == "" {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "Missing required parameter: job_id"}}}, nil
+	}
+
+	// Call the flow execution endpoint
+	// The backend should have POST /api/flows/:flowId/execute
+	err = s.client.ExecuteFlow(ctx, jobID, token)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Error running job: %v", err)}}}, nil
+	}
+
+	return mcp.CallToolResult{Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Scheduled job %s triggered successfully. It will run in the background.", jobID)}}}, nil
 }

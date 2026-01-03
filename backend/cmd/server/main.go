@@ -431,6 +431,10 @@ func main() {
 	svcMgr.StartOutboxWorker()
 	log.Println("📤 Outbox event worker started (500ms polling)")
 
+	// Start scheduled job executor
+	svcMgr.StartScheduler()
+	log.Println("⏰ Scheduler service started (60s polling)")
+
 	// Start server
 	log.Println("\n═══════════════════════════════════════════════════════════════════════════")
 	log.Println("🚀 NexusCRM Golang Backend Started Successfully")

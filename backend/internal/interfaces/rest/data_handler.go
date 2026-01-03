@@ -115,7 +115,7 @@ func (h *DataHandler) GetRecord(c *gin.Context) {
 			return nil, errors.NewValidationError(constants.FieldID, "Invalid ID format")
 		}
 		// Use formula expression for ID lookup
-		filterExpr := fmt.Sprintf("id == '%s'", id)
+		filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldID, id)
 		records, err := h.svc.QuerySvc.QueryWithFilter(
 			c.Request.Context(),
 			objectApiName,

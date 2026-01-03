@@ -42,3 +42,11 @@ const (
 	TriggerTypeRecordDeleted = "record_deleted"
 	TriggerTypeSchedule      = "schedule"
 )
+
+// Schedule-related constants
+const (
+	ScheduleDefaultTimezone = "UTC"
+	ScheduleCheckInterval   = 60 // Seconds between scheduler checks
+	ScheduleMaxRuntimeMins  = 30 // Maximum execution time before timeout (minutes)
+	ScheduleMinIntervalMins = 1  // Minimum interval between runs (minutes)
+)

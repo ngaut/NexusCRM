@@ -3,7 +3,6 @@ package contextstore
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -63,7 +62,7 @@ func (s *ContextStore) Load() error {
 		return nil
 	}
 
-	data, err := ioutil.ReadFile(s.filePath)
+	data, err := os.ReadFile(s.filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -106,7 +105,7 @@ func (s *ContextStore) Save() error {
 		return err
 	}
 
-	return ioutil.WriteFile(s.filePath, data, 0644)
+	return os.WriteFile(s.filePath, data, 0644)
 }
 
 func (s *ContextStore) GetSession(sessionID string) *SessionContext {
@@ -133,7 +132,7 @@ func (sc *SessionContext) AddFile(path string) error {
 		return err
 	}
 
-	content, err := ioutil.ReadFile(absPath)
+	content, err := os.ReadFile(absPath)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %v", err)
 	}

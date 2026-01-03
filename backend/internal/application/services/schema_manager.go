@@ -444,12 +444,71 @@ func (sm *SchemaManager) MapFieldTypeToSQL(fieldType string) string {
 // System column functions are in schema_system_columns.go:
 // - GetStandardSystemColumns, GetStandardFieldMetadata
 
-// ValidateSchema checks if a table matches its definition
+// ValidateSchema checks if a table matches its expected definition by comparing
+// the actual database schema (from INFORMATION_SCHEMA) with the registered metadata.
+// Returns an error if drift is detected, nil if schema matches or table doesn't exist.
 func (sm *SchemaManager) ValidateSchema(tableName string) error {
-	// NOTE: Schema drift detection not implemented. Would require querying INFORMATION_SCHEMA
-	// to compare actual database schema with expected schema from definitions. This is useful
-	// for detecting manual schema changes or migration issues. For now, relies on clean bootstrap.
-	// Future: Implement SchemaService.DetectDrift() to compare and report differences.
+	// Get expected columns from _System_Field metadata
+	expectedQuery := fmt.Sprintf(`
+		SELECT f.api_name, f.type 
+		FROM %s f 
+		JOIN %s o ON f.object_id = o.id 
+		WHERE o.api_name = ?
+	`, constants.TableField, constants.TableObject)
+
+	expectedRows, err := sm.db.Query(expectedQuery, tableName)
+	if err != nil {
+		return fmt.Errorf("failed to query expected schema: %w", err)
+	}
+	defer func() { _ = expectedRows.Close() }()
+
+	expectedFields := make(map[string]string) // field_name -> type
+	for expectedRows.Next() {
+		var fieldName, fieldType string
+		if err := expectedRows.Scan(&fieldName, &fieldType); err != nil {
+			continue
+		}
+		expectedFields[fieldName] = fieldType
+	}
+
+	// If no metadata registered, skip validation (table might be new or system-internal)
+	if len(expectedFields) == 0 {
+		return nil
+	}
+
+	// Get actual columns from INFORMATION_SCHEMA
+	actualQuery := `
+		SELECT COLUMN_NAME, DATA_TYPE 
+		FROM INFORMATION_SCHEMA.COLUMNS 
+		WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+	`
+	actualRows, err := sm.db.Query(actualQuery, tableName)
+	if err != nil {
+		return fmt.Errorf("failed to query actual schema: %w", err)
+	}
+	defer func() { _ = actualRows.Close() }()
+
+	actualFields := make(map[string]string)
+	for actualRows.Next() {
+		var columnName, dataType string
+		if err := actualRows.Scan(&columnName, &dataType); err != nil {
+			continue
+		}
+		actualFields[columnName] = dataType
+	}
+
+	// Compare: Find missing columns in database
+	var missingColumns []string
+	for expectedField := range expectedFields {
+		if _, exists := actualFields[expectedField]; !exists {
+			missingColumns = append(missingColumns, expectedField)
+		}
+	}
+
+	if len(missingColumns) > 0 {
+		return fmt.Errorf("schema drift detected for %s: missing columns %v", tableName, missingColumns)
+	}
+
 	return nil
 }
 

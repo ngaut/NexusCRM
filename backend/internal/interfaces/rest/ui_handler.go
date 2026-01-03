@@ -199,6 +199,11 @@ func (h *UIHandler) GetDashboard(c *gin.Context) {
 func (h *UIHandler) CreateDashboard(c *gin.Context) {
 	var dashboard models.DashboardConfig
 	HandleCreateEnvelope(c, "dashboard", "Dashboard created successfully", &dashboard, func() error {
+		// Strict Simplification: Do not allow widgets during creation.
+		// Agents/Clients must use add_dashboard_widget or update flow.
+		if len(dashboard.Widgets) > 0 {
+			return appErrors.NewValidationError("widgets", "Dashboard creation with widgets is not supported. Please create the dashboard first, then add widgets.")
+		}
 		return h.svc.UIMetadata.CreateDashboard(&dashboard)
 	})
 }

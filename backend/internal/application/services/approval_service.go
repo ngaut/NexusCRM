@@ -8,8 +8,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ApprovalService handles business logic for approval processes
@@ -152,7 +152,11 @@ func (s *ApprovalService) processAction(ctx context.Context, workItemID, newStat
 
 		// Verify user is authorized to act on this item
 		if !s.isAuthorizedApprover(item, user) {
-			return fmt.Errorf("you are not authorized to %s this item", newStatus)
+			action := "approve"
+			if newStatus == constants.ApprovalStatusRejected {
+				action = "reject"
+			}
+			return fmt.Errorf("you are not authorized to %s this item", action)
 		}
 
 		// Update work item
@@ -176,7 +180,7 @@ func (s *ApprovalService) processAction(ctx context.Context, workItemID, newStat
 }
 
 func (s *ApprovalService) findActiveProcess(ctx context.Context, objectAPIName string, user *models.UserSession) (models.SObject, error) {
-	filterExpr := fmt.Sprintf("object_api_name == '%s' && is_active == true", objectAPIName)
+	filterExpr := fmt.Sprintf("%s == '%s' && %s == true", constants.FieldSysApprovalProcess_ObjectAPIName, objectAPIName, constants.FieldSysApprovalProcess_IsActive)
 	processes, err := s.query.QueryWithFilter(
 		ctx,
 		constants.TableApprovalProcess,

@@ -94,7 +94,7 @@ func TestValidationService_ValidateFlow(t *testing.T) {
 	vs := NewValidationService(formula.NewEngine())
 
 	existing := []*models.Flow{
-		{ID: "f1", TriggerObject: constants.TableAccount, TriggerType: constants.TriggerTypeRecordCreated, Status: constants.FlowStatusActive},
+		{ID: "f1", TriggerObject: "account", TriggerType: constants.TriggerTypeRecordCreated, Status: constants.FlowStatusActive},
 	}
 
 	tests := []struct {
@@ -105,31 +105,31 @@ func TestValidationService_ValidateFlow(t *testing.T) {
 	}{
 		{
 			name:      "Allow different trigger type",
-			flow:      &models.Flow{ID: "f2", TriggerObject: constants.TableAccount, TriggerType: constants.TriggerTypeRecordUpdated, Status: constants.FlowStatusActive},
+			flow:      &models.Flow{ID: "f2", TriggerObject: "account", TriggerType: constants.TriggerTypeRecordUpdated, Status: constants.FlowStatusActive},
 			existing:  existing,
 			expectErr: false,
 		},
 		{
 			name:      "Allow different object",
-			flow:      &models.Flow{ID: "f3", TriggerObject: constants.TableContact, TriggerType: constants.TriggerTypeRecordCreated, Status: constants.FlowStatusActive},
+			flow:      &models.Flow{ID: "f3", TriggerObject: "contact", TriggerType: constants.TriggerTypeRecordCreated, Status: constants.FlowStatusActive},
 			existing:  existing,
 			expectErr: false,
 		},
 		{
 			name:      "Deny duplicate trigger",
-			flow:      &models.Flow{ID: "f4", TriggerObject: constants.TableAccount, TriggerType: constants.TriggerTypeRecordCreated, Status: constants.FlowStatusActive},
+			flow:      &models.Flow{ID: "f4", TriggerObject: "account", TriggerType: constants.TriggerTypeRecordCreated, Status: constants.FlowStatusActive},
 			existing:  existing,
 			expectErr: true,
 		},
 		{
 			name:      "Allow self update",
-			flow:      &models.Flow{ID: "f1", TriggerObject: constants.TableAccount, TriggerType: constants.TriggerTypeRecordCreated, Status: constants.FlowStatusActive},
+			flow:      &models.Flow{ID: "f1", TriggerObject: "account", TriggerType: constants.TriggerTypeRecordCreated, Status: constants.FlowStatusActive},
 			existing:  existing,
 			expectErr: false,
 		},
 		{
 			name:      "Allow duplicate if inactive",
-			flow:      &models.Flow{ID: "f5", TriggerObject: constants.TableAccount, TriggerType: constants.TriggerTypeRecordCreated, Status: constants.FlowStatusDraft},
+			flow:      &models.Flow{ID: "f5", TriggerObject: "account", TriggerType: constants.TriggerTypeRecordCreated, Status: constants.FlowStatusDraft},
 			existing:  existing,
 			expectErr: false,
 		},

@@ -178,9 +178,9 @@ func TestFlowExecutor_HighPriorityAlert(t *testing.T) {
 				ActionConfig: map[string]interface{}{
 					constants.ConfigTargetObject: "Ticket",
 					constants.ConfigFieldMappings: map[string]interface{}{
-						constants.FieldName:     "URGENT: Alert",
-						constants.FieldPriority: "Medium",
-						constants.FieldStatus:   "New",
+						constants.FieldName:   "URGENT: Alert",
+						"priority":            "Medium",
+						constants.FieldStatus: "New",
 					},
 				},
 			},
@@ -208,9 +208,9 @@ func TestFlowExecutor_HighPriorityAlert(t *testing.T) {
 		payload := RecordEventPayload{
 			ObjectAPIName: "Ticket",
 			Record: models.SObject{
-				constants.FieldID:       "ticket-1",
-				constants.FieldPriority: "High",
-				constants.FieldName:     "Crash",
+				constants.FieldID:   "ticket-1",
+				"priority":          "High",
+				constants.FieldName: "Crash",
 			},
 			CurrentUser: &models.UserSession{ID: "admin"},
 		}

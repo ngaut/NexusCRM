@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/backend/pkg/formula"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ServiceManager orchestrates all services with dependency injection
@@ -32,6 +32,7 @@ type ServiceManager struct {
 	Notification    *NotificationService
 	Validation      *ValidationService
 	Outbox          *OutboxService
+	Scheduler       *SchedulerService
 }
 
 // NewServiceManager creates a new service manager with all dependencies wired
@@ -79,6 +80,9 @@ func NewServiceManager(db *database.TiDBConnection) *ServiceManager {
 
 	// Register flow handlers for metadata-driven automation
 	sm.FlowExecutor.RegisterFlowHandlers()
+
+	// Scheduler Service for scheduled flow execution
+	sm.Scheduler = NewSchedulerService(db.DB(), sm.Metadata, sm.FlowExecutor)
 
 	return sm
 }
@@ -133,5 +137,21 @@ func (sm *ServiceManager) StartOutboxWorker() {
 func (sm *ServiceManager) StopOutboxWorker() {
 	if sm.Outbox != nil {
 		sm.Outbox.StopWorker()
+	}
+}
+
+// StartScheduler starts the scheduled job executor.
+// Call this during server startup.
+func (sm *ServiceManager) StartScheduler() {
+	if sm.Scheduler != nil {
+		go sm.Scheduler.Start()
+	}
+}
+
+// StopScheduler stops the scheduled job executor gracefully.
+// Call this during server shutdown.
+func (sm *ServiceManager) StopScheduler() {
+	if sm.Scheduler != nil {
+		sm.Scheduler.Stop()
 	}
 }

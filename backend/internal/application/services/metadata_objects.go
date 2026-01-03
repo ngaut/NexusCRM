@@ -98,6 +98,76 @@ func (ms *MetadataService) GetFlows() []*models.Flow {
 	return flows
 }
 
+// GetScheduledFlows returns all flows with trigger_type = "schedule"
+func (ms *MetadataService) GetScheduledFlows() []models.Flow {
+	ms.mu.RLock()
+	defer ms.mu.RUnlock()
+
+	query := fmt.Sprintf(`
+		SELECT id, name, trigger_object, trigger_type, trigger_condition, action_type, 
+		       action_config, flow_type, description, status, schedule, schedule_timezone,
+		       last_run_at, next_run_at, is_running
+		FROM %s 
+		WHERE trigger_type = ? AND (is_deleted = false OR is_deleted IS NULL)
+	`, constants.TableFlow)
+
+	rows, err := ms.db.Query(query, constants.TriggerTypeSchedule)
+	if err != nil {
+		log.Printf("Failed to query scheduled flows: %v", err)
+		return []models.Flow{}
+	}
+	defer func() { _ = rows.Close() }()
+
+	var flows []models.Flow
+	for rows.Next() {
+		var flow models.Flow
+		var actionConfigJSON, description sql.NullString
+		var schedule, scheduleTimezone sql.NullString
+		var lastRunAt, nextRunAt sql.NullTime
+		var isRunning sql.NullBool
+
+		err := rows.Scan(
+			&flow.ID, &flow.Name, &flow.TriggerObject, &flow.TriggerType,
+			&flow.TriggerCondition, &flow.ActionType, &actionConfigJSON,
+			&flow.FlowType, &description, &flow.Status, &schedule, &scheduleTimezone,
+			&lastRunAt, &nextRunAt, &isRunning,
+		)
+		if err != nil {
+			log.Printf("Failed to scan scheduled flow: %v", err)
+			continue
+		}
+
+		if description.Valid {
+			flow.Description = &description.String
+		}
+		if actionConfigJSON.Valid && actionConfigJSON.String != "" {
+			var config map[string]interface{}
+			if err := json.Unmarshal([]byte(actionConfigJSON.String), &config); err == nil {
+				flow.ActionConfig = config
+			}
+		}
+		if schedule.Valid {
+			flow.Schedule = &schedule.String
+		}
+		if scheduleTimezone.Valid {
+			flow.ScheduleTimezone = &scheduleTimezone.String
+		}
+		if lastRunAt.Valid {
+			flow.LastRunAt = &lastRunAt.Time
+		}
+		if nextRunAt.Valid {
+			flow.NextRunAt = &nextRunAt.Time
+		}
+		if isRunning.Valid {
+			flow.IsRunning = isRunning.Bool
+		}
+
+		flows = append(flows, flow)
+	}
+
+	return flows
+}
+
 func (ms *MetadataService) GetValidationRules(objectAPIName string) []*models.ValidationRule {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()

@@ -68,9 +68,9 @@ func (h *ApprovalHandler) Submit(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"success":      true,
-		constants.FieldMessage:      "Record submitted for approval",
-		"work_item_id": workItem[constants.FieldID],
+		"success":              true,
+		constants.FieldMessage: "Record submitted for approval",
+		"work_item_id":         workItem[constants.FieldID],
 	})
 }
 
@@ -89,7 +89,7 @@ func (h *ApprovalHandler) Approve(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"success": true,
+		"success":              true,
 		constants.FieldMessage: "Approval granted",
 	})
 }
@@ -109,7 +109,7 @@ func (h *ApprovalHandler) Reject(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"success": true,
+		"success":              true,
 		constants.FieldMessage: "Approval rejected",
 	})
 }
@@ -199,8 +199,8 @@ func handleApprovalError(c *gin.Context, err error) {
 		RespondError(c, 400, msg)
 		return
 	}
-	if msg == "you are not authorized to approved this item" ||
-		msg == "you are not authorized to rejected this item" {
+	if msg == "you are not authorized to approve this item" ||
+		msg == "you are not authorized to reject this item" {
 		RespondError(c, 403, msg)
 		return
 	}

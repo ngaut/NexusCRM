@@ -433,3 +433,9 @@ func (c *NexusClient) PurgeRecord(ctx context.Context, id string, authToken stri
 	// DELETE /api/data/recyclebin/:id
 	return c.doRequest(ctx, "DELETE", fmt.Sprintf("/api/data/recyclebin/%s", id), nil, nil, authToken)
 }
+
+// ExecuteFlow triggers a flow to run immediately
+func (c *NexusClient) ExecuteFlow(ctx context.Context, flowID string, authToken string) error {
+	// POST /api/flows/:flowId/execute
+	return c.doRequest(ctx, "POST", fmt.Sprintf("/api/flows/%s/execute", flowID), nil, nil, authToken)
+}

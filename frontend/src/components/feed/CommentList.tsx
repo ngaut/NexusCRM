@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Paperclip, Send, File, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import DOMPurify from 'dompurify';
 import { RichTextEditor } from '../RichTextEditor';
 import { useErrorToast } from '../ui/Toast';
 import { ConfirmationModal } from '../modals/ConfirmationModal';
@@ -119,8 +120,8 @@ export const CommentList: React.FC<CommentListProps> = ({ objectApiName, recordI
                                 {c.is_resolved && <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium">Resolved</span>}
                             </div>
                         </div>
-                        {/* Render HTML Body */}
-                        <div className={`prose prose-sm max-w-none text-slate-700 ${isReply ? 'text-xs' : 'text-sm'}`} dangerouslySetInnerHTML={{ __html: c.body }} />
+                        {/* Render HTML Body - sanitized to prevent XSS */}
+                        <div className={`prose prose-sm max-w-none text-slate-700 ${isReply ? 'text-xs' : 'text-sm'}`} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(c.body) }} />
 
                         {/* Attachments */}
                         {c.attachments && c.attachments.length > 0 && (
