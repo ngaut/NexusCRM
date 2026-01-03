@@ -179,6 +179,7 @@ export function MetadataRecordForm({
                                 value={value?.toString() || ''}
                                 onChange={onChange}
                                 disabled={disabled}
+                                onFocus={(e) => e.target.select()}
                             />
                         )}
                     />
@@ -215,6 +216,7 @@ export function MetadataRecordForm({
                                 onChange={onChange}
                                 step={field.type === 'Currency' ? "0.01" : "1"}
                                 disabled={disabled}
+                                onFocus={(e) => e.target.select()}
                             />
                         )}
                     />
@@ -232,6 +234,7 @@ export function MetadataRecordForm({
                                 value={value?.toString() || ''}
                                 onChange={onChange}
                                 disabled={disabled}
+                                onFocus={(e) => e.target.select()}
                             />
                         )}
                     />
@@ -249,6 +252,7 @@ export function MetadataRecordForm({
                                 value={value ? new Date(value as string).toISOString().split('T')[0] : ''}
                                 onChange={onChange}
                                 disabled={disabled}
+                                onFocus={(e) => e.target.select()}
                             />
                         )}
                     />
@@ -289,6 +293,7 @@ export function MetadataRecordForm({
                                 value={value?.toString() || ''}
                                 onChange={onChange}
                                 disabled={disabled}
+                                onFocus={(e) => e.target.select()}
                             />
                         )}
                     />
@@ -310,6 +315,7 @@ export function MetadataRecordForm({
                                 value={value?.toString() || ''}
                                 onChange={onChange}
                                 disabled={disabled}
+                                onFocus={(e) => e.target.select()}
                             />
                         )}
                     />

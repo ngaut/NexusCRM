@@ -86,6 +86,7 @@ export function ChangePasswordModal({
                             className="w-full h-10 px-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
                             placeholder="Enter new password"
                             required
+                            onFocus={(e) => e.target.select()}
                         />
                     </div>
 
@@ -100,6 +101,7 @@ export function ChangePasswordModal({
                             className="w-full h-10 px-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
                             placeholder="Confirm new password"
                             required
+                            onFocus={(e) => e.target.select()}
                         />
                     </div>
 

@@ -7,11 +7,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/backend/pkg/auth"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // AuthService handles authentication, session management, and password operations
@@ -45,13 +45,15 @@ func (s *AuthService) Login(email, password, ip, userAgent string) (*LoginResult
 		Password  sql.NullString
 		ProfileId string
 		RoleId    sql.NullString
+		FirstName sql.NullString
+		LastName  sql.NullString
 	}
 
-	query := fmt.Sprintf("SELECT %s, %s, %s, %s, %s, %s FROM %s WHERE %s = ? LIMIT 1",
-		constants.FieldID, constants.FieldUsername, constants.FieldEmail, constants.FieldPassword, constants.FieldProfileID, constants.FieldRoleID,
+	query := fmt.Sprintf("SELECT %s, %s, %s, %s, %s, %s, %s, %s FROM %s WHERE %s = ? LIMIT 1",
+		constants.FieldID, constants.FieldUsername, constants.FieldEmail, constants.FieldPassword, constants.FieldProfileID, constants.FieldRoleID, constants.FieldFirstName, constants.FieldLastName,
 		constants.TableUser, constants.FieldEmail)
 
-	err := s.db.QueryRow(query, email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.ProfileId, &user.RoleId)
+	err := s.db.QueryRow(query, email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.ProfileId, &user.RoleId, &user.FirstName, &user.LastName)
 	if err == sql.ErrNoRows {
 		log.Printf("⚠️ Login failed for %s: user not found", email)
 		return nil, errors.NewUnauthorizedError("Invalid email or password")
@@ -60,10 +62,41 @@ func (s *AuthService) Login(email, password, ip, userAgent string) (*LoginResult
 		return nil, fmt.Errorf("database error: %w", err)
 	}
 
+	// Construct Display Name
+	displayName := user.Username
+	if user.FirstName.Valid || user.LastName.Valid {
+		parts := []string{}
+		if user.FirstName.Valid && user.FirstName.String != "" {
+			parts = append(parts, user.FirstName.String)
+		}
+		if user.LastName.Valid && user.LastName.String != "" {
+			parts = append(parts, user.LastName.String)
+		}
+		if len(parts) > 0 {
+			// Join with space
+			fullName := ""
+			for i, p := range parts {
+				if i > 0 {
+					fullName += " "
+				}
+				fullName += p
+			}
+			displayName = fullName
+		}
+	}
+
 	// 2. Verify password
 	if !user.Password.Valid {
+		log.Printf("⚠️ Login failed for %s: Password not valid (NULL) in DB", email)
 		return nil, errors.NewUnauthorizedError("Password authentication not configured for this user")
 	}
+	// DEBUG: Print hash length and prefix
+	if len(user.Password.String) > 10 {
+		log.Printf("🔍 Debug Login: Stored hash len=%d, prefix=%s", len(user.Password.String), user.Password.String[:10])
+	} else {
+		log.Printf("🔍 Debug Login: Stored hash len=%d (too short!)", len(user.Password.String))
+	}
+
 	if !auth.VerifyPassword(password, user.Password.String) {
 		log.Printf("⚠️ Login failed for %s: invalid password", email)
 		return nil, errors.NewUnauthorizedError("Invalid email or password")
@@ -77,7 +110,7 @@ func (s *AuthService) Login(email, password, ip, userAgent string) (*LoginResult
 
 	userSession := auth.UserSession{
 		ID:        user.ID,
-		Name:      user.Username,
+		Name:      displayName,
 		Email:     user.Email,
 		ProfileId: user.ProfileId,
 		RoleId:    roleIdPtr,

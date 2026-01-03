@@ -105,7 +105,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({ currentAppId, onSelect
 
                     <div className="p-2 border-t border-slate-100">
                         <Link
-                            to="/setup/apps"
+                            to="/setup/appmanager"
                             onClick={() => setIsOpen(false)}
                             className="block w-full text-center text-sm text-blue-600 hover:text-blue-700 py-2 hover:bg-blue-50 rounded-lg transition-colors"
                         >

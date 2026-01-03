@@ -10,6 +10,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Source dependencies
 source "$SCRIPT_DIR/config.sh"
 source "$SCRIPT_DIR/lib/helpers.sh"
+source "$SCRIPT_DIR/lib/teardown.sh"
+
+# Default configs
+CLEANUP_ON_EXIT=false
 
 # Initialize counters
 export TOTAL_PASSED=0
@@ -43,6 +47,7 @@ usage() {
     echo ""
     echo "Options:"
     echo "  --list, -l       List available test suites"
+    echo "  --cleanup        Run teardown after tests"
     echo "  --help, -h       Show this help message"
     echo ""
     echo "Examples:"
@@ -108,6 +113,9 @@ else
     # Parse arguments
     for arg in "$@"; do
         case $arg in
+            --cleanup)
+                CLEANUP_ON_EXIT=true
+                ;;
             --list|-l)
                 list_suites
                 ;;
@@ -188,6 +196,17 @@ echo -e "Pass Rate: ${GREEN}$PASS_RATE${NC}"
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
+
+# Teardown
+if [ "$CLEANUP_ON_EXIT" = true ]; then
+    echo ""
+    echo "═══════════════════════════════════════════════════════════"
+    echo "   Global Teardown"
+    echo "═══════════════════════════════════════════════════════════"
+    if api_login; then
+        teardown_standard_objects
+    fi
+fi
 
 if [ $TOTAL_FAILED -eq 0 ]; then
     echo -e "${GREEN}✓ ALL TESTS PASSED!${NC}"

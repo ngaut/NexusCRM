@@ -190,6 +190,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
                         disabled={!isEnabled}
                         className={inputClasses}
                         step={field.type === 'Currency' ? '0.01' : 'any'}
+                        onFocus={(e) => e.target.select()}
                     />
                 );
 
@@ -202,6 +203,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
                         className={`${inputClasses} font-mono text-sm`}
                         rows={6}
                         placeholder='{ "key": "value" }'
+                        onFocus={(e) => e.target.select()}
                     />
                 );
 
@@ -214,6 +216,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
                         disabled={!isEnabled}
                         className={inputClasses}
                         rows={3}
+                        onFocus={(e) => e.target.select()}
                     />
                 );
 
@@ -226,6 +229,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
                         disabled={!isEnabled}
                         className={inputClasses}
                         placeholder="https://example.com"
+                        onFocus={(e) => e.target.select()}
                     />
                 );
 
@@ -238,6 +242,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
                         disabled={!isEnabled}
                         className={inputClasses}
                         placeholder={`Enter ${field.label}...`}
+                        onFocus={(e) => e.target.select()}
                     />
                 );
         }

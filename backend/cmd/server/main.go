@@ -72,11 +72,6 @@ func main() {
 		log.Printf("⚠️  Warning: Failed to initialize themes: %v", err)
 	}
 
-	// Initialize standard apps and tabs
-	if err := bootstrap.InitializeApps(svcMgr); err != nil {
-		log.Printf("⚠️  Warning: Failed to initialize apps: %v", err)
-	}
-
 	// Initialize UI components
 	if err := bootstrap.InitializeUIComponents(svcMgr); err != nil {
 		log.Printf("⚠️  Warning: Failed to initialize UI components: %v", err)

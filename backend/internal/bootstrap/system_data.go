@@ -92,43 +92,6 @@ func InitializeSystemData(sys *services.SystemManager) error {
 	return nil
 }
 
-//go:embed apps.json
-var appsJSON []byte
-
-type AppsData struct {
-	Apps []models.AppConfig `json:"apps"`
-}
-
-// InitializeApps ensures standard apps exist
-func InitializeApps(sm *services.ServiceManager) error {
-	log.Println("🔧 Initializing apps...")
-
-	var data AppsData
-	if err := json.Unmarshal(appsJSON, &data); err != nil {
-		return fmt.Errorf("failed to parse apps.json: %w", err)
-	}
-
-	// Process Apps
-	for _, app := range data.Apps {
-		if err := sm.UIMetadata.CreateApp(&app); err != nil {
-			if err.Error() != "app with ID '"+app.ID+"' already exists" {
-				log.Printf("   ⚠️  Failed to ensure app %s: %v", app.ID, err)
-			} else {
-				log.Printf("   🔄 %s app already exists, updating configuration...", app.ID)
-				if err := sm.UIMetadata.UpdateApp(app.ID, &app); err != nil {
-					log.Printf("   ⚠️  Failed to update app %s: %v", app.ID, err)
-				} else {
-					log.Printf("   ✅ %s app updated", app.ID)
-				}
-			}
-		} else {
-			log.Printf("   ✅ %s app created", app.ID)
-		}
-	}
-
-	return nil
-}
-
 //go:embed themes.json
 var themesJSON []byte
 

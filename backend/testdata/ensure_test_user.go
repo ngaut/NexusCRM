@@ -60,7 +60,7 @@ func main() {
 	} else if err != nil {
 		log.Fatalf("Database error: %v", err)
 	} else {
-		// Update existing user's password AND ProfileId (in case it was wrong)
+		// Update existing user's password AND ProfileId (to ensure consistency)
 		_, err = db.Exec(fmt.Sprintf(`
 			UPDATE %s
 			SET password = ?,

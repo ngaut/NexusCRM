@@ -183,10 +183,12 @@ func assertNoDuplicateActions(db *sql.DB, result *AssertionResult) {
 func assertNoDuplicateFlows(db *sql.DB, result *AssertionResult) {
 	log.Println("   📋 Checking for duplicate flows...")
 
+	// Check for duplicate flows (excluding 'schedule' which allows multiple)
 	rows, err := db.Query(`
 		SELECT trigger_object, trigger_type, COUNT(*) as cnt
 		FROM ` + "`" + constants.TableFlow + "`" + `
 		WHERE status = 'Active' AND (is_deleted = false OR is_deleted IS NULL)
+		AND trigger_type != 'schedule'
 		GROUP BY trigger_object, trigger_type
 		HAVING cnt > 1
 	`)
@@ -196,6 +198,7 @@ func assertNoDuplicateFlows(db *sql.DB, result *AssertionResult) {
 			SELECT trigger_object, trigger_type, COUNT(*) as cnt
 			FROM ` + "`" + constants.TableFlow + "`" + `
 			WHERE status = 'Active'
+			AND trigger_type != 'schedule'
 			GROUP BY trigger_object, trigger_type
 			HAVING cnt > 1
 		`)

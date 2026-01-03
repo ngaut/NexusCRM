@@ -37,10 +37,6 @@ cleanup_test_users() {
     if [ -n "$USER_B_ID" ]; then
         api_delete "/api/metadata/users/$USER_B_ID" > /dev/null 2>&1
     fi
-    # Delete temporary binary
-    if [ -n "$FORCE_LOGIN_TOOL" ] && [ -f "$FORCE_LOGIN_TOOL" ]; then
-        rm -f "$FORCE_LOGIN_TOOL"
-    fi
 }
 
 run_suite() {
@@ -120,10 +116,6 @@ setup_test_users() {
     local max_retries=10
     local consistency_reached=0
     
-    # Compile force_login tool (now in tools directory)
-    (cd backend && go build -o bin/force_login tools/force_login/main.go)
-    FORCE_LOGIN_TOOL="backend/bin/force_login"
-
     while [ $retries -lt $max_retries ]; do
         local user_check=$(api_get "/api/auth/users")
         if echo "$user_check" | grep -q "$USER_A_ID"; then
@@ -139,27 +131,43 @@ setup_test_users() {
         return 1
     fi
 
-    # Load .env for DB connection
-    if [ -f .env ]; then
-        set -a
-        source .env
-        set +a
+    echo "Step 3: Generating tokens for test users..."
+    
+    # Helper for login
+    login_and_get_token() {
+        local email="$1"
+        local password="$2"
+        local payload="{\"email\":\"$email\",\"password\":\"$password\"}"
+        api_post_unauth "/api/auth/login" "$payload"
+    }
+
+    # Login as User A
+    echo "Logging in as User A..."
+    # The payload had: email="user.a.$TIMESTAMP@test.com"
+    local email_a="user.a.$TIMESTAMP@test.com"
+    local login_a=$(login_and_get_token "$email_a" "Admin123!")
+    
+    if echo "$login_a" | grep -q "token"; then
+         TOKEN_A=$(echo "$login_a" | jq -r '.token')
+         echo "  ✅ User A logged in successfully"
+    else
+         echo "  ❌ User A login failed"
+         echo "  Response: $login_a"
+         return 1
     fi
 
-    # Force Login as User A
-    TOKEN_A=$("$FORCE_LOGIN_TOOL" "$USER_A_ID")
-    if [ -z "$TOKEN_A" ]; then
-        echo "  Failed to generate token for User A"
-        return 1
-    fi
-    # Force Login as User B
-    TOKEN_B=$("$FORCE_LOGIN_TOOL" "$USER_B_ID")
-    if [ -z "$TOKEN_B" ]; then
-        echo "  Failed to generate token for User B"
-        return 1
-    fi
+    # Login as User B
+    local email_b="user.b.$TIMESTAMP@test.com"
+    local login_b=$(login_and_get_token "$email_b" "Admin123!")
     
-    echo "  ✓ Users created and authenticated (via force login)"
+    if echo "$login_b" | grep -q "token"; then
+         TOKEN_B=$(echo "$login_b" | jq -r '.token')
+         echo "  ✅ User B logged in successfully"
+    else
+         echo "  ❌ User B login failed"
+         echo "  Response: $login_b"
+         return 1
+    fi
 }
 
 # Helper to make authenticated request as specific user

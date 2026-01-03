@@ -107,5 +107,25 @@ ensure_standard_objects_exist() {
         api_post "/api/metadata/objects/case/fields" '{"api_name": "priority", "label": "Priority", "type": "Select", "options": ["Low", "Medium", "High", "Critical"]}' > /dev/null
     fi
 
+    # NEXUS CRM APP
+    if ! api_get "/api/metadata/apps" | grep -q '"id":"nexus_crm"'; then
+        echo "   Creating Nexus CRM App..."
+        api_post "/api/metadata/apps" '{
+            "id": "nexus_crm",
+            "name": "nexus_crm",
+            "label": "Nexus CRM",
+            "description": "Standard CRM Application",
+            "icon": "LayoutDashboard",
+            "color": "#2563eb",
+            "navigation_items": [
+                {"id": "nav_account", "type": "object", "object_api_name": "account", "label": "Accounts", "icon": "Users"},
+                {"id": "nav_contact", "type": "object", "object_api_name": "contact", "label": "Contacts", "icon": "User"},
+                {"id": "nav_lead", "type": "object", "object_api_name": "lead", "label": "Leads", "icon": "Filter"},
+                {"id": "nav_opportunity", "type": "object", "object_api_name": "opportunity", "label": "Opportunities", "icon": "DollarSign"}
+            ],
+            "is_default": true
+        }' > /dev/null
+    fi
+
     echo "   ✅ Standard objects verification completed."
 }

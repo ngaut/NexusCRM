@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/pkg/auth"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ==================== User Management ====================
@@ -208,10 +208,10 @@ func (s *AuthService) DeleteUser(userID string) error {
 // GetUsers retrieves all users in the system
 func (s *AuthService) GetUsers() ([]map[string]interface{}, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, %s, %s, %s, %s, %s, %s 
+		SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s 
 		FROM %s 
 		ORDER BY %s DESC`,
-		constants.FieldID, constants.FieldUsername, constants.FieldEmail, constants.FieldProfileID, constants.FieldIsActive, constants.FieldCreatedDate, constants.FieldLastLoginDate,
+		constants.FieldID, constants.FieldUsername, constants.FieldEmail, constants.FieldProfileID, constants.FieldIsActive, constants.FieldCreatedDate, constants.FieldLastLoginDate, constants.FieldFirstName, constants.FieldLastName,
 		constants.TableUser,
 		constants.FieldCreatedDate)
 
@@ -223,18 +223,32 @@ func (s *AuthService) GetUsers() ([]map[string]interface{}, error) {
 
 	var users []map[string]interface{}
 	for rows.Next() {
-		var id, username, email, profileID string
+		var id, username, email, profileID, firstName, lastName string
 		var isActive bool
 		var createdDate, lastLogin sql.NullTime
 
-		if err := rows.Scan(&id, &username, &email, &profileID, &isActive, &createdDate, &lastLogin); err != nil {
+		if err := rows.Scan(&id, &username, &email, &profileID, &isActive, &createdDate, &lastLogin, &firstName, &lastName); err != nil {
 			continue
+		}
+
+		fullName := firstName
+		if lastName != "" && lastName != firstName {
+			fullName = firstName + " " + lastName
+		} else if lastName != "" {
+			// Handle case where splitName duplicated it? Or just show one?
+			// If firstName == lastName, usually single word.
+			fullName = firstName
+		}
+		// Actually, simple concat is safer:
+		fullName = strings.TrimSpace(firstName + " " + lastName)
+		if fullName == "" {
+			fullName = username // Fallback
 		}
 
 		user := map[string]interface{}{
 			constants.FieldID:            id,
 			constants.FieldUsername:      username,
-			constants.FieldName:          username, // Alias for UI
+			constants.FieldName:          fullName,
 			constants.FieldEmail:         email,
 			constants.FieldProfileID:     profileID,
 			constants.FieldIsActive:      isActive,
@@ -292,6 +306,10 @@ func splitName(fullName string) (firstName, lastName string) {
 	firstName = parts[0]
 	if len(parts) > 1 {
 		lastName = parts[1]
+	} else {
+		// If no last name is provided, use the first name as the last name
+		// This is a common fallacy in systems that require both names
+		lastName = firstName
 	}
 	return
 }

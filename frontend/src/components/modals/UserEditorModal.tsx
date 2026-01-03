@@ -98,6 +98,7 @@ export const UserEditorModal: React.FC<UserEditorModalProps> = ({ user, profiles
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                             className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            onFocus={(e) => e.target.select()}
                         />
                     </div>
 
@@ -109,6 +110,7 @@ export const UserEditorModal: React.FC<UserEditorModalProps> = ({ user, profiles
                             value={formData.email}
                             onChange={e => setFormData({ ...formData, email: e.target.value })}
                             className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            onFocus={(e) => e.target.select()}
                         />
                     </div>
 
@@ -156,6 +158,7 @@ export const UserEditorModal: React.FC<UserEditorModalProps> = ({ user, profiles
                                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                     placeholder={user ? "Leave empty to keep current" : ""}
+                                    onFocus={(e) => e.target.select()}
                                 />
                             </div>
 
@@ -167,6 +170,7 @@ export const UserEditorModal: React.FC<UserEditorModalProps> = ({ user, profiles
                                     value={formData.confirmPassword}
                                     onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    onFocus={(e) => e.target.select()}
                                 />
                             </div>
                         </>

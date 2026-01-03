@@ -435,8 +435,9 @@ func (sm *SchemaManager) mapSQLTypeToLogical(sqlType string) string {
 func (sm *SchemaManager) MapFieldTypeToSQL(fieldType string) string {
 	sqlType := fieldtypes.GetSQLType(fieldType)
 	if sqlType == "" {
-		// Default fallback for unknown types
-		return "VARCHAR(255)"
+		// Default fallback: assumes the type is already a valid SQL type (e.g. DATETIME, TINYINT, VARCHAR)
+		// This supports system tables that define raw SQL types in their JSON schema.
+		return fieldType
 	}
 	return sqlType
 }

@@ -34,7 +34,8 @@ func (sm *SchemaManager) buildColumnDDL(col schema.ColumnDefinition) string {
 	}
 
 	// Standard column DDL
-	sb.WriteString(fmt.Sprintf("`%s` %s", col.Name, col.Type))
+	sqlType := sm.MapFieldTypeToSQL(col.Type)
+	sb.WriteString(fmt.Sprintf("`%s` %s", col.Name, sqlType))
 
 	if !col.Nullable {
 		sb.WriteString(" NOT NULL")
