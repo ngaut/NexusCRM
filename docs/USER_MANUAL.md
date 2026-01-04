@@ -56,7 +56,7 @@ Welcome to **NexusCRM**, a metadata-driven CRM platform designed to manage your 
 ### Sidebar
 The left sidebar is your primary navigation:
 - **Apps**: Switch between Sales, Marketing, Service, etc.
-- **Tabs**: Object list views (Accounts, Contacts, Opportunities)
+- **Tabs**: Object list views
 - **Dashboards**: Analytics and KPIs
 - **Setup**: Admin configuration (if you're an admin)
 
@@ -78,13 +78,13 @@ The left sidebar is your primary navigation:
 ### List Views
 
 **Viewing Records**:
-- Navigate to any object tab (e.g., Accounts)
+- Navigate to any object tab
 - See all records you have access to
 - Click any record to view details
 
 **Filtering**:
 - Click "Filter" icon
-- Add conditions (e.g., `Industry equals Technology`)
+- Add conditions
 - Combine multiple filters with AND/OR logic
 - Save filters for reuse
 
@@ -139,7 +139,7 @@ The left sidebar is your primary navigation:
 - View real-time metrics and charts
 
 **Dashboard Widgets**:
-- **Metrics**: Key numbers (Total Revenue, Deal Count)
+- **Metrics**: Key numbers
 - **Charts**: Visual data (Bar, Pie, Line charts)
 - **Tables**: Lists of records meeting criteria
 - **SQL Analytics**: Advanced SQL queries with visualization (Admin only)
@@ -196,7 +196,7 @@ NexusCRM is a **metadata-driven platform** - you can customize without code.
 
 **Field Types Explained**:
 - **Formula**: Calculated using Excel-like syntax (e.g., `Amount * 0.1` for 10% commission)
-- **Lookup**: Creates relationship to another object (e.g., Account lookup on Contact)
+- **Lookup**: Creates relationship to another object
 - **Picklist**: Dropdown with predefined options
 
 ### Page Layouts
@@ -228,7 +228,7 @@ NexusCRM is a **metadata-driven platform** - you can customize without code.
 3. Define trigger:
    - Object (e.g., Opportunity)
    - Event (After Create, After Update)
-   - Condition (e.g., `Stage == 'Closed Won'`)
+   - Condition (e.g., `Status == 'Closed'`)
 4. Add actions:
    - Create Task
    - Send Email
@@ -302,26 +302,16 @@ NexusCRM is a **metadata-driven platform** - you can customize without code.
 
 ### Customization
 - ✅ Plan your data model before creating objects
-- ✅ Use standard objects when possible (Account, Contact)
 - ✅ Document custom fields and objects
 - ✅ Test changes in sandbox environment
 - ✅ Train users on new features
 
-## 8. Business Processes
 
-### Lead Conversion
-1. Open a **Lead** record
-2. Click the **Convert** action button
-3. The system will automatically:
-   - Create a new **Account** (Company)
-   - Create a new **Contact** (Person)
-   - Create a new **Opportunity** (Deal)
-   - Update Lead status to "Converted"
 
 ### AI Assistant (Nexus AI)
 - Click the **Nexus AI** button (🤖 icon) in the top navigation bar to open the assistant.
 - **Capabilities**:
-  - Answer questions about your data ("Show me high-value opportunities")
+  - Answer questions about your data
   - Navigate the system ("Go to Setup")
   - Perform actions ("Create a task to call John Doe")
 

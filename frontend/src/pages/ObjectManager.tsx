@@ -147,7 +147,6 @@ export const ObjectManager: React.FC = () => {
                         className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
                     >
                         <option value="all">All Objects</option>
-                        <option value="standard">Standard Objects</option>
                         <option value="custom">Custom Objects</option>
                     </select>
                 </div>

@@ -198,10 +198,6 @@ _System_User:
 **Operations (5 tables)**:
 - `_System_RecycleBin`, `_System_Log`, `_System_Recent`, `_System_AuditLog`, `_System_OutboxEvent`
 
-### 5.2 Business Tables
-- **Standard Objects**: Account, Contact, Opportunity, Lead, Task
-- **Custom Objects**: User-defined (suffix `__c`)
-
 ---
 
 ## 6. Security Architecture

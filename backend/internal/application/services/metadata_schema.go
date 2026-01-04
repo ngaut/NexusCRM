@@ -7,10 +7,10 @@ import (
 	"log"
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	domainSchema "github.com/nexuscrm/backend/internal/domain/schema"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ==================== Schema CRUD Methods ====================
@@ -19,6 +19,10 @@ import (
 func (ms *MetadataService) CreateSchema(schema *models.ObjectMetadata) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
+
+	// Capture original labels before any processing/defaults
+	originalPlural := schema.PluralLabel
+	originalLabel := schema.Label
 
 	// Validate Object Metadata
 	if ms.validationSvc != nil {
@@ -62,6 +66,15 @@ func (ms *MetadataService) CreateSchema(schema *models.ObjectMetadata) error {
 		} else {
 			log.Printf("✅ Auto-created default layout for %s", schema.APIName)
 		}
+	}
+
+	// 4. Force-Update Logic (Direct save to avoid Deadlock with UpdateSchema):
+	// Restore original labels
+	schema.PluralLabel = originalPlural
+	schema.Label = originalLabel
+
+	if err := ms.schemaMgr.SaveObjectMetadata(schema, ms.db); err != nil {
+		log.Printf("⚠️ Failed to apply plural label polish for %s: %v", schema.APIName, err)
 	}
 
 	ms.invalidateCacheLocked()

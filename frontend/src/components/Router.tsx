@@ -8,6 +8,7 @@ import { AppStudio } from '../pages/AppStudio';
 import { RecycleBin } from '../pages/RecycleBin';
 import { ApprovalQueue } from '../pages/ApprovalQueue';
 import { NotFound } from '../pages/NotFound';
+import { AppHomeRedirect } from './AppHomeRedirect';
 
 interface RouterProps {
   onToggleAI: () => void;
@@ -27,7 +28,7 @@ export function Router({ onToggleAI }: RouterProps) {
           </Layout>
         }
       >
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<AppHomeRedirect />} />
         {/* Dashboard viewing - redirects to library (consolidated to App-based) */}
         <Route path="/dashboards" element={<Dashboard />} />
         <Route path="/dashboard/:dashboardId" element={<Dashboard />} />

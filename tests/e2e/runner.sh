@@ -153,7 +153,6 @@ else
 fi
 
 
-# Global Setup: Ensure standard objects exist
 if [ ${#SUITES_TO_RUN[@]} -gt 0 ]; then
     echo ""
     echo "═══════════════════════════════════════════════════════════"
@@ -164,7 +163,7 @@ if [ ${#SUITES_TO_RUN[@]} -gt 0 ]; then
     
     # We need a token for setup
     if api_login; then
-        ensure_standard_objects_exist
+        ensure_test_objects
     else
         echo -e "${RED}✗ Global Login Failed. Aborting.${NC}"
         exit 1
@@ -204,7 +203,7 @@ if [ "$CLEANUP_ON_EXIT" = true ]; then
     echo "   Global Teardown"
     echo "═══════════════════════════════════════════════════════════"
     if api_login; then
-        teardown_standard_objects
+        echo "✅ Logged in for teardown"
     fi
 fi
 

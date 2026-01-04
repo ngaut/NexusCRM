@@ -12,13 +12,13 @@ fi
 
 echo "🔄 Tearing down existing metadata..."
 # Temporarily disable exit on error for teardown
+# Temporarily disable exit on error for teardown
 set +e
 source tests/e2e/lib/teardown.sh
-teardown_standard_objects
 set -e
 
 echo "🔄 Re-seeding metadata with fixes..."
 source tests/e2e/lib/setup.sh
-ensure_standard_objects_exist
+ensure_test_objects
 
 echo "✅ Reseed complete!"

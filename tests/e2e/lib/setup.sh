@@ -1,6 +1,8 @@
 #!/bin/bash
 # tests/e2e/lib/setup.sh
-# Ensures standard business objects exist before running tests
+# Ensures test objects exist before running tests
+# Note: These objects (Account, Contact, Lead, etc.) are created as CUSTOM objects
+# for testing purposes, replacing the legacy "Standard Objects".
 
 source "$(dirname "${BASH_SOURCE[0]}")/api.sh"
 
@@ -55,8 +57,8 @@ ensure_layout() {
     fi
 }
 
-ensure_standard_objects_exist() {
-    echo "⚡️ Ensuring standard business objects exist..."
+ensure_test_objects() {
+    echo "⚡️ Ensuring E2E test objects exist..."
 
     # ==========================
     # ACCOUNT
@@ -67,8 +69,8 @@ ensure_standard_objects_exist() {
             "label": "Account",
             "plural_label": "Accounts",
             "api_name": "account",
-            "description": "Account",
-            "is_custom": false,
+            "description": "Account (Test Object)",
+            "is_custom": true,
             "list_fields": ["name", "industry", "website", "phone"]
         }' > /dev/null
     fi
@@ -92,8 +94,8 @@ ensure_standard_objects_exist() {
             "label": "Contact",
             "plural_label": "Contacts",
             "api_name": "contact",
-            "description": "Contact",
-            "is_custom": false,
+            "description": "Contact (Test Object)",
+            "is_custom": true,
             "list_fields": ["first_name", "last_name", "email", "phone"]
         }' > /dev/null
     fi
@@ -117,8 +119,8 @@ ensure_standard_objects_exist() {
             "label": "Lead",
             "plural_label": "Leads",
             "api_name": "lead",
-            "description": "Lead",
-            "is_custom": false,
+            "description": "Lead (Test Object)",
+            "is_custom": true,
             "list_fields": ["name", "company", "email"]
         }' > /dev/null
     fi
@@ -140,8 +142,8 @@ ensure_standard_objects_exist() {
             "label": "Opportunity",
             "plural_label": "Opportunities",
             "api_name": "opportunity",
-            "description": "Opportunity",
-            "is_custom": false,
+            "description": "Opportunity (Test Object)",
+            "is_custom": true,
             "list_fields": ["name", "amount", "close_date"]
         }' > /dev/null
     fi
@@ -164,8 +166,8 @@ ensure_standard_objects_exist() {
             "label": "Case",
             "plural_label": "Cases",
             "api_name": "case",
-            "description": "Case",
-            "is_custom": false,
+            "description": "Case (Test Object)",
+            "is_custom": true,
             "list_fields": ["subject"]
         }' > /dev/null
     fi
@@ -202,79 +204,5 @@ ensure_standard_objects_exist() {
         }' > /dev/null
     fi
 
-
-    # ==========================
-    # LAYOUTS
-    # ==========================
-    create_layouts
-    
-    echo "   ✅ Standard objects verification completed."
-}
-
-create_layouts() {
-    echo "   Running Layout & Related List bootstrap..."
-
-    # ACCOUNT LAYOUT
-    ensure_layout "account" '{
-        "object_api_name": "account",
-        "label": "Account Layout",
-        "type": "Detail",
-        "is_default": true,
-        "sections": [
-            {
-                "id": "info",
-                "label": "Information",
-                "columns": 2,
-                "fields": ["name", "industry", "type", "website", "phone"]
-            }
-        ],
-        "related_lists": [
-            {
-                "id": "rl_contacts",
-                "label": "Contacts",
-                "object_api_name": "contact",
-                "lookup_field": "account_id",
-                "fields": ["first_name", "last_name", "phone", "email"]
-            },
-            {
-                "id": "rl_opportunities",
-                "label": "Opportunities",
-                "object_api_name": "opportunity",
-                "lookup_field": "account_id",
-                "fields": ["name", "stage_name", "amount", "close_date"]
-            },
-            {
-                "id": "rl_cases",
-                "label": "Cases",
-                "object_api_name": "case",
-                "lookup_field": "account_id",
-                "fields": ["subject", "status", "priority", "contact_id"]
-            }
-        ]
-    }'
-
-    # CONTACT LAYOUT
-    ensure_layout "contact" '{
-        "object_api_name": "contact",
-        "label": "Contact Layout",
-        "type": "Detail",
-        "is_default": true,
-        "sections": [
-            {
-                "id": "info",
-                "label": "Information",
-                "columns": 2,
-                "fields": ["first_name", "last_name", "email", "phone", "title", "account_id"]
-            }
-        ],
-        "related_lists": [
-            {
-                "id": "rl_cases",
-                "label": "Cases",
-                "object_api_name": "case",
-                "lookup_field": "contact_id",
-                "fields": ["subject", "status", "priority"]
-            }
-        ]
-    }'
+    echo "   ✅ Test objects verification completed."
 }

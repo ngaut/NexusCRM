@@ -22,7 +22,7 @@ func (ms *MetadataService) PrepareTableDefinition(schema *models.ObjectMetadata)
 
 	// Determine defaults
 	if schema.Description == nil || *schema.Description == "" {
-		desc := fmt.Sprintf("Custom object: %s", schema.Label)
+		desc := schema.Label
 		schema.Description = &desc
 	}
 	// In pure meta-driven architecture, all non-system objects use custom_object table type

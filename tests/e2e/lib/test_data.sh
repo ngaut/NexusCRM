@@ -15,10 +15,10 @@ if ! type api_post &>/dev/null; then
 fi
 
 # =========================================
-# STANDARD OBJECT FIELD REQUIREMENTS
+# Testing OBJECT FIELD REQUIREMENTS
 # =========================================
 
-# These constants document required fields for standard objects
+# These constants document required fields for Testing objects
 # Used by factory functions to ensure test data is valid
 
 # Note: Required fields are documented in each factory function below

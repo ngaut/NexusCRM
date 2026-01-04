@@ -99,7 +99,6 @@ export function isSystemTable(objectApiName: string): boolean {
 
 // ==================== Custom Objects ====================
 
-// Note: Standard objects (Account, Lead, etc.) are no longer hardcoded.
 // They are created dynamically via the Metadata API as part of the pure meta-driven architecture.
 
 export function isCustomObject(objectApiName: string): boolean {

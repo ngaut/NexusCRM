@@ -433,6 +433,11 @@ func (sm *SchemaManager) mapSQLTypeToLogical(sqlType string) string {
 // This is used by MetadataService to prepare TableDefinition
 // Now uses the centralized fieldtypes registry loaded from shared/constants/fieldTypes.json
 func (sm *SchemaManager) MapFieldTypeToSQL(fieldType string) string {
+	// Special handling for AutoNumber which is logically a string in storage
+	if strings.EqualFold(fieldType, string(constants.FieldTypeAutoNumber)) {
+		return "VARCHAR(255)"
+	}
+
 	sqlType := fieldtypes.GetSQLType(fieldType)
 	if sqlType == "" {
 		// Default fallback: assumes the type is already a valid SQL type (e.g. DATETIME, TINYINT, VARCHAR)

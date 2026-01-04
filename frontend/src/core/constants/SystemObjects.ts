@@ -13,7 +13,6 @@ export { SYSTEM_TABLE_NAMES, type SystemTableName };
 export const SYSTEM_TABLES = SYSTEM_TABLE_NAMES;
 
 // Object categorization from shared constants
-// Note: Standard objects are no longer hardcoded - they are created dynamically via Metadata API
 export {
     isCustomObject,
     OBJECT_CATEGORIES,

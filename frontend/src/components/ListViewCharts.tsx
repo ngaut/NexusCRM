@@ -158,60 +158,73 @@ export function ListViewCharts({ objectMetadata, filterExpr }: ListViewChartsPro
             {/* Content */}
             {isExpanded && (
                 <div className="px-5 pb-5 pt-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {/* Stat Cards */}
-                        {stats.map((stat, i) => (
-                            <div
-                                key={i}
-                                className={`p-4 rounded-xl bg-gradient-to-br ${stat.color === 'blue' ? 'from-blue-50 to-blue-100/50' :
-                                    stat.color === 'emerald' ? 'from-emerald-50 to-emerald-100/50' :
-                                        'from-slate-50 to-slate-100/50'
-                                    }`}
-                            >
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-slate-600">{stat.label}</span>
-                                    <div className={`${stat.color === 'blue' ? 'text-blue-600' :
-                                        stat.color === 'emerald' ? 'text-emerald-600' :
-                                            'text-slate-600'
-                                        }`}>
-                                        {stat.icon}
-                                    </div>
-                                </div>
-                                <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
-                            </div>
-                        ))}
+                    {/* Adaptive Grid: Up to 4 columns based on actual item count */}
+                    {(() => {
+                        const totalItems = stats.length + (distribution.length > 0 ? 1 : 0);
+                        const colsClass = {
+                            1: 'lg:grid-cols-1',
+                            2: 'lg:grid-cols-2',
+                            3: 'lg:grid-cols-3',
+                            4: 'lg:grid-cols-4'
+                        }[Math.min(totalItems, 4)] || 'lg:grid-cols-4';
 
-                        {/* Distribution Chart (Mini Horizontal Bars) */}
-                        {distribution.length > 0 && (
-                            <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-violet-100/50 col-span-1 lg:col-span-1">
-                                <div className="flex items-center justify-between mb-3">
-                                    <span className="text-sm font-medium text-slate-600">
-                                        By {picklistFields.find(f => f.api_name === distributionField)?.label || distributionField}
-                                    </span>
-                                    <PieChart size={18} className="text-violet-600" />
-                                </div>
-                                <div className="space-y-2">
-                                    {distribution.slice(0, 4).map((d, i) => (
-                                        <div key={i} className="flex items-center gap-2">
-                                            <div
-                                                className="h-2 rounded-full"
-                                                style={{
-                                                    width: `${Math.max((d.value / totalDistribution) * 100, 5)}%`,
-                                                    backgroundColor: d.color,
-                                                    minWidth: '8px'
-                                                }}
-                                            />
-                                            <span className="text-xs text-slate-600 truncate flex-1">{d.label}</span>
-                                            <span className="text-xs font-semibold text-slate-700">{d.value}</span>
+                        return (
+                            <div className={`grid grid-cols-1 md:grid-cols-2 ${colsClass} gap-4`}>
+                                {/* Stat Cards */}
+                                {stats.map((stat, i) => (
+                                    <div
+                                        key={i}
+                                        className={`p-4 rounded-xl bg-gradient-to-br ${stat.color === 'blue' ? 'from-blue-50 to-blue-100/50' :
+                                            stat.color === 'emerald' ? 'from-emerald-50 to-emerald-100/50' :
+                                                'from-slate-50 to-slate-100/50'
+                                            }`}
+                                    >
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm font-medium text-slate-600">{stat.label}</span>
+                                            <div className={`${stat.color === 'blue' ? 'text-blue-600' :
+                                                stat.color === 'emerald' ? 'text-emerald-600' :
+                                                    'text-slate-600'
+                                                }`}>
+                                                {stat.icon}
+                                            </div>
                                         </div>
-                                    ))}
-                                    {distribution.length > 4 && (
-                                        <div className="text-xs text-slate-400">+{distribution.length - 4} more</div>
-                                    )}
-                                </div>
+                                        <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
+                                    </div>
+                                ))}
+
+                                {/* Distribution Chart (Mini Horizontal Bars) */}
+                                {distribution.length > 0 && (
+                                    <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-violet-100/50 col-span-1 lg:col-span-1">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="text-sm font-medium text-slate-600">
+                                                By {picklistFields.find(f => f.api_name === distributionField)?.label || distributionField}
+                                            </span>
+                                            <PieChart size={18} className="text-violet-600" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            {distribution.slice(0, 4).map((d, i) => (
+                                                <div key={i} className="flex items-center gap-2">
+                                                    <div
+                                                        className="h-2 rounded-full"
+                                                        style={{
+                                                            width: `${Math.max((d.value / totalDistribution) * 100, 5)}%`,
+                                                            backgroundColor: d.color,
+                                                            minWidth: '8px'
+                                                        }}
+                                                    />
+                                                    <span className="text-xs text-slate-600 truncate flex-1">{d.label}</span>
+                                                    <span className="text-xs font-semibold text-slate-700">{d.value}</span>
+                                                </div>
+                                            ))}
+                                            {distribution.length > 4 && (
+                                                <div className="text-xs text-slate-400">+{distribution.length - 4} more</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
+                        );
+                    })()}
                 </div>
             )}
         </div>
