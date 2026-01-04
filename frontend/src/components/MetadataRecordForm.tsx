@@ -13,7 +13,7 @@ import { COMMON_FIELDS } from '../core/constants';
 import { FIELD_TYPES, FieldType } from '@shared/generated/constants';
 
 // Additional hidden fields beyond SYSTEM_FIELDS
-const ADDITIONAL_HIDDEN = ['system_modstamp', 'stage_name'] as const;
+const ADDITIONAL_HIDDEN = ['system_modstamp'] as const;
 
 interface MetadataRecordFormProps {
     objectMetadata: ObjectMetadata;

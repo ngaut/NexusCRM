@@ -34,6 +34,7 @@ export const ObjectManager: React.FC = () => {
 
     const filteredSchemas = useMemo(() => {
         return schemas.filter(schema => {
+            if (schema.api_name.startsWith('_')) return false;
             const matchesSearch = schema.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 schema.api_name.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesType = typeFilter === 'all' ||

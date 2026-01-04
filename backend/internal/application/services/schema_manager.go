@@ -536,7 +536,14 @@ func (sm *SchemaManager) ValidateFieldDefinition(field schema.ColumnDefinition) 
 	}
 
 	// 2. Type-Specific Assertions
-	switch field.Type {
+	// Use LogicalType for validation to catch metadata issues (e.g. Picklist options)
+	// regardless of the underlying SQL storage type (e.g. VARCHAR)
+	checkType := field.LogicalType
+	if checkType == "" {
+		checkType = field.Type
+	}
+
+	switch checkType {
 	case string(constants.FieldTypeLookup):
 		// User assumption: Lookups must specific a target
 		if field.ReferenceTo == "" && len(field.AllReferences) == 0 {
@@ -545,9 +552,7 @@ func (sm *SchemaManager) ValidateFieldDefinition(field schema.ColumnDefinition) 
 	case string(constants.FieldTypePicklist):
 		// User assumption: Picklists must have options
 		if len(field.Options) == 0 {
-			// Note: We allow empty options temporarily if loaded from partial metadata?
-			// But creating a new field via schema without options should fail.
-			// Let's enforce it strictly "Faile Fast".
+			// Fail Fast: Reject metadata that maps to a Picklist but has no options.
 			return fmt.Errorf("picklist field '%s' must have at least one option", field.Name)
 		}
 	case string(constants.FieldTypeFormula):

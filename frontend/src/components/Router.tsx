@@ -38,6 +38,7 @@ export function Router({ onToggleAI }: RouterProps) {
         <Route path="/approvals" element={<ApprovalQueue />} />
       </Route>
 
+      <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

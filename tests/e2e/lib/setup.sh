@@ -4,128 +4,277 @@
 
 source "$(dirname "${BASH_SOURCE[0]}")/api.sh"
 
+ensure_field() {
+    local obj_name="$1"
+    local field_name="$2"
+    local field_data="$3"
+
+    # Strategy: Try to create. If it fails (likely exists), then update.
+    # This avoids brittle grep checks on large JSON responses.
+    
+    echo "    Ensuring field $field_name on $obj_name..."
+    local resp=$(api_post "/api/metadata/objects/$obj_name/fields" "$field_data")
+    
+    # Check if creation failed (assuming failure means it exists)
+    if echo "$resp" | grep -q -i "error"; then
+        echo "      Creation failed (likely exists), updating..."
+        api_patch "/api/metadata/objects/$obj_name/fields/$field_name" "$field_data" > /dev/null
+    fi
+}
+
+ensure_layout() {
+    local obj_name="$1"
+    local layout_data="$2"
+
+    echo "    Ensuring Layout for $obj_name..."
+    
+    # 1. Find existing REAL layout ID (not default_)
+    # We get the first layout that doesn't start with "default_"
+    local layout_resp=$(api_get "/api/metadata/layouts/$obj_name")
+    local existing_id=$(echo "$layout_resp" | grep -o '"id":"[^"]*' | sed 's/"id":"//' | grep -v "^default_" | head -1)
+
+    local target_id=""
+    
+    if [ ! -z "$existing_id" ]; then
+        echo "    Found existing layout $existing_id. Updating..."
+        target_id="$existing_id"
+    else
+        echo "    No existing custom layout found. Creating new..."
+        target_id=$(uuidgen | tr '[:upper:]' '[:lower:]')
+    fi
+    
+    # Inject ID into JSON data
+    # Assuming layout_data starts with {
+    # We replace the starting { with { "id": "TARGET_ID", 
+    local data_with_id=$(echo "$layout_data" | sed "s/{/{\"id\": \"$target_id\", /")
+
+    local resp=$(api_post "/api/metadata/layouts" "$data_with_id")
+    
+    if echo "$resp" | grep -q -i "error"; then
+        echo "    ❌ Layout upsert failed: $resp"
+    fi
+}
+
 ensure_standard_objects_exist() {
     echo "⚡️ Ensuring standard business objects exist..."
 
+    # ==========================
     # ACCOUNT
+    # ==========================
     if ! api_get "/api/metadata/objects/account" | grep -q '"api_name":"account"'; then
         echo "   Creating Account object..."
         api_post "/api/metadata/objects" '{
             "label": "Account",
             "plural_label": "Accounts",
             "api_name": "account",
-            "description": "Standard Account Object",
+            "description": "Account",
             "is_custom": false,
-            "list_fields": ["name", "industry", "type", "website", "phone"]
+            "list_fields": ["name", "industry", "website", "phone"]
         }' > /dev/null
-        
-
     fi
-        
-    # Core Fields (Idempotent: Try to create, ignore if exists)
-    api_post "/api/metadata/objects/account/fields" '{"api_name": "name", "label": "Account Name", "type": "Text", "required": true, "is_name_field": true}' > /dev/null
-    api_post "/api/metadata/objects/account/fields" '{"api_name": "industry", "label": "Industry", "type": "Select", "options": ["Technology", "Finance", "Healthcare"]}' > /dev/null
-    api_post "/api/metadata/objects/account/fields" '{"api_name": "type", "label": "Type", "type": "Select", "options": ["Customer", "Partner", "Prospect"]}' > /dev/null
-    api_post "/api/metadata/objects/account/fields" '{"api_name": "website", "label": "Website", "type": "URL"}' > /dev/null
-    api_post "/api/metadata/objects/account/fields" '{"api_name": "annual_revenue", "label": "Annual Revenue", "type": "Currency"}' > /dev/null
-    api_post "/api/metadata/objects/account/fields" '{"api_name": "phone", "label": "Phone", "type": "Phone"}' > /dev/null
-    api_post "/api/metadata/objects/account/fields" '{"api_name": "theme_color", "label": "Theme Color", "type": "Text"}' > /dev/null
+    
+    ensure_field "account" "name" '{"api_name": "name", "label": "Account Name", "type": "Text", "required": true, "is_name_field": true}'
+    ensure_field "account" "industry" '{"api_name": "industry", "label": "Industry", "type": "Text"}'
+    ensure_field "account" "type" '{"api_name": "type", "label": "Type", "type": "Picklist", "options": ["Prospect", "Customer - Direct", "Customer - Channel", "Partner", "Competitor"]}'
+    ensure_field "account" "phone" '{"api_name": "phone", "label": "Phone", "type": "Phone"}'
+    ensure_field "account" "website" '{"api_name": "website", "label": "Website", "type": "Url"}'
 
+    # Update list fields
+    api_patch "/api/metadata/objects/account" '{"list_fields": ["name", "industry", "type", "website", "phone"]}' > /dev/null
+
+
+    # ==========================
     # CONTACT
+    # ==========================
     if ! api_get "/api/metadata/objects/contact" | grep -q '"api_name":"contact"'; then
         echo "   Creating Contact object..."
         api_post "/api/metadata/objects" '{
             "label": "Contact",
             "plural_label": "Contacts",
             "api_name": "contact",
-            "description": "Standard Contact Object",
+            "description": "Contact",
             "is_custom": false,
-            "list_fields": ["first_name", "last_name", "email", "phone", "title", "account_id"]
+            "list_fields": ["first_name", "last_name", "email", "phone"]
         }' > /dev/null
-        
-        api_post "/api/metadata/objects/contact/fields" '{"api_name": "first_name", "label": "First Name", "type": "Text"}' > /dev/null
-        api_post "/api/metadata/objects/contact/fields" '{"api_name": "last_name", "label": "Last Name", "type": "Text", "required": true, "is_name_field": true}' > /dev/null
-        api_post "/api/metadata/objects/contact/fields" '{"api_name": "email", "label": "Email", "type": "Email"}' > /dev/null
-        api_post "/api/metadata/objects/contact/fields" '{"api_name": "phone", "label": "Phone", "type": "Phone"}' > /dev/null
-        api_post "/api/metadata/objects/contact/fields" '{"api_name": "title", "label": "Title", "type": "Text"}' > /dev/null
-        api_post "/api/metadata/objects/contact/fields" '{"api_name": "account_id", "label": "Account", "type": "Lookup", "reference_to": ["account"]}' > /dev/null
     fi
 
+    ensure_field "contact" "first_name" '{"api_name": "first_name", "label": "First Name", "type": "Text"}'
+    ensure_field "contact" "last_name" '{"api_name": "last_name", "label": "Last Name", "type": "Text", "required": true, "is_name_field": true}'
+    ensure_field "contact" "email" '{"api_name": "email", "label": "Email", "type": "Email"}'
+    ensure_field "contact" "phone" '{"api_name": "phone", "label": "Phone", "type": "Phone"}'
+    ensure_field "contact" "title" '{"api_name": "title", "label": "Title", "type": "Text"}'
+    ensure_field "contact" "account_id" '{"api_name": "account_id", "label": "Account", "type": "Lookup", "reference_to": ["account"]}'
+
+    api_patch "/api/metadata/objects/contact" '{"list_fields": ["first_name", "last_name", "email", "phone", "account_id"]}' > /dev/null
+
+
+    # ==========================
     # LEAD
+    # ==========================
     if ! api_get "/api/metadata/objects/lead" | grep -q '"api_name":"lead"'; then
         echo "   Creating Lead object..."
         api_post "/api/metadata/objects" '{
             "label": "Lead",
             "plural_label": "Leads",
             "api_name": "lead",
-            "description": "Standard Lead Object",
+            "description": "Lead",
             "is_custom": false,
-            "list_fields": ["name", "company", "status", "email"]
+            "list_fields": ["name", "company", "email"]
         }' > /dev/null
-        
-        api_post "/api/metadata/objects/lead/fields" '{"api_name": "company", "label": "Company", "type": "Text", "required": true}' > /dev/null
-        api_post "/api/metadata/objects/lead/fields" '{"api_name": "name", "label": "Name", "type": "Text", "required": true, "is_name_field": true}' > /dev/null
-        api_post "/api/metadata/objects/lead/fields" '{"api_name": "email", "label": "Email", "type": "Email"}' > /dev/null
-        api_post "/api/metadata/objects/lead/fields" '{"api_name": "status", "label": "Status", "type": "Select", "options": ["Open", "Contacted", "Qualified", "Unqualified"]}' > /dev/null
     fi
 
+    ensure_field "lead" "company" '{"api_name": "company", "label": "Company", "type": "Text", "required": true}'
+    ensure_field "lead" "name" '{"api_name": "name", "label": "Name", "type": "Text", "required": true, "is_name_field": true}'
+    ensure_field "lead" "email" '{"api_name": "email", "label": "Email", "type": "Email"}'
+    ensure_field "lead" "status" '{"api_name": "status", "label": "Status", "type": "Picklist", "options": ["Open", "Contacted", "Qualified", "Unqualified"]}'
+
+    api_patch "/api/metadata/objects/lead" '{"list_fields": ["name", "company", "status", "email"]}' > /dev/null
+
+
+    # ==========================
     # OPPORTUNITY
+    # ==========================
     if ! api_get "/api/metadata/objects/opportunity" | grep -q '"api_name":"opportunity"'; then
         echo "   Creating Opportunity object..."
         api_post "/api/metadata/objects" '{
             "label": "Opportunity",
             "plural_label": "Opportunities",
             "api_name": "opportunity",
-            "description": "Standard Opportunity Object",
+            "description": "Opportunity",
             "is_custom": false,
-            "list_fields": ["name", "stage_name", "amount", "close_date", "account_id"]
+            "list_fields": ["name", "amount", "close_date"]
         }' > /dev/null
-        
-        api_post "/api/metadata/objects/opportunity/fields" '{"api_name": "name", "label": "Opportunity Name", "type": "Text", "required": true, "is_name_field": true}' > /dev/null
-        api_post "/api/metadata/objects/opportunity/fields" '{"api_name": "amount", "label": "Amount", "type": "Currency"}' > /dev/null
-        api_post "/api/metadata/objects/opportunity/fields" '{"api_name": "stage_name", "label": "Stage", "type": "Select", "options": ["Prospecting", "Qualification", "Needs Analysis", "Proposal", "Negotiation", "Closed Won", "Closed Lost"]}' > /dev/null
-        api_post "/api/metadata/objects/opportunity/fields" '{"api_name": "close_date", "label": "Close Date", "type": "Date"}' > /dev/null
-        api_post "/api/metadata/objects/opportunity/fields" '{"api_name": "account_id", "label": "Account", "type": "Lookup", "reference_to": ["account"]}' > /dev/null
     fi
 
+    ensure_field "opportunity" "name" '{"api_name": "name", "label": "Opportunity Name", "type": "Text", "required": true, "is_name_field": true}'
+    ensure_field "opportunity" "amount" '{"api_name": "amount", "label": "Amount", "type": "Currency"}'
+    ensure_field "opportunity" "stage_name" '{"api_name": "stage_name", "label": "Stage", "type": "Picklist", "options": ["Prospecting", "Qualification", "Needs Analysis", "Proposal", "Negotiation", "Closed Won", "Closed Lost"]}'
+    ensure_field "opportunity" "close_date" '{"api_name": "close_date", "label": "Close Date", "type": "Date"}'
+    ensure_field "opportunity" "account_id" '{"api_name": "account_id", "label": "Account", "type": "Lookup", "reference_to": ["account"]}'
+
+    api_patch "/api/metadata/objects/opportunity" '{"list_fields": ["name", "stage_name", "amount", "close_date", "account_id"]}' > /dev/null
+
+
+    # ==========================
     # CASE
+    # ==========================
     if ! api_get "/api/metadata/objects/case" | grep -q '"api_name":"case"'; then
         echo "   Creating Case object..."
         api_post "/api/metadata/objects" '{
             "label": "Case",
             "plural_label": "Cases",
             "api_name": "case",
-            "description": "Standard Service Case",
+            "description": "Case",
             "is_custom": false,
-            "list_fields": ["subject", "status", "priority", "contact_id", "account_id"]
+            "list_fields": ["subject"]
         }' > /dev/null
-
-        api_post "/api/metadata/objects/case/fields" '{"api_name": "subject", "label": "Subject", "type": "Text", "required": true, "is_name_field": true}' > /dev/null
-        api_post "/api/metadata/objects/case/fields" '{"api_name": "status", "label": "Status", "type": "Select", "options": ["New", "Working", "Escalated", "Closed"]}' > /dev/null
-        api_post "/api/metadata/objects/case/fields" '{"api_name": "contact_id", "label": "Contact", "type": "Lookup", "reference_to": ["contact"]}' > /dev/null
-        api_post "/api/metadata/objects/case/fields" '{"api_name": "account_id", "label": "Account", "type": "Lookup", "reference_to": ["account"]}' > /dev/null
-        api_post "/api/metadata/objects/case/fields" '{"api_name": "priority", "label": "Priority", "type": "Select", "options": ["Low", "Medium", "High", "Critical"]}' > /dev/null
     fi
 
-    # NEXUS CRM APP
+    ensure_field "case" "subject" '{"api_name": "subject", "label": "Subject", "type": "Text", "required": true, "is_name_field": true}'
+    ensure_field "case" "status" '{"api_name": "status", "label": "Status", "type": "Picklist", "options": ["New", "Working", "Escalated", "Closed"]}'
+    ensure_field "case" "priority" '{"api_name": "priority", "label": "Priority", "type": "Picklist", "options": ["Low", "Medium", "High", "Critical"]}'
+    ensure_field "case" "contact_id" '{"api_name": "contact_id", "label": "Contact", "type": "Lookup", "reference_to": ["contact"]}'
+    ensure_field "case" "account_id" '{"api_name": "account_id", "label": "Account", "type": "Lookup", "reference_to": ["account"]}'
+
+    api_patch "/api/metadata/objects/case" '{"list_fields": ["subject", "status", "priority", "contact_id", "account_id"]}' > /dev/null
+
+
+    # ==========================
+    # APP
+    # ==========================
     if ! api_get "/api/metadata/apps" | grep -q '"id":"nexus_crm"'; then
         echo "   Creating Nexus CRM App..."
         api_post "/api/metadata/apps" '{
             "id": "nexus_crm",
             "name": "nexus_crm",
             "label": "Nexus CRM",
-            "description": "Standard CRM Application",
+            "description": "CRM",
             "icon": "LayoutDashboard",
             "color": "#2563eb",
             "navigation_items": [
                 {"id": "nav_account", "type": "object", "object_api_name": "account", "label": "Accounts", "icon": "Users"},
                 {"id": "nav_contact", "type": "object", "object_api_name": "contact", "label": "Contacts", "icon": "User"},
                 {"id": "nav_lead", "type": "object", "object_api_name": "lead", "label": "Leads", "icon": "Filter"},
-                {"id": "nav_opportunity", "type": "object", "object_api_name": "opportunity", "label": "Opportunities", "icon": "DollarSign"}
+                {"id": "nav_opportunity", "type": "object", "object_api_name": "opportunity", "label": "Opportunities", "icon": "DollarSign"},
+                {"id": "nav_case", "type": "object", "object_api_name": "case", "label": "Cases", "icon": "Briefcase"}
             ],
             "is_default": true
         }' > /dev/null
     fi
 
+
+    # ==========================
+    # LAYOUTS
+    # ==========================
+    create_layouts
+    
     echo "   ✅ Standard objects verification completed."
+}
+
+create_layouts() {
+    echo "   Running Layout & Related List bootstrap..."
+
+    # ACCOUNT LAYOUT
+    ensure_layout "account" '{
+        "object_api_name": "account",
+        "label": "Account Layout",
+        "type": "Detail",
+        "is_default": true,
+        "sections": [
+            {
+                "id": "info",
+                "label": "Information",
+                "columns": 2,
+                "fields": ["name", "industry", "type", "website", "phone"]
+            }
+        ],
+        "related_lists": [
+            {
+                "id": "rl_contacts",
+                "label": "Contacts",
+                "object_api_name": "contact",
+                "lookup_field": "account_id",
+                "fields": ["first_name", "last_name", "phone", "email"]
+            },
+            {
+                "id": "rl_opportunities",
+                "label": "Opportunities",
+                "object_api_name": "opportunity",
+                "lookup_field": "account_id",
+                "fields": ["name", "stage_name", "amount", "close_date"]
+            },
+            {
+                "id": "rl_cases",
+                "label": "Cases",
+                "object_api_name": "case",
+                "lookup_field": "account_id",
+                "fields": ["subject", "status", "priority", "contact_id"]
+            }
+        ]
+    }'
+
+    # CONTACT LAYOUT
+    ensure_layout "contact" '{
+        "object_api_name": "contact",
+        "label": "Contact Layout",
+        "type": "Detail",
+        "is_default": true,
+        "sections": [
+            {
+                "id": "info",
+                "label": "Information",
+                "columns": 2,
+                "fields": ["first_name", "last_name", "email", "phone", "title", "account_id"]
+            }
+        ],
+        "related_lists": [
+            {
+                "id": "rl_cases",
+                "label": "Cases",
+                "object_api_name": "case",
+                "lookup_field": "contact_id",
+                "fields": ["subject", "status", "priority"]
+            }
+        ]
+    }'
 }

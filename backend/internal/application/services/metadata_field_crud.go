@@ -146,6 +146,9 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 			colDef.OnDelete = "RESTRICT"
 		}
 	}
+	if len(field.Options) > 0 {
+		colDef.Options = field.Options
+	}
 
 	// Delegate to SchemaManager
 	if err := ms.schemaMgr.AddColumn(objectAPIName, colDef); err != nil {

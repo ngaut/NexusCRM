@@ -49,7 +49,21 @@ const BooleanRenderer: React.FC<FieldRendererProps> = ({ value }) => (
     )
 );
 
-const PicklistRenderer: React.FC<FieldRendererProps> = ({ value }) => {
+const PicklistRenderer: React.FC<FieldRendererProps> = ({ value, field }) => {
+    // Fail Visible: Warn if we have a picklist but no options
+    const hasOptions = (field.options && field.options.length > 0) || (field.type === 'Picklist' && field.options && field.options.length > 0);
+    // Note: Some legacy fields might rely on checks. If strictly picklist, it must have options.
+    // For now, if value matches an option, good. If no options defined at all, warning.
+
+    if (field.type === 'Picklist' && (!field.options || field.options.length === 0)) {
+        return (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200" title="Metadata Error: Picklist has no options defined">
+                ⚠️ Broken Picklist
+            </span>
+        );
+    }
+
+    if (value === null || value === undefined || value === '') return null;
     const valStr = String(value);
     let hash = 0;
     for (let i = 0; i < valStr.length; i++) hash = valStr.charCodeAt(i) + ((hash << 5) - hash);
@@ -65,6 +79,7 @@ const PicklistRenderer: React.FC<FieldRendererProps> = ({ value }) => {
 };
 
 const UrlRenderer: React.FC<FieldRendererProps> = ({ value, variant, field }) => {
+    if (value === null || value === undefined || value === '') return null;
     const strVal = String(value);
     if (strVal.startsWith('data:image')) {
         return (
