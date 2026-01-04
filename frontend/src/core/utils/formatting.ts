@@ -7,8 +7,10 @@ import { FieldType } from '../../types';
 
 // --- Currency & Number Formatting ---
 
+import { APP_LOCALE } from '../constants';
+
 export const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    return new Intl.NumberFormat(APP_LOCALE, { style: 'currency', currency: 'USD' }).format(value);
 };
 
 export const formatPercent = (value: number): string => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, ExternalLink, RefreshCw, Inbox, Calendar } from 'lucide-react';
 import { approvalsAPI, ApprovalWorkItem } from '../infrastructure/api/approvals';
-import { COMMON_FIELDS } from '../core/constants';
+import { COMMON_FIELDS, ROUTES } from '../core/constants';
 import { Button } from '../components/ui/Button';
 import { useSuccessToast, useErrorToast } from '../components/ui/Toast';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
@@ -74,7 +74,7 @@ export function ApprovalQueue() {
     };
 
     const viewRecord = (workItem: ApprovalWorkItem) => {
-        navigate(`/object/${workItem[COMMON_FIELDS.OBJECT_API_NAME]}/${workItem[COMMON_FIELDS.RECORD_ID]}`);
+        navigate(ROUTES.OBJECT.DETAIL(workItem[COMMON_FIELDS.OBJECT_API_NAME] as string, workItem[COMMON_FIELDS.RECORD_ID] as string));
     };
 
     const formatDate = (dateStr: string) => {

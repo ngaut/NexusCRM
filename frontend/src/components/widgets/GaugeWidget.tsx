@@ -3,7 +3,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { WidgetRendererProps, ChartDataEntry } from '../../types';
 import { dataAPI } from '../../infrastructure/api/data';
-import { FieldCreatedDate, FieldOwnerID } from '../../constants';
+import { COMMON_FIELDS } from '../../core/constants/CommonFields';
 
 export const GaugeWidget: React.FC<WidgetRendererProps> = ({ title, config, data: initialData, loading: initialLoading, isEditing, isVisible, onToggle, globalFilters }) => {
     const [data, setData] = React.useState<number | ChartDataEntry[]>(initialData as number | ChartDataEntry[]);
@@ -20,13 +20,13 @@ export const GaugeWidget: React.FC<WidgetRendererProps> = ({ title, config, data
                 if (queryWithFilters.filter_expr) parts.push(`(${queryWithFilters.filter_expr})`);
 
                 if (globalFilters.ownerId) {
-                    parts.push(`${FieldOwnerID} == '${globalFilters.ownerId}'`);
+                    parts.push(`${COMMON_FIELDS.OWNER_ID} == '${globalFilters.ownerId}'`);
                 }
                 if (globalFilters.startDate) {
-                    parts.push(`${FieldCreatedDate} >= '${globalFilters.startDate}'`);
+                    parts.push(`${COMMON_FIELDS.CREATED_DATE} >= '${globalFilters.startDate}'`);
                 }
                 if (globalFilters.endDate) {
-                    parts.push(`${FieldCreatedDate} <= '${globalFilters.endDate}'`);
+                    parts.push(`${COMMON_FIELDS.CREATED_DATE} <= '${globalFilters.endDate}'`);
                 }
                 if (parts.length > 0) {
                     queryWithFilters.filter_expr = parts.join(' && ');

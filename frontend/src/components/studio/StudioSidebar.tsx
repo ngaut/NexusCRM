@@ -15,6 +15,7 @@ interface StudioSidebarProps {
     onAddWebLink: (webLinkDef: { label: string; url: string; icon: string }) => Promise<boolean>;
     onOpenSettings: () => void;
     onOpenPermissions: () => void;
+    openAddModal?: boolean;
 }
 
 export const StudioSidebar: React.FC<StudioSidebarProps> = ({
@@ -28,10 +29,18 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
     onRemoveNavItem,
     onOpenSettings,
     onOpenPermissions,
+    openAddModal,
 }) => {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
     const [isNavExpanded, setIsNavExpanded] = useState(true);
+
+    // Auto-open modal if requested via prop
+    React.useEffect(() => {
+        if (openAddModal) {
+            setShowAddModal(true);
+        }
+    }, [openAddModal]);
 
     const handleDragStart = (index: number) => {
         setDraggedIndex(index);

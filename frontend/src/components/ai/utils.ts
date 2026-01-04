@@ -1,5 +1,6 @@
 
 import { ChatMessage } from '../../infrastructure/api/agent';
+import { TIME_MS, APP_LOCALE } from '../../core/constants';
 import { DisplayItem, ToolBlock, ProcessStep, ThinkingBlock } from './types';
 
 export const formatToolName = (name: string) => {
@@ -26,10 +27,14 @@ export const formatRelativeTime = (date: Date | string | undefined): string => {
 
     const diffMs = now - timestamp;
 
-    if (diffMs < 60000) return 'just now';
-    if (diffMs < 3600000) return `${Math.floor(diffMs / 60000)}m`;
-    if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)}h`;
-    return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (diffMs < TIME_MS.MINUTE) return 'just now';
+    if (diffMs < TIME_MS.HOUR) return `${Math.floor(diffMs / TIME_MS.MINUTE)}m`;
+    if (diffMs < TIME_MS.DAY) return `${Math.floor(diffMs / TIME_MS.HOUR)}h`;
+    return new Date(timestamp).toLocaleDateString(APP_LOCALE, { month: 'short', day: 'numeric' });
+};
+
+export const formatDate = (timestamp: number): string => {
+    return new Date(timestamp).toLocaleDateString(APP_LOCALE, { month: 'short', day: 'numeric' });
 };
 
 /**
@@ -39,12 +44,21 @@ export const formatFullTime = (date: Date | string | undefined): string => {
     if (!date) return '';
     const timestamp = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(timestamp.getTime())) return '';
-    return timestamp.toLocaleString('en-US', {
+    return timestamp.toLocaleString(APP_LOCALE, {
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
+    });
+};
+
+export const formatDateTime = (timestamp: number): string => {
+    return new Date(timestamp).toLocaleString(APP_LOCALE, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric'
     });
 };
 

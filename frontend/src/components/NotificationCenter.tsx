@@ -5,6 +5,7 @@ import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { dataAPI } from '../infrastructure/api/data';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import { UI_TIMING } from '../core/constants';
 
 interface Notification extends SObject {
     recipient_id: string;
@@ -60,7 +61,7 @@ const NotificationCenterInner: React.FC = () => {
         if (user?.id) {
             loadNotifications();
             // Poll every 30s
-            const interval = setInterval(loadNotifications, 30000);
+            const interval = setInterval(loadNotifications, UI_TIMING.POLLING_FAST_MS);
             return () => clearInterval(interval);
         }
     }, [user?.id]);

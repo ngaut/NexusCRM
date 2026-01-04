@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useKanban } from '../../core/hooks';
 import { getRecordDisplayName } from '../../core/utils/recordUtils';
 import { SObject } from '../../types';
+import { ROUTES } from '../../core/constants/Routes';
 
 export const KanbanWidget: React.FC<WidgetRendererProps> = ({
     title,
@@ -59,7 +60,7 @@ export const KanbanWidget: React.FC<WidgetRendererProps> = ({
                                         <div
                                             key={record.id}
                                             className="bg-white p-3 rounded border border-slate-200 shadow-sm hover:shadow-md cursor-pointer transition-shadow"
-                                            onClick={() => navigate(`/object/${schema.api_name}/${record.id}`)}
+                                            onClick={() => navigate(ROUTES.OBJECT.DETAIL(schema.api_name, record.id as string))}
                                         >
                                             <div className="font-medium text-slate-800 mb-1 truncate">
                                                 {getRecordDisplayName(record, schema)}

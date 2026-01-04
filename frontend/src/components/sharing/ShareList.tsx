@@ -1,4 +1,5 @@
 import React from 'react';
+import { PERMISSION_READ, PERMISSION_EDIT } from '../../core/constants';
 import { Users, User, Trash2 } from 'lucide-react';
 import type { UserOption } from './ShareUserSearch';
 
@@ -6,7 +7,7 @@ interface ShareEntry {
     id: string;
     share_with_user_id?: string;
     share_with_group_id?: string;
-    access_level: 'Read' | 'Edit';
+    access_level: typeof PERMISSION_READ | typeof PERMISSION_EDIT;
     created_date: string;
     user_name?: string;
     group_name?: string;

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Plus, Trash2, ArrowRight } from 'lucide-react';
 import { ObjectMetadata, FieldMetadata } from '../../types';
+import { SYSTEM_FIELDS } from '../../core/constants/CommonFields';
 
 interface FieldMappingBuilderProps {
     targetObjectApiName: string;
@@ -9,15 +10,8 @@ interface FieldMappingBuilderProps {
     onChange: (mapping: Record<string, string>) => void;
 }
 
-const READ_ONLY_FIELDS = [
-    'id',
-    'created_date',
-    'last_modified_date',
-    'created_by_id',
-    'last_modified_by_id',
-    'is_deleted',
-    'system_modstamp'
-];
+// Fields that should not be mapped (system + additional read-only)
+const READ_ONLY_FIELDS = [...SYSTEM_FIELDS, 'system_modstamp'];
 
 export const FieldMappingBuilder: React.FC<FieldMappingBuilderProps> = ({
     targetObjectApiName,

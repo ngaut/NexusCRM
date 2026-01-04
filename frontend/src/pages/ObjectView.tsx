@@ -6,7 +6,9 @@ import { MetadataRecordDetail } from '../components/MetadataRecordDetail';
 import { MetadataRecordForm } from '../components/MetadataRecordForm';
 import { MetadataAwareSkeleton } from '../components/ui/LoadingSkeleton';
 import { EmptyState } from '../components/ui/EmptyState';
-import { TableObject } from '../constants';
+
+import { SYSTEM_FIELDS } from '../core/constants/CommonFields';
+import { ROUTES } from '../core/constants/Routes';
 import { Button } from '../components/ui/Button';
 import { ArrowLeft } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
@@ -76,9 +78,9 @@ export const ObjectView: React.FC = () => {
 
     // Redirect system objects to their dedicated Setup pages
     const systemObjectRedirects: Record<string, string> = {
-        [SYSTEM_TABLE_NAMES.SYSTEM_FLOW]: '/setup/flows',
-        [SYSTEM_TABLE_NAMES.SYSTEM_SHARINGRULE]: '/setup/sharing-rules',
-        [SYSTEM_TABLE_NAMES.SYSTEM_GROUP]: '/setup/groups',
+        [SYSTEM_TABLE_NAMES.SYSTEM_FLOW]: ROUTES.SETUP.FLOWS,
+        [SYSTEM_TABLE_NAMES.SYSTEM_SHARINGRULE]: ROUTES.SETUP.SHARING_RULES,
+        [SYSTEM_TABLE_NAMES.SYSTEM_GROUP]: ROUTES.SETUP.GROUPS,
     };
 
     if (isCreate && objectApiName && systemObjectRedirects[objectApiName]) {
@@ -97,22 +99,22 @@ export const ObjectView: React.FC = () => {
 
     // Handlers
     const handleCreateSuccess = (record: Record<string, unknown>) => {
-        navigate(`/object/${objectApiName}/${record.id as string}`);
+        navigate(ROUTES.OBJECT.DETAIL(objectApiName || '', record.id as string));
     };
 
     const handleUpdateSuccess = () => {
         setIsEditing(false);
         // Clear the edit query param from URL
-        navigate(`/object/${objectApiName}/${recordId}`, { replace: true });
+        navigate(ROUTES.OBJECT.DETAIL(objectApiName || '', recordId || ''), { replace: true });
     };
 
     const handleCancel = () => {
         if (isCreate) {
-            navigate(`/object/${objectApiName}`);
+            navigate(ROUTES.OBJECT.LIST(objectApiName || ''));
         } else {
             setIsEditing(false);
             // Clear the edit query param from URL
-            navigate(`/object/${objectApiName}/${recordId}`, { replace: true });
+            navigate(ROUTES.OBJECT.DETAIL(objectApiName || '', recordId || ''), { replace: true });
         }
     };
 
@@ -122,7 +124,7 @@ export const ObjectView: React.FC = () => {
             {isList && (
                 <MetadataRecordList
                     objectMetadata={metadata}
-                    onCreateNew={() => navigate(`/object/${objectApiName}/new`)}
+                    onCreateNew={() => navigate(ROUTES.OBJECT.NEW(objectApiName || ''))}
                 />
             )}
 
@@ -155,7 +157,7 @@ export const ObjectView: React.FC = () => {
                     objectMetadata={metadata}
                     recordId={recordId || ''}
                     layout={layout}
-                    onBack={() => navigate(`/object/${objectApiName}`)}
+                    onBack={() => navigate(ROUTES.OBJECT.LIST(objectApiName || ''))}
                 />
             )}
         </div>

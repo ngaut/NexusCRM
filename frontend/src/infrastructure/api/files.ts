@@ -7,6 +7,7 @@
 import { API_CONFIG } from '../../core/constants/EnvironmentConfig';
 import { COMMON_FIELDS } from '../../core/constants';
 import { API_ENDPOINTS } from './endpoints';
+import { STORAGE_KEYS } from '../../core/constants/ApplicationDefaults';
 
 export interface UploadedFile {
     path: string;
@@ -24,7 +25,7 @@ export const filesAPI = {
         const formData = new FormData();
         formData.append('file', file);
 
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
         const headers: Record<string, string> = {};
 
         if (token) {

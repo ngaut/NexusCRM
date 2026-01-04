@@ -3,7 +3,8 @@ import { COMMON_FIELDS } from './core/constants';
 
 // --- Core Schema Metadata ---
 
-export type FieldType = 'Text' | 'Number' | 'Currency' | 'Date' | 'DateTime' | 'Picklist' | 'Email' | 'Phone' | 'TextArea' | 'LongTextArea' | 'RichText' | 'Lookup' | 'Url' | 'Boolean' | 'Formula' | 'Percent' | 'RollupSummary' | 'JSON' | 'Password' | string;
+import { FieldType } from './core/constants/SchemaDefinitions';
+export { type FieldType } from './core/constants/SchemaDefinitions';
 
 export interface FieldTypeInfo {
   name: string;
@@ -50,6 +51,9 @@ export interface FieldMetadata {
   regex?: string;
   regex_message?: string;
   validator?: string; // Reference to a registered validator (e.g. 'USZip')
+  decimal_places?: number;
+  display_format?: string;
+  starting_number?: number;
 
   // Dependency Logic
   controlling_field?: string;
@@ -356,6 +360,7 @@ export interface WidgetConfig {
   h?: number;
   icon?: string;
   color?: string;
+  scope?: 'mine' | 'all';
 }
 
 export interface DashboardConfig {

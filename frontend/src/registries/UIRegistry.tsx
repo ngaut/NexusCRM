@@ -10,7 +10,7 @@ import { formatCurrency, formatDate, formatDateTime } from '../core/utils/format
 import { SearchableLookup } from '../components/SearchableLookup';
 import { UI_DEFAULTS } from '../core/constants';
 import { dataAPI } from '../infrastructure/api/data';
-import { FieldCreatedDate, FieldOwnerID } from '../constants';
+import { COMMON_FIELDS } from '../core/constants/CommonFields';
 
 // --- Prop Type Definitions ---
 
@@ -225,6 +225,11 @@ class UIRegistryClass {
             if (props.field.type === 'Number' || props.field.type === 'Currency' || props.field.type === 'Percent') inputType = 'number';
             if (props.field.type === 'Date') inputType = 'date';
             if (props.field.type === 'DateTime') inputType = 'datetime-local';
+
+            // Legacy constants check for read-only fields
+            if (props.field.api_name === 'CreatedDate' || props.field.api_name === 'LastModifiedDate') {
+                return <span className="text-slate-700">{String(props.value ?? '')}</span>;
+            }
 
             return (
                 <input

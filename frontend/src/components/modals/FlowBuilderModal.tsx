@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Zap, AlertCircle, Save, Layers } from 'lucide-react';
 import { Flow } from '../../infrastructure/api/flows';
 import { dataAPI } from '../../infrastructure/api/data';
@@ -155,8 +156,8 @@ const FlowBuilderModal: React.FC<FlowBuilderModalProps> = ({
         setActionConfig((prev) => ({ ...prev, [key]: value }));
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -296,7 +297,8 @@ const FlowBuilderModal: React.FC<FlowBuilderModalProps> = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

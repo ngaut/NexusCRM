@@ -6,8 +6,9 @@ import { useSuccessToast, useErrorToast } from '../ui/Toast';
 import { metadataAPI } from '../../infrastructure/api/metadata';
 import { useSchemas } from '../../core/hooks/useMetadata';
 import { formatApiError } from '../../core/utils/errorHandling';
+import { FIELD_TYPES } from '../../core/constants/SchemaDefinitions';
+import { FieldMetadata, FieldType } from '../../types';
 import { UI_CONFIG } from '../../core/constants/EnvironmentConfig';
-import { FieldMetadata } from '../../types';
 
 import { PicklistConfig } from './wizard-steps/PicklistConfig';
 import { LookupConfig } from './wizard-steps/LookupConfig';
@@ -22,7 +23,7 @@ interface CreateFieldWizardProps {
     onSuccess?: () => void;
 }
 
-const FIELD_TYPES = [
+const WIZARD_FIELD_OPTIONS = [
     { value: 'Text', label: 'Text', icon: Type, description: 'Single line of text' },
     { value: 'TextArea', label: 'Text Area', icon: FileText, description: 'Multiple lines of text' },
     { value: 'Number', label: 'Number', icon: Hash, description: 'Numeric value' },
@@ -138,7 +139,7 @@ export function CreateFieldWizard({ isOpen, onClose, objectId, objectApiName, on
             }
             if (fieldType === 'Formula' && formulaExpression) {
                 fieldData.formula = formulaExpression;
-                fieldData.return_type = formulaReturnType;
+                fieldData.return_type = formulaReturnType as FieldType;
             }
 
             await metadataAPI.createField(objectApiName, fieldData as unknown as Partial<FieldMetadata>);
@@ -222,7 +223,7 @@ export function CreateFieldWizard({ isOpen, onClose, objectId, objectApiName, on
                         Field Type <span className="text-red-500">*</span>
                     </label>
                     <div className="grid grid-cols-4 gap-2">
-                        {FIELD_TYPES.slice(0, 8).map((type) => {
+                        {WIZARD_FIELD_OPTIONS.slice(0, 8).map((type) => {
                             const Icon = type.icon;
                             const isSelected = fieldType === type.value;
                             return (
@@ -247,7 +248,7 @@ export function CreateFieldWizard({ isOpen, onClose, objectId, objectApiName, on
                             More field types...
                         </summary>
                         <div className="grid grid-cols-4 gap-2 mt-2">
-                            {FIELD_TYPES.slice(8).map((type) => {
+                            {WIZARD_FIELD_OPTIONS.slice(8).map((type) => {
                                 const Icon = type.icon;
                                 const isSelected = fieldType === type.value;
                                 return (

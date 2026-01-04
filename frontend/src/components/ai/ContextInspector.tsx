@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { X, Copy, Check, FileText, Database, MessageSquare } from 'lucide-react';
 import { ChatMessage } from '../../infrastructure/api/agent';
 import { Z_LAYERS } from '../../core/constants/zIndex';
+import { UI_TIMING } from '../../core/constants';
 
 interface ContextFile {
     path: string;
@@ -71,7 +72,7 @@ ${file.content ? file.content : `[... Content of ${file.path} (~${file.tokenSize
     const handleCopy = () => {
         navigator.clipboard.writeText(fullPrompt);
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setTimeout(() => setCopied(false), UI_TIMING.COPY_FEEDBACK_MS);
     };
 
     if (!isOpen) return null;

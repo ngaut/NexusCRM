@@ -62,7 +62,7 @@ export const CommentList: React.FC<CommentListProps> = ({ objectApiName, recordI
                 mime: data.mime
             }]);
         } catch (error) {
-            console.warn('CommentList: File upload failed:', error instanceof Error ? error.message : error);
+
             errorToast('File upload failed');
         }
     };

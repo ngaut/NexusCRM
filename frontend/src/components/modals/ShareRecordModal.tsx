@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Users, Users2, UserPlus } from 'lucide-react';
 import { dataAPI } from '../../infrastructure/api/data';
 import { useSuccessToast, useErrorToast } from '../../components/ui/Toast';
@@ -143,8 +144,8 @@ export const ShareRecordModal: React.FC<ShareRecordModalProps> = ({
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -257,7 +258,8 @@ export const ShareRecordModal: React.FC<ShareRecordModalProps> = ({
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

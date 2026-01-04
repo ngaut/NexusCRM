@@ -3,8 +3,9 @@ import { Responsive, WidthProvider, Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import ReactMarkdown from 'react-markdown';
-import { DashboardWidgetRegistry } from '../../../registries/DashboardWidgetRegistry';
 import { WidgetConfig } from '../../../types';
+import { BREAKPOINTS, GRID_COLS } from '../../../core/constants';
+import { DashboardWidgetRegistry } from '../../../registries/DashboardWidgetRegistry';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -84,8 +85,8 @@ export const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
                 className="layout"
                 style={{ minHeight: '800px' }}
                 layouts={{ lg: widgets.map(w => ({ i: w.id, x: w.x || 0, y: w.y || 0, w: w.w || 1, h: w.h || 1 })) }}
-                breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-                cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+                breakpoints={BREAKPOINTS}
+                cols={GRID_COLS}
                 rowHeight={60}
                 onLayoutChange={onLayoutChange}
                 onDrop={(layout, item, e) => {
@@ -100,10 +101,7 @@ export const DashboardCanvas: React.FC<DashboardCanvasProps> = ({
                 {widgets.map(widget => (
                     <div
                         key={widget.id}
-                        className={`
-                            relative bg-white rounded-lg shadow-sm border transaction-all group hover:shadow-md
-                            ${selectedWidgetId === widget.id ? 'border-blue-500 ring-2 ring-blue-500/20 z-10' : 'border-slate-200'}
-                        `}
+                        className={`relative bg-white rounded-lg shadow-sm border transaction-all group hover:shadow-md ${selectedWidgetId === widget.id ? 'border-blue-500 ring-2 ring-blue-500/20 z-10' : 'border-slate-200'}`}
                         onClick={(e) => {
                             e.stopPropagation();
                             onSelectWidget(widget.id);

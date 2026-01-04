@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { approvalsAPI, ApprovalWorkItem } from '../../infrastructure/api/approvals';
+import { UI_TIMING } from '../constants';
 
 interface UsePendingApprovalsReturn {
     count: number;
@@ -36,7 +37,7 @@ export function usePendingApprovals(): UsePendingApprovalsReturn {
         fetchPending();
 
         // Auto-refresh every 60 seconds
-        const interval = setInterval(fetchPending, 60000);
+        const interval = setInterval(fetchPending, UI_TIMING.POLLING_NORMAL_MS);
 
         return () => clearInterval(interval);
     }, [fetchPending]);

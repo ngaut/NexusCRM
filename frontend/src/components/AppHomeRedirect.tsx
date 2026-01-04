@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { Dashboard } from '../pages/Dashboard';
+import { ROUTES } from '../core/constants/Routes';
 
 export const AppHomeRedirect: React.FC = () => {
     const { currentApp, loading } = useApp();
@@ -18,7 +19,7 @@ export const AppHomeRedirect: React.FC = () => {
                 // Usually: /object/:apiName or /page/:pageId
                 let path = null;
                 if (firstItem.type === 'object' && firstItem.object_api_name) {
-                    path = `/object/${firstItem.object_api_name}`;
+                    path = ROUTES.OBJECT.LIST(firstItem.object_api_name);
                 } else if (firstItem.type === 'web' && firstItem.page_url) {
                     // Assuming internal pages might use this or handle external
                     path = firstItem.page_url.startsWith('/') ? firstItem.page_url : `/web/${encodeURIComponent(firstItem.page_url)}`;

@@ -1,8 +1,10 @@
+
 import React, { useState, useMemo } from 'react';
 import { Edit3, Loader2, AlertCircle } from 'lucide-react';
 import { ObjectMetadata, FieldMetadata } from '../../types';
 import { dataAPI } from '../../infrastructure/api/data';
-import { COMMON_FIELDS } from '../../core/constants';
+import { FIELD_TYPES } from '../../core/constants/SchemaDefinitions';
+import { COMMON_FIELDS } from '../../core/constants/CommonFields';
 import { Button } from '../ui/Button';
 import { BaseModal } from '../ui/BaseModal';
 import { useSuccessToast, useErrorToast } from '../ui/Toast';
@@ -111,11 +113,11 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
         setSaving(false);
 
         if (errorCount === 0) {
-            showSuccess(`Successfully updated ${successCount} record${successCount !== 1 ? 's' : ''}`);
+            showSuccess(`Successfully updated ${successCount} record${successCount !== 1 ? 's' : ''} `);
             onSuccess();
             onClose();
         } else {
-            showError(`Updated ${successCount} records, failed ${errorCount}`);
+            showError(`Updated ${successCount} records, failed ${errorCount} `);
             if (successCount > 0) {
                 onSuccess();
             }
@@ -126,12 +128,11 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
         const value = updates[field.api_name] ?? '';
         const isEnabled = enabledFields.has(field.api_name);
 
-        const inputClasses = `w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEnabled ? 'bg-gray-100 text-gray-400' : ''
-            }`;
+        const inputClasses = `w - full px - 3 py - 2 border border - gray - 300 rounded - md focus: outline - none focus: ring - 2 focus: ring - blue - 500 ${!isEnabled ? 'bg-gray-100 text-gray-400' : ''
+            } `;
 
         switch (field.type) {
             case 'Boolean':
-            case 'Checkbox':
                 return (
                     <input
                         type="checkbox"

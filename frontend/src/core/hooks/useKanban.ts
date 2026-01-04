@@ -4,7 +4,7 @@ import { dataAPI } from '../../infrastructure/api/data';
 import { ObjectMetadata, SObject } from '../../types';
 import { getSafeString } from '../utils/recordUtils';
 import { COMMON_FIELDS } from '../constants';
-import { FIELD_TYPES } from '@shared/generated/constants';
+import { FIELD_TYPES } from '../constants/SchemaDefinitions';
 
 interface UseKanbanProps {
     objectApiName?: string;

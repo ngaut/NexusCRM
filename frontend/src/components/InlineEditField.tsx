@@ -1,10 +1,14 @@
+
 import React, { useState, useRef, useEffect } from 'react';
+
+import { FieldType } from '../core/constants/SchemaDefinitions';
+import { KEYS } from '../core/constants';
 import { UIRegistry } from '../registries/UIRegistry';
 import { dataAPI } from '../infrastructure/api/data';
 import { useNotification } from '../contexts/NotificationContext';
 import type { SObject, FieldMetadata } from '../types';
 import { Pencil, Check, X, Loader2 } from 'lucide-react';
-import { SYSTEM_FIELDS } from '../constants';
+import { isSystemField } from '../core/constants/CommonFields';
 
 interface InlineEditFieldProps {
     objectApiName: string;
@@ -46,9 +50,8 @@ export const InlineEditField: React.FC<InlineEditFieldProps> = ({
         }
     }, [isEditing]);
 
-    // Don't allow editing system fields - use imported constants
-    const isSystemEditable = !field.is_system &&
-        !SYSTEM_FIELDS.includes(field.api_name);
+    // Don't allow editing system fields
+    const isSystemEditable = !field.is_system && !isSystemField(field.api_name);
 
     const canEdit = isSystemEditable && propIsEditable;
 
@@ -86,10 +89,10 @@ export const InlineEditField: React.FC<InlineEditFieldProps> = ({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === KEYS.ENTER && !e.shiftKey) {
             e.preventDefault();
             handleSave();
-        } else if (e.key === 'Escape') {
+        } else if (e.key === KEYS.ESCAPE) {
             handleCancel();
         }
     };
@@ -143,7 +146,7 @@ export const InlineEditField: React.FC<InlineEditFieldProps> = ({
     // Render view mode with edit hover indicator
     return (
         <div
-            className={`group flex items-center gap-2 min-h-[24px] ${canEdit ? 'cursor-pointer hover:bg-blue-50 -mx-2 px-2 py-1 rounded transition-colors' : ''}`}
+            className={`group flex items - center gap - 2 min - h - [24px] ${canEdit ? 'cursor-pointer hover:bg-blue-50 -mx-2 px-2 py-1 rounded transition-colors' : ''} `}
             onClick={handleStartEdit}
             title={canEdit ? 'Click to edit' : undefined}
         >

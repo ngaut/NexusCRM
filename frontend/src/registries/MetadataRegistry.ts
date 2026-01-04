@@ -1,27 +1,13 @@
-import { FieldType } from '../types';
+
 import * as Icons from 'lucide-react';
 import { RegistryBase } from '@shared/utils';
 import { metadataAPI } from '../infrastructure/api/metadata';
 import { FieldMetadata } from '../types';
-import {
-    FIELD_TYPES,
-    type FieldTypeDefinition as SharedFieldTypeDefinition,
-    getOperatorsForType as getSharedOperators,
-} from '../../../shared/generated/constants';
-import { SYSTEM_FIELDS } from '../constants';
+import { FIELD_TYPES, FieldType, OPERATORS, FieldTypeDefinition as SharedFieldTypeDefinition } from '../core/constants/SchemaDefinitions';
+import { SYSTEM_FIELDS } from '../core/constants/CommonFields';
 
 // Map operator names from shared constants to symbols for UI display
-const operatorSymbolMap: Record<string, FilterOperator> = {
-    equals: '=',
-    not_equals: '!=',
-    greater_than: '>',
-    greater_or_equal: '>=',
-    less_than: '<',
-    less_or_equal: '<=',
-    contains: 'contains',
-    starts_with: 'startsWith',
-    ends_with: 'endsWith',
-};
+
 
 export type FilterOperator = '=' | '!=' | '>' | '<' | '>=' | '<=' | 'contains' | 'startsWith' | 'endsWith';
 
@@ -44,7 +30,7 @@ export interface FieldTypeDefinition {
  */
 function convertSharedDefinition(type: string, shared: SharedFieldTypeDefinition): FieldTypeDefinition {
     const operators = shared.operators
-        .map((op: string) => operatorSymbolMap[op])
+        .map((op: string) => OPERATORS[op]?.symbol as FilterOperator)
         .filter((op): op is FilterOperator => !!op);
 
     return {

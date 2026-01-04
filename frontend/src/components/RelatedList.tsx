@@ -6,6 +6,7 @@ import { useObjectMetadata } from '../core/hooks/useMetadata';
 import { UIRegistry } from '../registries/UIRegistry';
 import type { SObject, RelatedListConfig } from '../types';
 import { Plus, Loader2, ChevronRight } from 'lucide-react';
+import { ROUTES, buildRoute } from '../core/constants/Routes';
 
 interface RelatedListProps {
     config: RelatedListConfig;
@@ -99,7 +100,7 @@ export const RelatedList: React.FC<RelatedListProps> = ({
                     </span>
                 </h3>
                 <Link
-                    to={`/object/${config.object_api_name}/new?${config.lookup_field}=${parentRecordId}`}
+                    to={buildRoute(ROUTES.OBJECT.NEW(config.object_api_name), { [config.lookup_field]: parentRecordId })}
                     className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                 >
                     <Plus size={16} />
@@ -137,7 +138,7 @@ export const RelatedList: React.FC<RelatedListProps> = ({
                                     key={record[COMMON_FIELDS.ID] as string}
                                     className="hover:bg-slate-50 transition-colors cursor-pointer"
                                     onClick={() => {
-                                        window.location.href = `/object/${config.object_api_name}/${record[COMMON_FIELDS.ID] as string}`;
+                                        window.location.href = ROUTES.OBJECT.DETAIL(config.object_api_name, record[COMMON_FIELDS.ID] as string);
                                     }}
                                 >
                                     {displayFields.map(fieldApiName => {
@@ -162,7 +163,7 @@ export const RelatedList: React.FC<RelatedListProps> = ({
                                                     record={record}
                                                     variant="table"
                                                     onNavigate={(obj, id) => {
-                                                        window.location.href = `/object/${obj}/${id}`;
+                                                        window.location.href = ROUTES.OBJECT.DETAIL(obj, id);
                                                     }}
                                                 />
                                             </td>
@@ -170,7 +171,7 @@ export const RelatedList: React.FC<RelatedListProps> = ({
                                     })}
                                     <td className="px-6 py-4 text-right">
                                         <Link
-                                            to={`/object/${config.object_api_name}/${record[COMMON_FIELDS.ID] as string}`}
+                                            to={ROUTES.OBJECT.DETAIL(config.object_api_name, record[COMMON_FIELDS.ID] as string)}
                                             className="text-blue-600 hover:text-blue-800"
                                             onClick={(e) => e.stopPropagation()}
                                         >
@@ -188,7 +189,7 @@ export const RelatedList: React.FC<RelatedListProps> = ({
             {records.length > 0 && (
                 <div className="px-6 py-3 border-t border-slate-200 bg-slate-50">
                     <Link
-                        to={`/object/${config.object_api_name}?${config.lookup_field}=${parentRecordId}`}
+                        to={buildRoute(ROUTES.OBJECT.LIST(config.object_api_name), { [config.lookup_field]: parentRecordId })}
                         className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                     >
                         View All ({records.length})

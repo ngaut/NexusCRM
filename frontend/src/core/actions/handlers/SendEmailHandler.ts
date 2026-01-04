@@ -10,6 +10,7 @@
 import { ActionHandlerModule } from '../ActionHandlerTypes';
 import { SObject } from '../../../types';
 import { SYSTEM_TABLE_NAMES } from '../../../generated-schema';
+import { API_CONFIG } from '../../constants/EnvironmentConfig';
 
 export const handler: ActionHandlerModule = {
     handler: {
@@ -91,7 +92,7 @@ export const handler: ActionHandlerModule = {
                 const mergeContext = {
                     Record: record,
                     CurrentUser: currentUser || { name: 'System' },
-                    SystemURL: process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001'
+                    SystemURL: API_CONFIG.BACKEND_URL
                 };
 
                 subject = processMergeFields(subject, mergeContext);

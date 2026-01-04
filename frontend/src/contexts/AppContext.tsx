@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useMe
 import { metadataAPI } from '../infrastructure/api/metadata';
 import { useRuntime } from './RuntimeContext';
 import type { AppConfig, NavigationItem } from '../types';
+import { STORAGE_KEYS } from '../core/constants/ApplicationDefaults';
 
 interface AppContextValue {
     apps: AppConfig[]; // All apps (for admin views)
@@ -25,7 +26,7 @@ export function AppProvider({ children }: AppProviderProps) {
     const [apps, setApps] = useState<AppConfig[]>([]);
     const [currentAppId, setCurrentAppIdState] = useState<string | null>(() => {
         // Restore from localStorage
-        return localStorage.getItem('nexuscrm_current_app') || null;
+        return localStorage.getItem(STORAGE_KEYS.CURRENT_APP) || null;
     });
     const [loading, setLoading] = useState(true);
 
@@ -79,14 +80,14 @@ export function AppProvider({ children }: AppProviderProps) {
             const currentIsVisible = visibleApps.some(app => app.id === currentAppId);
             if (!currentAppId || !currentIsVisible) {
                 setCurrentAppIdState(visibleApps[0].id);
-                localStorage.setItem('nexuscrm_current_app', visibleApps[0].id);
+                localStorage.setItem(STORAGE_KEYS.CURRENT_APP, visibleApps[0].id);
             }
         }
     }, [loading, visibleApps]); // Removed currentAppId to prevent infinite re-render loop
 
     const setCurrentAppId = (appId: string) => {
         setCurrentAppIdState(appId);
-        localStorage.setItem('nexuscrm_current_app', appId);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_APP, appId);
     };
 
     const currentApp = visibleApps.find(app => app.id === currentAppId) || null;

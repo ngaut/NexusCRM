@@ -7,6 +7,19 @@ export const APP_IDENTITY = {
     COPYRIGHT: `© ${new Date().getFullYear()} NexusCRM. All rights reserved.`,
 } as const;
 
+/**
+ * Centralized localStorage key names
+ * Prevents magic strings and makes key management easier
+ */
+export const STORAGE_KEYS = {
+    AUTH_TOKEN: 'auth_token',
+    CURRENT_APP: 'nexuscrm_current_app',
+    SIDEBAR_COLLAPSED: 'sidebarCollapsed',
+    AI_CONTEXT_FILES: 'nexus_ai_active_files',
+    AI_CONTEXT_TOKENS: 'nexus_ai_total_tokens',
+    AI_MESSAGES: 'nexus_ai_messages',
+} as const;
+
 export const DATABASE_DEFAULTS = {
     ISOLATION_LEVEL: 'READ_COMMITTED' as const,
     QUERY_TIMEOUT_MS: 30000,
@@ -49,6 +62,86 @@ export const UI_DEFAULTS = {
     TOAST_DURATION_MS: 3000,
     DEFAULT_FORM_COLUMNS: 2,
     MAX_RECENT_ITEMS: 20,
+} as const;
+
+export const BREAKPOINTS = {
+    lg: 1200,
+    md: 996,
+    sm: 768,
+    xs: 480,
+    xxs: 0,
+} as const;
+
+export const GRID_COLS = {
+    lg: 12,
+    md: 10,
+    sm: 6,
+    xs: 4,
+    xxs: 2,
+} as const;
+
+/**
+ * Common time constants in milliseconds
+ */
+export const TIME_MS = {
+    SECOND: 1000,
+    MINUTE: 60 * 1000,
+    HOUR: 60 * 60 * 1000,
+    DAY: 24 * 60 * 60 * 1000,
+} as const;
+
+export const APP_LOCALE = 'en-US';
+
+export const KEYS = {
+    ENTER: 'Enter',
+    ESCAPE: 'Escape',
+    TAB: 'Tab',
+    ARROW_UP: 'ArrowUp',
+    ARROW_DOWN: 'ArrowDown',
+    ARROW_LEFT: 'ArrowLeft',
+    ARROW_RIGHT: 'ArrowRight',
+    SPACE: ' ',
+    BACKSPACE: 'Backspace',
+} as const;
+
+export const DOM_EVENTS = {
+    MOUSE_DOWN: 'mousedown',
+    MOUSE_UP: 'mouseup',
+    MOUSE_MOVE: 'mousemove',
+    KEY_DOWN: 'keydown',
+    KEY_UP: 'keyup',
+    RESIZE: 'resize',
+    SCROLL: 'scroll',
+    BLUR: 'blur',
+    FOCUS: 'focus',
+} as const;
+
+/**
+ * UI Timing Constants - Centralized timeout and debounce values
+ * Prevents magic numbers and ensures consistent UX timing
+ */
+export const UI_TIMING = {
+    // Debounce delays
+    DEBOUNCE_FAST_MS: 300,           // Search, typing input
+    DEBOUNCE_NORMAL_MS: 500,         // Form validation, generic debounce
+    DEBOUNCE_SLOW_MS: 1000,          // Heavy operations
+
+    // Animation/transition durations
+    ANIMATION_FAST_MS: 200,          // Tooltips, hover effects
+    ANIMATION_NORMAL_MS: 300,        // Modal transitions, toast fade
+    ANIMATION_SLOW_MS: 500,          // Refresh spinners, loading states
+
+    // Feedback durations
+    COPY_FEEDBACK_MS: 2000,          // "Copied!" message duration
+    SUCCESS_FEEDBACK_MS: 1500,       // Brief success indicator
+
+    // Polling intervals
+    POLLING_FAST_MS: 30000,          // Notifications (30 sec)
+    POLLING_NORMAL_MS: 60000,        // Approvals (1 min)
+    POLLING_SLOW_MS: 300000,         // Background tasks (5 min)
+
+    // AI-specific
+    AI_SAVE_DELAY_MS: 2000,          // Debounce AI context save
 } as const;
 
 export const RECORD_DEFAULTS = {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Play, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { flowsApi, ExecuteFlowRequest, ExecuteFlowResponse } from '../../infrastructure/api/flows';
 import { Button } from '../ui/Button';
@@ -65,8 +66,8 @@ export function FlowExecutionModal({
         onClose();
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -197,6 +198,7 @@ export function FlowExecutionModal({
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -42,7 +43,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             case 'warning':
                 return <AlertTriangle className="w-6 h-6 text-yellow-600" />;
             default:
-                return <AlertTriangle className="w-6 h-6 text-blue-600" />;
+                return <AlertTriangle className="w-6 h-6 text-slate-600" />;
         }
     };
 
@@ -53,12 +54,12 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             case 'warning':
                 return 'bg-yellow-50';
             default:
-                return 'bg-blue-50';
+                return 'bg-white';
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
             <div
                 className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform transition-all scale-100"
                 role="dialog"
@@ -109,6 +110,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     </Button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

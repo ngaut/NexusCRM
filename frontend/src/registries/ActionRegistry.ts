@@ -1,6 +1,7 @@
 import { ActionMetadata, SObject } from '../types';
 import { pluginRegistry } from '../core/plugins/PluginRegistry';
 import { dataAPI } from '../infrastructure/api/data';
+import { ROUTES } from '../core/constants/Routes';
 
 export interface ActionContext {
     navigate: (path: string) => void;
@@ -105,7 +106,7 @@ actionRegistry.register('api', {
 actionRegistry.register('UpdateRecord', {
     execute: async (action, record, context) => {
         // Navigate to edit mode
-        context.navigate(`/object/${action.object_api_name}/${record.id}?edit=true`);
+        context.navigate(ROUTES.OBJECT.EDIT(action.object_api_name, record.id as string));
     }
 });
 
@@ -119,7 +120,7 @@ actionRegistry.register('DeleteRecord', {
                 await dataAPI.deleteRecord(action.object_api_name, record.id);
                 context.showSuccess('Record deleted successfully');
                 // Navigate back to list view
-                context.navigate(`/object/${action.object_api_name}`);
+                context.navigate(ROUTES.OBJECT.LIST(action.object_api_name));
             }
         });
     }

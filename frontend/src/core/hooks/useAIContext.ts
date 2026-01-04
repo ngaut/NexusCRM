@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { agentApi } from '../../infrastructure/api/agent';
-
-const STORAGE_KEY_FILES = 'nexus_ai_active_files';
-const STORAGE_KEY_TOKENS = 'nexus_ai_total_tokens';
+import { STORAGE_KEYS } from '../constants/ApplicationDefaults';
 
 export function useAIContext() {
     const [activeFiles, setActiveFiles] = useState<{ path: string, tokenSize: number }[]>([]);
@@ -11,8 +9,8 @@ export function useAIContext() {
     // Load persisted state
     useEffect(() => {
         try {
-            const savedFiles = localStorage.getItem(STORAGE_KEY_FILES);
-            const savedTokens = localStorage.getItem(STORAGE_KEY_TOKENS);
+            const savedFiles = localStorage.getItem(STORAGE_KEYS.AI_CONTEXT_FILES);
+            const savedTokens = localStorage.getItem(STORAGE_KEYS.AI_CONTEXT_TOKENS);
 
             if (savedFiles) setActiveFiles(JSON.parse(savedFiles));
             if (savedTokens) setTotalTokens(parseInt(savedTokens, 10));
@@ -42,11 +40,11 @@ export function useAIContext() {
 
     // Persist state
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY_FILES, JSON.stringify(activeFiles));
+        localStorage.setItem(STORAGE_KEYS.AI_CONTEXT_FILES, JSON.stringify(activeFiles));
     }, [activeFiles]);
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY_TOKENS, totalTokens.toString());
+        localStorage.setItem(STORAGE_KEYS.AI_CONTEXT_TOKENS, totalTokens.toString());
     }, [totalTokens]);
 
     const refreshContext = async () => {

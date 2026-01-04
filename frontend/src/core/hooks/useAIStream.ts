@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { agentApi, ChatMessage, StreamEvent, CompactRequest, ConversationSummary } from '../../infrastructure/api/agent';
 import { ProcessStep } from '../../components/ai/types';
-
-const STORAGE_KEY_MESSAGES = 'nexus_ai_messages';
+import { STORAGE_KEYS } from '../constants/ApplicationDefaults';
 
 export function useAIStream() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -36,7 +35,7 @@ export function useAIStream() {
                     setMessages(response.messages as ChatMessage[]);
                 } else {
                     // Fallback to localStorage for migration
-                    const savedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
+                    const savedMessages = localStorage.getItem(STORAGE_KEYS.AI_MESSAGES);
                     if (savedMessages) {
                         const parsed = JSON.parse(savedMessages);
                         setMessages(parsed);
@@ -50,7 +49,7 @@ export function useAIStream() {
                 }
             } catch {
                 // Fallback to localStorage if API fails
-                const savedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
+                const savedMessages = localStorage.getItem(STORAGE_KEYS.AI_MESSAGES);
                 if (savedMessages) setMessages(JSON.parse(savedMessages));
             } finally {
                 setIsInitialized(true);
@@ -64,7 +63,7 @@ export function useAIStream() {
         if (!isInitialized || messages.length === 0) return;
 
         // Also save to localStorage as backup
-        localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
+        localStorage.setItem(STORAGE_KEYS.AI_MESSAGES, JSON.stringify(messages));
 
         // Debounce server save to avoid too many requests
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -331,7 +330,7 @@ export function useAIStream() {
         setProcessSteps([]);
         setStreamingContent('');
         setCurrentConversationId(null);
-        localStorage.removeItem(STORAGE_KEY_MESSAGES);
+        localStorage.removeItem(STORAGE_KEYS.AI_MESSAGES);
         agentApi.clearConversation().catch(() => { });
     };
 
@@ -342,7 +341,7 @@ export function useAIStream() {
         setProcessSteps([]);
         setStreamingContent('');
         setCurrentConversationId(null);
-        localStorage.removeItem(STORAGE_KEY_MESSAGES);
+        localStorage.removeItem(STORAGE_KEYS.AI_MESSAGES);
     }, []);
 
     // Select and load a specific conversation
@@ -356,7 +355,7 @@ export function useAIStream() {
                 setCurrentConversationId(response.conversation.id);
                 setProcessSteps([]);
                 setStreamingContent('');
-                localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(response.messages));
+                localStorage.setItem(STORAGE_KEYS.AI_MESSAGES, JSON.stringify(response.messages));
             }
         } catch (error) {
             console.warn('Failed to load conversation:', error);
@@ -373,7 +372,7 @@ export function useAIStream() {
             if (id === currentConversationId) {
                 setMessages([]);
                 setCurrentConversationId(null);
-                localStorage.removeItem(STORAGE_KEY_MESSAGES);
+                localStorage.removeItem(STORAGE_KEYS.AI_MESSAGES);
             }
         } catch (error) {
             console.warn('Failed to delete conversation:', error);

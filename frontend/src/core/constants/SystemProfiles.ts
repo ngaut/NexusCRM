@@ -5,6 +5,7 @@
  * shared constants. The single source of truth is shared/constants/system.json.
  */
 
+// Re-export for local use
 export {
     PROFILE_IDS,
     type ProfileId,
@@ -12,9 +13,9 @@ export {
     SYSTEM_PROFILES,
     isSuperUserProfile,
     isSystemProfile,
-} from '../../../../shared/generated/constants';
+} from './SchemaDefinitions';
 
 
 
 // Re-import for local use
-import { PROFILE_IDS, SYSTEM_PROFILES, type ProfileMetadata } from '../../../../shared/generated/constants';
+

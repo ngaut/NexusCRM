@@ -6,6 +6,7 @@ import { useApp } from '../contexts/AppContext';
 import { LayoutDashboard, TrendingUp, Settings, Plus, Edit, Trash2, ArrowLeft, RefreshCw, Clock } from 'lucide-react';
 import type { DashboardConfig, WidgetConfig } from '../types';
 import { WIDGET_SIZE_DEFAULTS, DEFAULT_WIDGET_SIZE } from '../core/constants/widgets';
+import { ROUTES, BREAKPOINTS, GRID_COLS } from '../core/constants';
 import { FilterBar, GlobalFilters } from '../components/FilterBar';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -89,7 +90,7 @@ export const Dashboard: React.FC = () => {
     if (currentAppId) {
       navigate(`/studio/${currentAppId}?dashboardId=${id}`);
     } else {
-      navigate('/setup/apps');
+      navigate(ROUTES.SETUP.APPS);
     }
   };
 
@@ -133,7 +134,7 @@ export const Dashboard: React.FC = () => {
             <button
               onClick={() => {
                 if (currentAppId) {
-                  navigate(`/studio/${currentAppId}?tab=dashboards`);
+                  navigate(`/studio/${currentAppId}?action=add_page`);
                 } else {
                   setShowAppContextModal(true);
                 }
@@ -263,8 +264,8 @@ export const Dashboard: React.FC = () => {
                   };
                 }) || []
               }}
-              breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-              cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+              breakpoints={BREAKPOINTS}
+              cols={GRID_COLS}
               rowHeight={80}
               isDraggable={false}
               isResizable={false}
@@ -314,7 +315,7 @@ export const Dashboard: React.FC = () => {
         onClose={() => setShowAppContextModal(false)}
         onConfirm={() => {
           setShowAppContextModal(false);
-          navigate('/setup/apps');
+          navigate(ROUTES.SETUP.APPS);
         }}
         title="App Context Required"
         message="You need to be in an App context to create a dashboard. Would you like to go to App Manager?"

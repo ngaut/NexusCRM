@@ -67,6 +67,8 @@ export const AppStudio: React.FC = () => {
         }
     }, [searchParams]);
 
+    const shouldOpenAddModal = searchParams.get('action') === 'add_page';
+
     const loadApp = async (id: string) => {
         try {
             const response = await metadataAPI.getApps();
@@ -298,7 +300,7 @@ export const AppStudio: React.FC = () => {
             {/* Top Bar */}
             <header className="bg-white border-b border-slate-200 h-14 flex items-center justify-between px-4 flex-shrink-0 z-10">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate('/setup/app-manager')} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
+                    <button onClick={() => navigate('/setup/appmanager')} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
                         <ArrowLeft size={20} />
                     </button>
                     <div className="flex items-center gap-3">
@@ -341,6 +343,7 @@ export const AppStudio: React.FC = () => {
                 {/* Left Sidebar */}
                 <StudioSidebar
                     app={app}
+                    openAddModal={shouldOpenAddModal}
                     selectedObjectApiName={editor.mode === 'object' ? editor.objectApiName : (editor.mode === 'dashboard' ? editor.dashboardId : undefined)}
                     onSelectNavItem={handleNavItemSelect}
                     onAddObject={handleAddObject}

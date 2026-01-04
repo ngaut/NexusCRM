@@ -5,7 +5,8 @@ import { BaseModal } from '../ui/BaseModal';
 import { useSuccessToast, useErrorToast } from '../ui/Toast';
 import { dataAPI } from '../../infrastructure/api/data';
 import { formatApiError } from '../../core/utils/errorHandling';
-import { TableObject } from '../../constants';
+import { SYSTEM_FIELDS } from '../../core/constants/CommonFields';
+import { SYSTEM_TABLE_NAMES } from '../../generated-schema';
 import { UI_CONFIG } from '../../core/constants/EnvironmentConfig';
 import { ObjectMetadata } from '../../types';
 
@@ -82,7 +83,7 @@ export function CreateObjectWizard({ isOpen, onClose, onSuccess }: CreateObjectW
                 is_custom: true,
             };
 
-            const result = await dataAPI.createRecord(TableObject, objectData as unknown as Record<string, unknown>);
+            const result = await dataAPI.createRecord(SYSTEM_TABLE_NAMES.SYSTEM_OBJECT, objectData as unknown as Record<string, unknown>);
             showSuccess(`Object "${label}" created successfully`);
             onSuccess?.(result.id);
             onClose();

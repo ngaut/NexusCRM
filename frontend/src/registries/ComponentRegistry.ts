@@ -2,7 +2,7 @@
 import React from 'react';
 import { RegistryBase } from '@shared/utils';
 import { dataAPI } from '../infrastructure/api/data';
-import { TableUIComponent } from '../constants/tables';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { Dashboard } from '../pages/Dashboard';
 import { ObjectView } from '../pages/ObjectView';
 import FlowsPage from '../pages/FlowsPage';
@@ -80,7 +80,7 @@ class ComponentRegistryClass extends RegistryBase<React.ComponentType<any>> {
     private async loadFromDatabase() {
         try {
             const results = await dataAPI.query({
-                objectApiName: TableUIComponent
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_UICOMPONENT
             });
 
             if (results && results.length > 0) {

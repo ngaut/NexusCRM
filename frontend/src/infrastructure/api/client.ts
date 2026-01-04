@@ -1,4 +1,5 @@
 import { API_CONFIG } from '../../core/constants/EnvironmentConfig';
+import { STORAGE_KEYS } from '../../core/constants/ApplicationDefaults';
 
 export class APIError extends Error {
   constructor(
@@ -29,15 +30,15 @@ class APIClient {
   constructor() {
     this.baseURL = API_CONFIG.BACKEND_URL;
     // Try to restore token from localStorage
-    this.token = localStorage.getItem('auth_token');
+    this.token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   }
 
   setToken(token: string | null) {
     this.token = token;
     if (token) {
-      localStorage.setItem('auth_token', token);
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
     } else {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     }
   }
 

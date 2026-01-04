@@ -3,38 +3,51 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
 import { WidgetRendererProps, ChartDataEntry } from '../../types';
-import { UI_DEFAULTS } from '../../core/constants';
+import { COMMON_FIELDS } from '../../core/constants/CommonFields';
 import { dataAPI } from '../../infrastructure/api/data';
-import { FieldCreatedDate, FieldOwnerID } from '../../constants';
+import { useRuntime } from '../../contexts/RuntimeContext';
+import { UI_DEFAULTS, ROUTES, buildRoute } from '../../core/constants';
+
 
 export const FunnelWidget: React.FC<WidgetRendererProps> = ({ title, config, data: initialData, loading: initialLoading, isEditing, isVisible, onToggle, globalFilters }) => {
     const [data, setData] = React.useState<ChartDataEntry[]>(Array.isArray(initialData) ? initialData as ChartDataEntry[] : []);
     const [loading, setLoading] = React.useState(initialLoading);
     const navigate = useNavigate();
+    const { user } = useRuntime();
 
     React.useEffect(() => {
         if (config.query) {
             setLoading(true);
             const queryWithFilters = { ...config.query };
+            let filterExpr = queryWithFilters.filter_expr || '';
+            const globalFilterParts: string[] = [];
 
             // Apply Global Filters
             if (globalFilters) {
-                const parts: string[] = [];
-                if (queryWithFilters.filter_expr) parts.push(`(${queryWithFilters.filter_expr})`);
+                if (filterExpr) globalFilterParts.push(`(${filterExpr})`);
 
                 if (globalFilters.ownerId) {
-                    parts.push(`${FieldOwnerID} == '${globalFilters.ownerId}'`);
+                    globalFilterParts.push(`${COMMON_FIELDS.OWNER_ID} == '${globalFilters.ownerId}'`);
                 }
                 if (globalFilters.startDate) {
-                    parts.push(`${FieldCreatedDate} >= '${globalFilters.startDate}'`);
+                    globalFilterParts.push(`${COMMON_FIELDS.CREATED_DATE} >= '${globalFilters.startDate}'`);
                 }
                 if (globalFilters.endDate) {
-                    parts.push(`${FieldCreatedDate} <= '${globalFilters.endDate}'`);
-                }
-                if (parts.length > 0) {
-                    queryWithFilters.filter_expr = parts.join(' && ');
+                    globalFilterParts.push(`${COMMON_FIELDS.CREATED_DATE} <= '${globalFilters.endDate}'`);
                 }
             }
+
+            if (globalFilterParts.length > 0) {
+                filterExpr = globalFilterParts.join(' && ');
+            }
+
+            // Apply scope filter
+            if (config.scope === 'mine' && user?.id) {
+                const ownerCriteria = `${COMMON_FIELDS.OWNER_ID} == '${user.id}'`;
+                filterExpr = filterExpr ? `(${filterExpr}) AND (${ownerCriteria})` : ownerCriteria;
+            }
+
+            queryWithFilters.filter_expr = filterExpr;
 
             dataAPI.runAnalytics(queryWithFilters)
                 .then(res => setData(Array.isArray(res) ? res as ChartDataEntry[] : []))
@@ -43,7 +56,7 @@ export const FunnelWidget: React.FC<WidgetRendererProps> = ({ title, config, dat
         } else {
             setData(initialData as ChartDataEntry[]);
         }
-    }, [config, globalFilters, initialData]);
+    }, [config, globalFilters, initialData, user]);
 
     const handleDrillDown = React.useCallback((entry: ChartDataEntry) => {
         if (!config.query?.object_api_name) return;
@@ -51,9 +64,9 @@ export const FunnelWidget: React.FC<WidgetRendererProps> = ({ title, config, dat
         const parts: string[] = [];
 
         if (globalFilters) {
-            if (globalFilters.ownerId) parts.push(`${FieldOwnerID} == '${globalFilters.ownerId}'`);
-            if (globalFilters.startDate) parts.push(`${FieldCreatedDate} >= '${globalFilters.startDate}'`);
-            if (globalFilters.endDate) parts.push(`${FieldCreatedDate} <= '${globalFilters.endDate}'`);
+            if (globalFilters.ownerId) parts.push(`${COMMON_FIELDS.OWNER_ID} == '${globalFilters.ownerId}'`);
+            if (globalFilters.startDate) parts.push(`${COMMON_FIELDS.CREATED_DATE} >= '${globalFilters.startDate}'`);
+            if (globalFilters.endDate) parts.push(`${COMMON_FIELDS.CREATED_DATE} <= '${globalFilters.endDate}'`);
         }
 
         // Add grouping filter
@@ -62,7 +75,7 @@ export const FunnelWidget: React.FC<WidgetRendererProps> = ({ title, config, dat
         }
 
         const filterStr = encodeURIComponent(parts.join(' && '));
-        navigate(`/object/${config.query.object_api_name}?filterExpr=${filterStr}`);
+        navigate(buildRoute(ROUTES.OBJECT.LIST(config.query.object_api_name), { filterExpr: filterStr }));
     }, [config, globalFilters, navigate]);
 
     // Transform logic: Funnel usually expects sorted data. 

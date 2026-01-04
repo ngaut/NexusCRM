@@ -3,7 +3,8 @@ import * as Icons from 'lucide-react';
 import { Box, Eye, EyeOff } from 'lucide-react';
 import { WidgetRendererProps } from '../../types';
 import { dataAPI } from '../../infrastructure/api/data';
-import { FieldCreatedDate, FieldOwnerID } from '../../constants';
+import { COMMON_FIELDS } from '../../core/constants/CommonFields';
+import { useRuntime } from '../../contexts/RuntimeContext';
 
 export const MetricWidget: React.FC<WidgetRendererProps> = ({ title, config, data: initialData, loading: initialLoading, isEditing, isVisible, onToggle, globalFilters }) => {
     const Icon = config.icon ? (Icons as unknown as Record<string, React.ComponentType<{ size: number; className?: string }>>)[config.icon] : Box;
@@ -11,41 +12,51 @@ export const MetricWidget: React.FC<WidgetRendererProps> = ({ title, config, dat
     const colorClass = `text-${color}-600`;
     const bgClass = `bg-${color}-100`;
 
-    const [data, setData] = React.useState(initialData);
+    const [data, setData] = React.useState<number>(typeof initialData === 'number' ? initialData : 0);
     const [loading, setLoading] = React.useState(initialLoading);
+    const { user } = useRuntime();
 
     React.useEffect(() => {
         if (config.query) {
             setLoading(true);
             const queryWithFilters = { ...config.query };
+            let filterExpr = queryWithFilters.filter_expr || '';
+            const globalFilterParts: string[] = [];
 
             // Apply Global Filters
             if (globalFilters) {
-                const parts: string[] = [];
-                if (queryWithFilters.filter_expr) parts.push(`(${queryWithFilters.filter_expr})`);
+                if (filterExpr) globalFilterParts.push(`(${filterExpr})`);
 
                 if (globalFilters.ownerId) {
-                    parts.push(`${FieldOwnerID} == '${globalFilters.ownerId}'`);
+                    globalFilterParts.push(`${COMMON_FIELDS.OWNER_ID} == '${globalFilters.ownerId}'`);
                 }
                 if (globalFilters.startDate) {
-                    parts.push(`${FieldCreatedDate} >= '${globalFilters.startDate}'`);
+                    globalFilterParts.push(`${COMMON_FIELDS.CREATED_DATE} >= '${globalFilters.startDate}'`);
                 }
                 if (globalFilters.endDate) {
-                    parts.push(`${FieldCreatedDate} <= '${globalFilters.endDate}'`);
-                }
-                if (parts.length > 0) {
-                    queryWithFilters.filter_expr = parts.join(' && ');
+                    globalFilterParts.push(`${COMMON_FIELDS.CREATED_DATE} <= '${globalFilters.endDate}'`);
                 }
             }
+            if (globalFilterParts.length > 0) {
+                filterExpr = globalFilterParts.join(' && ');
+            }
+
+            // Apply scope filter
+            if (config.scope === 'mine' && user?.id) {
+                const ownerCriteria = `${COMMON_FIELDS.OWNER_ID} == '${user.id}'`;
+                filterExpr = filterExpr ? `(${filterExpr}) AND (${ownerCriteria})` : ownerCriteria;
+            }
+
+            queryWithFilters.filter_expr = filterExpr;
 
             dataAPI.runAnalytics(queryWithFilters)
-                .then(result => setData(result))
-                .catch(console.error)
+                .then(result => setData(Number(result)))
+                .catch(err => console.error("Metric widget error", err))
                 .finally(() => setLoading(false));
         } else {
-            setData(initialData);
+            setData(typeof initialData === 'number' ? initialData : 0);
         }
-    }, [config, globalFilters, initialData]);
+    }, [config, globalFilters, initialData, user]);
 
     return (
         <div className={`relative bg-white p-6 rounded-lg border shadow-sm transition-all h-full flex flex-col justify-between ${isEditing ? 'border-dashed border-2 border-slate-300' : 'border-slate-200'} ${!isVisible ? 'opacity-40' : ''}`}>

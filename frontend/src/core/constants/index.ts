@@ -6,7 +6,7 @@
  * 
  * @example
  * ```typescript
- * import { PROFILE_IDS, SYSTEM_TABLES, APP_IDENTITY } from '@/core/constants';
+ * import { PROFILE_IDS, SYSTEM_TABLE_NAMES, APP_IDENTITY } from '@/core/constants';
  * ```
  * 
  * @module core/constants
@@ -24,7 +24,7 @@ export {
 
 // System Objects
 export {
-    SYSTEM_TABLES,
+    SYSTEM_TABLE_NAMES,
     type ObjectCategory,
     isSystemTable,
     isCustomObject,
@@ -39,11 +39,19 @@ export {
     PLATFORM_LIMITS,
     CACHE_SETTINGS,
     UI_DEFAULTS,
+    UI_TIMING,
+    BREAKPOINTS,
+    GRID_COLS,
+    TIME_MS,
+    KEYS,
+    DOM_EVENTS,
+    APP_LOCALE,
     RECORD_DEFAULTS,
     SYSTEM_BEHAVIOR,
     SECURITY_DEFAULTS,
     FEATURE_FLAGS,
     DEV_SETTINGS,
+    STORAGE_KEYS,
     getLimit,
     isFeatureEnabled,
 } from './ApplicationDefaults';
@@ -72,3 +80,39 @@ export {
     APPROVAL_STATUS,
     type ApprovalStatus,
 } from './ApprovalConstants';
+
+// System Constants
+export {
+    PERMISSION_TYPES,
+    PERMISSION_READ,
+    PERMISSION_CREATE,
+    PERMISSION_EDIT,
+    PERMISSION_DELETE,
+    PERMISSION_VIEW_ALL,
+    PERMISSION_MODIFY_ALL,
+    LOG_LEVEL,
+    PAGINATION_DEFAULTS,
+    APP_CATEGORIES,
+    type PermissionType,
+    type LogLevel,
+} from './SystemConstants';
+
+// Automation Constants
+export {
+    FLOW_STATUS,
+    TRIGGER_TYPE,
+    ACTION_TYPE,
+    EVENT_TYPE,
+    isBeforeTrigger,
+    isAfterTrigger,
+    type FlowStatus,
+    type TriggerType,
+    type ActionType,
+    type EventType,
+} from './FlowConstants';
+
+// Route Constants
+export {
+    ROUTES,
+    buildRoute,
+} from './Routes';

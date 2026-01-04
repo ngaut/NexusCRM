@@ -8,8 +8,9 @@ import { EmptyState, ErrorEmptyState, AccessDeniedEmptyState } from './ui/EmptyS
 import { MetadataAwareSkeleton } from './ui/LoadingSkeleton';
 import { useToast, useSuccessToast, useErrorToast } from './ui/Toast';
 import { formatApiError, getOperationErrorMessage, AppError } from '../core/utils/errorHandling';
-import { getHighlightFields, getPathField } from '../core/utils/recordUtils';
 import { usePermissions } from '../contexts/PermissionContext';
+import { getHighlightFields, getPathField } from '../core/utils/recordUtils';
+import { SYSTEM_FIELDS } from '../core/constants/CommonFields';
 import { InlineEditField } from './InlineEditField';
 import { ActivityFeed } from './ActivityFeed';
 import { RelatedList } from './RelatedList';
@@ -18,8 +19,8 @@ import { Path } from './Path';
 import { ChangePasswordModal } from './modals/ChangePasswordModal';
 import { SubmitApprovalModal } from './modals/SubmitApprovalModal';
 import { StudioFieldEditor } from './studio/StudioFieldEditor';
-import { TableObject, TableField, TableUser } from '../constants';
-import { COMMON_FIELDS, APPROVAL_STATUS } from '../core/constants';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
+import { COMMON_FIELDS, APPROVAL_STATUS, ROUTES } from '../core/constants';
 import { useActions } from '../core/hooks/useMetadata';
 import { ActionRenderer } from './ActionRenderer';
 import { LayoutRenderer } from './runtime/LayoutRenderer';
@@ -96,7 +97,7 @@ export function MetadataRecordDetail({
     };
 
     const handleNavigate = (obj: string, id: string) => {
-        navigate(`/object/${obj}/${id}`);
+        navigate(ROUTES.OBJECT.DETAIL(obj, id));
     };
 
     if (loading && !record) {
@@ -154,7 +155,7 @@ export function MetadataRecordDetail({
                                 }}
                             />
                         ))}
-                        {objectMetadata.api_name === TableUser && hasObjectPermission(objectMetadata.api_name, 'edit') && (
+                        {objectMetadata.api_name === SYSTEM_TABLE_NAMES.SYSTEM_USER && hasObjectPermission(objectMetadata.api_name, 'edit') && (
                             <Button variant="secondary" onClick={() => setChangePasswordModalOpen(true)} icon={<Lock className="w-4 h-4" />}>
                                 Change Password
                             </Button>
@@ -250,8 +251,8 @@ export function MetadataRecordDetail({
                         </div>
                     ))}
 
-                    {/* Special Schema Builder Related Lists for System Objects */}
-                    {objectMetadata.api_name === TableObject && record && (
+                    {/* Related Lists for Object Metadata */}
+                    {objectMetadata.api_name === SYSTEM_TABLE_NAMES.SYSTEM_OBJECT && record && (
                         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mt-8">
                             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                                 <h2 className="font-semibold text-gray-900">Fields</h2>
@@ -268,7 +269,7 @@ export function MetadataRecordDetail({
                                     config={{
                                         id: 'fields',
                                         label: 'Fields',
-                                        object_api_name: TableField,
+                                        object_api_name: SYSTEM_TABLE_NAMES.SYSTEM_FIELD,
                                         lookup_field: COMMON_FIELDS.OBJECT_ID,
                                         fields: [COMMON_FIELDS.API_NAME, COMMON_FIELDS.LABEL, COMMON_FIELDS.TYPE, COMMON_FIELDS.IS_REQUIRED]
                                     }}
@@ -325,8 +326,8 @@ export function MetadataRecordDetail({
                 objectApiName={objectMetadata.api_name}
             />
 
-            {/* Schema Builder: Field Creation Wizard */}
-            {objectMetadata.api_name === TableObject && record && createFieldWizardOpen && (
+            {/* Field Creation Wizard */}
+            {objectMetadata.api_name === SYSTEM_TABLE_NAMES.SYSTEM_OBJECT && record && createFieldWizardOpen && (
                 <StudioFieldEditor
                     objectApiName={String(record.api_name)}
                     field={null}

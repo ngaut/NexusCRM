@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FieldMetadata, FieldType } from '../types';
 import { metadataAPI } from '../infrastructure/api/metadata';
 import { MetadataRegistry } from '../registries/MetadataRegistry';
@@ -35,7 +36,10 @@ export const FieldDefinitionModal: React.FC<FieldDefinitionModalProps> = ({
         reference_to: '',
         formula: '',
         return_type: 'Text' as FieldType,
-        max_length: 255
+        max_length: 255,
+        decimal_places: 0,
+        display_format: '',
+        starting_number: 1
     });
 
     const [error, setError] = useState<string | null>(null);
@@ -58,7 +62,10 @@ export const FieldDefinitionModal: React.FC<FieldDefinitionModalProps> = ({
                     reference_to: (Array.isArray(editingField.reference_to) ? editingField.reference_to[0] : editingField.reference_to) || '',
                     formula: editingField.formula || '',
                     return_type: editingField.return_type || 'Text',
-                    max_length: editingField.max_length || 255
+                    max_length: editingField.max_length || 255,
+                    decimal_places: editingField.decimal_places || 0,
+                    display_format: editingField.display_format || '',
+                    starting_number: editingField.starting_number || 1
                 });
             } else {
                 // Reset form for new field
@@ -74,7 +81,10 @@ export const FieldDefinitionModal: React.FC<FieldDefinitionModalProps> = ({
                     reference_to: '',
                     formula: '',
                     return_type: 'Text' as FieldType,
-                    max_length: 255
+                    max_length: 255,
+                    decimal_places: 0,
+                    display_format: '',
+                    starting_number: 1
                 });
             }
         }
@@ -123,6 +133,15 @@ export const FieldDefinitionModal: React.FC<FieldDefinitionModalProps> = ({
             if (formData.type === 'Text') {
                 fieldData.max_length = Number(formData.max_length);
             }
+            if (['Number', 'Currency', 'Percent'].includes(formData.type)) {
+                fieldData.decimal_places = Number(formData.decimal_places);
+                // Also support max_length or length for number precision if needed, but backend often handles decimal(18,scale)
+                if (formData.max_length) fieldData.max_length = Number(formData.max_length);
+            }
+            if (formData.type === 'AutoNumber') {
+                fieldData.display_format = formData.display_format;
+                fieldData.starting_number = Number(formData.starting_number);
+            }
 
 
             if (editingField) {
@@ -143,8 +162,8 @@ export const FieldDefinitionModal: React.FC<FieldDefinitionModalProps> = ({
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    return createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
             <div className="bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/40">
 
                 <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
@@ -238,6 +257,72 @@ export const FieldDefinitionModal: React.FC<FieldDefinitionModalProps> = ({
                                 max={255}
                             />
                             <p className="text-xs text-slate-500 mt-1">Maximum number of characters (1-255)</p>
+                        </div>
+                    )}
+
+                    {['Number', 'Currency', 'Percent'].includes(formData.type) && (
+                        <div className="grid grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Length <span className="text-red-600">*</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    value={formData.max_length}
+                                    onChange={(e) => setFormData({ ...formData, max_length: parseInt(e.target.value) || 18 })}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    required
+                                    min={1}
+                                    max={18}
+                                />
+                                <p className="text-xs text-slate-500 mt-1">Total digits</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Decimal Places <span className="text-red-600">*</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    value={formData.decimal_places}
+                                    onChange={(e) => setFormData({ ...formData, decimal_places: parseInt(e.target.value) || 0 })}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    required
+                                    min={0}
+                                    max={18}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {formData.type === 'AutoNumber' && (
+                        <div className="grid grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Display Format <span className="text-red-600">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.display_format}
+                                    onChange={(e) => setFormData({ ...formData, display_format: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="A-{0000}"
+                                    required
+                                />
+                                <p className="text-xs text-slate-500 mt-1">Example: INV-&#123;0000&#125;</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Starting Number <span className="text-red-600">*</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    value={formData.starting_number}
+                                    onChange={(e) => setFormData({ ...formData, starting_number: parseInt(e.target.value) || 1 })}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    required
+                                    min={1}
+                                />
+                            </div>
                         </div>
                     )}
 
@@ -389,6 +474,7 @@ export const FieldDefinitionModal: React.FC<FieldDefinitionModalProps> = ({
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

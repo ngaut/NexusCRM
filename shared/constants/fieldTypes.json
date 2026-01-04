@@ -314,5 +314,21 @@
         "isSummable": false,
         "isSystemOnly": true,
         "operators": []
+    },
+    "AutoNumber": {
+        "sqlType": "VARCHAR(255)",
+        "icon": "Hash",
+        "label": "Auto Number",
+        "description": "System-generated sequence number",
+        "isSearchable": true,
+        "isGroupable": false,
+        "isSummable": false,
+        "operators": [
+            "equals",
+            "not_equals",
+            "contains",
+            "starts_with",
+            "ends_with"
+        ]
     }
 }

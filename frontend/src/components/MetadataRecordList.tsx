@@ -10,8 +10,10 @@ import { formatApiError, getOperationErrorMessage } from '../core/utils/errorHan
 import { usePermissions } from '../contexts/PermissionContext';
 import { CreateObjectWizard } from './modals/CreateObjectWizard';
 import { BulkEditModal } from './modals/BulkEditModal';
-import { TableObject } from '../constants';
-import { COMMON_FIELDS } from '../core/constants';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
+import { SYSTEM_FIELDS, COMMON_FIELDS } from '../core/constants/CommonFields';
+import { ROUTES } from '../core/constants/Routes';
+import { UI_TIMING } from '../core/constants';
 import { KanbanBoard } from './KanbanBoard';
 import { ListViewCharts } from './ListViewCharts';
 import { useSplitView } from './SplitViewContainer';
@@ -88,7 +90,7 @@ export function MetadataRecordList({
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(localSearch);
-        }, 300);
+        }, UI_TIMING.DEBOUNCE_FAST_MS);
         return () => clearTimeout(timer);
     }, [localSearch]);
 
@@ -142,7 +144,7 @@ export function MetadataRecordList({
             const finalFilterExpr = parts.length > 0 ? parts.join(' && ') : undefined;
 
             const data = await dataAPI.query({
-                objectApiName: objectMetadata.api_name,
+                objectApiName: objectMetadata.api_name === SYSTEM_TABLE_NAMES.SYSTEM_OBJECT ? SYSTEM_TABLE_NAMES.SYSTEM_OBJECT : objectMetadata.api_name,
                 filterExpr: finalFilterExpr,
                 sortField,
                 sortDirection: sortDirection.toUpperCase(),
@@ -192,7 +194,7 @@ export function MetadataRecordList({
         } else if (isSplitMode) {
             openInSplit(recordId);
         } else {
-            navigate(`/object/${objectMetadata.api_name}/${recordId}`);
+            navigate(ROUTES.OBJECT.DETAIL(objectMetadata.api_name, recordId));
         }
     };
 
@@ -286,7 +288,7 @@ export function MetadataRecordList({
                             } else if (isSplitMode) {
                                 openInSplit(id);
                             } else {
-                                navigate(`/object/${obj || objectMetadata.api_name}/${id}`);
+                                navigate(ROUTES.OBJECT.DETAIL(obj || objectMetadata.api_name, id));
                             }
                         }}
                     />
@@ -357,13 +359,13 @@ export function MetadataRecordList({
                 </div>
             )}
 
-            {/* Schema Builder: Object Creation Wizard */}
+            {/* Object Creation Wizard */}
             <CreateObjectWizard
                 isOpen={createObjectWizardOpen}
                 onClose={() => setCreateObjectWizardOpen(false)}
                 onSuccess={(objectId) => {
                     loadRecords();
-                    navigate(`/object/${TableObject}/${objectId}`);
+                    navigate(ROUTES.OBJECT.DETAIL(SYSTEM_TABLE_NAMES.SYSTEM_OBJECT, objectId));
                 }}
             />
 

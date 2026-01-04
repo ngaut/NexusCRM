@@ -7,6 +7,7 @@ import * as Icons from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { usePendingApprovals } from '../../core/hooks/usePendingApprovals';
 import { Tooltip } from '../ui/Tooltip';
+import { ROUTES } from '../../core/constants/Routes';
 
 interface SidebarProps {
     isSidebarCollapsed: boolean;
@@ -75,14 +76,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                                 const commonClasses = ({ isActive }: { isActive: boolean }) =>
                                     `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
-                                        ? 'text-white shadow-md'
+                                        ? 'bg-slate-100 text-slate-900'
                                         : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
                                     } ${isSidebarCollapsed ? 'justify-center' : ''}`;
 
-                                const activeStyle = ({ isActive }: { isActive: boolean }) => isActive ? {
-                                    backgroundColor: 'var(--color-brand)',
-                                    boxShadow: '0 4px 6px -1px color-mix(in srgb, var(--color-brand), transparent 80%)'
-                                } : {};
+                                const activeStyle = ({ isActive }: { isActive: boolean }) => ({});
 
                                 // Web tabs
                                 if (item.type === 'web' && item.page_url) {
@@ -113,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         return item.page_url;
                                     }
                                     if (item.type === 'object' && item.object_api_name) {
-                                        return `/object/${item.object_api_name}`;
+                                        return ROUTES.OBJECT.LIST(item.object_api_name);
                                     }
                                     return '/';
                                 };

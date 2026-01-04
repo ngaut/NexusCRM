@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Loader2, ChevronDown } from 'lucide-react';
+import { Search, X, ChevronDown, Check, Loader2, Plus, ArrowRight } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
 import type { SObject } from '../types';
+import { KEYS, DOM_EVENTS } from '../core/constants';
 import { useDebounce } from '../core/hooks/useDebounce';
 import { getRecordDisplayName } from '../core/utils/recordUtils';
 import { COMMON_FIELDS } from '../core/constants';
@@ -157,8 +159,8 @@ export const SearchableLookup: React.FC<SearchableLookupProps> = ({
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener(DOM_EVENTS.MOUSE_DOWN, handleClickOutside);
+        return () => document.removeEventListener(DOM_EVENTS.MOUSE_DOWN, handleClickOutside);
     }, [selectedRecord, value]);
 
     const handleSelect = (record: SObject) => {
@@ -189,37 +191,37 @@ export const SearchableLookup: React.FC<SearchableLookupProps> = ({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (!isOpen || results.length === 0) {
             // If dropdown not open but we have a search term, open it
-            if (e.key === 'ArrowDown' && searchTerm) {
+            if (e.key === KEYS.ARROW_DOWN && searchTerm) {
                 setIsOpen(true);
             }
             return;
         }
 
         switch (e.key) {
-            case 'ArrowDown':
+            case KEYS.ARROW_DOWN:
                 e.preventDefault();
                 setHighlightedIndex(prev =>
                     prev < results.length - 1 ? prev + 1 : 0
                 );
                 break;
-            case 'ArrowUp':
+            case KEYS.ARROW_UP:
                 e.preventDefault();
                 setHighlightedIndex(prev =>
                     prev > 0 ? prev - 1 : results.length - 1
                 );
                 break;
-            case 'Enter':
+            case KEYS.ENTER:
                 e.preventDefault();
                 if (highlightedIndex >= 0 && highlightedIndex < results.length) {
                     handleSelect(results[highlightedIndex]);
                 }
                 break;
-            case 'Escape':
+            case KEYS.ESCAPE:
                 e.preventDefault();
                 setIsOpen(false);
                 setHighlightedIndex(-1);
                 break;
-            case 'Tab':
+            case KEYS.TAB:
                 // Select highlighted item on Tab if one is highlighted
                 if (highlightedIndex >= 0 && highlightedIndex < results.length) {
                     handleSelect(results[highlightedIndex]);
@@ -247,13 +249,13 @@ export const SearchableLookup: React.FC<SearchableLookupProps> = ({
                     onFocus={handleFocus}
                     onKeyDown={handleKeyDown}
                     disabled={disabled}
-                    className={`block w-full pl-10 pr-10 py-2 border ${error ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500'} rounded-lg text-sm bg-white disabled:bg-slate-50 disabled:text-slate-500 transition-colors shadow-sm outline-none`}
+                    className={`block w - full pl - 10 pr - 10 py - 2 border ${error ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500'} rounded - lg text - sm bg - white disabled: bg - slate - 50 disabled: text - slate - 500 transition - colors shadow - sm outline - none`}
                     placeholder={placeholder}
                     autoComplete="off"
                     role="combobox"
                     aria-expanded={isOpen}
                     aria-haspopup="listbox"
-                    aria-activedescendant={highlightedIndex >= 0 ? `lookup-option-${highlightedIndex}` : undefined}
+                    aria-activedescendant={highlightedIndex >= 0 ? `lookup - option - ${highlightedIndex} ` : undefined}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     {isLoading ? (
@@ -282,7 +284,7 @@ export const SearchableLookup: React.FC<SearchableLookupProps> = ({
                             {results.map((record, index) => (
                                 <li
                                     key={record[COMMON_FIELDS.ID] as string}
-                                    id={`lookup-option-${index}`}
+                                    id={`lookup - option - ${index} `}
                                     role="option"
                                     aria-selected={highlightedIndex === index}
                                 >
@@ -290,15 +292,15 @@ export const SearchableLookup: React.FC<SearchableLookupProps> = ({
                                         type="button"
                                         onClick={() => handleSelect(record)}
                                         onMouseEnter={() => setHighlightedIndex(index)}
-                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-3 transition-colors group ${highlightedIndex === index
-                                            ? 'bg-blue-50 text-blue-900'
-                                            : 'hover:bg-slate-50'
-                                            }`}
+                                        className={`w - full px - 4 py - 2 text - left text - sm flex items - center gap - 3 transition - colors group ${highlightedIndex === index
+                                                ? 'bg-blue-50 text-blue-900'
+                                                : 'hover:bg-slate-50'
+                                            } `}
                                     >
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-medium transition-colors shrink-0 ${highlightedIndex === index
-                                            ? 'bg-blue-200 text-blue-700'
-                                            : 'bg-blue-100 text-blue-600 group-hover:bg-blue-200'
-                                            }`}>
+                                        <div className={`w - 8 h - 8 rounded - full flex items - center justify - center font - medium transition - colors shrink - 0 ${highlightedIndex === index
+                                                ? 'bg-blue-200 text-blue-700'
+                                                : 'bg-blue-100 text-blue-600 group-hover:bg-blue-200'
+                                            } `}>
                                             {getRecordDisplayName(record).charAt(0).toUpperCase()}
                                         </div>
                                         <div className="min-w-0">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, GripVertical, Trash2 } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { metadataAPI } from '../../infrastructure/api/metadata';
@@ -188,8 +189,8 @@ export const AppBuilderModal: React.FC<AppBuilderModalProps> = ({ app, onSave, o
         setDraggedIndex(null);
     };
 
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    return createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b bg-slate-50 rounded-t-xl">
@@ -344,6 +345,7 @@ export const AppBuilderModal: React.FC<AppBuilderModalProps> = ({ app, onSave, o
                     setShowObjectPicker(false);
                 }}
             />
-        </div >
+        </div >,
+        document.body
     );
 };

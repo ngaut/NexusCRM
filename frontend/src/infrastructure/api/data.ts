@@ -103,21 +103,21 @@ export const dataAPI = {
    * Restore record from recycle bin
    */
   async restoreRecord(id: string): Promise<void> {
-    await apiClient.post(`/api/data/recyclebin/restore/${encodeURIComponent(id)}`);
+    await apiClient.post(API_ENDPOINTS.DATA.RESTORE(id));
   },
 
   /**
    * Permanently delete record from recycle bin
    */
   async purgeRecord(id: string): Promise<void> {
-    await apiClient.delete(`/api/data/recyclebin/${encodeURIComponent(id)}`);
+    await apiClient.delete(API_ENDPOINTS.DATA.PURGE(id));
   },
 
   /**
    * Run analytics query
    */
   async runAnalytics(query: AnalyticsQuery): Promise<unknown> {
-    const response = await apiClient.post<{ result: unknown }>('/api/data/analytics', query);
+    const response = await apiClient.post<{ result: unknown }>(API_ENDPOINTS.DATA.ANALYTICS, query);
     return response.result;
   },
   /**
@@ -125,7 +125,7 @@ export const dataAPI = {
    */
   async calculate(objectApiName: string, record: SObject): Promise<SObject> {
     const response = await apiClient.post<{ record: SObject }>(
-      `/api/data/${encodeURIComponent(objectApiName)}/calculate`,
+      API_ENDPOINTS.DATA.CALCULATE(objectApiName),
       record
     );
     return response.record;
@@ -136,7 +136,7 @@ export const dataAPI = {
    */
   async executeAction(actionId: string, payload: Record<string, unknown>): Promise<unknown> {
     const response = await apiClient.post<{ result: unknown }>(
-      `/api/actions/${encodeURIComponent(actionId)}/execute`,
+      API_ENDPOINTS.ACTIONS.EXECUTE(actionId),
       payload
     );
     return response.result;

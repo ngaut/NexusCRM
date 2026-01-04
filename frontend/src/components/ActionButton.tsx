@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { ConfirmationModal } from './modals/ConfirmationModal';
 import { actionHandlerRegistry } from '../core/actions/ActionHandlerRegistry';
 import { clientDBAdapter } from '../core/api/ClientDBAdapter';
+import { ROUTES } from '../core/constants/Routes';
 
 interface ActionButtonProps {
     action: ActionConfig;
@@ -119,12 +120,12 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
                     name: `${record.name || 'Record'} (Clone)`
                 });
                 success('Cloned', 'Record cloned successfully');
-                navigate(`/object/${objectApiName}/${newRecord.id}`);
+                navigate(ROUTES.OBJECT.DETAIL(objectApiName, newRecord.id as string));
                 break;
 
             case 'Edit':
                 if (!record) return;
-                navigate(`/object/${objectApiName}/${record.id}?edit=true`);
+                navigate(ROUTES.OBJECT.EDIT(objectApiName, record.id as string));
                 break;
 
             case 'Refresh':
@@ -142,7 +143,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         try {
             await dataAPI.deleteRecord(objectApiName, record.id as string);
             success('Deleted', 'Record moved to recycle bin');
-            navigate(`/object/${objectApiName}`);
+            navigate(ROUTES.OBJECT.LIST(objectApiName));
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Failed to delete record';
             error('Delete Failed', message);
@@ -178,7 +179,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         Object.entries(defaults).forEach(([k, v]) => paramsObj[k] = String(v));
         const params = new URLSearchParams(paramsObj).toString();
 
-        navigate(`/object/${action.target_object}/new${params ? `?${params}` : ''}`);
+        navigate(ROUTES.OBJECT.NEW(action.target_object) + (params ? `?${params}` : ''));
     };
 
     const handleUpdateRecord = async () => {

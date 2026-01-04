@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import * as Icons from 'lucide-react';
 import { Search, X } from 'lucide-react';
 
@@ -33,8 +34,8 @@ export const IconPicker: React.FC<IconPickerProps> = ({ value, onChange, onClose
         return <IconComponent size={20} />;
     };
 
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    return createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
                 <div className="flex items-center justify-between p-4 border-b">
                     <h3 className="text-lg font-semibold">Select Icon</h3>
@@ -97,6 +98,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({ value, onChange, onClose
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

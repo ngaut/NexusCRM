@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Send } from 'lucide-react';
 import { approvalsAPI } from '../../infrastructure/api/approvals';
 import { Button } from '../ui/Button';
@@ -53,8 +54,8 @@ export function SubmitApprovalModal({
         onClose();
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -119,6 +120,7 @@ export function SubmitApprovalModal({
                     </Button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

@@ -39,7 +39,6 @@ func RunAssertions(db *database.TiDBConnection, strictMode bool) (*AssertionResu
 	assertNoDuplicateActions(db.DB(), result)
 	assertNoDuplicateFlows(db.DB(), result)
 	assertNoOrphanedSharingRules(db.DB(), result)
-	assertDefaultAppExists(db.DB(), result)
 	assertDefaultThemeExists(db.DB(), result)
 
 	// assertStandardActionsExist(db.DB(), result) // Removed deprecated call
@@ -259,42 +258,6 @@ func assertNoOrphanedSharingRules(db *sql.DB, result *AssertionResult) {
 				Severity:    constants.SeverityWarning,
 				Object:      ruleName,
 				Description: fmt.Sprintf("Sharing rule '%s' references non-existent group '%s'", ruleName, groupID),
-			})
-		}
-	}
-}
-
-// assertDefaultAppExists checks if there is at least one active default app
-func assertDefaultAppExists(db *sql.DB, result *AssertionResult) {
-	log.Println("   📋 Checking for default application...")
-
-	var count int
-	// Check for any default app (is_default = 1)
-	err := db.QueryRow("SELECT COUNT(*) FROM " + constants.TableApp + " WHERE is_default = 1").Scan(&count)
-	if err != nil {
-		log.Printf("   ⚠️  Could not query apps: %v", err)
-		return
-	}
-
-	if count == 0 {
-		// If no default, check if ANY app exists
-		if err = db.QueryRow("SELECT COUNT(*) FROM " + constants.TableApp).Scan(&count); err != nil {
-			log.Printf("   ⚠️  Could not count apps: %v", err)
-			return
-		}
-		if count == 0 {
-			result.Violations = append(result.Violations, AssertionViolation{
-				Category:    "MissingData",
-				Severity:    constants.SeverityWarning,
-				Object:      constants.TableApp,
-				Description: "No applications defined. System will be unusable.",
-			})
-		} else {
-			result.Violations = append(result.Violations, AssertionViolation{
-				Category:    "Configuration",
-				Severity:    constants.SeverityWarning,
-				Object:      constants.TableApp,
-				Description: "No default application set.",
 			})
 		}
 	}

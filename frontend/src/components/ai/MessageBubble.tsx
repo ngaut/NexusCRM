@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { User, Bot, Copy, Check } from 'lucide-react';
 import { ChatMessage } from '../../infrastructure/api/agent';
 import { formatRelativeTime, formatFullTime } from './utils';
+import { UI_TIMING } from '../../core/constants';
 
 interface MessageBubbleProps {
     msg: ChatMessage;
@@ -18,7 +19,7 @@ export function MessageBubble({ msg }: MessageBubbleProps) {
         try {
             await navigator.clipboard.writeText(msg.content || '');
             setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            setTimeout(() => setCopied(false), UI_TIMING.COPY_FEEDBACK_MS);
         } catch (err) {
             console.warn('Failed to copy to clipboard:', err);
         }

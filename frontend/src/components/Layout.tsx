@@ -4,6 +4,7 @@ import { useApp } from '../contexts/AppContext';
 import { UtilityBar } from './UtilityBar';
 import { TopBar } from './layout/TopBar';
 import { Sidebar } from './layout/Sidebar';
+import { STORAGE_KEYS } from '../core/constants/ApplicationDefaults';
 
 interface LayoutProps {
   children: ReactNode;
@@ -16,11 +17,11 @@ export function Layout({ children, onToggleAI }: LayoutProps) {
 
   // Sidebar collapsed state with persistence
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    return localStorage.getItem('sidebarCollapsed') === 'true';
+    return localStorage.getItem(STORAGE_KEYS.SIDEBAR_COLLAPSED) === 'true';
   });
 
   useEffect(() => {
-    localStorage.setItem('sidebarCollapsed', String(isSidebarCollapsed));
+    localStorage.setItem(STORAGE_KEYS.SIDEBAR_COLLAPSED, String(isSidebarCollapsed));
   }, [isSidebarCollapsed]);
 
   // Close mobile menu on route change

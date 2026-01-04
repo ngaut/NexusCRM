@@ -5,7 +5,8 @@ import type { FieldMetadata, FieldType, ObjectMetadata } from '../../types';
 import { UI_CONFIG } from '../../core/constants/EnvironmentConfig';
 
 // Sub-components
-import { FieldTypeSelector, FIELD_TYPES } from './field-editor/FieldTypeSelector';
+import { FieldTypeSelector } from './field-editor/FieldTypeSelector';
+import { FIELD_TYPE_OPTIONS } from '../../core/constants/ui/FieldUIConstants';
 import { FieldForm } from './field-editor/FieldForm';
 
 interface StudioFieldEditorProps {
@@ -222,6 +223,7 @@ export const StudioFieldEditor: React.FC<StudioFieldEditorProps> = ({
                             availableObjects={availableObjects}
                             onChange={handleFieldFormChange}
                             onChangeType={() => setStep('type')}
+
                         />
                     )}
                 </div>

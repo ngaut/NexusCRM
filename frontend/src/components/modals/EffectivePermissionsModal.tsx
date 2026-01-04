@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Shield, Loader2, X, Check, Search, Eye, Edit2, Trash2, Plus, Info } from 'lucide-react';
 import { usersAPI } from '../../infrastructure/api/users';
 import { metadataAPI } from '../../infrastructure/api/metadata';
@@ -91,8 +92,8 @@ export const EffectivePermissionsModal: React.FC<EffectivePermissionsModalProps>
         check ? <Check size={18} className="text-green-600 inline" /> : <X size={18} className="text-slate-300 inline" />
     );
 
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    return createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
                     <div>
@@ -282,6 +283,7 @@ export const EffectivePermissionsModal: React.FC<EffectivePermissionsModalProps>
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

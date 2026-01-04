@@ -7,6 +7,7 @@
  */
 
 import { ActionHandlerModule } from '../ActionHandlerTypes';
+import { TIME_MS } from '../../constants';
 
 export const handler: ActionHandlerModule = {
     handler: {
@@ -52,7 +53,8 @@ export const handler: ActionHandlerModule = {
                 'status': 'Not Started',
                 'priority': priority,
                 'what_id': record.id,
-                'due_date': new Date(Date.now() + (parseInt(String(config.daysDue || '1')) || 1) * 86400000)
+                // Default due date: tomorrow
+                'due_date': new Date(Date.now() + (parseInt(String(config.daysDue || '1')) || 1) * TIME_MS.DAY)
                     .toISOString()
                     .split('T')[0]
             }, currentUser || null, tx);

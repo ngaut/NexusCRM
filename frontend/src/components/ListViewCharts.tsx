@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart2, TrendingUp, DollarSign, Hash, PieChart, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { ObjectMetadata, FieldMetadata } from '../types';
 import { dataAPI } from '../infrastructure/api/data';
+import { FIELD_TYPES, OPERATORS, FieldType } from '../core/constants/SchemaDefinitions';
 import { UI_DEFAULTS } from '../core/constants/ApplicationDefaults';
 
 interface ListViewChartsProps {
@@ -31,14 +32,14 @@ export function ListViewCharts({ objectMetadata, filterExpr }: ListViewChartsPro
     // Find currency and number fields for aggregation
     const currencyFields = useMemo(() =>
         objectMetadata.fields?.filter(f =>
-            f.type === 'Currency' || f.type === 'Number' || f.type === 'Decimal'
+            f.type === 'Currency' || f.type === 'Number'
         ) || []
         , [objectMetadata.fields]);
 
     // Find picklist fields for distribution
     const picklistFields = useMemo(() =>
         objectMetadata.fields?.filter(f =>
-            f.type === 'Picklist' || f.type === 'Status' || f.api_name === 'status'
+            f.type === 'Picklist' || f.api_name === 'status'
         ) || []
         , [objectMetadata.fields]);
 

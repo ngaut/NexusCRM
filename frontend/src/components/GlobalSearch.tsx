@@ -4,7 +4,7 @@ import { dataAPI } from '../infrastructure/api/data';
 import type { SearchResult, SObject } from '../types';
 import { Search, Loader2, X } from 'lucide-react';
 import { getRecordDisplayName } from '../core/utils/recordUtils';
-import { COMMON_FIELDS } from '../core/constants';
+import { COMMON_FIELDS, ROUTES, UI_TIMING } from '../core/constants';
 
 export const GlobalSearch: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -42,7 +42,7 @@ export const GlobalSearch: React.FC = () => {
 
         const timer = setTimeout(() => {
             performSearch(searchTerm);
-        }, 300); // 300ms debounce
+        }, UI_TIMING.DEBOUNCE_FAST_MS); // Search debounce
 
         return () => clearTimeout(timer);
     }, [searchTerm]);
@@ -78,7 +78,7 @@ export const GlobalSearch: React.FC = () => {
     };
 
     const handleResultClick = (objectApiName: string, recordId: string) => {
-        navigate(`/object/${objectApiName}/${recordId}`);
+        navigate(ROUTES.OBJECT.DETAIL(objectApiName, recordId));
         setSearchTerm('');
         setResults([]);
         setIsOpen(false);

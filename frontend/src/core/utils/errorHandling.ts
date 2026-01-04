@@ -3,6 +3,8 @@
  * Provides user-friendly error messages based on error type and context
  */
 
+import { IS_DEVELOPMENT } from '../constants/EnvironmentConfig';
+
 export interface ApiError {
     message: string;
     code?: string;
@@ -219,7 +221,7 @@ export function getErrorRecoveryAction(error: AppError): {
  * Log errors for debugging (in development)
  */
 export function logError(context: string, error: unknown) {
-    if (process.env.NODE_ENV === 'development') {
+    if (IS_DEVELOPMENT) {
         console.group(`🔴 Error in ${context}`);
         console.error('Error:', error);
 

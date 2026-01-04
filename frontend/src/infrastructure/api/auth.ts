@@ -65,7 +65,7 @@ export const authAPI = {
    */
   async register(data: RegisterRequest): Promise<LoginResponse> {
     const response = await apiClient.post<LoginResponse>(
-      '/api/auth/register',
+      API_ENDPOINTS.AUTH.REGISTER,
       data,
       false // Registration doesn't require auth
     );
@@ -90,7 +90,7 @@ export const authAPI = {
    * Get permissions for the current user
    */
   async getMyPermissions(): Promise<{ objectPermissions: ObjectPermission[], fieldPermissions: FieldPermission[] }> {
-    const response = await apiClient.get<{ objectPermissions: ObjectPermission[], fieldPermissions?: FieldPermission[] }>('/api/auth/permissions/me');
+    const response = await apiClient.get<{ objectPermissions: ObjectPermission[], fieldPermissions?: FieldPermission[] }>(API_ENDPOINTS.AUTH.PERMISSIONS);
     return {
       objectPermissions: response.objectPermissions || [],
       fieldPermissions: response.fieldPermissions || []

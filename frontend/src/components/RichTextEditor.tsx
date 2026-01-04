@@ -1,14 +1,17 @@
 import React from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, ReactRenderer, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Mention from '@tiptap/extension-mention';
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
+import { SYSTEM_PROFILES } from '../core/constants/SystemProfiles';
+import { KEYS } from '../core/constants';
 
 interface RichTextEditorProps {
     value: string;
     onChange: (html: string) => void;
     placeholder?: string;
+    mentionItems?: SuggestionItem[];
 }
 
 // Mock user list for mentions.
@@ -16,19 +19,6 @@ interface SuggestionItem {
     id: string;
     label: string;
 }
-
-const getSuggestionItems = (query: string): SuggestionItem[] => {
-    return [
-        { id: '10000000-0000-0000-0000-000000000001', label: 'System Administrator' },
-        { id: 'user2', label: 'Sarah Connor' },
-        { id: 'user3', label: 'John Doe' },
-    ].filter(item => item.label.toLowerCase().startsWith(query.toLowerCase()))
-        .slice(0, 5);
-};
-
-import { ReactRenderer } from '@tiptap/react';
-import { Editor } from '@tiptap/react';
-
 interface Range {
     from: number;
     to: number;
@@ -68,15 +58,15 @@ const MentionList = React.forwardRef((props: MentionListProps, ref) => {
 
     React.useImperativeHandle(ref, () => ({
         onKeyDown: ({ event }: { event: KeyboardEvent }) => {
-            if (event.key === 'ArrowUp') {
+            if (event.key === KEYS.ARROW_UP) {
                 setSelectedIndex((selectedIndex + props.items.length - 1) % props.items.length);
                 return true;
             }
-            if (event.key === 'ArrowDown') {
+            if (event.key === KEYS.ARROW_DOWN) {
                 setSelectedIndex((selectedIndex + 1) % props.items.length);
                 return true;
             }
-            if (event.key === 'Enter') {
+            if (event.key === KEYS.ENTER) {
                 selectItem(selectedIndex);
                 return true;
             }
@@ -104,7 +94,7 @@ const MentionList = React.forwardRef((props: MentionListProps, ref) => {
     );
 });
 
-export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeholder }) => {
+export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeholder, mentionItems = [] }) => {
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -113,7 +103,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
                     class: 'mention text-blue-600 font-medium bg-blue-50 px-1 rounded',
                 },
                 suggestion: {
-                    items: ({ query }) => getSuggestionItems(query),
+                    items: ({ query }) => {
+                        return mentionItems
+                            .filter(item => item.label.toLowerCase().startsWith(query.toLowerCase()))
+                            .slice(0, 5);
+                    },
                     render: () => {
                         let component: ReactRenderer;
                         let popup: unknown[];
@@ -147,7 +141,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
                                 });
                             },
                             onKeyDown: (props: SuggestionKeyDownProps) => {
-                                if (props.event.key === 'Escape') {
+                                if (props.event.key === KEYS.ESCAPE) {
                                     const tippyInstance = popup?.[0] as { hide: () => void } | undefined;
                                     tippyInstance?.hide();
                                     return true;

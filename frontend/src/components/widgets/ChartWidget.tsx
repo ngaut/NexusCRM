@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from 'recharts';
 import { WidgetRendererProps, ChartDataEntry } from '../../types';
-import { UI_DEFAULTS } from '../../core/constants';
+import { COMMON_FIELDS } from '../../core/constants/CommonFields';
+import { UI_DEFAULTS, ROUTES, buildRoute } from '../../core/constants';
 import { dataAPI } from '../../infrastructure/api/data';
-import { FieldCreatedDate, FieldOwnerID } from '../../constants';
 
 export const ChartWidget: React.FC<WidgetRendererProps> = ({ title, config, data: initialData, loading: initialLoading, isEditing, isVisible, onToggle, globalFilters }) => {
     const [data, setData] = React.useState<ChartDataEntry[]>(Array.isArray(initialData) ? initialData as ChartDataEntry[] : []);
@@ -23,13 +23,13 @@ export const ChartWidget: React.FC<WidgetRendererProps> = ({ title, config, data
                 if (queryWithFilters.filter_expr) parts.push(`(${queryWithFilters.filter_expr})`);
 
                 if (globalFilters.ownerId) {
-                    parts.push(`${FieldOwnerID} == '${globalFilters.ownerId}'`);
+                    parts.push(`${COMMON_FIELDS.OWNER_ID} == '${globalFilters.ownerId}'`);
                 }
                 if (globalFilters.startDate) {
-                    parts.push(`${FieldCreatedDate} >= '${globalFilters.startDate}'`);
+                    parts.push(`${COMMON_FIELDS.CREATED_DATE} >= '${globalFilters.startDate}'`);
                 }
                 if (globalFilters.endDate) {
-                    parts.push(`${FieldCreatedDate} <= '${globalFilters.endDate}'`);
+                    parts.push(`${COMMON_FIELDS.CREATED_DATE} <= '${globalFilters.endDate}'`);
                 }
                 if (parts.length > 0) {
                     queryWithFilters.filter_expr = parts.join(' && ');
@@ -51,9 +51,9 @@ export const ChartWidget: React.FC<WidgetRendererProps> = ({ title, config, data
         const parts: string[] = [];
 
         if (globalFilters) {
-            if (globalFilters.ownerId) parts.push(`${FieldOwnerID} == '${globalFilters.ownerId}'`);
-            if (globalFilters.startDate) parts.push(`${FieldCreatedDate} >= '${globalFilters.startDate}'`);
-            if (globalFilters.endDate) parts.push(`${FieldCreatedDate} <= '${globalFilters.endDate}'`);
+            if (globalFilters.ownerId) parts.push(`${COMMON_FIELDS.OWNER_ID} == '${globalFilters.ownerId}'`);
+            if (globalFilters.startDate) parts.push(`${COMMON_FIELDS.CREATED_DATE} >= '${globalFilters.startDate}'`);
+            if (globalFilters.endDate) parts.push(`${COMMON_FIELDS.CREATED_DATE} <= '${globalFilters.endDate}'`);
         }
 
         // Add grouping filter
@@ -62,7 +62,7 @@ export const ChartWidget: React.FC<WidgetRendererProps> = ({ title, config, data
         }
 
         const filterStr = encodeURIComponent(parts.join(' && '));
-        navigate(`/object/${config.query.object_api_name}?filterExpr=${filterStr}`);
+        navigate(buildRoute(ROUTES.OBJECT.LIST(config.query.object_api_name), { filterExpr: filterStr }));
     }, [config, globalFilters, navigate]);
 
     return (

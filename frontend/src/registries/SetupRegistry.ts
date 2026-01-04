@@ -1,5 +1,5 @@
 import { RegistryBase } from '@shared/utils';
-import { TableSetupPage } from '../constants/tables';
+import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { dataAPI } from '../infrastructure/api/data';
 import * as Icons from 'lucide-react';
 
@@ -47,7 +47,7 @@ class SetupRegistryClass extends RegistryBase<SetupPageDefinition> {
     async loadFromDatabase(): Promise<void> {
         try {
             const rows = await dataAPI.query({
-                objectApiName: TableSetupPage,
+                objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_SETUPPAGE,
                 filterExpr: 'is_enabled == true',
                 sortField: 'page_order',
                 sortDirection: 'ASC'
@@ -72,6 +72,8 @@ class SetupRegistryClass extends RegistryBase<SetupPageDefinition> {
                 };
                 this.register(page.id, page);
             });
+
+
 
             this.loaded = true;
         } catch (error) {

@@ -5,6 +5,7 @@ import { useApp } from '../../contexts/AppContext';
 import { GlobalSearch } from '../GlobalSearch';
 import { NotificationCenter } from '../NotificationCenter';
 import { AppLauncher } from '../AppLauncher';
+import { STORAGE_KEYS } from '../../core/constants/ApplicationDefaults';
 
 interface TopBarProps {
     mobileMenuOpen: boolean;
@@ -81,7 +82,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <AppLauncher
                         currentAppId={currentAppId}
                         onSelectApp={(appId) => {
-                            localStorage.setItem('nexuscrm_current_app', appId);
+                            localStorage.setItem(STORAGE_KEYS.CURRENT_APP, appId);
                             window.location.href = '/';
                         }}
                     />
@@ -96,10 +97,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                 {/* AI Assistant Toggle */}
                 <button
                     onClick={onToggleAI}
-                    className="group flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-full transition-all border border-indigo-200/50"
+                    className="group flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-full transition-all border border-slate-200 shadow-sm"
                     title="Nexus AI"
                 >
-                    <Bot size={20} className="group-hover:animate-pulse" />
+                    <Bot size={20} className="group-hover:text-indigo-600 transition-colors" />
                     <span className="font-semibold text-sm">Nexus AI</span>
                 </button>
 

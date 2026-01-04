@@ -8,6 +8,7 @@
 
 import { ActionHandlerModule } from '../ActionHandlerTypes';
 import { parseStandardValue } from '../../utils/parsing';
+import { isSystemTable, FieldType } from '../../constants/SchemaDefinitions';
 
 // Simple inline formula evaluation (safe subset)
 function safeEvaluateFormula(formula: string, context: { record: Record<string, unknown>; user?: Record<string, unknown> }): unknown {
@@ -63,7 +64,7 @@ export const handler: ActionHandlerModule = {
                 return;
             }
 
-            const schema = db.getSchema(objectApiName) as { fields?: { api_name: string; type: string }[] };
+            const schema = db.getSchema(objectApiName) as { fields?: { api_name: string; type: FieldType }[] };
             const fieldName = String(config.field);
             const fieldMeta = schema?.fields?.find(f => f.api_name === fieldName);
 

@@ -7,10 +7,10 @@ import { formatApiError, getOperationErrorMessage } from '../core/utils/errorHan
 import { usePermissions } from '../contexts/PermissionContext';
 import { SearchableLookup } from './SearchableLookup';
 import { dataAPI } from '../infrastructure/api/data';
-import type { ObjectMetadata, FieldMetadata, SObject } from '../types';
-import { SYSTEM_FIELDS } from '../constants';
+import type { ObjectMetadata, FieldMetadata, SObject, FieldType } from '../types';
+import { SYSTEM_FIELDS } from '../core/constants/CommonFields';
 import { COMMON_FIELDS } from '../core/constants';
-import { FIELD_TYPES, FieldType } from '@shared/generated/constants';
+import { FIELD_TYPES } from '../core/constants/SchemaDefinitions';
 
 // Additional hidden fields beyond SYSTEM_FIELDS
 const ADDITIONAL_HIDDEN = ['system_modstamp'] as const;

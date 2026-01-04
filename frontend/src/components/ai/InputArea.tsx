@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Plus, FileText, Trash2, HelpCircle, Loader2, Minimize2 } from 'lucide-react';
 
+import { STORAGE_KEYS, UI_TIMING, KEYS, DOM_EVENTS } from '../../core/constants';
+import { useAIContext } from '../../core/hooks/useAIContext';
+
 interface InputAreaProps {
     input: string;
     isLoading: boolean;
@@ -29,7 +32,7 @@ export function InputArea({ input, isLoading, setInput, handleSubmit, handleCanc
     const [showSlashMenu, setShowSlashMenu] = useState(false);
     const [showActionMenu, setShowActionMenu] = useState(false);
     const [slashFilter, setSlashFilter] = useState('');
-    const [selectedIndex, setSelectedIndex] = useState(0);
+    const [selectedIndex, setSelectedIndex] = useState(0); // This will be `selectedActionIndex` in the new logic
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const slashMenuRef = useRef<HTMLDivElement>(null);
     const actionMenuRef = useRef<HTMLDivElement>(null);
@@ -64,8 +67,10 @@ export function InputArea({ input, isLoading, setInput, handleSubmit, handleCanc
                 setShowActionMenu(false);
             }
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener(DOM_EVENTS.MOUSE_DOWN, handleClickOutside);
+        return () => {
+            document.removeEventListener(DOM_EVENTS.MOUSE_DOWN, handleClickOutside);
+        };
     }, []);
 
     const filteredCommands = COMMANDS.filter(cmd =>
@@ -89,21 +94,21 @@ export function InputArea({ input, isLoading, setInput, handleSubmit, handleCanc
         if (e.nativeEvent.isComposing) return;
 
         if (showSlashMenu) {
-            if (e.key === 'ArrowDown') {
+            if (e.key === KEYS.ARROW_DOWN) {
                 e.preventDefault();
                 setSelectedIndex(prev => (prev + 1) % filteredCommands.length);
-            } else if (e.key === 'ArrowUp') {
+            } else if (e.key === KEYS.ARROW_UP) {
                 e.preventDefault();
                 setSelectedIndex(prev => (prev - 1 + filteredCommands.length) % filteredCommands.length);
-            } else if (e.key === 'Enter' || e.key === 'Tab') {
+            } else if (e.key === KEYS.ENTER || e.key === KEYS.TAB) {
                 e.preventDefault();
                 if (filteredCommands[selectedIndex]) {
                     executeCommand(filteredCommands[selectedIndex].id);
                 }
-            } else if (e.key === 'Escape') {
+            } else if (e.key === KEYS.ESCAPE) {
                 setShowSlashMenu(false);
             }
-        } else if (e.key === 'Enter' && !e.shiftKey) {
+        } else if (e.key === KEYS.ENTER && !e.shiftKey) {
             e.preventDefault();
             handleSubmit(e);
         }
