@@ -215,6 +215,39 @@ export function MetadataRecordList({
         }
     };
 
+    const handleNewView = () => {
+        setNewViewName('');
+        // If we want "New" to start fresh, we could clear filters. 
+        // But usually users want to save current state as new.
+        // If "current state" is "All Records" (no filter), creating a new view means 
+        // creating a view effectively equal to "All Records" until modified.
+        // Let's assume "New" means "Save current state as new view".
+        // If user wants a blank view, they clear filters then click New.
+        setSaveViewModalOpen(true);
+    };
+
+    const handleCloneView = () => {
+        if (selectedView) {
+            setNewViewName(`Copy of ${selectedView.label}`);
+            setSaveViewModalOpen(true);
+        }
+    };
+
+    const handleDeleteView = async (viewId: string) => {
+        if (!confirm('Are you sure you want to delete this list view?')) return;
+        try {
+            await metadataAPI.deleteListView(viewId);
+            setListViews(listViews.filter(v => v.id !== viewId));
+            if (selectedView?.id === viewId) {
+                setSelectedView(null);
+                setActiveFilterExpr('');
+            }
+            showSuccess('List view deleted');
+        } catch (err) {
+            showError(formatApiError(err).message);
+        }
+    };
+
     return (
         <>
             {showCharts && (
@@ -242,7 +275,10 @@ export function MetadataRecordList({
                     selectedView={selectedView}
                     setSelectedView={setSelectedView}
                     listViews={listViews}
-                    onSaveViewClick={() => { setSaveViewModalOpen(true); setViewDropdownOpen(false); }}
+                    onSaveViewClick={() => { setNewViewName(''); setSaveViewModalOpen(true); setViewDropdownOpen(false); }}
+                    onCloneViewClick={handleCloneView}
+                    onNewViewClick={handleNewView}
+                    onDeleteViewClick={handleDeleteView}
                 />
 
                 {/* Bulk Actions Bar */}
@@ -315,7 +351,7 @@ export function MetadataRecordList({
 
             {/* Save View Modal */}
             {saveViewModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
                     <div className="bg-white rounded-lg shadow-xl p-6 w-96">
                         <h3 className="text-lg font-semibold mb-4">Save List View</h3>
                         <input
@@ -338,7 +374,7 @@ export function MetadataRecordList({
                                         const res = await metadataAPI.createListView({
                                             [COMMON_FIELDS.OBJECT_API_NAME]: objectMetadata.api_name,
                                             [COMMON_FIELDS.LABEL]: newViewName.trim(),
-                                            [COMMON_FIELDS.FILTERS]: activeFilterExpr,
+                                            filter_expr: activeFilterExpr,
                                             fields: displayFields.map(f => f.api_name),
                                         });
                                         setListViews([...listViews, res.view]);
@@ -356,8 +392,9 @@ export function MetadataRecordList({
                             </Button>
                         </div>
                     </div>
-                </div>
-            )}
+                </div >
+            )
+            }
 
             {/* Object Creation Wizard */}
             <CreateObjectWizard
@@ -382,31 +419,33 @@ export function MetadataRecordList({
             />
 
             {/* Split View Panel */}
-            {isSplitMode && splitRecordId && (
-                <div className="fixed inset-0 z-40 bg-black/20" onClick={closeSplit}>
-                    <div
-                        className="absolute right-0 top-0 bottom-0 w-1/2 bg-white shadow-2xl overflow-auto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                            <h3 className="font-semibold text-gray-900">Record Detail</h3>
-                            <button
-                                onClick={closeSplit}
-                                className="p-1 rounded hover:bg-gray-100"
-                            >
-                                <X className="w-5 h-5 text-gray-500" />
-                            </button>
-                        </div>
-                        <div className="p-4">
-                            <MetadataRecordDetail
-                                objectMetadata={objectMetadata}
-                                recordId={splitRecordId}
-                                onBack={closeSplit}
-                            />
+            {
+                isSplitMode && splitRecordId && (
+                    <div className="fixed inset-0 z-[100] bg-black/20" onClick={closeSplit}>
+                        <div
+                            className="absolute right-0 top-0 bottom-0 w-1/2 bg-white shadow-2xl overflow-auto"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                                <h3 className="font-semibold text-gray-900">Record Detail</h3>
+                                <button
+                                    onClick={closeSplit}
+                                    className="p-1 rounded hover:bg-gray-100"
+                                >
+                                    <X className="w-5 h-5 text-gray-500" />
+                                </button>
+                            </div>
+                            <div className="p-4">
+                                <MetadataRecordDetail
+                                    objectMetadata={objectMetadata}
+                                    recordId={splitRecordId}
+                                    onBack={closeSplit}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </>
     );
 }

@@ -28,7 +28,7 @@ export const GroupMembersModal: React.FC<GroupMembersModalProps> = ({
     );
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] overflow-hidden flex flex-col">
                 <div className="p-6 border-b border-slate-200">
                     <h2 className="text-xl font-semibold text-slate-800">

@@ -440,7 +440,7 @@
             },
             {
                 "name": "created_by",
-                "label": "Created By (Legacy)",
+                "label": "Created By",
                 "type": "VARCHAR(255)",
                 "default": "'bootstrap'"
             },
@@ -2019,9 +2019,9 @@
                 "nullable": false
             },
             {
-                "name": "filters",
-                "type": "JSON",
-                "nullable": false
+                "name": "filter_expr",
+                "type": "TEXT",
+                "nullable": true
             },
             {
                 "name": "fields",

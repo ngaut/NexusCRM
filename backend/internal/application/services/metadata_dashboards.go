@@ -63,7 +63,7 @@ func (ms *MetadataService) CreateDashboard(dashboard *models.DashboardConfig) er
 		return fmt.Errorf("dashboard with ID '%s' already exists", dashboard.ID)
 	}
 
-	// Normalize widgets: ensure IDs and map legacy types
+	// Normalize widgets: ensure IDs
 	dashboard.Widgets = normalizeWidgets(dashboard.Widgets)
 
 	widgetsJSON, err := MarshalJSONOrDefault(dashboard.Widgets, "[]")
@@ -113,7 +113,7 @@ func (ms *MetadataService) UpdateDashboard(id string, updates *models.DashboardC
 
 	existing.ID = id
 
-	// Normalize widgets: ensure IDs and map legacy types
+	// Normalize widgets: ensure IDs
 	existing.Widgets = normalizeWidgets(existing.Widgets)
 
 	widgetsJSON, err := MarshalJSONOrDefault(existing.Widgets, "[]")

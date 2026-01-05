@@ -18,7 +18,7 @@ func (ms *MetadataService) GetAllObjects(ctx context.Context, user *models.UserS
 	defer ms.mu.RUnlock()
 
 	// 1. Get all object API names
-	rows, err := ms.db.Query(fmt.Sprintf("SELECT api_name FROM %s", constants.TableObject))
+	rows, err := ms.db.QueryContext(ctx, fmt.Sprintf("SELECT api_name FROM %s", constants.TableObject))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query objects: %w", err)
 	}
@@ -28,13 +28,12 @@ func (ms *MetadataService) GetAllObjects(ctx context.Context, user *models.UserS
 	for rows.Next() {
 		var name string
 		if err := rows.Scan(&name); err != nil {
+			log.Printf("Warning: Failed to scan object api_name: %v", err)
 			continue
 		}
 		apiNames = append(apiNames, name)
 	}
 
-	// 2. Load schema for each (in parallel or loop)
-	// Optimization: This could be heavy. For now, loop.
 	var objects []models.ObjectMetadata
 	for _, name := range apiNames {
 		// Use existing load logic which includes fields
@@ -43,9 +42,6 @@ func (ms *MetadataService) GetAllObjects(ctx context.Context, user *models.UserS
 			log.Printf("Warning: Failed to load schema for %s: %v", name, err)
 			continue
 		}
-
-		// 3. Filter by permissions (Phase 2)
-		// if !ms.permissionService.CanReadObject(user, name) { continue }
 
 		objects = append(objects, *obj)
 	}
@@ -65,7 +61,7 @@ func (ms *MetadataService) GetSystemFields(objectAPIName string) []string {
 		return []string{}
 	}
 
-	systemFields := make([]string, 0)
+	var systemFields []string
 	for _, field := range obj.Fields {
 		if field.IsSystem || field.IsNameField {
 			systemFields = append(systemFields, field.APIName)
@@ -199,12 +195,14 @@ func (ms *MetadataService) CreateListView(view *models.ListView) error {
 		view.ID = GenerateID()
 	}
 
-	filtersJSON, _ := json.Marshal(view.Filters)
-	fieldsJSON, _ := json.Marshal(view.Fields)
+	fieldsJSON, err := json.Marshal(view.Fields)
+	if err != nil {
+		return fmt.Errorf("failed to marshal fields: %w", err)
+	}
 
-	_, err := ms.db.Exec(
-		fmt.Sprintf("INSERT INTO %s (id, object_api_name, label, filters, fields) VALUES (?, ?, ?, ?, ?)", constants.TableListView),
-		view.ID, view.ObjectAPIName, view.Label, string(filtersJSON), string(fieldsJSON),
+	_, err = ms.db.Exec(
+		fmt.Sprintf("INSERT INTO %s (id, object_api_name, label, filter_expr, fields) VALUES (?, ?, ?, ?, ?)", constants.TableListView),
+		view.ID, view.ObjectAPIName, view.Label, view.FilterExpr, string(fieldsJSON),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create list view: %w", err)
@@ -217,18 +215,23 @@ func (ms *MetadataService) UpdateListView(id string, updates *models.ListView) e
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	filtersJSON, _ := json.Marshal(updates.Filters)
-	fieldsJSON, _ := json.Marshal(updates.Fields)
+	fieldsJSON, err := json.Marshal(updates.Fields)
+	if err != nil {
+		return fmt.Errorf("failed to marshal fields: %w", err)
+	}
 
 	result, err := ms.db.Exec(
-		fmt.Sprintf("UPDATE %s SET label = ?, filters = ?, fields = ? WHERE id = ?", constants.TableListView),
-		updates.Label, string(filtersJSON), string(fieldsJSON), id,
+		fmt.Sprintf("UPDATE %s SET label = ?, filter_expr = ?, fields = ? WHERE id = ?", constants.TableListView),
+		updates.Label, updates.FilterExpr, string(fieldsJSON), id,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update list view: %w", err)
 	}
 
-	rowsAffected, _ := result.RowsAffected()
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
 	if rowsAffected == 0 {
 		return fmt.Errorf("list view not found: %s", id)
 	}
@@ -245,7 +248,10 @@ func (ms *MetadataService) DeleteListView(id string) error {
 		return fmt.Errorf("failed to delete list view: %w", err)
 	}
 
-	rowsAffected, _ := result.RowsAffected()
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
 	if rowsAffected == 0 {
 		return fmt.Errorf("list view not found: %s", id)
 	}
@@ -282,6 +288,7 @@ func (ms *MetadataService) GetAllActions() []*models.ActionMetadata {
 	// Implementing query here similar to loadActions but returning slice
 	rows, err := ms.db.Query(fmt.Sprintf("SELECT id, object_api_name, name, label, type, icon, target_object, config FROM %s", constants.TableAction))
 	if err != nil {
+		log.Printf("Failed to query actions: %v", err)
 		return []*models.ActionMetadata{}
 	}
 	defer func() { _ = rows.Close() }()
@@ -291,6 +298,7 @@ func (ms *MetadataService) GetAllActions() []*models.ActionMetadata {
 		var action models.ActionMetadata
 		var targetObject, configJSON sql.NullString
 		if err := rows.Scan(&action.ID, &action.ObjectAPIName, &action.Name, &action.Label, &action.Type, &action.Icon, &targetObject, &configJSON); err != nil {
+			log.Printf("Warning: Failed to scan action: %v", err)
 			continue
 		}
 		if targetObject.Valid {
@@ -359,8 +367,10 @@ func (ms *MetadataService) GetFieldDependencies(objectAPIName string) []*models.
 }
 
 func (ms *MetadataService) GetChildRelationships(parentObjectAPIName string) []*models.ObjectMetadata {
-	// Query fields that reference this object
-	// reference_to is stored as JSON array string or simple string
+	ms.mu.RLock()
+	defer ms.mu.RUnlock()
+
+	// Query fields that reference this object (reference_to is stored as JSON array string or simple string)
 	query := fmt.Sprintf(`
 		SELECT o.api_name 
 		FROM %s f
@@ -368,7 +378,11 @@ func (ms *MetadataService) GetChildRelationships(parentObjectAPIName string) []*
 		WHERE (f.reference_to = ? OR f.reference_to LIKE ?) AND f.type = 'Lookup'
 	`, constants.TableField, constants.TableObject)
 
-	likePattern := fmt.Sprintf("%%%q%%", parentObjectAPIName)
+	// Use generic matching for JSON arrays or simple strings.
+	// We want to match:
+	// 1. Exact match: "Account"
+	// 2. JSON array match: contains "Account"
+	likePattern := fmt.Sprintf("%%%s%%", parentObjectAPIName)
 	rows, err := ms.db.Query(query, parentObjectAPIName, likePattern)
 	if err != nil {
 		log.Printf("⚠️ Failed to query child relationships for %s: %v", parentObjectAPIName, err)
@@ -380,6 +394,7 @@ func (ms *MetadataService) GetChildRelationships(parentObjectAPIName string) []*
 	for rows.Next() {
 		var apiName string
 		if err := rows.Scan(&apiName); err != nil {
+			log.Printf("Warning: Failed to scan child relationship: %v", err)
 			continue
 		}
 

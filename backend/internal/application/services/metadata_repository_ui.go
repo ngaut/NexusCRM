@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // scanApp scans a row into an AppConfig struct
@@ -42,6 +43,7 @@ func (ms *MetadataService) queryAllApps() ([]*models.AppConfig, error) {
 	for rows.Next() {
 		app, err := ms.scanApp(rows)
 		if err != nil {
+			log.Printf("Warning: Failed to scan app: %v", err)
 			continue
 		}
 		apps = append(apps, app)
@@ -92,6 +94,7 @@ func (ms *MetadataService) queryLayouts(objectAPIName string) ([]*models.PageLay
 	for rows.Next() {
 		layout, err := ms.scanLayout(rows)
 		if err != nil {
+			log.Printf("Warning: Failed to scan layout: %v", err)
 			continue
 		}
 		layouts = append(layouts, layout)
@@ -138,6 +141,7 @@ func (ms *MetadataService) queryDashboards() ([]*models.DashboardConfig, error) 
 	for rows.Next() {
 		db, err := ms.scanDashboard(rows)
 		if err != nil {
+			log.Printf("Warning: Failed to scan dashboard: %v", err)
 			continue
 		}
 		dashboards = append(dashboards, db)
@@ -165,18 +169,18 @@ func (ms *MetadataService) queryDashboard(id string) (*models.DashboardConfig, e
 // scanListView scans a row into a ListView struct
 func (ms *MetadataService) scanListView(row Scannable) (*models.ListView, error) {
 	var view models.ListView
-	var filtersJSON, fieldsJSON sql.NullString
-	if err := row.Scan(&view.ID, &view.ObjectAPIName, &view.Label, &filtersJSON, &fieldsJSON); err != nil {
+	var filterExpr, fieldsJSON sql.NullString
+	if err := row.Scan(&view.ID, &view.ObjectAPIName, &view.Label, &filterExpr, &fieldsJSON); err != nil {
 		return nil, err
 	}
-	UnmarshalJSONField(filtersJSON, &view.Filters)
+	view.FilterExpr = ScanNullStringValue(filterExpr)
 	UnmarshalJSONField(fieldsJSON, &view.Fields)
 	return &view, nil
 }
 
 // queryListViews queries list views for an object
 func (ms *MetadataService) queryListViews(objectAPIName string) ([]*models.ListView, error) {
-	query := fmt.Sprintf("SELECT id, object_api_name, label, filters, fields FROM %s WHERE object_api_name = ?", constants.TableListView)
+	query := fmt.Sprintf("SELECT id, object_api_name, label, filter_expr, fields FROM %s WHERE object_api_name = ?", constants.TableListView)
 	rows, err := ms.db.Query(query, objectAPIName)
 	if err != nil {
 		return nil, err
@@ -187,6 +191,7 @@ func (ms *MetadataService) queryListViews(objectAPIName string) ([]*models.ListV
 	for rows.Next() {
 		view, err := ms.scanListView(rows)
 		if err != nil {
+			log.Printf("Warning: Failed to scan list view: %v", err)
 			continue
 		}
 		views = append(views, view)

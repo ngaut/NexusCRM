@@ -215,11 +215,11 @@ func (ms *MetadataService) EnsureDefaultListView(objectAPIName string) error {
 
 	id := GenerateID()
 	label := "All"
-	filtersJSON := "[]"
+	filterExpr := ""
 	fieldsJSON := fmt.Sprintf(`["%s", "%s", "%s"]`, constants.FieldName, constants.FieldCreatedDate, constants.FieldOwnerID)
 
-	insQuery := fmt.Sprintf("INSERT INTO %s (id, object_api_name, label, filters, fields) VALUES (?, ?, ?, ?, ?)", constants.TableListView)
-	_, err := ms.db.Exec(insQuery, id, objectAPIName, label, filtersJSON, fieldsJSON)
+	insQuery := fmt.Sprintf("INSERT INTO %s (id, object_api_name, label, filter_expr, fields) VALUES (?, ?, ?, ?, ?)", constants.TableListView)
+	_, err := ms.db.Exec(insQuery, id, objectAPIName, label, filterExpr, fieldsJSON)
 	if err != nil {
 		return fmt.Errorf("failed to insert default list view: %w", err)
 	}
@@ -289,7 +289,11 @@ func (ms *MetadataService) BatchCreateSchemas(schemas []models.ObjectMetadata) e
 		values := []string{}
 		args := []interface{}{}
 		for _, l := range layouts {
-			layoutJSON, _ := json.Marshal(l)
+			layoutJSON, err := json.Marshal(l)
+			if err != nil {
+				log.Printf("⚠️ Failed to marshal layout for %s: %v", l.ObjectAPIName, err)
+				continue
+			}
 			values = append(values, "(?, ?, ?)")
 			args = append(args, l.ID, l.ObjectAPIName, string(layoutJSON))
 		}

@@ -83,11 +83,12 @@ type ObjectMetadata struct {
 
 // ListView represents a list view configuration
 type ListView struct {
-	ID            string                   `json:"id"`
-	ObjectAPIName string                   `json:"object_api_name"`
-	Label         string                   `json:"label"`
-	Filters       []map[string]interface{} `json:"filters"`
-	Fields        []string                 `json:"fields,omitempty"`
+	ID            string `json:"id"`
+	ObjectAPIName string `json:"object_api_name"`
+	Label         string `json:"label"`
+
+	FilterExpr string   `json:"filter_expr,omitempty"`
+	Fields     []string `json:"fields,omitempty"`
 }
 
 // PageLayout represents page layout configuration

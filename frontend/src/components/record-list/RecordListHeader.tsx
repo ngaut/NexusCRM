@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, RefreshCw, Search, ChevronDown, Save, List } from 'lucide-react';
+import { Plus, RefreshCw, Search, ChevronDown, Save, List, Settings, Copy, Trash } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { COMMON_FIELDS } from '../../core/constants';
 import { ListFilters } from '../ListFilters';
@@ -30,6 +30,9 @@ interface RecordListHeaderProps {
     setSelectedView: (view: ListView | null) => void;
     listViews: ListView[];
     onSaveViewClick: () => void;
+    onCloneViewClick: () => void;
+    onNewViewClick: () => void;
+    onDeleteViewClick: (viewId: string) => void;
 }
 
 export const RecordListHeader: React.FC<RecordListHeaderProps> = ({
@@ -49,9 +52,13 @@ export const RecordListHeader: React.FC<RecordListHeaderProps> = ({
     selectedView,
     setSelectedView,
     listViews,
-    onSaveViewClick
+    onSaveViewClick,
+    onCloneViewClick,
+    onNewViewClick,
+    onDeleteViewClick
 }) => {
     const { hasObjectPermission } = usePermissions();
+    const [settingsDropdownOpen, setSettingsDropdownOpen] = React.useState(false);
 
     return (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -86,7 +93,7 @@ export const RecordListHeader: React.FC<RecordListHeaderProps> = ({
                                         key={view.id}
                                         onClick={() => {
                                             setSelectedView(view);
-                                            const filterExpr = view[COMMON_FIELDS.FILTERS];
+                                            const filterExpr = view.filter_expr;
                                             if (filterExpr) {
                                                 setActiveFilterExpr(filterExpr);
                                             } else {
@@ -107,6 +114,56 @@ export const RecordListHeader: React.FC<RecordListHeaderProps> = ({
                                             className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
                                         >
                                             <Save size={14} /> Save Current View
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* List Settings Dropdown */}
+                <div className="relative">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSettingsDropdownOpen(!settingsDropdownOpen)}
+                        className="text-gray-500 hover:text-gray-700"
+                    >
+                        <Settings size={18} />
+                    </Button>
+
+                    {settingsDropdownOpen && (
+                        <div className="absolute left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                            <div className="py-1">
+                                <button
+                                    onClick={() => {
+                                        onNewViewClick();
+                                        setSettingsDropdownOpen(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                >
+                                    <Plus size={14} /> New List View
+                                </button>
+                                {selectedView && (
+                                    <>
+                                        <button
+                                            onClick={() => {
+                                                onCloneViewClick();
+                                                setSettingsDropdownOpen(false);
+                                            }}
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                        >
+                                            <Copy size={14} /> Clone List View
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                onDeleteViewClick(selectedView.id);
+                                                setSettingsDropdownOpen(false);
+                                            }}
+                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                        >
+                                            <Trash size={14} /> Delete List View
                                         </button>
                                     </>
                                 )}

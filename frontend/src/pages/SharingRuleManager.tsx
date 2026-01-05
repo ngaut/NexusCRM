@@ -242,7 +242,7 @@ export const SharingRuleManager: React.FC = () => {
 
             {/* Create/Edit Modal */}
             {(showCreateModal || editingRule) && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
                         <div className="p-6 border-b border-slate-200">
                             <h2 className="text-xl font-semibold text-slate-800">

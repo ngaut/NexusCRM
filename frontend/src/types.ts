@@ -273,7 +273,8 @@ export interface ListView {
   [COMMON_FIELDS.ID]: string;
   [COMMON_FIELDS.OBJECT_API_NAME]: string;
   [COMMON_FIELDS.LABEL]: string;
-  [COMMON_FIELDS.FILTERS]?: string; // New formula filter
+
+  filter_expr?: string;
   fields?: string[]; // Columns to display
 }
 

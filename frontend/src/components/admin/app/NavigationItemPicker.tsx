@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Database, Globe, Search, Plus, ExternalLink } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import type { ObjectMetadata } from '../../../types';
-import { Z_LAYERS } from '../../../core/constants/zIndex';
+
 
 interface NavigationItemPickerProps {
     isOpen: boolean;
@@ -50,7 +50,7 @@ export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center" style={{ zIndex: Z_LAYERS.MODAL }}>
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[100]">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md m-4">
                 <div className="flex items-center justify-between p-4 border-b">
                     <h3 className="font-semibold text-slate-800">Add Navigation Item</h3>

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ==================== App Methods ====================
@@ -25,7 +25,11 @@ func (ms *MetadataService) GetApps() []*models.AppConfig {
 func (ms *MetadataService) GetApp(id string) *models.AppConfig {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	app, _ := ms.queryApp(id)
+	app, err := ms.queryApp(id)
+	if err != nil {
+		log.Printf("Warning: Failed to query app %s: %v", id, err)
+		return nil
+	}
 	return app
 }
 
@@ -162,7 +166,11 @@ func (ms *MetadataService) CreateObjectInApp(appID string, schema *models.Object
 	app.NavigationItems = append(app.NavigationItems, newItem)
 
 	// Persist App Update
-	navItemsJSON, _ := json.Marshal(app.NavigationItems)
+	navItemsJSON, err := json.Marshal(app.NavigationItems)
+	if err != nil {
+		log.Printf("⚠️ Warning: Failed to marshal navigation items for app %s: %v", appID, err)
+		return nil
+	}
 	if _, err := ms.db.Exec(fmt.Sprintf("UPDATE %s SET navigation_items = ? WHERE id = ?", constants.TableApp), string(navItemsJSON), appID); err != nil {
 		log.Printf("⚠️ Warning: Created object %s but failed to update app navigation: %v", schema.APIName, err)
 	}

@@ -41,7 +41,6 @@ func RunAssertions(db *database.TiDBConnection, strictMode bool) (*AssertionResu
 	assertNoOrphanedSharingRules(db.DB(), result)
 	assertDefaultThemeExists(db.DB(), result)
 
-	// assertStandardActionsExist(db.DB(), result) // Removed deprecated call
 	assertSystemAdminProfileExists(db.DB(), result)
 	assertSystemAdminUserExists(db.DB(), result)
 	assertCriticalTablesExist(db.DB(), result)

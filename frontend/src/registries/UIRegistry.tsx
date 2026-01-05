@@ -226,8 +226,8 @@ class UIRegistryClass {
             if (props.field.type === 'Date') inputType = 'date';
             if (props.field.type === 'DateTime') inputType = 'datetime-local';
 
-            // Legacy constants check for read-only fields
-            if (props.field.api_name === 'CreatedDate' || props.field.api_name === 'LastModifiedDate') {
+            // Read-only fields check
+            if (props.field.api_name === COMMON_FIELDS.CREATED_DATE || props.field.api_name === COMMON_FIELDS.LAST_MODIFIED_DATE) {
                 return <span className="text-slate-700">{String(props.value ?? '')}</span>;
             }
 

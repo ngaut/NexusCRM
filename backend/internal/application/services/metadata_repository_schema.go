@@ -320,6 +320,7 @@ func (ms *MetadataService) queryRecordTypes(objectAPIName string) ([]*models.Rec
 			&description, &isActive, &isDefault, &businessProcessID,
 			&rt.CreatedDate, &rt.LastModifiedDate,
 		); err != nil {
+			log.Printf("Warning: Failed to scan record type: %v", err)
 			continue
 		}
 
@@ -354,6 +355,7 @@ func (ms *MetadataService) queryAutoNumbers(objectAPIName string) ([]*models.Aut
 			&an.ID, &an.ObjectAPIName, &an.FieldAPIName, &an.DisplayFormat,
 			&an.StartingNumber, &an.CurrentValue, &an.CreatedDate, &an.LastModifiedDate,
 		); err != nil {
+			log.Printf("Warning: Failed to scan auto number: %v", err)
 			continue
 		}
 		anList = append(anList, &an)
@@ -387,6 +389,7 @@ func (ms *MetadataService) queryRelationships(childObjectAPIName string) ([]*mod
 			&rel.RelationshipName, &rel.RelationshipType, &cascadeDelete, &restrictedDelete,
 			&relatedListLabel, &relatedListFields, &rel.CreatedDate, &rel.LastModifiedDate,
 		); err != nil {
+			log.Printf("Warning: Failed to scan relationship: %v", err)
 			continue
 		}
 
@@ -424,6 +427,7 @@ func (ms *MetadataService) queryFieldDependencies(objectAPIName string) ([]*mode
 			&dep.ID, &dep.ObjectAPIName, &dep.ControllingField, &dep.DependentField,
 			&controllingValue, &action, &isActive, &dep.CreatedDate, &dep.LastModifiedDate,
 		); err != nil {
+			log.Printf("Warning: Failed to scan field dependency: %v", err)
 			continue
 		}
 

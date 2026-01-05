@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ==================== Layout Methods ====================
@@ -111,37 +111,39 @@ func (ms *MetadataService) augmentLayoutWithRelatedLists(layout *models.PageLayo
 		var lookupFieldAPI, childObjectAPI, childPluralLabel string
 		var relatedListFields sql.NullString
 
-		if err := rows.Scan(&lookupFieldAPI, &childObjectAPI, &childPluralLabel, &relatedListFields); err == nil {
+		if err := rows.Scan(&lookupFieldAPI, &childObjectAPI, &childPluralLabel, &relatedListFields); err != nil {
+			log.Printf("Warning: Failed to scan child relationship row: %v", err)
+			continue
+		}
 
-			// Avoid duplicates if any exist
-			exists := false
-			for _, rl := range layout.RelatedLists {
-				if rl.ObjectAPIName == childObjectAPI && rl.LookupField == lookupFieldAPI {
-					exists = true
-					break
+		// Avoid duplicates if any exist
+		exists := false
+		for _, rl := range layout.RelatedLists {
+			if rl.ObjectAPIName == childObjectAPI && rl.LookupField == lookupFieldAPI {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			// Default columns
+			columns := []string{constants.FieldName, constants.FieldCreatedDate}
+
+			// Override if relationship defines columns
+			if relatedListFields.Valid && relatedListFields.String != "" {
+				var customColumns []string
+				if err := json.Unmarshal([]byte(relatedListFields.String), &customColumns); err == nil && len(customColumns) > 0 {
+					columns = customColumns
 				}
 			}
 
-			if !exists {
-				// Default columns
-				columns := []string{constants.FieldName, constants.FieldCreatedDate}
-
-				// Override if relationship defines columns
-				if relatedListFields.Valid && relatedListFields.String != "" {
-					var customColumns []string
-					if err := json.Unmarshal([]byte(relatedListFields.String), &customColumns); err == nil && len(customColumns) > 0 {
-						columns = customColumns
-					}
-				}
-
-				layout.RelatedLists = append(layout.RelatedLists, models.RelatedListConfig{
-					ID:            fmt.Sprintf("%s-%s", childObjectAPI, lookupFieldAPI),
-					Label:         childPluralLabel,
-					ObjectAPIName: childObjectAPI,
-					LookupField:   lookupFieldAPI,
-					Fields:        columns,
-				})
-			}
+			layout.RelatedLists = append(layout.RelatedLists, models.RelatedListConfig{
+				ID:            fmt.Sprintf("%s-%s", childObjectAPI, lookupFieldAPI),
+				Label:         childPluralLabel,
+				ObjectAPIName: childObjectAPI,
+				LookupField:   lookupFieldAPI,
+				Fields:        columns,
+			})
 		}
 	}
 }

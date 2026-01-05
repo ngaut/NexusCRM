@@ -11,6 +11,17 @@
         "is_enabled": true
     },
     {
+        "id": "setup_sharing_rules",
+        "label": "Sharing Rules",
+        "icon": "Share2",
+        "component_name": "SharingRuleManager",
+        "category": "Security",
+        "page_order": 15,
+        "description": "Manage record sharing rules",
+        "path": "/setup/sharing-rules",
+        "is_enabled": true
+    },
+    {
         "id": "setup_profiles_manage",
         "label": "Profiles",
         "icon": "Shield",
