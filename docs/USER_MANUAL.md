@@ -1,334 +1,157 @@
 # NexusCRM User Manual
 
-Welcome to **NexusCRM**, a metadata-driven CRM platform designed to manage your customer relationships and business processes.
+Welcome to **NexusCRM**, a metadata-driven CRM platform for managing customer relationships and business processes.
 
 ---
 
-## 💡 Quick Start
+## Quick Start
 
-### Default Credentials
-- **Email**: `admin@test.com`
-- **Password**: `Admin123!`
-- ⚠️ **Change password immediately after first login**
+**Default Credentials:**
+- Email: `admin@test.com`
+- Password: `Admin123!`
+- ⚠️ Change password after first login
 
-### Accessing the Application
-1. **Easy Start**: Run `npm run dev:full` from the project root (starts both backend and frontend).
-2. **Alternative**:
-   - Backend: `npm run dev:server` (or `cd backend && go run cmd/server/main.go`)
-   - Frontend: `npm run dev:client`
-3. Open browser: `http://localhost:5173`
-4. Login with default credentials
+**Running the Application:**
+```bash
+npm run dev:full    # Starts both backend and frontend
+```
+Open browser: `http://localhost:5173`
 
 ---
 
-## 📚 Table of Contents
-
-1. [Getting Started](#1-getting-started)
-2. [Navigation](#2-navigation)
-3. [Working with Data](#3-working-with-data)
-4. [Analytics & Reporting](#4-analytics--reporting)
-5. [Administrator Guide](#5-administrator-guide)
-6. [Security & Permissions](#6-security--permissions)
-7. [Tips & Best Practices](#7-tips--best-practices)
-8. [Business Processes](#8-business-processes)
-9. [Getting Help](#9-getting-help)
-
----
-
-## 1. Getting Started
-
-### First Login
-1. Navigate to `http://localhost:5173`
-2. Enter default credentials
-3. You'll be directed to the main dashboard
-
-### Changing Your Password
-1. Click your profile icon (top-right)
-2. Select "Settings"
-3. Enter current password
-4. Enter new strong password (12+ characters, mixed case, numbers, special chars)
-5. Save changes
-
----
-
-## 2. Navigation
+## Navigation
 
 ### Sidebar
-The left sidebar is your primary navigation:
-- **Apps**: Switch between Sales, Marketing, Service, etc.
+- **Apps**: Switch between business areas
 - **Tabs**: Object list views
-- **Dashboards**: Analytics and KPIs
-- **Setup**: Admin configuration (if you're an admin)
-
-### Global Search
-- Located at the top of the page
-- Search across all objects
-- Type record name, email, or any field value
-- Results show matching records with quick actions
+- **Dashboards**: Analytics
+- **Setup**: Admin configuration (admin only)
 
 ### App Launcher
-- Click the grid icon (top-left)
-- Browse available applications
-- Switch between different business areas
+Click the grid icon (top-left) to browse and switch between available applications.
+
+### Global Search
+Top navigation - search across all objects by name, email, or field values.
 
 ---
 
-## 3. Working with Data
+## Working with Data
 
 ### List Views
-
-**Viewing Records**:
 - Navigate to any object tab
-- See all records you have access to
-- Click any record to view details
-
-**Filtering**:
-- Click "Filter" icon
-- Add conditions
-- Combine multiple filters with AND/OR logic
-- Save filters for reuse
-
-**Sorting**:
-- Click column headers to sort
-- Toggle ascending/descending order
-
-**Kanban View** (for picklist fields like Stage, Status):
-- Click "Kanban" toggle
-- Drag and drop cards between columns
-- Changes automatically save
+- Filter: Click filter icon, add conditions
+- Sort: Click column headers
+- Kanban: Toggle view for picklist fields (drag/drop cards)
 
 ### Creating Records
-
-1. Click "New" button on list view
-2. Fill required fields (marked with red asterisk)
-3. Optional: Fill additional fields
-4. Click "Save"
-5. Record is created and you're redirected to detail view
+1. Click "New" button
+2. Fill required fields (red asterisk)
+3. Click "Save"
 
 ### Editing Records
-
-**Method 1: Inline Edit**
-- Click pencil icon next to field
-- Edit value
-- Changes save automatically
-
-**Method 2: Edit Mode**
-- Click "Edit" button at top
-- Modify multiple fields
-- Click "Save" when done
+- **Inline**: Click field to edit directly
+- **Full Edit**: Click "Edit" button, modify fields, save
 
 ### Deleting Records
-
-**Soft Delete** (Recoverable):
-1. Open record detail page
-2. Click "Delete" button
-3. Confirm deletion
-4. Record moves to Recycle Bin
-
-
-
-
-
-## 4. Analytics & Reporting
-
-### Dashboards
-
-**Viewing Dashboards**:
-- Click "Dashboards" tab
-- Select dashboard from list
-- View real-time metrics and charts
-
-**Dashboard Widgets**:
-- **Metrics**: Key numbers
-- **Charts**: Visual data (Bar, Pie, Line charts)
-- **Tables**: Lists of records meeting criteria
-- **SQL Analytics**: Advanced SQL queries with visualization (Admin only)
-
-**Filtering Dashboards**:
-- Use date range picker
-- Apply filters to focus on specific data
-- Filters apply to all widgets
-
-### Creating Reports
-
-1. Navigate to Reports tab
-2. Click "New Report"
-3. Select data source (Object)
-4. Choose fields to include
-5. Add filters (optional)
-6. Add grouping (optional)
-7. Choose chart type (Bar, Pie, Table)
-8. Save report
+Records move to Recycle Bin (recoverable).
 
 ---
 
-## 5. Administrator Guide
+## Dashboards
 
-NexusCRM is a **metadata-driven platform** - you can customize without code.
+### Viewing
+- Click "Dashboards" tab
+- Select a dashboard
+- View real-time metrics and charts
+
+### Widget Types
+- **Metrics**: Key numbers
+- **Charts**: Bar, Pie, Line visualizations
+- **Tables**: Record lists
+- **Kanban**: Board view
+- **SQL Analytics**: Advanced queries (admin only)
+
+---
+
+## Administrator Guide
+
+NexusCRM is **metadata-driven** - customize without code.
 
 ### Object Manager
 
-**Creating Custom Objects**:
-1. Navigate to Setup → Object Manager
-2. Click "New Object"
-3. Enter:
-   - Label (e.g., "Project")
-   - API Name (auto-generated: `Project__c`)
-   - Description
-4. Save
-5. New object appears in database and UI
+**Creating Objects:**
+Setup → Object Manager → New Object
+- Enter Label, API Name, Description
+- New object appears in database and UI
 
-**Adding Custom Fields**:
-1. Open Object Manager
-2. Select object
-3. Click "New Field"
-4. Choose field type:
-   - Text, Number, Currency
-   - Email, Phone, URL
-   - Picklist (dropdown)
-   - Checkbox (true/false)
-   - Date, DateTime
-   - Lookup (relationship to another object)
-   - Formula (calculated field)
-5. Configure field properties
-6. Save
-7. Field appears in layouts and forms
-
-**Field Types Explained**:
-- **Formula**: Calculated using Excel-like syntax (e.g., `Amount * 0.1` for 10% commission)
-- **Lookup**: Creates relationship to another object
-- **Picklist**: Dropdown with predefined options
+**Adding Fields:**
+Setup → Object Manager → [Object] → New Field
+- Text, Number, Currency, Email, Phone, URL
+- Picklist (dropdown), Checkbox
+- Date, DateTime, Lookup, Formula
 
 ### Page Layouts
-
-**Customizing Record Pages**:
-1. Setup → Object Manager → [Object] → Layouts
-2. Drag and drop sections
-3. Add/remove fields
-4. Reorder fields
-5. Set field required status
-6. Save layout
-7. Changes appear immediately for users
+Setup → Object Manager → [Object] → Layouts
+- Drag/drop sections and fields
+- Changes appear immediately
 
 ### Validation Rules
-
-**Preventing Bad Data**:
-1. Setup → Object Manager → [Object] → Validation Rules
-2. Click "New Rule"
-3. Enter formula that must be TRUE for save to succeed
-4. Example: `Amount <= 0` with error "Amount must be positive"
-5. Save
-6. Rule enforced on all creates/updates
+Setup → Object Manager → [Object] → Validation Rules
+- Define conditions that must be true to save
+- Example: `Amount <= 0` → "Amount must be positive"
 
 ### Automation (Flows)
-
-**Creating Workflows**:
-1. Setup → Flows
-2. Click "New Flow"
-3. Define trigger:
-   - Object (e.g., Opportunity)
-   - Event (After Create, After Update)
-   - Condition (e.g., `Status == 'Closed'`)
-4. Add actions:
-   - Create Task
-   - Send Email
-   - Update Field
-5. Save and activate
-6. Flow runs automatically when conditions met
+Setup → Flows → New Flow
+- Trigger: Object + Event (After Create/Update) + Condition
+- Actions: Create Task, Send Email, Update Field
 
 ---
 
-## 6. Security & Permissions
+## Security & Permissions
 
-### Profile System
-
-**Understanding Profiles**:
+### Profiles
 - Every user has ONE profile
-- Profile defines WHAT you can do (permissions)
-- Examples: `system_admin`, `standard_user`
-
-**Profile Permissions**:
-- **Object Permissions**: Create, Read, Edit, Delete per object
-- **Field Permissions**: Which fields you can see/edit
-- **ViewAll/ModifyAll**: Bypass ownership rules
-
-
+- Profile defines permissions (CRUD per object)
+- Field-level: Read/Edit per field
 
 ### Managing Users
+Setup → Users → New User
+- Email, Name, Profile (required), Role (optional)
 
-**Creating Users** (Admin Only):
-1. Setup → Users
-2. Click "New User"
-3. Enter:
-   - Email (used for login)
-   - Name
-   - Profile (required)
-   - Role (optional)
-4. Save
-5. User receives email with temp password
-
-**Assigning Permissions**:
-1. Setup → Profiles
-2. Select profile
-3. Configure:
-   - Object permissions (CRUD)
-   - Field permissions (Read/Edit)
-4. Save
-5. All users with this profile inherit permissions
-
-
+### Assigning Permissions
+Setup → Profiles → Select Profile
+- Object permissions (Create, Read, Edit, Delete)
+- Field permissions (Read, Edit)
 
 ---
 
-## 7. Tips & Best Practices
+## AI Assistant (Nexus AI)
+
+Click the **Nexus AI** button in the top navigation bar.
+
+**Capabilities:**
+- Answer questions about your data
+- Navigate the system
+- Perform actions
+
+---
+
+## Best Practices
 
 ### Data Quality
-- ✅ Use validation rules to enforce data standards
+- ✅ Use validation rules
 - ✅ Make important fields required
-- ✅ Use picklists instead of free text when possible
-- ✅ Regular data cleanup and deduplication
-
-### Performance
-- ✅ Use filters to reduce dataset size
-- ✅ Archive old records
-- ✅ Limit formula complexity
-- ✅ Use indexed fields for filtering
+- ✅ Use picklists over free text
 
 ### Security
-- ✅ Principle of least privilege - don't over-grant permissions
-- ✅ Regular permission audits
-- ✅ Use roles for hierarchy, not for permissions
-- ✅ Strong passwords (12+ chars, mixed case, numbers, symbols)
-
-### Customization
-- ✅ Plan your data model before creating objects
-- ✅ Document custom fields and objects
-- ✅ Test changes in sandbox environment
-- ✅ Train users on new features
-
-
-
-### AI Assistant (Nexus AI)
-- Click the **Nexus AI** button (🤖 icon) in the top navigation bar to open the assistant.
-- **Capabilities**:
-  - Answer questions about your data
-  - Navigate the system ("Go to Setup")
-  - Perform actions ("Create a task to call John Doe")
+- ✅ Principle of least privilege
+- ✅ Strong passwords (8+ chars, mixed case, numbers, special chars)
+- ✅ Use roles for hierarchy, not permissions
 
 ---
 
-## 9. Getting Help
+## Documentation
 
-
-
-### Documentation
-- Main README: Project overview
-- ARCHITECTURE.md: Technical architecture
-- SECURITY.md: Security details
-- This manual: User guide
-
-### Support
-- Contact your System Administrator for access and support issues.
-- GitHub Issues: Bug reports and feature requests
-
-
+- [README.md](../README.md) - Project overview
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical design
+- [SECURITY.md](./SECURITY.md) - Security features
