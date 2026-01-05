@@ -40,6 +40,9 @@ npm run dev:full                         # Both backend + frontend
 │   │   └── infrastructure/    # TiDB, events
 │   └── pkg/                   # Shared packages
 │
+├── shared/                    # Shared code generation
+│   └── pkg/                   # Generated constants, models
+│
 ├── mcp/                       # Model Context Protocol Server
 ├── tests/e2e/                 # E2E test suites
 └── docs/                      # Documentation
@@ -57,6 +60,7 @@ npm run dev:full                         # Both backend + frontend
 - [ARCHITECTURE.md](./docs/ARCHITECTURE.md) - System design
 - [SECURITY.md](./docs/SECURITY.md) - Security features
 - [USER_MANUAL.md](./docs/USER_MANUAL.md) - Usage guide
+- [adding-fields.md](./docs/adding-fields.md) - Developer guide
 - [PRD.md](./PRD.md) - Best practices & lessons learned
 
 ## Development
@@ -65,6 +69,7 @@ npm run dev:full                         # Both backend + frontend
 npm run dev:full        # Start both servers
 npm run lint            # Run linting
 npm run test            # E2E tests
+make generate           # Regenerate code from system_tables.json
 ```
 
 **Backend restart:**

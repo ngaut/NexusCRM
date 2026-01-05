@@ -9,8 +9,8 @@
 - **Transmission**: Bearer token in Authorization header
 
 ### Password Security
-- **Hashing**: bcrypt (12 rounds)
-- **Requirements**: 8+ chars, uppercase, lowercase, number, special char
+- **Hashing**: bcrypt (10 rounds, DefaultCost)
+- **Requirements**: 8+ chars, uppercase, lowercase, number, special char (@$!%*?&)
 - **Default Admin**: `admin@test.com` / `Admin123!` (change immediately)
 
 ### Sessions
@@ -68,5 +68,5 @@ JWT_SECRET=<openssl rand -base64 32>
 1. ✅ Never commit `.env` to version control
 2. ✅ Rotate credentials if exposed
 3. ✅ Change default admin password
-4. ✅ Use strong passwords (12+ chars)
+4. ✅ Use strong passwords (8+ chars, mixed case, numbers, special chars)
 5. ✅ Principle of least privilege
