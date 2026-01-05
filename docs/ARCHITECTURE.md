@@ -1,358 +1,135 @@
 # NexusCRM Architecture
 
-## 1. Vision & Philosophy
+## Vision
 
-NexusCRM is a **Metadata-Driven CRM Platform** built with:
-- **Go Backend**: High-performance, clean architecture
+NexusCRM is a **Metadata-Driven CRM Platform**:
+- **Go Backend**: Clean architecture, high performance
 - **React Frontend**: Modern UI with Vite
 - **TiDB Cloud**: Scalable MySQL-compatible database
 - **Profile/Role System**: Salesforce-inspired permissions
 
-The core philosophy is that application structure (Schema), business logic (Flows), user interface (Layouts), and security (Permissions) are stored as **metadata** in the database. The system interprets this metadata at runtime to construct UI and execute logic dynamically.
-
-**For user instructions, see [USER_MANUAL.md](./USER_MANUAL.md).**
+Application structure (Schema), business logic (Flows), UI (Layouts), and security (Permissions) are stored as **metadata** in the database and interpreted at runtime.
 
 ---
 
-## 2. High-Level Architecture
+## High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  Frontend (React + Vite)                │
-│                   http://localhost:5173                  │
-│                                                          │
-│  Components → Services → API Client                    │
-│   - UI Components                                       │
-│   - Custom Hooks                                        │
-│   - Context Providers                                   │
+│              Frontend (React + Vite)                    │
+│              http://localhost:5173                      │
+│  Components → Services → API Client                     │
 └──────────────────────┬──────────────────────────────────┘
                        │ REST API (JSON)
 ┌──────────────────────▼──────────────────────────────────┐
-│              Backend (Go Clean Architecture)            │
-│                   http://localhost:3001                  │
-│                                                          │
+│          Backend (Go Clean Architecture)                │
+│              http://localhost:3001                      │
 │  ┌────────────────────────────────────────────┐        │
 │  │ Interface Layer (REST Handlers)             │        │
-│  │  - auth_handler.go                          │        │
-│  │  - schema_handler.go                        │        │
-│  │  - data_handler.go                          │        │
+│  │  auth, schema, data, formula, ui, approval  │        │
 │  └──────────────────┬──────────────────────────┘        │
 │  ┌──────────────────▼──────────────────────────┐        │
 │  │ Application Layer (Business Logic)          │        │
-│  │  - MetadataService                          │        │
-│  │  - QueryService                             │        │
-│  │  - PermissionService                        │        │
-│  │  - FormulaEngine                            │        │
-│  └──────────────────┬──────────────────────────┘        │
-│  ┌──────────────────▼──────────────────────────┐        │
-│  │ Domain Layer (Models & Events)              │        │
-│  │  - Business Models                          │        │
-│  │  - Domain Events                            │        │
-│  └──────────────────┬──────────────────────────┘        │
+│  │  MetadataService, QueryService, FlowEngine  │        │
 │  └──────────────────┬──────────────────────────┘        │
 │  ┌──────────────────▼──────────────────────────┐        │
 │  │ Infrastructure Layer                        │        │
-│  │  - TiDB Connection (with TLS)               │        │
-│  │  - Event Bus                                │        │
+│  │  TiDB Connection (TLS), Event Bus           │        │
 │  └──────────────────┬──────────────────────────┘        │
 │                     │                           ┌───────▼──────────────┐
-│                     │                           │ MCP Server (Layer 2) │
+│                     │                           │ MCP Server           │
 │                     │                           │ (Agent Tool Bus)     │
 │                     │                           └──────────────────────┘
 └──────────────────────┬──────────────────────────────────┘
                        │ MySQL Protocol + TLS
 ┌──────────────────────▼──────────────────────────────────┐
 │                    TiDB Cloud                           │
-│              (MySQL-Compatible Database)                 │
-│                                                          │
-│  - 42+ System Metadata Tables                           │
-│  - User Business Tables                                 │
-│  - ACID Transactions                                    │
+│  - 40+ System Metadata Tables                          │
+│  - User Business Tables                                │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Clean Architecture Layers
+## Clean Architecture Layers
 
-### 3.1 Domain Layer (`internal/domain/`)
-**Purpose**: Core business logic and models
-
-- **models/**: Business entities (User, Profile, Role, etc.)
+### Domain Layer (`internal/domain/`)
+- **models/**: Business entities (User, Profile, Role)
 - **events/**: Domain events for decoupling
 
-**Key Principle**: No dependencies on outer layers
-
-### 3.2 Application Layer (`internal/application/services/`)
-**Purpose**: Use cases and business operations
-
-**Core Services**:
-- **MetadataService**: Schema management, delegates to `SchemaDefaults` for system field injection.
-- **QueryService**: Data retrieval with RLS enforcement
+### Application Layer (`internal/application/services/`)
+- **MetadataService**: Schema management
+- **QueryService**: Data retrieval with RLS
 - **PermissionService**: RBAC and role hierarchy
-- **FormulaEngine**: Excel-like expression evaluator
+- **FormulaEngine**: Excel-like expressions
 - **FlowEngine**: Workflow automation
-- **EventBus**: Pub/sub for decoupled logic
-- **SchemaManager**: Handles physical DDL operations
-- **UIMetadataService**: Manages layouts, dashboards, and apps
 
-### 3.3 Interface Layer (`internal/interfaces/rest/`)
-**Purpose**: HTTP handlers and API contracts
+### Interface Layer (`internal/interfaces/rest/`)
+- **auth_handler.go**: Login, logout, sessions
+- **schema_handler.go**: Object/field metadata
+- **data_handler.go**: CRUD operations
+- **ui_handler.go**: Layouts, apps, tabs
 
-**Main Handlers**:
-- **auth_handler.go**: Login, logout, session management
-- **schema_handler.go**: Schema discovery, object/field metadata
-- **data_handler.go**: CRUD operations on records
-- **formula_handler.go**: Formula evaluation
-- **ui_handler.go**: UI metadata (layouts, apps, tabs)
-- **approval_handler.go**: Approval process management
-- **file_handler.go**: File uploads and attachments
-- **feed_handler.go**: Activity feed and comments
-- **notification_handler.go**: User notifications
-
-**Pattern**: Each handler delegates to application services
-
-### 3.4 Infrastructure Layer (`internal/infrastructure/`)
-**Purpose**: External dependencies and technical concerns
-
-- **database/tidb.go**: TiDB Cloud connection with TLS
+### Infrastructure Layer (`internal/infrastructure/`)
+- **database/tidb.go**: TiDB connection with TLS
 - **events/**: Event bus implementation
 
 ---
 
-## 4. Permission System (Salesforce Pattern)
+## Permission System
 
-### 4.1 Profile vs Role
-
-**Profile** (Required):
+### Profile (Required)
 - Defines **what a user can do** (permissions)
-- Examples: `system_admin`, `standard_user`
-- Controls CRUD operations on objects
-- Controls field-level security
+- Controls CRUD on objects, field-level security
 - Every user MUST have exactly one profile
 
-**Role** (Optional):
+### Role (Optional)
 - Defines **whose data a user can see** (hierarchy)
-- Role hierarchy enables managers to see subordinate data
-- Not all users need roles (e.g., individual contributors)
-- Example: CEO > VP Sales > Regional Manager > Sales Rep
+- Tree structure: CEO > VP > Manager > Rep
+- Higher roles inherit data access from lower roles
 
-**Database Schema**:
-```sql
-_System_User:
-  ProfileId varchar(255) NOT NULL  -- Required: Permissions
-  RoleId    varchar(255) NULL       -- Optional: Hierarchy
-```
-
-**API Response**:
-```json
-{
-  "id": "user-id",
-  "email": "user@example.com",
-  "profileId": "system_admin",  // Always present
-  "roleId": null                 // Always present, can be null
-}
-```
-
-### 4.2 Permission Evaluation
-
-1. **Profile Permissions** (`_System_ObjectPerms`, `_System_FieldPerms`)
-   - Object-level: Create, Read, Edit, Delete, ViewAll, ModifyAll
-   - Field-level: Readable, Editable
-
-2. **Role Hierarchy** (`_System_Role`)
-   - Tree structure
-   - Higher roles see data owned by lower roles
-   - Computed in PermissionService
-
-3. **Sharing Rules** (`_System_SharingRule`)
-   - Criteria-based access extensions
-   - Example: "If Industry='Tech', share with Sales Team"
+### Security Enforcement
+1. **Object Permissions**: Create, Read, Edit, Delete, ViewAll, ModifyAll
+2. **Field Permissions**: Readable, Editable
+3. **Row-Level Security**: Ownership, role hierarchy, sharing rules
 
 ---
 
-## 5. Data Model
+## System Tables (40+)
 
-### 5.1 System Metadata Tables (Verified)
+**Core Schema**: `_System_Object`, `_System_Field`, `_System_User`, `_System_Profile`, `_System_Role`
 
-### 5.1 System Metadata Tables (Verified)
+**Security**: `_System_ObjectPerms`, `_System_FieldPerms`, `_System_SharingRule`, `_System_RecordShare`
 
-**Core Schema (9 tables)**:
-- `_System_Object`, `_System_Field`, `_System_RecordType`, `_System_Relationship`, `_System_AutoNumber`
-- `_System_Profile`, `_System_Role`, `_System_User`, `_System_Group`, `_System_GroupMember`
+**UI**: `_System_App`, `_System_Layout`, `_System_Dashboard`, `_System_Tab`, `_System_ListView`
 
-**Security & Permissions (6 tables)**:
-- `_System_ObjectPerms`, `_System_FieldPerms`, `_System_SharingRule`, `_System_RecordShare`
-- `_System_Session`, `_System_PermissionSet`
+**Automation**: `_System_Flow`, `_System_Action`, `_System_Validation`, `_System_ApprovalProcess`
 
-**UI & Experience (14 tables)**:
-- `_System_App`, `_System_Layout`, `_System_Dashboard`, `_System_Tab`, `_System_ListView`
-- `_System_SetupPage`, `_System_UITheme`, `_System_UIComponent`, `_System_FieldRendering`
-- `_System_NavigationMenu`, `_System_Limit`, `_System_Prompt`, `_System_Theme`
-
-**Business Logic & Automation (11 tables)**:
-- `_System_Flow`, `_System_Action`, `_System_ActionHandler`, `_System_Validation`
-- `_System_FormulaFunction`, `_System_Transformation`, `_System_Webhook`, `_System_EmailTemplate`
-- `_System_ApiEndpoint`, `_System_ApprovalProcess`, `_System_FieldDependency`
-
-**Operations (5 tables)**:
-- `_System_RecycleBin`, `_System_Log`, `_System_Recent`, `_System_AuditLog`, `_System_OutboxEvent`
+**Operations**: `_System_RecycleBin`, `_System_AuditLog`, `_System_Recent`
 
 ---
 
-## 6. Security Architecture
+## Key Patterns
 
-### 6.1 Authentication
-- **JWT Tokens**: Secure, stateless authentication
-- **bcrypt Password Hashing**: Industry-standard (12 rounds)
-- **Session Management**: Stored in `_System_Session`
+### Metadata-Driven
+All UI, schema, and logic defined in database. No code changes needed for customization.
 
-### 6.2 Row-Level Security (RLS)
-**Enforced in QueryService**:
-1. **Object-Level Permissions**: Read/Create/Edit/Delete permissions checked per object.
-2. **Field-Level Visibility**: Fields hidden based on profile permissions.
-*- Shared via Role Hierarchy and Sharing Rules.*
+### Clean Architecture
+Dependencies point inward: Interface → Application → Domain ← Infrastructure
 
-### 6.3 Field-Level Security (FLS)
-**Enforced at API layer**:
-- Read permissions: Controls visibility
-- Edit permissions: Controls mutability
-- Checked in both query and persistence operations
+### Event-Driven
+EventBus decouples business logic. FlowEngine subscribes to domain events.
 
-### 6.4 Metadata Persistence & Hydration
-**Reliability Pattern**:
-To ensure data integrity, the system uses a **hydration pattern** for all object creation.
-- **Schema Defaults**: When a new custom object is defined (e.g., `Project__c`), `schema_defaults.go` automatically injects mandatory system fields:
-    - `id` (UUID, Primary Key)
-    - `created_date`, `created_by_id`
-    - `last_modified_date`, `last_modified_by_id`
-    - `owner_id`, `is_deleted`
-- **Atomic Operations**: Metadata is registered in `_System_Object` and `_System_Field` transactional tables simultaneously with physical table creation (`CREATE TABLE`). This prevents "orphan" tables or "ghost" metadata.
+### React Portal for Modals
+All modals use `createPortal(content, document.body)` with `z-[100]` for proper stacking.
 
 ---
 
-## 7. Testing Architecture
+## Agent Integration (MCP)
 
-### 7.1 Modular E2E Tests (`tests/e2e/`)
-```
-tests/e2e/
-├── runner.sh              # Test orchestrator
-├── config.sh              # Environment config
-├── lib/
-│   ├── helpers.sh         # Test utilities
-│   └── api.sh             # API wrappers
-└── suites/
-    ├── 01-infrastructure.sh
-    ├── ...
-    └── 42-ui-smoke.sh (42 suites total)
-```
+- **Protocol**: Model Context Protocol over HTTP
+- **Endpoint**: `/mcp`
+- **Authentication**: Standard JWT (agents are logical users)
+- **Design**: 4-layer architecture (Foundation → Tool Bus → Runtime → Interaction)
 
-**Run Tests**:
-```bash
-cd tests/e2e && ./runner.sh          # All tests
-cd tests/e2e && ./runner.sh auth    # Specific suite
-```
-
-### 7.2 Role Implementation Tests
-`tests/comprehensive_role_tests.sh` - Validates Profile/Role system end-to-end
-
----
-
-## 8. Development
-
-### 8.1 Project Structure
-```
-nexuscrm/
-├── frontend/              # React + TypeScript + Vite
-│   ├── src/
-│   │   ├── components/
-│   │   ├── ...
-│   └── vite.config.ts
-│
-├── backend/               # Go + Clean Architecture
-│   ├── cmd/server/        # Entry point
-│   ├── internal/
-│   ├── pkg/
-│   └── go.mod
-│
-├── mcp/                   # Model Context Protocol Server
-│   ├── pkg/
-│   └── cmd/
-│
-├── shared/                # Shared Definitions
-│   └── constants/
-│
-├── scripts/               # Project-wide Utilities
-│
-└── tests/                 # Test suites
-    └── e2e/
-```
-
-### 8.2 Running Locally
-```bash
-# Backend (Terminal 1)
-cd backend
-go run cmd/server/main.go
-# → http://localhost:3001
-
-# Frontend (Terminal 2)
-npm run dev
-# → http://localhost:5173
-```
-
-### 8.3 Environment Configuration
-**Backend** (`.env`):
-```bash
-TIDB_HOST=gateway01.us-west-2.prod.aws.tidbcloud.com
-TIDB_PORT=4000
-TIDB_USER=<your-user>
-TIDB_PASSWORD=<your-password>
-TIDB_DATABASE=nexuscrm
-JWT_SECRET=<generate-with-openssl-rand>
-```
-
-**Frontend** (`.env`):
-```bash
-REACT_APP_BACKEND_URL=http://localhost:3001
-REACT_APP_FRONTEND_URL=http://localhost:5173
-```
-
----
-
-## 9. Key Design Patterns
-
-### 9.1 Metadata-Driven
-- All UI, schema, and logic defined in database
-- No code changes needed for customization
-- Runtime interpretation of metadata
-
-### 9.2 Clean Architecture
-- Dependencies point inward (Domain ← Application ← Interface ← Infrastructure)
-- Business logic independent of frameworks
-- Testable, maintainable, scalable
-
-### 9.3 Event-Driven
-- EventBus decouples business logic
-- FlowEngine subscribes to events
-- Atomic operations with transactions
-
-### 9.4 Security-First
-- RLS enforced in QueryService
-- FLS checked at API boundaries
-- Profile/Role separation (Salesforce pattern)
-
-### 9.5 Agent-Native Architecture (Implemented)
-- **4-Layer Design**: Foundation (L1) → Dynamic Tool Bus (L2) → Runtime (L3) → Interaction (L4).
-- **Protocol**: Model Context Protocol (MCP) for tool exposure (`/mcp` endpoint).
-- **Philosophy**: Agents are logical users subject to standard permissions but empowered with dynamic discovery.
-- **Implementation**: Deployed via `github.com/nexuscrm/mcp` module, integrated into `backend/cmd/server/main.go`.
-
-See detailed design documents:
-- [Agent-Native Vision (v3)](architecture/agent_native_vision.md)
-- [Platform Technical Design](architecture/agent_platform_design.md)
-- [UI/UX Interaction & Design](architecture/agent_ui_design.md)
-
-
----
-
-
+See: [docs/architecture/agent_native_vision.md](./architecture/agent_native_vision.md)
