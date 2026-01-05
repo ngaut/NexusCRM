@@ -63,7 +63,40 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({ currentAppId, onSelect
                         {loading ? (
                             <div className="p-4 text-center text-slate-500 text-sm">Loading apps...</div>
                         ) : visibleApps.length === 0 ? (
-                            <div className="p-4 text-center text-slate-500 text-sm">No apps available</div>
+                            <div className="p-3 space-y-3">
+                                <p className="text-xs text-slate-500 text-center">No apps created yet</p>
+
+                                {/* Quick Links */}
+                                <div className="space-y-1">
+                                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Quick Links</p>
+                                    <Link
+                                        to="/setup"
+                                        onClick={() => setIsOpen(false)}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                                    >
+                                        <Icons.Settings size={16} className="text-slate-500" />
+                                        <span className="text-sm text-slate-700">Setup</span>
+                                    </Link>
+                                    <Link
+                                        to="/setup/objects"
+                                        onClick={() => setIsOpen(false)}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                                    >
+                                        <Icons.Database size={16} className="text-slate-500" />
+                                        <span className="text-sm text-slate-700">Object Manager</span>
+                                    </Link>
+                                </div>
+
+                                {/* Create App CTA */}
+                                <Link
+                                    to="/setup/appmanager"
+                                    onClick={() => setIsOpen(false)}
+                                    className="flex items-center justify-center gap-2 w-full px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                                >
+                                    <Icons.Plus size={16} />
+                                    <span className="text-sm font-medium">Create Your First App</span>
+                                </Link>
+                            </div>
                         ) : (
                             <div className="grid grid-cols-3 gap-2">
                                 {visibleApps.map(app => {

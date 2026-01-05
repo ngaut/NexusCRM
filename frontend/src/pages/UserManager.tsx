@@ -26,6 +26,10 @@ export const UserManager: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [deletingUser, setDeletingUser] = useState<User | null>(null);
 
+    const [creatingProfile, setCreatingProfile] = useState(false);
+    const [profileFormData, setProfileFormData] = useState<{ name: string; description: string }>({ name: '', description: '' });
+    const [savingProfile, setSavingProfile] = useState(false);
+
     useEffect(() => {
         loadData();
     }, [activeTab]);
@@ -52,6 +56,24 @@ export const UserManager: React.FC = () => {
         }
     };
 
+    const handleCreateProfile = async () => {
+        if (!profileFormData.name.trim()) {
+            errorToast('Profile name is required');
+            return;
+        }
+        setSavingProfile(true);
+        try {
+            await usersAPI.createProfile(profileFormData);
+            setCreatingProfile(false);
+            setProfileFormData({ name: '', description: '' });
+            loadData();
+        } catch {
+            errorToast('Failed to create profile');
+        } finally {
+            setSavingProfile(false);
+        }
+    };
+
     return (
         <div className="max-w-7xl mx-auto p-6">
             <div className="flex items-center justify-between mb-8">
@@ -66,7 +88,11 @@ export const UserManager: React.FC = () => {
                 </div>
                 <button
                     onClick={() => {
-                        if (activeTab === 'users') setCreatingUser(true);
+                        if (activeTab === 'users') {
+                            setCreatingUser(true);
+                        } else {
+                            setCreatingProfile(true);
+                        }
                     }}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm transition-colors"
                 >
@@ -156,43 +182,49 @@ export const UserManager: React.FC = () => {
                                                 {user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}
                                             </td>
                                             <td className="px-6 py-4 text-right whitespace-nowrap">
-                                                <button
-                                                    onClick={() => setManagingPermissionsUser(user)}
-                                                    className="text-sm font-medium text-purple-600 hover:text-purple-800 mr-3"
-                                                >
-                                                    Assign Perm Sets
-                                                </button>
-                                                <button
-                                                    onClick={() => setViewingEffectivePermissionsUser(user)}
-                                                    className="text-sm font-medium text-teal-600 hover:text-teal-800 mr-3"
-                                                >
-                                                    View Effective
-                                                </button>
-                                                <button
-                                                    onClick={() => setEditingUser(user)}
-                                                    className="text-sm font-medium text-blue-600 hover:text-blue-800 mr-3"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={async () => {
-                                                        try {
-                                                            await usersAPI.updateUser(user[COMMON_FIELDS.ID] as string, { is_active: !user.is_active });
-                                                            loadData();
-                                                        } catch {
-                                                            errorToast("Failed to update user status");
-                                                        }
-                                                    }}
-                                                    className={`text-sm font-medium mr-3 ${user.is_active ? 'text-amber-600 hover:text-amber-800' : 'text-green-600 hover:text-green-800'}`}
-                                                >
-                                                    {user.is_active ? 'Deactivate' : 'Activate'}
-                                                </button>
-                                                <button
-                                                    onClick={() => setDeletingUser(user)}
-                                                    className="text-sm font-medium text-red-600 hover:text-red-800"
-                                                >
-                                                    Delete
-                                                </button>
+                                                <div className="inline-flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setManagingPermissionsUser(user)}
+                                                        className="text-sm font-medium text-purple-600 hover:text-purple-800"
+                                                    >
+                                                        Assign Perm Sets
+                                                    </button>
+                                                    <span className="text-slate-300">|</span>
+                                                    <button
+                                                        onClick={() => setViewingEffectivePermissionsUser(user)}
+                                                        className="text-sm font-medium text-teal-600 hover:text-teal-800"
+                                                    >
+                                                        View Effective
+                                                    </button>
+                                                    <span className="text-slate-300">|</span>
+                                                    <button
+                                                        onClick={() => setEditingUser(user)}
+                                                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <span className="text-slate-300">|</span>
+                                                    <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                await usersAPI.updateUser(user[COMMON_FIELDS.ID] as string, { is_active: !user.is_active });
+                                                                loadData();
+                                                            } catch {
+                                                                errorToast("Failed to update user status");
+                                                            }
+                                                        }}
+                                                        className={`text-sm font-medium ${user.is_active ? 'text-amber-600 hover:text-amber-800' : 'text-green-600 hover:text-green-800'}`}
+                                                    >
+                                                        {user.is_active ? 'Deactivate' : 'Activate'}
+                                                    </button>
+                                                    <span className="text-slate-300">|</span>
+                                                    <button
+                                                        onClick={() => setDeletingUser(user)}
+                                                        className="text-sm font-medium text-red-600 hover:text-red-800"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -315,6 +347,65 @@ export const UserManager: React.FC = () => {
                 confirmLabel="Delete"
                 variant="danger"
             />
+
+            {/* Profile Creation Modal */}
+            {creatingProfile && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-slate-800">Create Profile</h2>
+                            <button
+                                onClick={() => setCreatingProfile(false)}
+                                className="text-slate-400 hover:text-slate-600"
+                            >
+                                <span className="sr-only">Close</span>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Profile Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={profileFormData.name}
+                                    onChange={(e) => setProfileFormData({ ...profileFormData, name: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="e.g. Sales Manager"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                                <textarea
+                                    value={profileFormData.description}
+                                    onChange={(e) => setProfileFormData({ ...profileFormData, description: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    rows={3}
+                                    placeholder="Describe the access level and role..."
+                                />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                onClick={() => setCreatingProfile(false)}
+                                className="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCreateProfile}
+                                disabled={savingProfile}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                            >
+                                {savingProfile ? 'Creating...' : 'Create Profile'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

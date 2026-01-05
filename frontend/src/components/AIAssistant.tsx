@@ -23,7 +23,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
     width: panelWidth,
     startResizing: handleResizeStart
   } = useResizable({
-    initialWidth: 520,
+    initialWidth: 440,
     minWidth: 360,
     maxWidth: window.innerWidth - 100,
     direction: 'left'
@@ -162,7 +162,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
       />
 
       {/* 2. Main Chat Area (center) */}
-      <div className="flex flex-col h-full flex-1 relative border-l border-slate-200">
+      <div className="flex flex-col h-full flex-1 relative border-l border-slate-200 max-w-full overflow-hidden">
         <div
           onMouseDown={handleResizeStart}
           className="absolute left-0 top-0 h-full w-2 cursor-ew-resize hover:bg-indigo-500/20 transition-colors z-10 group -ml-1"
@@ -174,7 +174,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
               title={isSidebarOpen ? 'Collapse history' : 'Expand history'}
             >
               {isSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeft size={16} />}
@@ -187,10 +187,10 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
               <p className="text-[11px] text-slate-400">Your CRM assistant</p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <button
               onClick={() => setIsContextPanelOpen(!isContextPanelOpen)}
-              className={`p-2 rounded-lg transition-all ${isContextPanelOpen ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600'}`}
+              className={`p-2 rounded-lg transition-all ${isContextPanelOpen ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-700'}`}
               title="Toggle Context Panel"
             >
               <Database size={18} />
@@ -198,7 +198,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
 
             <button
               onClick={onClose}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-all text-slate-400 hover:text-slate-600"
+              className="p-2 hover:bg-slate-100 rounded-lg transition-all text-slate-500 hover:text-slate-700 hover:bg-red-50 hover:text-red-600"
               title="Close"
             >
               <X size={18} />

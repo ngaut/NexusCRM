@@ -25,6 +25,10 @@ export const usersAPI = {
     updateUser: (id: string, user: Partial<User>) => api.put<{ message: string }>(`${API_ENDPOINTS.AUTH.USERS}/${id}`, user),
     deleteUser: (id: string) => api.delete<{ message: string }>(`${API_ENDPOINTS.AUTH.USERS}/${id}`),
 
+    // Profile CRUD
+    createProfile: (profile: { name: string; description?: string }) =>
+        api.post<{ message: string; profile: Profile }>(API_ENDPOINTS.AUTH.PROFILES, profile),
+
     // Permission operations (Return full response object to access .permissions property)
     getProfilePermissions: (profileId: string) => api.get<{ permissions: ObjectPermission[] }>(API_ENDPOINTS.AUTH.PROFILE_PERMISSIONS(profileId)),
     updateProfilePermissions: (profileId: string, permissions: ObjectPermission[]) => api.put<{ message: string }>(API_ENDPOINTS.AUTH.PROFILE_PERMISSIONS(profileId), permissions),

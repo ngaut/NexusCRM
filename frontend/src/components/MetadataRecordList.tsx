@@ -327,6 +327,7 @@ export function MetadataRecordList({
                                 navigate(ROUTES.OBJECT.DETAIL(obj || objectMetadata.api_name, id));
                             }
                         }}
+                        onCreateNew={handleCreateNew}
                     />
                 ) : (
                     <div className="flex-1 min-h-[500px] overflow-hidden">

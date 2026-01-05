@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { SetupRegistry, SetupPageDefinition } from '../registries/SetupRegistry';
 import { ComponentRegistry } from '../registries/ComponentRegistry';
 import { Settings as SettingsIcon, AlertCircle } from 'lucide-react';
@@ -168,6 +168,11 @@ const DynamicSetupRoutes: React.FC = () => {
             {/* Static routes for nested pages (these are not top-level setup pages) */}
             <Route path="/objects/:objectApiName" element={<ObjectDetailRoute />} />
             <Route path="/objects/:objectApiName/layout" element={<LayoutEditorRoute />} />
+
+            {/* URL Alias Redirects - Friendly URLs that redirect to actual component paths */}
+            <Route path="/users" element={<Navigate to="/setup/usermanager" replace />} />
+            <Route path="/profiles" element={<Navigate to="/setup/usermanager" replace />} />
+            <Route path="/sharing-rules" element={<Navigate to="/setup/sharingrulemanager" replace />} />
 
             {/* Explicit Object Manager Route to prevent 404s (BUG-007 fix) */}
             <Route path="/objects" element={<ObjectManagerRoute />} />
