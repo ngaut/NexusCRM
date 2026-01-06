@@ -45,3 +45,6 @@ type DashboardConfig = shared.DashboardConfig
 
 // RecycleBinItem represents an item in the recycle bin
 type RecycleBinItem = shared.RecycleBinItem
+
+// ValidationRule represents a validation rule
+type ValidationRule = shared.ValidationRule

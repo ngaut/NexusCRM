@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
-	"github.com/nexuscrm/shared/pkg/constants"
 	appErrors "github.com/nexuscrm/backend/pkg/errors"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ==================== Validation Rule CRUD ====================
@@ -18,8 +18,18 @@ func (ms *MetadataService) CreateValidationRule(rule *models.ValidationRule) err
 	defer ms.mu.Unlock()
 
 	// Validate
-	if rule.ObjectAPIName == "" || rule.Name == "" || rule.Condition == "" || rule.ErrorMessage == "" {
-		return fmt.Errorf("objectApiName, name, condition, and errorMessage are required")
+	rule.ObjectAPIName = strings.ToLower(rule.ObjectAPIName)
+	if rule.ObjectAPIName == "" {
+		return fmt.Errorf("Object API Name is required")
+	}
+	if rule.Name == "" {
+		return fmt.Errorf("Rule Name is required")
+	}
+	if rule.Condition == "" {
+		return fmt.Errorf("Error Condition Formula is required")
+	}
+	if rule.ErrorMessage == "" {
+		return fmt.Errorf("Error Message is required")
 	}
 
 	if rule.ID == "" {

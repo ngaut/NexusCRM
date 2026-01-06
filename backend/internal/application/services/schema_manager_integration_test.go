@@ -9,6 +9,7 @@ import (
 	"github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,9 +53,22 @@ func TestSchemaManager_Integration_ACID(t *testing.T) {
 	}
 
 	// 3. Execute Create (Transactional)
+	// 3. Execute Create (Transactional)
 	t.Logf("Creating table %s...", tableName)
-	err = sm.CreateTableFromDefinition(context.Background(), def)
-	assert.NoError(t, err, "CreateTableFromDefinition should succeed")
+
+	// Create Object Metadata explicitly for strict mode
+	desc := "Test Object for ACID"
+	objMeta := &models.ObjectMetadata{
+		APIName:      tableName,
+		Label:        "Test Object",
+		PluralLabel:  "Test Objects",
+		Description:  &desc,
+		IsCustom:     true,
+		SharingModel: models.SharingModel(constants.SharingModelPublicReadWrite),
+	}
+
+	err = sm.CreateTableWithStrictMetadata(context.Background(), def, objMeta)
+	assert.NoError(t, err, "CreateTableWithStrictMetadata should succeed")
 
 	// 4. Verify Physical Table Existence
 	// Using a direct query to information_schema or checking via SQL

@@ -28,7 +28,7 @@ export const FormulaConfig: React.FC<FormulaConfigProps> = ({
                     required
                 />
                 <p className="mt-1 text-xs text-yellow-600">
-                    Reference other fields by their API name. Supports math operators (+, -, *, /), functions (IF, ROUND, LEN, etc.)
+                    Uses <a href="https://expr-lang.org/" target="_blank" rel="noopener noreferrer" className="text-yellow-800 hover:underline font-medium">expr-lang syntax</a>. Reference fields by API name. Operators: +, -, *, /, ==, !=, &gt;, &lt;, &amp;&amp;, ||
                 </p>
             </div>
 

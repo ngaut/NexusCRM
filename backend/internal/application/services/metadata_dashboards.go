@@ -51,7 +51,7 @@ func (ms *MetadataService) CreateDashboard(dashboard *models.DashboardConfig) er
 	defer ms.mu.Unlock()
 
 	if dashboard.Label == "" {
-		return fmt.Errorf("dashboard label is required")
+		return fmt.Errorf("Dashboard Label is required")
 	}
 
 	if dashboard.ID == "" {

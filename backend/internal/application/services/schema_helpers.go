@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // Helper methods to eliminate redundancy and ensuring consistency in metadata persistence
@@ -140,6 +140,14 @@ func (sm *SchemaManager) getObjectInsertQuery() string {
 		table_type = VALUES(table_type),
 		last_modified_date = NOW()
 	`, constants.TableObject)
+}
+
+func (sm *SchemaManager) getObjectStrictInsertQuery() string {
+	return fmt.Sprintf(`INSERT INTO %s (
+		id, api_name, label, plural_label, icon, description, 
+		is_custom, sharing_model, app_id, list_fields, path_field, theme_color, table_type,
+		created_date, last_modified_date
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`, constants.TableObject)
 }
 
 func (sm *SchemaManager) getFieldInsertQuery() string {

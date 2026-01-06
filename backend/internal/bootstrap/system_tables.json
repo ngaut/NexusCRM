@@ -29,7 +29,8 @@
                 "name": "label",
                 "label": "Label",
                 "type": "VARCHAR(255)",
-                "nullable": false
+                "nullable": false,
+                "unique": true
             },
             {
                 "name": "plural_label",
@@ -1236,7 +1237,8 @@
             {
                 "name": "label",
                 "type": "VARCHAR(255)",
-                "nullable": false
+                "nullable": false,
+                "unique": true
             },
             {
                 "name": "description",
@@ -1566,7 +1568,8 @@
             {
                 "name": "name",
                 "type": "VARCHAR(255)",
-                "nullable": false
+                "nullable": false,
+                "unique": true
             },
             {
                 "name": "trigger_object",
@@ -2860,7 +2863,8 @@
             {
                 "name": "label",
                 "type": "VARCHAR(255)",
-                "nullable": false
+                "nullable": false,
+                "unique": true
             },
             {
                 "name": "type",
@@ -2974,7 +2978,8 @@
             {
                 "name": "label",
                 "type": "VARCHAR(255)",
-                "nullable": false
+                "nullable": false,
+                "unique": true
             },
             {
                 "name": "description",

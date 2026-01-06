@@ -4,6 +4,7 @@ import { dataAPI } from '../infrastructure/api/data';
 import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { useErrorToast, useSuccessToast } from '../components/ui/Toast';
+import { formatApiError } from '../core/utils/errorHandling';
 import { RecordListSkeleton } from '../components/ui/LoadingSkeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import type { Group, GroupMember, User } from '../types';
@@ -35,8 +36,8 @@ export const GroupManager: React.FC = () => {
         try {
             const records = await dataAPI.query<Group>({ objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_GROUP });
             setGroups(records);
-        } catch {
-            errorToast('Failed to load groups');
+        } catch (err) {
+            errorToast(`Failed to load groups: ${formatApiError(err).message}`);
         } finally {
             setLoading(false);
         }
@@ -58,8 +59,8 @@ export const GroupManager: React.FC = () => {
             // Map member user IDs to user objects
             const memberUserIds = membersRecords.map((m: GroupMember) => m.user_id);
             setMemberUsers(allUsers.filter((u: User) => memberUserIds.includes(u.id)));
-        } catch {
-            errorToast('Failed to load group members');
+        } catch (err) {
+            errorToast(`Failed to load group members: ${formatApiError(err).message}`);
         }
     };
 
@@ -69,8 +70,8 @@ export const GroupManager: React.FC = () => {
             successToast('Group created successfully');
             setShowCreateModal(false);
             loadGroups();
-        } catch {
-            errorToast('Failed to create group');
+        } catch (err) {
+            errorToast(`Failed to create group: ${formatApiError(err).message}`);
         }
     };
 
@@ -81,8 +82,8 @@ export const GroupManager: React.FC = () => {
             successToast('Group updated successfully');
             setEditingGroup(null);
             loadGroups();
-        } catch {
-            errorToast('Failed to update group');
+        } catch (err) {
+            errorToast(`Failed to update group: ${formatApiError(err).message}`);
         }
     };
 
@@ -93,8 +94,8 @@ export const GroupManager: React.FC = () => {
             successToast('Group deleted successfully');
             setDeletingGroup(null);
             loadGroups();
-        } catch {
-            errorToast('Failed to delete group');
+        } catch (err) {
+            errorToast(`Failed to delete group: ${formatApiError(err).message}`);
         }
     };
 

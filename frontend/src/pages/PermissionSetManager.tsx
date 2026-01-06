@@ -6,6 +6,7 @@ import { COMMON_FIELDS } from '../core/constants';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { PermissionEditorModal, PermissionEntity } from '../components/modals/PermissionEditorModal';
 import { useErrorToast, useSuccessToast } from '../components/ui/Toast';
+import { formatApiError } from '../core/utils/errorHandling';
 import { RecordListSkeleton } from '../components/ui/LoadingSkeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import type { PermissionSet } from '../types';
@@ -38,8 +39,8 @@ export const PermissionSetManager: React.FC = () => {
         try {
             const records = await dataAPI.query({ objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_PERMISSIONSET });
             setPermissionSets(records as unknown as PermissionSet[]);
-        } catch {
-            errorToast('Failed to load permission sets');
+        } catch (err) {
+            errorToast(`Failed to load permission sets: ${formatApiError(err).message}`);
         } finally {
             setLoading(false);
         }
@@ -52,8 +53,8 @@ export const PermissionSetManager: React.FC = () => {
             setShowCreateModal(false);
             setFormData({ name: '', label: '', description: '', is_active: true });
             loadPermissionSets();
-        } catch {
-            errorToast('Failed to create permission set');
+        } catch (err) {
+            errorToast(`Failed to create permission set: ${formatApiError(err).message}`);
         }
     };
 
@@ -65,8 +66,8 @@ export const PermissionSetManager: React.FC = () => {
             setEditingPermSet(null);
             setFormData({ name: '', label: '', description: '', is_active: true });
             loadPermissionSets();
-        } catch {
-            errorToast('Failed to update permission set');
+        } catch (err) {
+            errorToast(`Failed to update permission set: ${formatApiError(err).message}`);
         }
     };
 
@@ -77,8 +78,8 @@ export const PermissionSetManager: React.FC = () => {
             successToast('Permission Set deleted successfully');
             setDeletingPermSet(null);
             loadPermissionSets();
-        } catch {
-            errorToast('Failed to delete permission set');
+        } catch (err) {
+            errorToast(`Failed to delete permission set: ${formatApiError(err).message}`);
         }
     };
 

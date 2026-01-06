@@ -82,8 +82,12 @@ run_test_suite() {
     fi
     
     # Run the suite
-    source "$suite_file"
-    run_suite
+    if bash "$suite_file"; then
+        TOTAL_PASSED=$((TOTAL_PASSED + 1))
+    else
+        echo -e "${RED}✗ Suite $suite_num failed${NC}"
+        TOTAL_FAILED=$((TOTAL_FAILED + 1))
+    fi
 }
 
 # Main execution

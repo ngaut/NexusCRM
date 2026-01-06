@@ -39,8 +39,11 @@ func (ms *MetadataService) CreateApp(app *models.AppConfig) error {
 	defer ms.mu.Unlock()
 
 	// Validate
-	if app.ID == "" || app.Label == "" {
-		return fmt.Errorf("app ID and label are required")
+	if app.ID == "" {
+		return fmt.Errorf("App ID is required")
+	}
+	if app.Label == "" {
+		return fmt.Errorf("App Label is required")
 	}
 
 	// Check if exists

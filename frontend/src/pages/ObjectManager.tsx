@@ -6,6 +6,7 @@ import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { useErrorToast } from '../components/ui/Toast';
 import { metadataAPI } from '../infrastructure/api/metadata';
 import { UI_CONFIG } from '../core/constants/EnvironmentConfig';
+import { formatApiError } from '../core/utils/errorHandling';
 
 export const ObjectManager: React.FC = () => {
     const errorToast = useErrorToast();
@@ -77,16 +78,7 @@ export const ObjectManager: React.FC = () => {
             // Redirect to the new object's detail page
             navigate(`/setup/objects/${formData.api_name}`);
         } catch (err) {
-            // Extract error message from Error
-            let errorMessage = err instanceof Error ? err.message : 'Failed to create object. Please check console for details.';
-
-            // Check for nested error data (e.g. from backend validation or conflicts)
-            const apiError = err as { data?: { error?: string } };
-            if (apiError?.data?.error) {
-                errorMessage = `${errorMessage} (${apiError.data.error})`;
-            }
-
-            errorToast(errorMessage);
+            errorToast(formatApiError(err).message);
         } finally {
             setCreating(false);
         }

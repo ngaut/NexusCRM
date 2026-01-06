@@ -391,12 +391,14 @@ export const FieldDefinitionModal: React.FC<FieldDefinitionModalProps> = ({
                                 <textarea
                                     value={formData.formula}
                                     onChange={(e) => setFormData({ ...formData, formula: e.target.value })}
-                                    placeholder="e.g. record.amount * 0.1"
+                                    placeholder="e.g. amount * 0.1 or first_name + ' ' + last_name"
                                     rows={3}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
                                     required
                                 />
-                                <p className="text-xs text-slate-500 mt-1">JavaScript expression. Use `record` to access fields.</p>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Uses <a href="https://expr-lang.org/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">expr-lang syntax</a>. Use field names directly (e.g., <code>amount</code>, <code>name</code>).
+                                </p>
                             </div>
                         </div>
                     )}

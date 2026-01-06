@@ -8,6 +8,7 @@ import { AppBuilderModal } from '../components/admin/AppBuilderModal';
 import { getColorClasses } from '../core/utils/colorClasses';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { useErrorToast } from '../components/ui/Toast';
+import { formatApiError } from '../core/utils/errorHandling';
 
 export const AppManager: React.FC = () => {
     const errorToast = useErrorToast();
@@ -51,12 +52,7 @@ export const AppManager: React.FC = () => {
             setDeleteModalOpen(false);
             setAppToDelete(null);
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            // Extract API error message from response if available
-            const apiError = typeof error === 'object' && error !== null && 'response' in error
-                ? ((error as { response?: { data?: { error?: string } } }).response?.data?.error)
-                : undefined;
-            errorToast(`Failed to delete app: ${apiError || errorMessage}`);
+            errorToast(`Failed to delete app: ${formatApiError(error).message}`);
         } finally {
             setDeleting(false);
         }

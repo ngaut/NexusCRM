@@ -42,6 +42,7 @@ interface BackendError {
     status?: number;
     data?: {
         message?: string;
+        error?: string; // Some backend errors use this key
         field?: string;
         details?: unknown;
     };
@@ -49,6 +50,7 @@ interface BackendError {
         status: number;
         data?: {
             message?: string;
+            error?: string;
             field?: string;
             details?: unknown;
         };
@@ -78,7 +80,7 @@ export function formatApiError(error: unknown): AppError {
 
     if (!isBackendError(error)) {
         return new AppError(
-            'An detailed error occurred. Please try again.',
+            'An unexpected error occurred. Please try again.',
             'UNKNOWN_ERROR'
         );
     }
@@ -91,7 +93,7 @@ export function formatApiError(error: unknown): AppError {
         switch (status) {
             case 400:
                 return new AppError(
-                    data?.message || 'Invalid request. Please check your input and try again.',
+                    data?.message || data?.error || 'Invalid request. Please check your input and try again.',
                     'VALIDATION_ERROR',
                     data?.field
                 );
@@ -131,7 +133,7 @@ export function formatApiError(error: unknown): AppError {
 
             case 500:
                 return new AppError(
-                    'An unexpected error occurred on the server. Our team has been notified.',
+                    data?.message || data?.error || 'An unexpected error occurred on the server. Our team has been notified.',
                     'SERVER_ERROR'
                 );
 

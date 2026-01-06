@@ -53,7 +53,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, [showToast]);
 
   const error = useCallback((title: string, message?: string) => {
-    showToast('error', title, message);
+    showToast('error', title, message, 10000);
   }, [showToast]);
 
   const info = useCallback((title: string, message?: string) => {

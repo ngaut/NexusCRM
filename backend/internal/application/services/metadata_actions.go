@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ==================== Action CRUD ====================
@@ -19,11 +19,14 @@ func (ms *MetadataService) CreateAction(action *models.ActionMetadata) error {
 	if action.ID == "" {
 		action.ID = GenerateID()
 	}
-	if action.Name == "" || action.Label == "" {
-		return fmt.Errorf("action name and label are required")
+	if action.Name == "" {
+		return fmt.Errorf("Action Name is required")
+	}
+	if action.Label == "" {
+		return fmt.Errorf("Action Label is required")
 	}
 	if action.Type == "" {
-		return fmt.Errorf("action type is required")
+		return fmt.Errorf("Action Type is required")
 	}
 
 	// Check for duplicate ID

@@ -102,92 +102,60 @@ func (sm *SchemaManager) CreatePhysicalTable(ctx context.Context, def schema.Tab
 	return nil
 }
 
-// CreateTableFromDefinition creates a table from a declarative definition
-func (sm *SchemaManager) CreateTableFromDefinition(ctx context.Context, def schema.TableDefinition) error {
+// CreateTableWithStrictMetadata creates a table ensuring metadata uniqueness (Strict Insert)
+func (sm *SchemaManager) CreateTableWithStrictMetadata(ctx context.Context, def schema.TableDefinition, objectMeta *models.ObjectMetadata) (err error) {
 	// 1. Create Physical Table
-	if err := sm.CreatePhysicalTable(ctx, def); err != nil {
+	if err = sm.CreatePhysicalTable(ctx, def); err != nil {
 		return err
 	}
+
+	// COMPENSATION: Ensure table is dropped if any subsequent step fails
+	// We use the named return 'err' to determine if cleanup is needed
+	defer func() {
+		if err != nil {
+			log.Printf("⚠️ An error occurred during registration. Rolling back table creation: %s", def.TableName)
+			if _, dropErr := sm.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS `%s`", def.TableName)); dropErr != nil {
+				log.Printf("⚠️ Failed to cleanup table %s: %v", def.TableName, dropErr)
+			}
+		}
+	}()
 
 	// TRANSACTION: Register Metadata
-	// We wrap metadata registration in a transaction to ensure atomicity.
-	// If registration fails, we must manually compensate by dropping the physical table.
 	tx, err := sm.db.Begin()
 	if err != nil {
-		// Attempt to cleanup
-		if _, dropErr := sm.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS `%s`", def.TableName)); dropErr != nil {
-			log.Printf("⚠️ Failed to cleanup table %s: %v", def.TableName, dropErr)
-		}
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-
-	// 1. Register in _System_Table registry
-	if err := sm.registerTable(def, tx); err != nil {
+	// Ensure rollback on panic or error (safe to call after Commit)
+	defer func() {
 		_ = tx.Rollback()
-		if _, dropErr := sm.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS `%s`", def.TableName)); dropErr != nil {
-			log.Printf("⚠️ Failed to cleanup table %s: %v", def.TableName, dropErr)
-		}
+	}()
+
+	// 1. Register in _System_Table
+	if err = sm.registerTable(def, tx); err != nil {
 		return fmt.Errorf("failed to register table %s: %w", def.TableName, err)
 	}
 
-	// 2. Register in _System_Object and _System_Field for metadata-driven operations
-	if err := sm.RegisterObjectMetadata(def, tx); err != nil {
-		_ = tx.Rollback()
-		if _, dropErr := sm.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS `%s`", def.TableName)); dropErr != nil {
-			log.Printf("⚠️ Failed to cleanup table %s: %v", def.TableName, dropErr)
-		}
-		return fmt.Errorf("failed to register object metadata %s: %w", def.TableName, err)
+	// 2. Register Object Metadata (Strict)
+	// We use InsertObjectMetadata instead of BatchSaveObjectMetadata to fail on uniqueness
+	if err = sm.InsertObjectMetadata(objectMeta, tx); err != nil {
+		return fmt.Errorf("failed to register object (strict) %s: %w", def.TableName, err)
 	}
 
-	if err := tx.Commit(); err != nil {
-		if _, dropErr := sm.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS `%s`", def.TableName)); dropErr != nil {
-			log.Printf("⚠️ Failed to cleanup table %s: %v", def.TableName, dropErr)
-		}
-		return fmt.Errorf("failed to commit metadata transaction: %w", err)
-	}
-
-	log.Printf("   ✅ Table created and registered: %s", def.TableName)
-	return nil
-}
-
-// CreateTableWithBatchMetadata creates a table using batch metadata registration (optimized)
-// This is faster than CreateTableFromDefinition for tables with many fields
-func (sm *SchemaManager) CreateTableWithBatchMetadata(ctx context.Context, def schema.TableDefinition, objectMeta *models.ObjectMetadata) error {
-	// 1. Create Physical Table (DDL only)
-	if err := sm.CreatePhysicalTable(ctx, def); err != nil {
-		return err
-	}
-
-	// 2. Batch register table in _System_Table
-	if err := sm.BatchRegisterTables([]schema.TableDefinition{def}, sm.db); err != nil {
-		if _, dropErr := sm.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS `%s`", def.TableName)); dropErr != nil {
-			log.Printf("⚠️ Failed to cleanup table %s: %v", def.TableName, dropErr)
-		}
-		return fmt.Errorf("failed to register table %s: %w", def.TableName, err)
-	}
-
-	// 3. Batch register object in _System_Object
-	if err := sm.BatchSaveObjectMetadata([]*models.ObjectMetadata{objectMeta}, sm.db); err != nil {
-		if _, dropErr := sm.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS `%s`", def.TableName)); dropErr != nil {
-			log.Printf("⚠️ Failed to cleanup table %s: %v", def.TableName, dropErr)
-		}
-		return fmt.Errorf("failed to register object %s: %w", def.TableName, err)
-	}
-
-	// 4. Batch register all fields in _System_Field
+	// 3. Register Fields (Batch is OK here as fields belong to new object)
 	batchFields := make([]FieldWithContext, 0, len(def.Columns))
 	for _, col := range def.Columns {
 		batchFields = append(batchFields, sm.PrepareFieldForBatch(def.TableName, col))
 	}
 
-	if err := sm.BatchSaveFieldMetadata(batchFields, sm.db); err != nil {
-		if _, dropErr := sm.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS `%s`", def.TableName)); dropErr != nil {
-			log.Printf("⚠️ Failed to cleanup table %s: %v", def.TableName, dropErr)
-		}
+	if err = sm.BatchSaveFieldMetadata(batchFields, tx); err != nil {
 		return fmt.Errorf("failed to register fields for %s: %w", def.TableName, err)
 	}
 
-	log.Printf("   ✅ Table created and registered: %s", def.TableName)
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit metadata transaction: %w", err)
+	}
+
+	log.Printf("   ✅ Table created and registered (strict): %s", def.TableName)
 	return nil
 }
 
@@ -342,52 +310,17 @@ func (sm *SchemaManager) DropTable(tableName string) error {
 		log.Printf("⚠️  Warning: Failed to delete auto-number metadata for %s: %v", tableName, err)
 	}
 
+	// Delete Object Permissions
+	if _, err := sm.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE object_api_name = ?", constants.TableObjectPerms), tableName); err != nil {
+		log.Printf("⚠️  Warning: Failed to delete object permissions for %s: %v", tableName, err)
+	}
+
+	// Delete Field Permissions
+	if _, err := sm.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE object_api_name = ?", constants.TableFieldPerms), tableName); err != nil {
+		log.Printf("⚠️  Warning: Failed to delete field permissions for %s: %v", tableName, err)
+	}
+
 	log.Printf("   ✅ Table dropped and metadata cleaned: %s", tableName)
-	return nil
-}
-
-// RegisterObjectMetadata registers the table definition as a logical object in _System_Object and _System_Field
-// This promotes the table to a "First Class" object in the metadata system
-func (sm *SchemaManager) RegisterObjectMetadata(def schema.TableDefinition, exec Executor) error {
-	if exec == nil {
-		exec = sm.db
-	}
-	// 1. Construct Object Metadata
-	objectID := GenerateObjectID(def.TableName)
-	isCustom := constants.TableType(def.TableType) == constants.TableTypeCustomObject
-
-	// Determine Label (use description or table name if not provided)
-	label := def.Description
-	if label == "" {
-		label = def.TableName
-	}
-
-	description := def.Description
-
-	obj := &models.ObjectMetadata{
-		ID:           objectID,
-		APIName:      def.TableName,
-		Label:        label,
-		PluralLabel:  def.TableName + "s", // Simple pluralization
-		Description:  &description,
-		IsCustom:     isCustom,
-		SharingModel: models.SharingModel(constants.SharingModelPublicReadWrite), // Default for system objects
-	}
-
-	// 2. Upsert Object (reuse Batch method)
-	if err := sm.BatchSaveObjectMetadata([]*models.ObjectMetadata{obj}, exec); err != nil {
-		return fmt.Errorf("failed to register object %s: %w", def.TableName, err)
-	}
-
-	// 3. Register Fields in _System_Field (reuse Batch method)
-	batchFields := make([]FieldWithContext, 0, len(def.Columns))
-	for _, col := range def.Columns {
-		batchFields = append(batchFields, sm.PrepareFieldForBatch(def.TableName, col))
-	}
-	if err := sm.BatchSaveFieldMetadata(batchFields, exec); err != nil {
-		return fmt.Errorf("failed to register fields for %s: %w", def.TableName, err)
-	}
-
 	return nil
 }
 

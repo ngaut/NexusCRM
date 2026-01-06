@@ -136,7 +136,7 @@ export function useSuccessToast() {
 export function useErrorToast() {
     const { showToast } = useToast();
     return useCallback((title: string, message?: string) => {
-        showToast({ type: 'error', title, message, duration: 7000 });
+        showToast({ type: 'error', title, message, duration: 10000 });
     }, [showToast]);
 }
 

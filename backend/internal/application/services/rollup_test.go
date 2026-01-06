@@ -52,7 +52,15 @@ func TestRollupSummary_Sum(t *testing.T) {
 		TableType:   string(constants.TableTypeCustomObject),
 		Columns:     parentCols,
 	}
-	require.NoError(t, schemaMgr.CreateTableFromDefinition(context.Background(), parentDef))
+	parentMeta := &models.ObjectMetadata{
+		APIName:      parentName,
+		Label:        "Master Invoice",
+		PluralLabel:  "Master Invoices",
+		Description:  &parentDef.Description,
+		IsCustom:     true,
+		SharingModel: models.SharingModel(constants.SharingModelPublicReadWrite),
+	}
+	require.NoError(t, schemaMgr.CreateTableWithStrictMetadata(context.Background(), parentDef, parentMeta))
 	defer schemaMgr.DropTable(parentName)
 
 	// 2. Define Child Object (LineItem)
@@ -69,15 +77,25 @@ func TestRollupSummary_Sum(t *testing.T) {
 		TableType:   "custom_object",
 		Columns:     childCols,
 	}
-	require.NoError(t, schemaMgr.CreateTableFromDefinition(context.Background(), childDef))
+	childMeta := &models.ObjectMetadata{
+		APIName:      childName,
+		Label:        "Invoice Line Item",
+		PluralLabel:  "Invoice Line Items",
+		Description:  &childDef.Description,
+		IsCustom:     true,
+		SharingModel: models.SharingModel(constants.SharingModelPublicReadWrite),
+	}
+	require.NoError(t, schemaMgr.CreateTableWithStrictMetadata(context.Background(), childDef, childMeta))
 	defer schemaMgr.DropTable(childName)
 
 	// 3. Register Metadata & Rollup
-	desc := "Test Object"
-	require.NoError(t, schemaMgr.BatchSaveObjectMetadata([]*models.ObjectMetadata{
-		{APIName: parentName, Label: "Invoice", Description: &desc},
-		{APIName: childName, Label: "Line Item", Description: &desc},
-	}, nil))
+
+	// 3. Metadata is already registered via CreateTableWithStrictMetadata
+	// We just need to update descriptions if needed, but strict create did it.
+	// require.NoError(t, schemaMgr.BatchSaveObjectMetadata([]*models.ObjectMetadata{
+	// 	{APIName: parentName, Label: "Invoice", Description: &desc},
+	// 	{APIName: childName, Label: "Line Item", Description: &desc},
+	// }, nil))
 
 	// Register Fields for Parent
 	rollupConfig := &models.RollupConfig{

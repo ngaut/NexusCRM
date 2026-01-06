@@ -22,8 +22,7 @@ export const SYSTEM_FIELDS = [
     'created_by_id',
     'last_modified_date',
     'last_modified_by_id',
-    'is_deleted',
-    'name'
+    'is_deleted'
 ];
 
 /**

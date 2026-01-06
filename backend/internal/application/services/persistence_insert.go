@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/domain/events"
+	"github.com/nexuscrm/backend/pkg/auth"
 	"github.com/nexuscrm/backend/pkg/query"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
@@ -61,8 +62,20 @@ func (ps *PersistenceService) Insert(
 		data[k] = v
 	}
 
-	// NOTE: Password hashing for _System_User is handled by Flow 'User_Password_Hash_Create'
-	// Do NOT add redundant hashing here - it will double-hash and break logins.
+	// CRITICAL: Ensure _System_User passwords are hashed if not already.
+	// This provides a fallback if the system Flow is missing or fails.
+	if strings.EqualFold(objectName, constants.TableUser) {
+		if pwd, ok := data[constants.FieldPassword].(string); ok && pwd != "" {
+			// Check if already hashed (Bcrypt starts with $2a$, $2b$, or $2y$)
+			if !strings.HasPrefix(pwd, "$2") {
+				hashed, err := auth.HashPassword(pwd)
+				if err != nil {
+					return nil, fmt.Errorf("failed to hash password: %w", err)
+				}
+				data[constants.FieldPassword] = string(hashed)
+			}
+		}
+	}
 
 	// Execute Transactional Work
 	err = ps.RunInTransaction(ctx, func(tx *sql.Tx, txCtx context.Context) error {

@@ -6,6 +6,7 @@ import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { useErrorToast, useSuccessToast } from '../components/ui/Toast';
 import { FormulaEditor } from '../components/formula/FormulaEditor';
+import { formatApiError } from '../core/utils/errorHandling';
 import { FieldMetadata, SharingRule, ObjectMetadata, Role } from '../types';
 
 export const SharingRuleManager: React.FC = () => {
@@ -50,8 +51,8 @@ export const SharingRuleManager: React.FC = () => {
             if (response?.schema?.fields) {
                 setCurrentFields(response.schema.fields);
             }
-        } catch {
-            errorToast('Failed to load object fields');
+        } catch (err) {
+            errorToast(`Failed to load object fields: ${formatApiError(err).message}`);
         }
     };
 
@@ -69,8 +70,8 @@ export const SharingRuleManager: React.FC = () => {
             // Load objects for dropdown
             const objectsRes = await metadataAPI.getSchemas();
             setObjects(objectsRes.schemas || []);
-        } catch {
-            errorToast('Failed to load sharing rules');
+        } catch (err) {
+            errorToast(`Failed to load sharing rules: ${formatApiError(err).message}`);
         } finally {
             setLoading(false);
         }
@@ -83,8 +84,8 @@ export const SharingRuleManager: React.FC = () => {
             setShowCreateModal(false);
             resetForm();
             loadData();
-        } catch {
-            errorToast('Failed to create sharing rule');
+        } catch (err) {
+            errorToast(`Failed to create sharing rule: ${formatApiError(err).message}`);
         }
     };
 
@@ -96,8 +97,8 @@ export const SharingRuleManager: React.FC = () => {
             setEditingRule(null);
             resetForm();
             loadData();
-        } catch {
-            errorToast('Failed to update sharing rule');
+        } catch (err) {
+            errorToast(`Failed to update sharing rule: ${formatApiError(err).message}`);
         }
     };
 

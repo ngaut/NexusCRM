@@ -16,20 +16,14 @@ function useSetupPages() {
     const [loading, setLoading] = React.useState(!SetupRegistry.isLoaded());
 
     React.useEffect(() => {
-        console.log('Setup: hook mounted. Registry loaded?', SetupRegistry.isLoaded());
         if (SetupRegistry.isLoaded()) {
-            const p = SetupRegistry.getPages();
-            console.log('Setup: pages loaded from registry', p);
-            setPages(p);
+            setPages(SetupRegistry.getPages());
             return;
         }
 
         const load = async () => {
-            console.log('Setup: loading from database via registry...');
             await SetupRegistry.loadFromDatabase();
-            const p = SetupRegistry.getPages();
-            console.log('Setup: pages loaded after fetch', p);
-            setPages(p);
+            setPages(SetupRegistry.getPages());
             setLoading(false);
         };
         load();

@@ -3,9 +3,9 @@ package services
 import (
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ==================== System Column Definitions ====================

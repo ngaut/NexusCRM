@@ -63,6 +63,11 @@ const (
 	ToolCreateScheduledJob = "create_scheduled_job"
 	ToolUpdateSchedule     = "update_schedule"
 	ToolRunJobNow          = "run_job_now"
+	// Validation Rule Tools
+	ToolCreateValidationRule = "create_validation_rule"
+	ToolUpdateValidationRule = "update_validation_rule"
+	ToolDeleteValidationRule = "delete_validation_rule"
+	ToolGetValidationRules   = "get_validation_rules"
 )
 
 type ToolBusService struct {
@@ -268,7 +273,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 								"operation":       map[string]interface{}{"type": "string", "enum": []string{"count", "sum", "avg", "min", "max", "group_by"}, "description": "Aggregation operation"},
 								"field":           map[string]interface{}{"type": "string", "description": "Field to aggregate (for sum/avg)"},
 								"group_by":        map[string]interface{}{"type": "string", "description": "Group by field (for charts)"},
-								"filter_expr":     map[string]interface{}{"type": "string", "description": "Optional filter expression"},
+								"filter_expr":     map[string]interface{}{"type": "string", "description": "Optional filter using expr-lang syntax (e.g., \"status == 'Open'\")"},
 							},
 						},
 						"config": map[string]interface{}{
@@ -372,7 +377,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 				},
 				"formula_expression": map[string]interface{}{
 					"type":        "string",
-					"description": "Formula expression for Formula fields (e.g. \"amount * 0.1\")",
+					"description": "Formula expression using expr-lang syntax (https://expr-lang.org/). Use field API names directly. Examples: \"amount * 0.1\", \"first_name + ' ' + last_name\", \"amount > 10000 ? 'High' : 'Low'\"",
 				},
 				"default_value": map[string]interface{}{
 					"type":        "string",
@@ -492,7 +497,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 				},
 				"filter_expr": map[string]interface{}{
 					"type":        "string",
-					"description": "Optional formula filter (e.g. \"status = 'Closed'\")",
+					"description": "Optional filter using expr-lang syntax (https://expr-lang.org/). Examples: \"status == 'Closed'\", \"amount > 10000\"",
 				},
 			},
 			"required": []string{"object_api_name", "operation"},
@@ -887,14 +892,21 @@ Full objects for more control:
 
 	// Formula & Theme Tools
 	allTools = append(allTools, mcp.Tool{
-		Name:        ToolCalculateFormula,
-		Description: "Evaluate a formula expression with optional record context.",
+		Name: ToolCalculateFormula,
+		Description: `Evaluate a formula expression with optional record context. Uses expr-lang syntax (https://expr-lang.org/).
+
+SYNTAX: Use field API names directly for record context. Supports arithmetic (+, -, *, /), comparisons (==, !=, >, <), logical operators (&&, ||, !), ternary (? :), and string concatenation (+).
+
+EXAMPLES:
+- "amount * 0.1" - Calculate 10% of amount
+- "first_name + ' ' + last_name" - Concatenate names
+- "probability > 50 ? 'Likely' : 'Unlikely'" - Conditional`,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
 				"expression": map[string]interface{}{
 					"type":        "string",
-					"description": "Formula expression to evaluate",
+					"description": "expr-lang formula expression to evaluate",
 				},
 				"object_name": map[string]interface{}{
 					"type":        "string",
@@ -1020,6 +1032,112 @@ Full objects for more control:
 		},
 	})
 
+	// Validation Rule Tools
+	allTools = append(allTools, mcp.Tool{
+		Name: ToolCreateValidationRule,
+		Description: `Create a validation rule for an object. The condition uses expr-lang syntax (https://expr-lang.org/) and evaluates to TRUE when the error should be shown.
+
+SYNTAX GUIDE:
+- Field access: Use field API names directly (e.g., amount, close_date, stage)
+- Null checks: field == null or field != null
+- Comparisons: ==, !=, >, <, >=, <=
+- Logical: && (and), || (or), ! (not)
+- Strings: Use single quotes 'text'
+- Empty strings for Date/Number fields are auto-converted to null
+
+EXAMPLES:
+- "amount < 0" - Amount cannot be negative
+- "stage == 'Closed' && close_date == null" - Close date required for closed deals
+- "probability > 100 || probability < 0" - Probability must be 0-100`,
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"object_api_name": map[string]interface{}{
+					"type":        "string",
+					"description": "API name of the object (e.g. 'opportunity')",
+				},
+				"name": map[string]interface{}{
+					"type":        "string",
+					"description": "Unique name for the rule (e.g. 'Close_Date_Required')",
+				},
+				"error_message": map[string]interface{}{
+					"type":        "string",
+					"description": "The error message to display to the user",
+				},
+				"condition": map[string]interface{}{
+					"type":        "string",
+					"description": "expr-lang formula expression. Returns TRUE to trigger the error. Use field names directly, 'null' for null checks. Example: \"stage == 'Closed' && close_date == null\"",
+				},
+				"active": map[string]interface{}{
+					"type":        "boolean",
+					"description": "Whether the rule is active (default true)",
+				},
+			},
+			"required": []string{"object_api_name", "name", "error_message", "condition"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolUpdateValidationRule,
+		Description: "Update an existing validation rule.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"id": map[string]interface{}{
+					"type":        "string",
+					"description": "ID of the validation rule",
+				},
+				"name": map[string]interface{}{
+					"type":        "string",
+					"description": "New name (optional)",
+				},
+				"error_message": map[string]interface{}{
+					"type":        "string",
+					"description": "New error message (optional)",
+				},
+				"condition": map[string]interface{}{
+					"type":        "string",
+					"description": "New formula condition (optional)",
+				},
+				"active": map[string]interface{}{
+					"type":        "boolean",
+					"description": "New active status (optional)",
+				},
+			},
+			"required": []string{"id"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolDeleteValidationRule,
+		Description: "Delete a validation rule.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"id": map[string]interface{}{
+					"type":        "string",
+					"description": "ID of the validation rule to delete",
+				},
+			},
+			"required": []string{"id"},
+		},
+	})
+
+	allTools = append(allTools, mcp.Tool{
+		Name:        ToolGetValidationRules,
+		Description: "List validation rules for a specific object.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"object_api_name": map[string]interface{}{
+					"type":        "string",
+					"description": "API name of the object",
+				},
+			},
+			"required": []string{"object_api_name"},
+		},
+	})
+
 	return mcp.ListToolsResult{Tools: allTools}, nil
 }
 
@@ -1112,6 +1230,14 @@ func (s *ToolBusService) HandleCallTool(ctx context.Context, params json.RawMess
 		return s.handleUpdateSchedule(ctx, req.Arguments)
 	case ToolRunJobNow:
 		return s.handleRunJobNow(ctx, req.Arguments)
+	case ToolCreateValidationRule:
+		return s.handleCreateValidationRule(ctx, req.Arguments)
+	case ToolUpdateValidationRule:
+		return s.handleUpdateValidationRule(ctx, req.Arguments)
+	case ToolDeleteValidationRule:
+		return s.handleDeleteValidationRule(ctx, req.Arguments)
+	case ToolGetValidationRules:
+		return s.handleGetValidationRules(ctx, req.Arguments)
 	default:
 		return nil, &mcp.Error{Code: mcp.ErrMethodNotFound, Message: fmt.Sprintf("Tool '%s' not found", req.Name)}
 	}
@@ -2198,11 +2324,130 @@ func (s *ToolBusService) handleRunJobNow(ctx context.Context, arguments map[stri
 	}
 
 	// Call the flow execution endpoint
-	// The backend should have POST /api/flows/:flowId/execute
 	err = s.client.ExecuteFlow(ctx, jobID, token)
 	if err != nil {
 		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Error running job: %v", err)}}}, nil
 	}
 
-	return mcp.CallToolResult{Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Scheduled job %s triggered successfully. It will run in the background.", jobID)}}}, nil
+	return mcp.CallToolResult{Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully triggered job %s", jobID)}}}, nil
+}
+
+// handleCreateValidationRule handles creation of a new validation rule
+func (s *ToolBusService) handleCreateValidationRule(ctx context.Context, args map[string]interface{}) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	objectAPIName, _ := args["object_api_name"].(string)
+	name, _ := args["name"].(string)
+	errorMsg, _ := args["error_message"].(string)
+	condition, _ := args["condition"].(string)
+	active, _ := args["active"].(bool)
+
+	// Default active to true if not specified? Schema says so
+	if _, ok := args["active"]; !ok {
+		active = true
+	}
+
+	if objectAPIName == "" || name == "" || errorMsg == "" || condition == "" {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "object_api_name, name, error_message, and condition are required"}}}, nil
+	}
+
+	rule := models.ValidationRule{
+		ObjectAPIName: objectAPIName,
+		Name:          name,
+		ErrorMessage:  errorMsg,
+		Condition:     condition,
+		Active:        active,
+	}
+
+	id, err := s.client.CreateValidationRule(ctx, rule, token)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to create validation rule: %v", err)}}}, nil
+	}
+
+	return mcp.CallToolResult{
+		Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully created validation rule '%s' with ID: %s", name, id)}},
+	}, nil
+}
+
+// handleUpdateValidationRule handles updating an existing validation rule
+func (s *ToolBusService) handleUpdateValidationRule(ctx context.Context, args map[string]interface{}) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	id, _ := args["id"].(string)
+	if id == "" {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "id is required"}}}, nil
+	}
+
+	rule := models.ValidationRule{}
+	if val, ok := args["name"].(string); ok {
+		rule.Name = val
+	}
+	if val, ok := args["error_message"].(string); ok {
+		rule.ErrorMessage = val
+	}
+	if val, ok := args["condition"].(string); ok {
+		rule.Condition = val
+	}
+	if val, ok := args["active"].(bool); ok {
+		rule.Active = val
+	}
+
+	if err := s.client.UpdateValidationRule(ctx, id, rule, token); err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to update validation rule: %v", err)}}}, nil
+	}
+
+	return mcp.CallToolResult{
+		Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully updated validation rule %s", id)}},
+	}, nil
+}
+
+// handleDeleteValidationRule handles deleting a validation rule
+func (s *ToolBusService) handleDeleteValidationRule(ctx context.Context, args map[string]interface{}) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	id, _ := args["id"].(string)
+	if id == "" {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "id is required"}}}, nil
+	}
+
+	if err := s.client.DeleteValidationRule(ctx, id, token); err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to delete validation rule: %v", err)}}}, nil
+	}
+
+	return mcp.CallToolResult{
+		Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Successfully deleted validation rule %s", id)}},
+	}, nil
+}
+
+// handleGetValidationRules returns validation rules for an object
+func (s *ToolBusService) handleGetValidationRules(ctx context.Context, args map[string]interface{}) (mcp.CallToolResult, error) {
+	token, err := s.getAuthToken(ctx)
+	if err != nil {
+		return mcp.CallToolResult{}, err
+	}
+
+	objectAPIName, _ := args["object_api_name"].(string)
+	if objectAPIName == "" {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: "object_api_name is required"}}}, nil
+	}
+
+	rules, err := s.client.GetValidationRules(ctx, objectAPIName, token)
+	if err != nil {
+		return mcp.CallToolResult{IsError: true, Content: []mcp.Content{{Type: "text", Text: fmt.Sprintf("Failed to get validation rules: %v", err)}}}, nil
+	}
+
+	jsonBytes, _ := json.MarshalIndent(rules, "", "  ")
+
+	return mcp.CallToolResult{
+		Content: []mcp.Content{{Type: "text", Text: string(jsonBytes)}},
+	}, nil
 }

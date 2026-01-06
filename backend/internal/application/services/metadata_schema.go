@@ -43,8 +43,17 @@ func (ms *MetadataService) CreateSchema(schema *models.ObjectMetadata) error {
 		return errors.NewConflictError("Object Metadata", "api_name", schema.APIName)
 	}
 
-	// Create Table (includes System Columns, System Registry, Indices)
-	if err := ms.schemaMgr.CreateTableFromDefinition(context.Background(), def); err != nil {
+	// Restore original labels for strict insert (if provided/valid)
+	// This ensures we persist exactly what the user provided, overriding any "Humanization" done by PrepareTableDefinition
+	if originalLabel != "" {
+		schema.Label = originalLabel
+	}
+	if originalPlural != "" {
+		schema.PluralLabel = originalPlural
+	}
+
+	// Create Table (Strict Mode: Fails if metadata conflicts)
+	if err := ms.schemaMgr.CreateTableWithStrictMetadata(context.Background(), def, schema); err != nil {
 		return fmt.Errorf("failed to create schema via SchemaManager: %w", err)
 	}
 
@@ -66,15 +75,6 @@ func (ms *MetadataService) CreateSchema(schema *models.ObjectMetadata) error {
 		} else {
 			log.Printf("✅ Auto-created default layout for %s", schema.APIName)
 		}
-	}
-
-	// 4. Force-Update Logic (Direct save to avoid Deadlock with UpdateSchema):
-	// Restore original labels
-	schema.PluralLabel = originalPlural
-	schema.Label = originalLabel
-
-	if err := ms.schemaMgr.SaveObjectMetadata(schema, ms.db); err != nil {
-		log.Printf("⚠️ Failed to apply plural label polish for %s: %v", schema.APIName, err)
 	}
 
 	ms.invalidateCacheLocked()
@@ -106,9 +106,9 @@ func (ms *MetadataService) CreateSchemaOptimized(schema *models.ObjectMetadata) 
 		return errors.NewConflictError("Object Metadata", "api_name", schema.APIName)
 	}
 
-	// Create table with BATCH metadata registration
+	// Create table with STRICT metadata registration (Fails on Unique Constraint)
 	// Note: PrepareTableDefinition updates schema with defaults, so we pass it back
-	if err := ms.schemaMgr.CreateTableWithBatchMetadata(context.Background(), def, schema); err != nil {
+	if err := ms.schemaMgr.CreateTableWithStrictMetadata(context.Background(), def, schema); err != nil {
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
 

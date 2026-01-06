@@ -90,6 +90,268 @@ func TestValidationService_ValidateRecord(t *testing.T) {
 func floatPtr(v float64) *float64 { return &v }
 func strPtr(v string) *string     { return &v }
 
+// ============================================================================
+// Null Keyword Support Tests
+// ============================================================================
+
+func TestValidationService_NullKeyword(t *testing.T) {
+	vs := NewValidationService(formula.NewEngine())
+
+	schema := &models.ObjectMetadata{
+		APIName: "test_object",
+		Fields: []models.FieldMetadata{
+			{APIName: "name", Type: constants.FieldTypeText},
+			{APIName: "close_date", Type: constants.FieldTypeDate},
+		},
+	}
+
+	tests := []struct {
+		name      string
+		record    models.SObject
+		rules     []*models.ValidationRule
+		expectErr bool
+		errMsg    string
+	}{
+		{
+			name: "Null keyword works with nil value",
+			record: models.SObject{
+				"name":       "Test",
+				"close_date": nil,
+			},
+			rules: []*models.ValidationRule{
+				{
+					Active:       true,
+					Condition:    "close_date == null",
+					ErrorMessage: "Close date is required",
+				},
+			},
+			expectErr: true, // Rule triggers because close_date IS null
+			errMsg:    "Close date is required",
+		},
+		{
+			name: "Null keyword works with present value",
+			record: models.SObject{
+				"name":       "Test",
+				"close_date": "2026-01-15",
+			},
+			rules: []*models.ValidationRule{
+				{
+					Active:       true,
+					Condition:    "close_date == null",
+					ErrorMessage: "Close date is required",
+				},
+			},
+			expectErr: false, // Rule does NOT trigger because close_date has a value
+		},
+		{
+			name: "Not null check works",
+			record: models.SObject{
+				"name":       "Test",
+				"close_date": "2026-01-15",
+			},
+			rules: []*models.ValidationRule{
+				{
+					Active:       true,
+					Condition:    "close_date != null",
+					ErrorMessage: "Close date must be empty",
+				},
+			},
+			expectErr: true, // Rule triggers because close_date is NOT null
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := vs.ValidateRecord(tt.record, schema, tt.rules, nil)
+			if tt.expectErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// ============================================================================
+// Empty String Normalization Tests
+// ============================================================================
+
+func TestValidationService_EmptyStringNormalization(t *testing.T) {
+	vs := NewValidationService(formula.NewEngine())
+
+	schema := &models.ObjectMetadata{
+		APIName: "test_object",
+		Fields: []models.FieldMetadata{
+			{APIName: "name", Type: constants.FieldTypeText},
+			{APIName: "close_date", Type: constants.FieldTypeDate},
+			{APIName: "amount", Type: constants.FieldTypeNumber},
+			{APIName: "is_active", Type: constants.FieldTypeBoolean},
+			{APIName: "description", Type: constants.FieldTypeText}, // Text fields should NOT be normalized
+		},
+	}
+
+	tests := []struct {
+		name      string
+		record    models.SObject
+		rules     []*models.ValidationRule
+		expectErr bool
+		errMsg    string
+	}{
+		{
+			name: "Empty date string treated as null",
+			record: models.SObject{
+				"name":       "Test",
+				"close_date": "", // Empty string should become nil
+			},
+			rules: []*models.ValidationRule{
+				{
+					Active:       true,
+					Condition:    "close_date == null",
+					ErrorMessage: "Close date is empty",
+				},
+			},
+			expectErr: true, // Rule triggers because empty string -> nil -> null
+		},
+		{
+			name: "Empty number string treated as null",
+			record: models.SObject{
+				"name":   "Test",
+				"amount": "", // Empty string should become nil
+			},
+			rules: []*models.ValidationRule{
+				{
+					Active:       true,
+					Condition:    "amount == null",
+					ErrorMessage: "Amount is empty",
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name: "Empty text string NOT treated as null (preserved)",
+			record: models.SObject{
+				"name":        "Test",
+				"description": "", // Empty string should be PRESERVED for text
+			},
+			rules: []*models.ValidationRule{
+				{
+					Active:       true,
+					Condition:    "description == null",
+					ErrorMessage: "Description is null",
+				},
+			},
+			expectErr: false, // Rule does NOT trigger because text "" is NOT converted to nil
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := vs.ValidateRecord(tt.record, schema, tt.rules, nil)
+			if tt.expectErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// ============================================================================
+// Fail-Closed Behavior Tests
+// ============================================================================
+
+func TestValidationService_FailClosed(t *testing.T) {
+	vs := NewValidationService(formula.NewEngine())
+
+	schema := &models.ObjectMetadata{
+		APIName: "test_object",
+		Fields: []models.FieldMetadata{
+			{APIName: "name", Type: constants.FieldTypeText},
+		},
+	}
+
+	tests := []struct {
+		name      string
+		record    models.SObject
+		rules     []*models.ValidationRule
+		expectErr bool
+		errType   string // "validation" or "internal"
+	}{
+		{
+			name:   "Syntax error causes internal error",
+			record: models.SObject{"name": "Test"},
+			rules: []*models.ValidationRule{
+				{
+					Active:       true,
+					Condition:    "name ==== 'Test'", // Invalid syntax
+					ErrorMessage: "Should never see this",
+				},
+			},
+			expectErr: true,
+			errType:   "internal",
+		},
+		{
+			name:   "Inactive rules are skipped even with bad syntax",
+			record: models.SObject{"name": "Test"},
+			rules: []*models.ValidationRule{
+				{
+					Active:       false,              // Inactive
+					Condition:    "name ==== 'Test'", // Invalid but won't be evaluated
+					ErrorMessage: "Should never see this",
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name:   "Valid rule that passes",
+			record: models.SObject{"name": "Test"},
+			rules: []*models.ValidationRule{
+				{
+					Active:       true,
+					Condition:    "name == 'SomeOtherName'", // Condition is false, so no error
+					ErrorMessage: "Name mismatch",
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name:   "Valid rule that triggers",
+			record: models.SObject{"name": "Test"},
+			rules: []*models.ValidationRule{
+				{
+					Active:       true,
+					Condition:    "name == 'Test'", // Condition is true, triggers validation error
+					ErrorMessage: "Name cannot be Test",
+				},
+			},
+			expectErr: true,
+			errType:   "validation",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := vs.ValidateRecord(tt.record, schema, tt.rules, nil)
+			if tt.expectErr {
+				assert.Error(t, err)
+				if tt.errType == "internal" {
+					assert.Contains(t, err.Error(), "failed to evaluate")
+				} else if tt.errType == "validation" {
+					assert.Contains(t, err.Error(), tt.rules[0].ErrorMessage)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestValidationService_ValidateFlow(t *testing.T) {
 	vs := NewValidationService(formula.NewEngine())
 

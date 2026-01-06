@@ -439,3 +439,39 @@ func (c *NexusClient) ExecuteFlow(ctx context.Context, flowID string, authToken 
 	// POST /api/flows/:flowId/execute
 	return c.doRequest(ctx, "POST", fmt.Sprintf("/api/flows/%s/execute", flowID), nil, nil, authToken)
 }
+
+// CreateValidationRule creates a new validation rule
+func (c *NexusClient) CreateValidationRule(ctx context.Context, rule models.ValidationRule, authToken string) (string, error) {
+	// POST /api/metadata/validation-rules
+	var rawResp map[string]interface{}
+	if err := c.doRequest(ctx, "POST", "/api/metadata/validation-rules", rule, &rawResp, authToken); err != nil {
+		return "", err
+	}
+
+	// Check "rule" -> "id"
+	if dataVal, ok := rawResp["rule"]; ok {
+		if dataMap, ok := dataVal.(map[string]interface{}); ok {
+			if id, ok := dataMap["id"].(string); ok {
+				return id, nil
+			}
+		}
+	}
+	// Fallback check
+	if id, ok := rawResp["id"].(string); ok {
+		return id, nil
+	}
+
+	return "", fmt.Errorf("created rule missing ID")
+}
+
+// UpdateValidationRule updates an existing validation rule
+func (c *NexusClient) UpdateValidationRule(ctx context.Context, id string, rule models.ValidationRule, authToken string) error {
+	// PATCH /api/metadata/validation-rules/:id
+	return c.doRequest(ctx, "PATCH", fmt.Sprintf("/api/metadata/validation-rules/%s", id), rule, nil, authToken)
+}
+
+// DeleteValidationRule deletes a validation rule
+func (c *NexusClient) DeleteValidationRule(ctx context.Context, id string, authToken string) error {
+	// DELETE /api/metadata/validation-rules/:id
+	return c.doRequest(ctx, "DELETE", fmt.Sprintf("/api/metadata/validation-rules/%s", id), nil, nil, authToken)
+}

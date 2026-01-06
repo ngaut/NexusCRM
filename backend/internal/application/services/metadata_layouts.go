@@ -22,7 +22,7 @@ func (ms *MetadataService) GetLayout(apiName string, profileID *string) *models.
 	// 1. If profileID provided, try to find assigned layout
 	if profileID != nil {
 		var layoutID string
-		err := ms.db.QueryRow(fmt.Sprintf("SELECT layout_id FROM %s WHERE profile_id = ? AND object_api_name = ?", constants.TableProfileLayout), *profileID, apiName).Scan(&layoutID)
+		err := ms.db.QueryRow(fmt.Sprintf("SELECT layout_id FROM %s WHERE profile_id = ? AND LOWER(object_api_name) = LOWER(?)", constants.TableProfileLayout), *profileID, apiName).Scan(&layoutID)
 		if err == nil {
 			l, err := ms.queryLayout(layoutID)
 			if err == nil && l != nil {
@@ -218,7 +218,7 @@ func (ms *MetadataService) addFieldToLayout(objectAPIName, fieldAPIName string) 
 
 	// 1. Find the default layout
 	var layoutID, configJSON string
-	err := ms.db.QueryRow(fmt.Sprintf("SELECT id, config FROM %s WHERE object_api_name = ? LIMIT 1", constants.TableLayout), objectAPIName).Scan(&layoutID, &configJSON)
+	err := ms.db.QueryRow(fmt.Sprintf("SELECT id, config FROM %s WHERE LOWER(object_api_name) = LOWER(?) LIMIT 1", constants.TableLayout), objectAPIName).Scan(&layoutID, &configJSON)
 	if err == sql.ErrNoRows {
 		// No layout exists, CreateSchema usually creates one. If missing, we ignore or create?
 		// For now, ignore.

@@ -39,6 +39,28 @@ func (sm *SchemaManager) SaveObjectMetadata(obj *models.ObjectMetadata, exec Exe
 	return err
 }
 
+// InsertObjectMetadata inserts object metadata into _System_Object (Strict - Fails on Unique Constraint)
+func (sm *SchemaManager) InsertObjectMetadata(obj *models.ObjectMetadata, exec Executor) error {
+	if exec == nil {
+		exec = sm.db
+	}
+
+	// Determine Object ID if not set
+	if obj.ID == "" {
+		obj.ID = GenerateObjectID(obj.APIName)
+	}
+
+	values, err := sm.prepareObjectDBValues(obj)
+	if err != nil {
+		return fmt.Errorf("failed to prepare object values for %s: %w", obj.APIName, err)
+	}
+
+	args := append([]interface{}{obj.ID}, values...)
+	_, err = exec.Exec(sm.getObjectStrictInsertQuery(), args...)
+
+	return err
+}
+
 // SaveFieldMetadataWithIDs upserts field metadata with explicit IDs
 func (sm *SchemaManager) SaveFieldMetadataWithIDs(field *models.FieldMetadata, objectID string, fieldID string, exec Executor) error {
 	if exec == nil {

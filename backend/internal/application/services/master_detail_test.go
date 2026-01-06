@@ -57,7 +57,15 @@ func TestMasterDetail_CascadeDelete(t *testing.T) {
 		TableType:   string(constants.TableTypeCustomObject),
 		Columns:     masterCols,
 	}
-	require.NoError(t, schemaMgr.CreateTableFromDefinition(context.Background(), masterDef))
+	masterMeta := &models.ObjectMetadata{
+		APIName:      masterObjName,
+		Label:        "Master Project",
+		PluralLabel:  "Master Projects",
+		Description:  &masterDef.Description,
+		IsCustom:     true,
+		SharingModel: models.SharingModel(constants.SharingModelPublicReadWrite),
+	}
+	require.NoError(t, schemaMgr.CreateTableWithStrictMetadata(context.Background(), masterDef, masterMeta))
 	// Clean up schema after test
 	defer schemaMgr.DropTable(masterObjName)
 
@@ -74,7 +82,15 @@ func TestMasterDetail_CascadeDelete(t *testing.T) {
 		TableType:   "custom_object",
 		Columns:     detailCols,
 	}
-	require.NoError(t, schemaMgr.CreateTableFromDefinition(context.Background(), detailDef))
+	detailMeta := &models.ObjectMetadata{
+		APIName:      detailObjName,
+		Label:        "Detail Task",
+		PluralLabel:  "Detail Tasks",
+		Description:  &detailDef.Description,
+		IsCustom:     true,
+		SharingModel: models.SharingModel(constants.SharingModelPublicReadWrite),
+	}
+	require.NoError(t, schemaMgr.CreateTableWithStrictMetadata(context.Background(), detailDef, detailMeta))
 	defer schemaMgr.DropTable(detailObjName)
 
 	// 4. Update Metadata to enforce Master-Detail

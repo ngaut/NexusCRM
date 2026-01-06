@@ -67,7 +67,7 @@ func (ms *MetadataService) scanAction(row Scannable) (*models.ActionMetadata, er
 
 // queryActions queries actions for an object
 func (ms *MetadataService) queryActions(objectAPIName string) ([]*models.ActionMetadata, error) {
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE object_api_name = ?", strings.Join(actionColumns, ", "), constants.TableAction)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE LOWER(object_api_name) = LOWER(?)", strings.Join(actionColumns, ", "), constants.TableAction)
 	rows, err := ms.db.Query(query, objectAPIName)
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (ms *MetadataService) scanValidationRule(row Scannable) (*models.Validation
 
 // queryValidationRules queries validation rules for an object
 func (ms *MetadataService) queryValidationRules(objectAPIName string) ([]*models.ValidationRule, error) {
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE object_api_name = ?", strings.Join(validationRuleColumns, ", "), constants.TableValidation)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE LOWER(object_api_name) = LOWER(?)", strings.Join(validationRuleColumns, ", "), constants.TableValidation)
 	rows, err := ms.db.Query(query, objectAPIName)
 	if err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func (ms *MetadataService) queryFlow(id string) (*models.Flow, error) {
 
 // querySharingRules queries sharing rules for an object
 func (ms *MetadataService) querySharingRules(objectAPIName string) ([]*models.SharingRule, error) {
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE object_api_name = ?", strings.Join(sharingRuleColumns, ", "), constants.TableSharingRule)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE LOWER(object_api_name) = LOWER(?)", strings.Join(sharingRuleColumns, ", "), constants.TableSharingRule)
 	rows, err := ms.db.Query(query, objectAPIName)
 	if err != nil {
 		return nil, err

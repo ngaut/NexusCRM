@@ -47,11 +47,19 @@ echo "👤 Creating Users..."
 ALICE_EMAIL="alice.$TIMESTAMP@test.com"
 ALICE_RES=$(api_post "/api/data/_System_User" "{\"username\": \"$ALICE_EMAIL\", \"email\": \"$ALICE_EMAIL\", \"password\": \"Password123!\", \"profile_id\": \"standard_user\", \"role_id\": \"$ROLE_MGR_ID\", \"first_name\": \"Alice\", \"last_name\": \"Manager\"}")
 ALICE_ID=$(json_extract "$ALICE_RES" "id")
+if [[ -z "$ALICE_ID" || "$ALICE_ID" == "null" ]]; then
+    echo "❌ Failed to create Alice: $ALICE_RES"
+    exit 1
+fi
 
 # Bob (Assistant)
 BOB_EMAIL="bob.$TIMESTAMP@test.com"
 BOB_RES=$(api_post "/api/data/_System_User" "{\"username\": \"$BOB_EMAIL\", \"email\": \"$BOB_EMAIL\", \"password\": \"Password123!\", \"profile_id\": \"standard_user\", \"role_id\": \"$ROLE_AST_ID\", \"first_name\": \"Bob\", \"last_name\": \"Assistant\"}")
 BOB_ID=$(json_extract "$BOB_RES" "id")
+if [[ -z "$BOB_ID" || "$BOB_ID" == "null" ]]; then
+    echo "❌ Failed to create Bob: $BOB_RES"
+    exit 1
+fi
 
 echo "🔐 Creating 'Salary' object (OWD: Private)..."
 # Use api_post directly because ensure_schema might not support sharing_model yet
@@ -122,8 +130,12 @@ CHARLIE_TOKEN=$TOKEN
 CHARLIE_ID=$USER_ID
 
 export TOKEN=$ADMIN_TOKEN
-GRP_RES=$(api_post "/api/data/_System_Group" "{\"name\": \"Accounting_$TIMESTAMP\", \"label\": \"Accounting Group\", \"type\": \"Regular\"}")
+GRP_RES=$(api_post "/api/data/_System_Group" "{\"name\": \"Accounting_$TIMESTAMP\", \"label\": \"Accounting Group $TIMESTAMP\", \"type\": \"Regular\"}")
 GRP_ID=$(json_extract "$GRP_RES" "id")
+if [[ -z "$GRP_ID" || "$GRP_ID" == "null" ]]; then
+    echo "❌ Failed to create Group: $GRP_RES"
+    exit 1
+fi
 echo "   Group ID: $GRP_ID"
 api_post "/api/data/_System_GroupMember" "{\"group_id\": \"$GRP_ID\", \"user_id\": \"$CHARLIE_ID\"}"
 

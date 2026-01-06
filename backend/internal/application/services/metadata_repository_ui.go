@@ -84,7 +84,7 @@ func (ms *MetadataService) scanLayout(row Scannable) (*models.PageLayout, error)
 
 // queryLayouts queries all layouts for an object
 func (ms *MetadataService) queryLayouts(objectAPIName string) ([]*models.PageLayout, error) {
-	rows, err := ms.db.Query(fmt.Sprintf("SELECT config FROM %s WHERE object_api_name = ?", constants.TableLayout), objectAPIName)
+	rows, err := ms.db.Query(fmt.Sprintf("SELECT config FROM %s WHERE LOWER(object_api_name) = LOWER(?)", constants.TableLayout), objectAPIName)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (ms *MetadataService) scanListView(row Scannable) (*models.ListView, error)
 
 // queryListViews queries list views for an object
 func (ms *MetadataService) queryListViews(objectAPIName string) ([]*models.ListView, error) {
-	query := fmt.Sprintf("SELECT id, object_api_name, label, filter_expr, fields FROM %s WHERE object_api_name = ?", constants.TableListView)
+	query := fmt.Sprintf("SELECT id, object_api_name, label, filter_expr, fields FROM %s WHERE LOWER(object_api_name) = LOWER(?)", constants.TableListView)
 	rows, err := ms.db.Query(query, objectAPIName)
 	if err != nil {
 		return nil, err

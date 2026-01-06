@@ -340,17 +340,22 @@ export function MetadataRecordForm({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 relative">
             {/* Loading handled by parent */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {fieldsToRender.map(field => (
-                    <div key={field.api_name} className={field.type === 'TextArea' || field.type === 'LongTextArea' ? 'col-span-2' : ''}>
-                        <label className="block text-sm font-medium text-gray-700">
-                            {field.label} {field.required && <span className="text-red-500">*</span>}
-                        </label>
-                        {renderFieldInput(field)}
-                        {errors[field.api_name] && (
-                            <p className="mt-1 text-sm text-red-600">This field is required</p>
-                        )}
-                    </div>
-                ))}
+                {fieldsToRender.map(field => {
+                    const fieldKey = field.api_name || `field-${Math.random()}`;
+                    if (!field.api_name) return null; // Skip invalid fields
+
+                    return (
+                        <div key={fieldKey} className={field.type === 'TextArea' || field.type === 'LongTextArea' ? 'col-span-2' : ''}>
+                            <label className="block text-sm font-medium text-gray-700">
+                                {field.label} {field.required && <span className="text-red-500">*</span>}
+                            </label>
+                            {renderFieldInput(field)}
+                            {errors[field.api_name] && (
+                                <p className="mt-1 text-sm text-red-600">This field is required</p>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">

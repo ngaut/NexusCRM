@@ -7,12 +7,12 @@ import (
 
 	"fmt"
 
-	"github.com/nexuscrm/shared/pkg/models"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/fieldtypes"
 	"github.com/nexuscrm/backend/pkg/formula"
 	"github.com/nexuscrm/backend/pkg/validator"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // ValidationService handles record validation logic
@@ -36,6 +36,7 @@ func (vs *ValidationService) ValidateRecord(
 	rules []*models.ValidationRule,
 	oldRecord *models.SObject,
 ) error {
+
 	// 1. Static Schema Constraints
 	for _, field := range schema.Fields {
 		// Skip system fields for required checks (unless input provided, but typically server-set)
@@ -188,7 +189,40 @@ func (vs *ValidationService) ValidateRecord(
 	}
 
 	// 2. Custom Validation Rules
-	if rules != nil {
+	if len(rules) > 0 {
+		// Pre-process record for formula engine:
+		// 1. Convert empty strings to nil for non-string types (Date, Number, etc.)
+		// 2. Inject "null" helper
+
+		// Create a copy or modify in place? Modifying in place is fine as we are in service layer before persistence
+		// but we should be careful not to break subsequent steps?
+		// Actually ValidateRecord is called *before* persistence Insert/Update.
+		// If we change "" to nil, PersistenceService will store nil/NULL.
+		// For Date/Number, storing NULL is PREFERRED over "".
+		// So this is actually a data cleaning feature too!
+
+		for _, field := range schema.Fields {
+			val, ok := record[field.APIName]
+			if !ok {
+				continue
+			}
+
+			// If value is empty string, and type is NOT Text/TextArea/etc, convert to nil
+			if strVal, isStr := val.(string); isStr && strVal == "" {
+				switch field.Type {
+				case constants.FieldTypeDate, constants.FieldTypeDateTime,
+					constants.FieldTypeNumber, constants.FieldTypeCurrency, constants.FieldTypePercent,
+					constants.FieldTypeBoolean, constants.FieldTypeLookup:
+					record[field.APIName] = nil
+				}
+			}
+		}
+
+		// SUPPORT 'null' keyword:
+		if _, exists := record["null"]; !exists {
+			record["null"] = nil
+		}
+
 		ctx := &formula.Context{Record: record}
 		// If we have access to oldRecord (update context), we should potentially pass it to formula engine?
 		// Currently formula engine context assumes Record only? Assuming minimal for now.
@@ -200,8 +234,8 @@ func (vs *ValidationService) ValidateRecord(
 
 			result, err := vs.formula.Evaluate(rule.Condition, ctx)
 			if err != nil {
-				// Log warning? For now skip invalid rules so they don't block
-				continue
+				// Fail Closed: If a rule crashes, we must stop to prevent invalid data.
+				return errors.NewInternalError(fmt.Sprintf("Validation rule '%s' failed to evaluate", rule.Name), err)
 			}
 
 			if isTrue, ok := result.(bool); ok && isTrue {

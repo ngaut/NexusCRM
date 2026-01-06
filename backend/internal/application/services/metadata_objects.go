@@ -165,6 +165,11 @@ func (ms *MetadataService) GetScheduledFlows() []models.Flow {
 }
 
 func (ms *MetadataService) GetValidationRules(objectAPIName string) []*models.ValidationRule {
+	// Skip validation rule lookup for system objects - they never have custom rules
+	if constants.IsSystemTable(objectAPIName) {
+		return []*models.ValidationRule{}
+	}
+
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 	rules, err := ms.queryValidationRules(objectAPIName)

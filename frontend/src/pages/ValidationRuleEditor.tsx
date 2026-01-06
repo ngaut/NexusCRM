@@ -44,12 +44,18 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
 
         try {
             const ruleData = {
-                objectApiName,
+                object_api_name: objectApiName,
                 name: formData.name,
                 active: formData.active,
                 error_message: formData.errorMessage,
                 condition: formData.condition
             };
+
+            if (!objectApiName) {
+                showError('Error', 'Object API Name is missing');
+                setSaving(false);
+                return;
+            }
 
             if (rule) {
                 await metadataAPI.updateValidationRule(rule.id, ruleData);
@@ -72,6 +78,7 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
                 <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
                     <h2 className="text-xl font-bold text-slate-800">
                         {rule ? 'Edit Validation Rule' : 'New Validation Rule'}
+                        {objectApiName && <span className="text-slate-500 font-normal text-lg ml-2">for {objectApiName}</span>}
                     </h2>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
                         <span className="sr-only">Close</span>
@@ -114,8 +121,14 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
                             Error Condition Formula <span className="text-red-600">*</span>
                         </label>
                         <p className="text-xs text-slate-500 mb-2">
-                            Enter an expression that returns TRUE if the data is INVALID. Use field names like <code>record.amount</code>.
+                            Enter an expression that returns <strong>TRUE</strong> if the data is <strong>INVALID</strong>.
+                            Uses <a href="https://expr-lang.org/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">expr-lang syntax</a>.
                         </p>
+                        <div className="text-xs text-slate-400 mb-2 p-2 bg-slate-50 rounded border border-slate-200 font-mono">
+                            <div><strong>Syntax:</strong> field_name == 'value', amount &gt; 0, close_date == null</div>
+                            <div><strong>Operators:</strong> ==, !=, &gt;, &lt;, &gt;=, &lt;=, &amp;&amp;, ||, !</div>
+                            <div><strong>Null checks:</strong> field == null, field != null</div>
+                        </div>
                         <div className="relative">
                             <textarea
                                 required
@@ -123,7 +136,7 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
                                 onChange={e => setFormData({ ...formData, condition: e.target.value })}
                                 rows={4}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-                                placeholder="record.amount < 0 || record.amount > 1000000"
+                                placeholder="stage == 'Closed' && close_date == null"
                             />
                         </div>
                     </div>
