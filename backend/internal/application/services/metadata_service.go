@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -112,7 +111,7 @@ func (ms *MetadataService) ensureCacheInitialized() error {
 
 // Getter methods
 
-func (ms *MetadataService) GetSchema(apiName string) *models.ObjectMetadata {
+func (ms *MetadataService) GetSchema(ctx context.Context, apiName string) *models.ObjectMetadata {
 	// Ensure cache is loaded
 	if err := ms.ensureCacheInitialized(); err != nil {
 		log.Printf("⚠️ Failed to initialize cache in GetSchema: %v", err)
@@ -149,28 +148,12 @@ func (ms *MetadataService) invalidateCacheLocked() {
 }
 
 // GetSchemaOrError returns the schema or a NotFoundError if not found
-func (ms *MetadataService) GetSchemaOrError(apiName string) (*models.ObjectMetadata, error) {
-	schema := ms.GetSchema(apiName)
+func (ms *MetadataService) GetSchemaOrError(ctx context.Context, apiName string) (*models.ObjectMetadata, error) {
+	schema := ms.GetSchema(ctx, apiName)
 	if schema == nil {
 		return nil, errors.NewNotFoundError("Object Metadata", apiName)
 	}
 	return schema, nil
-}
-
-// deleteMetadataRecord removes a record by ID and checks for existence via RowsAffected,
-// eliminating the need for a preliminary SELECT query.
-func (ms *MetadataService) deleteMetadataRecord(tableName, id, entityName string) error {
-	query := fmt.Sprintf("DELETE FROM %s WHERE id = ?", tableName)
-	result, err := ms.db.Exec(query, id)
-	if err != nil {
-		return fmt.Errorf("failed to delete %s: %w", entityName, err)
-	}
-
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		return fmt.Errorf("%s with ID '%s' not found", entityName, id)
-	}
-	return nil
 }
 
 func (ms *MetadataService) GetField(objectAPIName, fieldAPIName string) *models.FieldMetadata {
@@ -199,7 +182,7 @@ func (ms *MetadataService) GetField(objectAPIName, fieldAPIName string) *models.
 	return nil
 }
 
-func (ms *MetadataService) GetSchemas() []*models.ObjectMetadata {
+func (ms *MetadataService) GetSchemas(ctx context.Context) []*models.ObjectMetadata {
 	// Ensure cache is loaded
 	if err := ms.ensureCacheInitialized(); err != nil {
 		log.Printf("⚠️ Failed to initialize cache in GetSchemas: %v", err)

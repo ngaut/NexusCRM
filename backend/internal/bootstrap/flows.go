@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -24,20 +25,20 @@ func InitializeFlows(metadata *services.MetadataService) error {
 
 	for _, flow := range flows {
 		// Check if flow exists
-		existing := metadata.GetFlow(flow.ID)
+		existing := metadata.GetFlow(context.Background(), flow.ID)
 		if existing != nil {
 			// Update existing flow
 			log.Printf("   🔄 Flow %s already exists, updating...", flow.Name)
 			// Apply updates (status, logic, etc.)
 			// Enforce system flow definition.
-			if err := metadata.UpdateFlow(flow.ID, &flow); err != nil {
+			if err := metadata.UpdateFlow(context.Background(), flow.ID, &flow); err != nil {
 				log.Printf("   ⚠️  Failed to update flow %s: %v", flow.Name, err)
 			}
 		} else {
 			// Create new flow
 			// Ensure ID consistency from JSON definition.
 			// CreateFlow should respect the provided ID to allow idempotent updates.
-			if err := metadata.CreateFlow(&flow); err != nil {
+			if err := metadata.CreateFlow(context.Background(), &flow); err != nil {
 				log.Printf("   ⚠️  Failed to create flow %s: %v", flow.Name, err)
 			} else {
 				log.Printf("   ✅ Flow %s created", flow.Name)

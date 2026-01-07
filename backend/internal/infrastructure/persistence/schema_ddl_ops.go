@@ -288,7 +288,7 @@ func (r *SchemaRepository) DropTable(tableName string) error {
 	}
 
 	// Delete AutoNumber metadata
-	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE LOWER(object_api_name) = LOWER(?)", constants.TableAutoNumber), tableName); err != nil {
+	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE object_api_name = ?", constants.TableAutoNumber), tableName); err != nil {
 		log.Printf("⚠️  Warning: Failed to delete auto-number metadata for %s: %v", tableName, err)
 	}
 
@@ -393,7 +393,7 @@ func (r *SchemaRepository) ValidateFieldDefinition(field schema.ColumnDefinition
 	switch checkType {
 	case string(constants.FieldTypeLookup):
 		// User assumption: Lookups must specific a target
-		if field.ReferenceTo == "" && len(field.AllReferences) == 0 {
+		if len(field.ReferenceTo) == 0 {
 			return fmt.Errorf("lookup field '%s' must have a valid 'reference_to' target", field.Name)
 		}
 	case string(constants.FieldTypePicklist):

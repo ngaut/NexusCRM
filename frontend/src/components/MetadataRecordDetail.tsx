@@ -271,7 +271,7 @@ export function MetadataRecordDetail({
                                         label: 'Fields',
                                         object_api_name: SYSTEM_TABLE_NAMES.SYSTEM_FIELD,
                                         lookup_field: COMMON_FIELDS.OBJECT_ID,
-                                        fields: [COMMON_FIELDS.API_NAME, COMMON_FIELDS.LABEL, COMMON_FIELDS.TYPE, COMMON_FIELDS.IS_REQUIRED]
+                                        fields: [COMMON_FIELDS.API_NAME, COMMON_FIELDS.LABEL, COMMON_FIELDS.TYPE, COMMON_FIELDS.REQUIRED]
                                     }}
                                     parentRecordId={recordId}
                                     parentObjectApiName={objectMetadata.api_name}

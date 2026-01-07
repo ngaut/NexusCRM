@@ -25,7 +25,7 @@ type CreateUserRequest struct {
 }
 
 // CreateUser creates a new user account
-func (s *AuthService) CreateUser(req CreateUserRequest) (*models.UserSession, error) {
+func (s *AuthService) CreateUser(ctx context.Context, req CreateUserRequest) (*models.UserSession, error) {
 	// 1. Validate Email
 	if !auth.IsValidEmail(req.Email) {
 		return nil, errors.NewValidationError(constants.FieldEmail, "Invalid email format")
@@ -37,7 +37,7 @@ func (s *AuthService) CreateUser(req CreateUserRequest) (*models.UserSession, er
 	}
 
 	// 3. Check for Existing User
-	exists, err := s.userRepo.CheckUserExistsByEmail(context.Background(), req.Email)
+	exists, err := s.userRepo.CheckUserExistsByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, fmt.Errorf("database error: %w", err)
 	}
@@ -82,7 +82,8 @@ func (s *AuthService) CreateUser(req CreateUserRequest) (*models.UserSession, er
 		ProfileID: constants.ProfileSystemAdmin,
 	}
 
-	ctx := context.Background()
+	// Use propagated context
+	// ctx := context.Background()
 	if _, err := s.persistence.Insert(ctx, constants.TableUser, userStruct.ToSObject(), systemContext); err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
@@ -105,9 +106,9 @@ type UpdateUserRequest struct {
 }
 
 // UpdateUser updates an existing user's information
-func (s *AuthService) UpdateUser(userID string, req UpdateUserRequest) error {
+func (s *AuthService) UpdateUser(ctx context.Context, userID string, req UpdateUserRequest) error {
 	// 1. Check Existence
-	exists, err := s.userRepo.CheckUserExistsByID(context.Background(), userID)
+	exists, err := s.userRepo.CheckUserExistsByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("database error: %w", err)
 	}
@@ -131,7 +132,7 @@ func (s *AuthService) UpdateUser(userID string, req UpdateUserRequest) error {
 		}
 
 		// Check for email uniqueness
-		emailExists, err := s.userRepo.CheckEmailConflict(context.Background(), req.Email, userID)
+		emailExists, err := s.userRepo.CheckEmailConflict(ctx, req.Email, userID)
 		if err != nil {
 			return fmt.Errorf("database error checking email: %w", err)
 		}
@@ -175,7 +176,7 @@ func (s *AuthService) UpdateUser(userID string, req UpdateUserRequest) error {
 	query := fmt.Sprintf("UPDATE %s SET "+strings.Join(updates, ", ")+" WHERE %s = ?", constants.TableUser, constants.FieldID)
 	args = append(args, userID)
 
-	_, err = s.db.Exec(query, args...)
+	_, err = s.db.ExecContext(ctx, query, args...)
 	if err == nil {
 		log.Printf("📝 User updated: %s", userID)
 	}
@@ -183,9 +184,9 @@ func (s *AuthService) UpdateUser(userID string, req UpdateUserRequest) error {
 }
 
 // DeleteUser removes a user from the system
-func (s *AuthService) DeleteUser(userID string) error {
+func (s *AuthService) DeleteUser(ctx context.Context, userID string) error {
 	// Check Existence
-	exists, err := s.userRepo.CheckUserExistsByID(context.Background(), userID)
+	exists, err := s.userRepo.CheckUserExistsByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("database error: %w", err)
 	}
@@ -194,7 +195,7 @@ func (s *AuthService) DeleteUser(userID string) error {
 	}
 
 	query := fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableUser, constants.FieldID)
-	_, err = s.db.Exec(query, userID)
+	_, err = s.db.ExecContext(ctx, query, userID)
 	if err == nil {
 		log.Printf("🗑️ User deleted: %s", userID)
 	}
@@ -202,7 +203,7 @@ func (s *AuthService) DeleteUser(userID string) error {
 }
 
 // GetUsers retrieves all users in the system
-func (s *AuthService) GetUsers() ([]map[string]interface{}, error) {
+func (s *AuthService) GetUsers(ctx context.Context) ([]map[string]interface{}, error) {
 	query := fmt.Sprintf(`
 		SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s 
 		FROM %s 
@@ -211,32 +212,23 @@ func (s *AuthService) GetUsers() ([]map[string]interface{}, error) {
 		constants.TableUser,
 		constants.FieldCreatedDate)
 
-	rows, err := s.db.Query(query)
+	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query users: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var users []map[string]interface{}
 	for rows.Next() {
 		var id, username, email, profileID, firstName, lastName string
 		var isActive bool
-		var createdDate, lastLogin sql.NullTime
+		var createdDateRaw, lastLoginRaw []byte
 
-		if err := rows.Scan(&id, &username, &email, &profileID, &isActive, &createdDate, &lastLogin, &firstName, &lastName); err != nil {
+		if err := rows.Scan(&id, &username, &email, &profileID, &isActive, &createdDateRaw, &lastLoginRaw, &firstName, &lastName); err != nil {
 			continue
 		}
 
-		fullName := firstName
-		if lastName != "" && lastName != firstName {
-			fullName = firstName + " " + lastName
-		} else if lastName != "" {
-			// Handle case where splitName duplicated it? Or just show one?
-			// If firstName == lastName, usually single word.
-			fullName = firstName
-		}
-		// Actually, simple concat is safer:
-		fullName = strings.TrimSpace(firstName + " " + lastName)
+		fullName := strings.TrimSpace(firstName + " " + lastName)
 		if fullName == "" {
 			fullName = username // Fallback
 		}
@@ -250,11 +242,26 @@ func (s *AuthService) GetUsers() ([]map[string]interface{}, error) {
 			constants.FieldIsActive:      isActive,
 			constants.FieldLastLoginDate: nil,
 		}
-		if createdDate.Valid {
-			user[constants.FieldCreatedDate] = createdDate.Time
+
+		// Parse dates manually from bytes (format: 2006-01-02 15:04:05)
+		if len(createdDateRaw) > 0 {
+			if t, err := time.Parse("2006-01-02 15:04:05", string(createdDateRaw)); err == nil {
+				user[constants.FieldCreatedDate] = t
+			} else {
+				// Fallback to RFC3339 just in case
+				if t, err := time.Parse(time.RFC3339, string(createdDateRaw)); err == nil {
+					user[constants.FieldCreatedDate] = t
+				}
+			}
 		}
-		if lastLogin.Valid {
-			user[constants.FieldLastLoginDate] = lastLogin.Time
+		if len(lastLoginRaw) > 0 {
+			if t, err := time.Parse("2006-01-02 15:04:05", string(lastLoginRaw)); err == nil {
+				user[constants.FieldLastLoginDate] = t
+			} else {
+				if t, err := time.Parse(time.RFC3339, string(lastLoginRaw)); err == nil {
+					user[constants.FieldLastLoginDate] = t
+				}
+			}
 		}
 		users = append(users, user)
 	}
@@ -262,16 +269,16 @@ func (s *AuthService) GetUsers() ([]map[string]interface{}, error) {
 }
 
 // GetProfiles retrieves all security profiles
-func (s *AuthService) GetProfiles() ([]map[string]interface{}, error) {
+func (s *AuthService) GetProfiles(ctx context.Context) ([]map[string]interface{}, error) {
 	query := fmt.Sprintf("SELECT %s, %s, %s FROM %s ORDER BY %s ASC",
 		constants.FieldID, constants.FieldName, constants.FieldDescription,
 		constants.TableProfile, constants.FieldName)
 
-	rows, err := s.db.Query(query)
+	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query profiles: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var profiles []map[string]interface{}
 	for rows.Next() {

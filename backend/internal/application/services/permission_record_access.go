@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -79,7 +80,7 @@ func (ps *PermissionService) CheckRecordAccess(schema *models.ObjectMetadata, re
 	// 3. Sharing Rules Check
 	// Evaluate all sharing rules for this object
 	if schema != nil {
-		rules := ps.metadata.GetSharingRules(schema.APIName)
+		rules := ps.metadata.GetSharingRules(context.Background(), schema.APIName)
 		for _, rule := range rules {
 			if ps.checkSharingRuleAccess(record, rule, user, operation) {
 				return true
@@ -89,7 +90,8 @@ func (ps *PermissionService) CheckRecordAccess(schema *models.ObjectMetadata, re
 
 	// 4. Manual Record Share Check (_System_RecordShare)
 	if schema != nil && recordID != "" && ps.db != nil {
-		if ps.checkManualShareAccess(schema.APIName, recordID, user, operation) {
+		ctx := context.Background()
+		if ps.checkManualShareAccess(ctx, schema.APIName, recordID, user, operation) {
 			return true
 		}
 	}
@@ -106,7 +108,7 @@ func (ps *PermissionService) CheckRecordAccess(schema *models.ObjectMetadata, re
 }
 
 // checkManualShareAccess checks if user has access via manual record share
-func (ps *PermissionService) checkManualShareAccess(objectAPIName, recordID string, user *models.UserSession, operation string) bool {
+func (ps *PermissionService) checkManualShareAccess(ctx context.Context, objectAPIName, recordID string, user *models.UserSession, operation string) bool {
 	// Check direct user share
 	query := fmt.Sprintf(`
 		SELECT access_level FROM %s 
@@ -116,7 +118,7 @@ func (ps *PermissionService) checkManualShareAccess(objectAPIName, recordID stri
 		))
 	`, constants.TableRecordShare, constants.TableGroupMember)
 
-	rows, err := ps.db.DB().Query(query, objectAPIName, recordID, user.ID, user.ID)
+	rows, err := ps.db.DB().QueryContext(ctx, query, objectAPIName, recordID, user.ID, user.ID)
 	if err != nil {
 		return false
 	}

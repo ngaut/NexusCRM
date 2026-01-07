@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/nexuscrm/backend/internal/application/services"
+	"github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
@@ -38,9 +39,24 @@ func InitializeSchema(db *database.TiDBConnection) error {
 	}
 
 	// Phase 1: Create all tables in PARALLEL and BATCH register (DDL + _System_Table registry)
+	// Filter out core tables as they are already created
+	var remainingDefs []schema.TableDefinition
+	for _, def := range tableDefs {
+		isCore := false
+		for _, core := range coreTables {
+			if def.TableName == core {
+				isCore = true
+				break
+			}
+		}
+		if !isCore {
+			remainingDefs = append(remainingDefs, def)
+		}
+	}
+
 	// BatchCreatePhysicalTables handles parallel DDL and batch registration internally
 	log.Println("⚡️ Creating tables and registering (Super Batch)...")
-	if err := schemaMgr.BatchCreatePhysicalTables(context.Background(), tableDefs); err != nil {
+	if err := schemaMgr.BatchCreatePhysicalTables(context.Background(), remainingDefs); err != nil {
 		log.Printf("   ⚠️  Batch physical table creation failed: %v", err)
 		return err
 	}

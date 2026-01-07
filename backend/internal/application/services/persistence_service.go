@@ -77,11 +77,11 @@ func (ps *PersistenceService) publishRecordEvent(ctx context.Context, eventType 
 }
 
 // prepareOperation checks permissions and retrieves schema
-func (ps *PersistenceService) prepareOperation(objectName string, operation string, user *models.UserSession) (*models.ObjectMetadata, error) {
+func (ps *PersistenceService) prepareOperation(ctx context.Context, objectName string, operation string, user *models.UserSession) (*models.ObjectMetadata, error) {
 	if err := ps.permissions.CheckPermissionOrErrorWithUser(objectName, operation, user); err != nil {
 		return nil, err
 	}
-	return ps.metadata.GetSchemaOrError(objectName)
+	return ps.metadata.GetSchemaOrError(ctx, objectName)
 }
 
 // validatePolymorphicLookups verifies that referenced IDs in polymorphic fields exist in at least one of the allowed objects
@@ -109,9 +109,11 @@ func (ps *PersistenceService) validatePolymorphicLookups(ctx context.Context, da
 		var checkedObjects []string
 
 		for _, refObj := range field.ReferenceTo {
-			checkedObjects = append(checkedObjects, refObj)
+			tableToCheck := ps.getTableName(refObj) // Resolving table name
+			checkedObjects = append(checkedObjects, tableToCheck)
 			// Efficient existence check using ID
-			exists, err := ps.checkRecordExists(ctx, refObj, idVal)
+			exists, err := ps.checkRecordExists(ctx, tableToCheck, idVal)
+			log.Printf("🔍 Poly check: Field=%s, ID=%s, Obj=%s, Table=%s, Exists=%v, Err=%v", field.APIName, idVal, refObj, tableToCheck, exists, err)
 			if err != nil {
 				log.Printf("Warning: failed to check existence in %s: %v", refObj, err)
 				continue
@@ -147,6 +149,14 @@ func (ps *PersistenceService) checkRecordExists(ctx context.Context, objectName 
 	return rows.Next(), nil
 }
 
+// Helper to get table name from object API name
+// Helper to get table name from object API name
+func (ps *PersistenceService) getTableName(objectAPIName string) string {
+	// Fallback to APIName for now to fix build.
+	// For custom objects (used in test), APIName is the TableName.
+	return objectAPIName
+}
+
 // RunInTransaction executes a function within a transaction (new or existing) with retry support
 func (ps *PersistenceService) RunInTransaction(
 	ctx context.Context,
@@ -178,7 +188,7 @@ func (ps *PersistenceService) Update(
 	updates models.SObject,
 	currentUser *models.UserSession,
 ) error {
-	schema, err := ps.prepareOperation(objectName, constants.PermEdit, currentUser)
+	schema, err := ps.prepareOperation(ctx, objectName, constants.PermEdit, currentUser)
 	if err != nil {
 		return err
 	}
@@ -257,7 +267,7 @@ func (ps *PersistenceService) Update(
 		recordToValidate := ps.mergeRecords(oldRecord, effectiveUpdates)
 
 		// Validate
-		validationRules := ps.metadata.GetValidationRules(objectName)
+		validationRules := ps.metadata.GetValidationRules(txCtx, objectName)
 		if err := ps.validator.ValidateRecord(recordToValidate, schema, validationRules, &oldRecord); err != nil {
 			return err
 		}
@@ -406,7 +416,7 @@ func getUserID(user *models.UserSession) string {
 
 // generateAutoNumbers handles atomic generation of AutoNumber field values within a transaction
 func (ps *PersistenceService) generateAutoNumbers(ctx context.Context, tx *sql.Tx, objectName string, data models.SObject) error {
-	autoNumbers := ps.metadata.GetAutoNumbers(objectName)
+	autoNumbers := ps.metadata.GetAutoNumbers(ctx, objectName)
 	if len(autoNumbers) == 0 {
 		return nil
 	}

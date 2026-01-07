@@ -1,12 +1,12 @@
 package bootstrap
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/shared/pkg/models"
@@ -16,18 +16,19 @@ import (
 var systemDataJSON []byte
 
 type SystemData struct {
-	Profiles []struct {
-		ID          string `json:"id"`
-		Name        string `json:"name"`
-		Description string `json:"description"`
-	} `json:"profiles"`
-	Users []struct {
-		ID        string `json:"id,omitempty"`
-		Name      string `json:"name"`
-		Email     string `json:"email"`
-		Password  string `json:"password"`
-		ProfileID string `json:"profile_id"`
-	} `json:"users"`
+	Profiles []models.SystemProfile `json:"profiles"`
+	Users    []SystemUserJSON       `json:"users"`
+}
+
+// SystemUserJSON is a DTO for seeding users from JSON
+// It handles Password (which is ignored in the main model)
+type SystemUserJSON struct {
+	ID        string `json:"id,omitempty"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	ProfileID string `json:"profile_id"`
 }
 
 // InitializeSystemData ensures required system data exists
@@ -41,20 +42,14 @@ func InitializeSystemData(sys *services.SystemManager) error {
 	}
 
 	// 1. Process Profiles (Batch)
-	profiles := make([]models.Profile, len(data.Profiles))
-	for i, p := range data.Profiles {
-		profiles[i] = models.Profile{
-			ID:          p.ID,
-			Name:        p.Name,
-			Description: &p.Description,
-			IsActive:    true,
-			IsSystem:    true,
-		}
+	for i := range data.Profiles {
+		data.Profiles[i].IsActive = true
+		data.Profiles[i].IsSystem = true
 	}
-	if err := sys.BatchUpsertProfiles(profiles); err != nil {
+	if err := sys.BatchUpsertProfiles(context.Background(), data.Profiles); err != nil {
 		return fmt.Errorf("failed to batch upsert profiles: %w", err)
 	}
-	log.Printf("   ✅ Ensure %d system profiles (batch)", len(profiles))
+	log.Printf("   ✅ Ensure %d system profiles (batch)", len(data.Profiles))
 
 	// 2. Process Users (Batch)
 	users := make([]models.SystemUser, len(data.Users))
@@ -64,27 +59,19 @@ func InitializeSystemData(sys *services.SystemManager) error {
 			id = services.GenerateID()
 		}
 
-		// Split Name
-		parts := strings.SplitN(u.Name, " ", 2)
-		firstName := parts[0]
-		lastName := ""
-		if len(parts) > 1 {
-			lastName = parts[1]
-		}
-
 		users[i] = models.SystemUser{
 			ID:        id,
 			Username:  u.Email,
 			Email:     u.Email,
 			Password:  u.Password,
 			ProfileID: u.ProfileID,
-			FirstName: firstName,
-			LastName:  lastName,
+			FirstName: u.FirstName,
+			LastName:  u.LastName,
 			IsActive:  true,
 		}
 	}
 
-	if err := sys.BatchUpsertUsers(users); err != nil {
+	if err := sys.BatchUpsertUsers(context.Background(), users); err != nil {
 		return fmt.Errorf("failed to batch upsert users: %w", err)
 	}
 	log.Printf("   ✅ Ensure %d system users (batch)", len(users))
@@ -109,7 +96,7 @@ func InitializeThemes(sm *services.ServiceManager) error {
 	}
 
 	for _, theme := range data.Themes {
-		if err := sm.Metadata.UpsertTheme(&theme); err != nil {
+		if err := sm.Metadata.UpsertTheme(context.Background(), &theme); err != nil {
 			log.Printf("   ⚠️  Failed to ensure theme %s: %v", theme.Name, err)
 		} else {
 			log.Printf("   ✅ %s theme ensured", theme.Name)
@@ -141,7 +128,7 @@ func InitializeUIComponents(sm *services.ServiceManager) error {
 			comp.Description = nil
 		}
 
-		if err := sm.Metadata.UpsertUIComponent(&comp); err != nil {
+		if err := sm.Metadata.UpsertUIComponent(context.Background(), &comp); err != nil {
 			log.Printf("   ⚠️  Failed to ensure component %s: %v", comp.Name, err)
 		}
 	}
@@ -169,7 +156,7 @@ func InitializeSetupPages(sm *services.ServiceManager) error {
 	}
 
 	for _, page := range pages {
-		if err := sm.Metadata.UpsertSetupPage(&page); err != nil {
+		if err := sm.Metadata.UpsertSetupPage(context.Background(), &page); err != nil {
 			log.Printf("   ⚠️  Failed to ensure setup page %s: %v", page.Label, err)
 		}
 	}

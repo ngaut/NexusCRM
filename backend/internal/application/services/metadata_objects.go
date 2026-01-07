@@ -73,12 +73,12 @@ func (ms *MetadataService) GetAllObjects(ctx context.Context, user *models.UserS
 
 // GetSystemFields returns all system fields for an object by querying metadata
 // System fields are those with IsSystem=true OR IsNameField=true
-func (ms *MetadataService) GetSystemFields(objectAPIName string) []string {
+func (ms *MetadataService) GetSystemFields(ctx context.Context, objectAPIName string) []string {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
 	// Query schema from Repo
-	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), objectAPIName)
+	obj, err := ms.repo.GetSchemaByAPIName(ctx, objectAPIName)
 	if err != nil || obj == nil {
 		return []string{}
 	}
@@ -105,10 +105,10 @@ func (ms *MetadataService) GetSupportedEvents() []string {
 	}
 }
 
-func (ms *MetadataService) GetFlows() []*models.Flow {
+func (ms *MetadataService) GetFlows(ctx context.Context) []*models.Flow {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	flows, err := ms.repo.GetAllFlows(context.Background())
+	flows, err := ms.repo.GetAllFlows(ctx)
 	if err != nil {
 		log.Printf("Failed to get flows: %v", err)
 		return []*models.Flow{}
@@ -117,11 +117,11 @@ func (ms *MetadataService) GetFlows() []*models.Flow {
 }
 
 // GetScheduledFlows returns all flows with trigger_type = "schedule"
-func (ms *MetadataService) GetScheduledFlows() []models.Flow {
+func (ms *MetadataService) GetScheduledFlows(ctx context.Context) []models.Flow {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	flows, err := ms.repo.GetScheduledFlows(context.Background())
+	flows, err := ms.repo.GetScheduledFlows(ctx)
 	if err != nil {
 		log.Printf("Failed to query scheduled flows: %v", err)
 		return []models.Flow{}
@@ -136,7 +136,7 @@ func (ms *MetadataService) GetScheduledFlows() []models.Flow {
 	return res
 }
 
-func (ms *MetadataService) GetValidationRules(objectAPIName string) []*models.ValidationRule {
+func (ms *MetadataService) GetValidationRules(ctx context.Context, objectAPIName string) []*models.ValidationRule {
 	// Skip validation rule lookup for system objects - they never have custom rules
 	if constants.IsSystemTable(objectAPIName) {
 		return []*models.ValidationRule{}
@@ -144,7 +144,7 @@ func (ms *MetadataService) GetValidationRules(objectAPIName string) []*models.Va
 
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	rules, err := ms.repo.GetValidationRules(context.Background(), objectAPIName)
+	rules, err := ms.repo.GetValidationRules(ctx, objectAPIName)
 	if err != nil {
 		log.Printf("Failed to get validation rules: %v", err)
 		return []*models.ValidationRule{}
@@ -152,10 +152,10 @@ func (ms *MetadataService) GetValidationRules(objectAPIName string) []*models.Va
 	return rules
 }
 
-func (ms *MetadataService) GetListViews(objectAPIName string) []*models.ListView {
+func (ms *MetadataService) GetListViews(ctx context.Context, objectAPIName string) []*models.ListView {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	views, err := ms.repo.GetListViews(context.Background(), objectAPIName)
+	views, err := ms.repo.GetListViews(ctx, objectAPIName)
 	if err != nil {
 		log.Printf("Failed to get list views: %v", err)
 		return []*models.ListView{}
@@ -164,7 +164,7 @@ func (ms *MetadataService) GetListViews(objectAPIName string) []*models.ListView
 }
 
 // CreateListView creates a new list view
-func (ms *MetadataService) CreateListView(view *models.ListView) error {
+func (ms *MetadataService) CreateListView(ctx context.Context, view *models.ListView) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
@@ -172,49 +172,49 @@ func (ms *MetadataService) CreateListView(view *models.ListView) error {
 		view.ID = GenerateID()
 	}
 
-	if err := ms.repo.CreateListView(context.Background(), view); err != nil {
+	if err := ms.repo.CreateListView(ctx, view); err != nil {
 		return fmt.Errorf("failed to create list view: %w", err)
 	}
 	return nil
 }
 
 // UpdateListView updates an existing list view
-func (ms *MetadataService) UpdateListView(id string, updates *models.ListView) error {
+func (ms *MetadataService) UpdateListView(ctx context.Context, id string, updates *models.ListView) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	if err := ms.repo.UpdateListView(context.Background(), id, updates); err != nil {
+	if err := ms.repo.UpdateListView(ctx, id, updates); err != nil {
 		return fmt.Errorf("failed to update list view: %w", err)
 	}
 	return nil
 }
 
 // DeleteListView deletes a list view
-func (ms *MetadataService) DeleteListView(id string) error {
+func (ms *MetadataService) DeleteListView(ctx context.Context, id string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	if err := ms.repo.DeleteListView(context.Background(), id); err != nil {
+	if err := ms.repo.DeleteListView(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete list view: %w", err)
 	}
 	return nil
 }
 
-func (ms *MetadataService) GetSharingRules(objectAPIName string) []*models.SharingRule {
+func (ms *MetadataService) GetSharingRules(ctx context.Context, objectAPIName string) []*models.SystemSharingRule {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	rules, err := ms.repo.GetSharingRules(context.Background(), objectAPIName)
+	rules, err := ms.repo.GetSharingRules(ctx, objectAPIName)
 	if err != nil {
 		log.Printf("Failed to get sharing rules: %v", err)
-		return []*models.SharingRule{}
+		return []*models.SystemSharingRule{}
 	}
 	return rules
 }
 
-func (ms *MetadataService) GetActions(objectAPIName string) []*models.ActionMetadata {
+func (ms *MetadataService) GetActions(ctx context.Context, objectAPIName string) []*models.ActionMetadata {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	actions, err := ms.repo.GetActions(context.Background(), objectAPIName)
+	actions, err := ms.repo.GetActions(ctx, objectAPIName)
 	if err != nil {
 		log.Printf("Failed to get actions: %v", err)
 		return []*models.ActionMetadata{}
@@ -223,11 +223,11 @@ func (ms *MetadataService) GetActions(objectAPIName string) []*models.ActionMeta
 }
 
 // GetAllActions returns all actions from all objects
-func (ms *MetadataService) GetAllActions() []*models.ActionMetadata {
+func (ms *MetadataService) GetAllActions(ctx context.Context) []*models.ActionMetadata {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	actions, err := ms.repo.GetAllActions(context.Background())
+	actions, err := ms.repo.GetAllActions(ctx)
 	if err != nil {
 		log.Printf("Failed to query actions: %v", err)
 		return []*models.ActionMetadata{}
@@ -235,62 +235,62 @@ func (ms *MetadataService) GetAllActions() []*models.ActionMetadata {
 	return actions
 }
 
-func (ms *MetadataService) GetActionByID(actionID string) *models.ActionMetadata {
+func (ms *MetadataService) GetActionByID(ctx context.Context, actionID string) *models.ActionMetadata {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	action, err := ms.repo.GetAction(context.Background(), actionID)
+	action, err := ms.repo.GetAction(ctx, actionID)
 	if err != nil {
 		return nil
 	}
 	return action
 }
 
-func (ms *MetadataService) GetRecordTypes(objectAPIName string) []*models.RecordType {
+func (ms *MetadataService) GetRecordTypes(ctx context.Context, objectAPIName string) []*models.RecordType {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	rts, err := ms.repo.GetRecordTypes(context.Background(), objectAPIName)
+	rts, err := ms.repo.GetRecordTypes(ctx, objectAPIName)
 	if err != nil {
 		return []*models.RecordType{}
 	}
 	return rts
 }
 
-func (ms *MetadataService) GetAutoNumbers(objectAPIName string) []*models.AutoNumber {
+func (ms *MetadataService) GetAutoNumbers(ctx context.Context, objectAPIName string) []*models.AutoNumber {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	ans, err := ms.repo.GetAutoNumbers(context.Background(), objectAPIName)
+	ans, err := ms.repo.GetAutoNumbers(ctx, objectAPIName)
 	if err != nil {
 		return []*models.AutoNumber{}
 	}
 	return ans
 }
 
-func (ms *MetadataService) GetRelationships(objectAPIName string) []*models.Relationship {
+func (ms *MetadataService) GetRelationships(ctx context.Context, objectAPIName string) []*models.Relationship {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	rels, err := ms.repo.GetRelationships(context.Background(), objectAPIName)
+	rels, err := ms.repo.GetRelationships(ctx, objectAPIName)
 	if err != nil {
 		return []*models.Relationship{}
 	}
 	return rels
 }
 
-func (ms *MetadataService) GetFieldDependencies(objectAPIName string) []*models.FieldDependency {
+func (ms *MetadataService) GetFieldDependencies(ctx context.Context, objectAPIName string) []*models.FieldDependency {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	fds, err := ms.repo.GetFieldDependencies(context.Background(), objectAPIName)
+	fds, err := ms.repo.GetFieldDependencies(ctx, objectAPIName)
 	if err != nil {
 		return []*models.FieldDependency{}
 	}
 	return fds
 }
 
-func (ms *MetadataService) GetChildRelationships(parentObjectAPIName string) []*models.ObjectMetadata {
+func (ms *MetadataService) GetChildRelationships(ctx context.Context, parentObjectAPIName string) []*models.ObjectMetadata {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	children, err := ms.repo.GetChildRelationships(context.Background(), parentObjectAPIName)
+	children, err := ms.repo.GetChildRelationships(ctx, parentObjectAPIName)
 	if err != nil {
 		log.Printf("⚠️ Failed to query child relationships for %s: %v", parentObjectAPIName, err)
 		return []*models.ObjectMetadata{}

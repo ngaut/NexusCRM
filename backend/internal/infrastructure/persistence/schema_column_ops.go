@@ -57,11 +57,12 @@ func (r *SchemaRepository) AddColumn(tableName string, col schema.ColumnDefiniti
 	}
 
 	// If it's a reference field, we handle the Foreign Key in a separate statement
+	// If it's a reference field (single target), we handle the Foreign Key in a separate statement
 	var fkDDL string
-	if col.ReferenceTo != "" {
+	if len(col.ReferenceTo) == 1 {
 		fkName := fmt.Sprintf("fk_%s_%s", tableName, col.Name)
 		fkDDL = fmt.Sprintf("ALTER TABLE `%s` ADD CONSTRAINT `%s` FOREIGN KEY (`%s`) REFERENCES `%s` (`id`)",
-			tableName, fkName, col.Name, col.ReferenceTo)
+			tableName, fkName, col.Name, col.ReferenceTo[0])
 
 		if col.OnDelete != "" {
 			fkDDL += fmt.Sprintf(" ON DELETE %s", col.OnDelete)
@@ -233,19 +234,16 @@ func (r *SchemaRepository) registerField(tableName string, col schema.ColumnDefi
 		IsNameField: isNameField,
 	}
 
-	// DESIGN ASSUMPTION: AllReferences contains the full list of referenced objects for polymorphic lookups.
-	if len(col.AllReferences) > 0 {
-		field.ReferenceTo = col.AllReferences
-	} else {
-		field.ReferenceTo = WrapStringToSlice(col.ReferenceTo)
-	}
+	// References
+	field.ReferenceTo = col.ReferenceTo
 
 	// Persist Options
 	if len(col.Options) > 0 {
 		field.Options = col.Options
 	}
 
-	field.IsPolymorphic = len(field.ReferenceTo) > 1
+	field.IsPolymorphic = col.IsPolymorphic || len(field.ReferenceTo) > 1
+
 	field.IsMasterDetail = col.IsMasterDetail
 
 	if col.OnDelete != "" {

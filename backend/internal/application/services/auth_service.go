@@ -39,7 +39,7 @@ type LoginResult struct {
 }
 
 // Login authenticates a user and creates a session
-func (s *AuthService) Login(email, password, ip, userAgent string) (*LoginResult, error) {
+func (s *AuthService) Login(ctx context.Context, email, password, ip, userAgent string) (*LoginResult, error) {
 	// 1. Find user by email
 	var user struct {
 		ID        string
@@ -56,7 +56,7 @@ func (s *AuthService) Login(email, password, ip, userAgent string) (*LoginResult
 		constants.FieldID, constants.FieldUsername, constants.FieldEmail, constants.FieldPassword, constants.FieldProfileID, constants.FieldRoleID, constants.FieldFirstName, constants.FieldLastName,
 		constants.TableUser, constants.FieldEmail)
 
-	err := s.db.QueryRow(query, email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.ProfileId, &user.RoleId, &user.FirstName, &user.LastName)
+	err := s.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.ProfileId, &user.RoleId, &user.FirstName, &user.LastName)
 	if err == sql.ErrNoRows {
 		log.Printf("⚠️ Login failed for %s: user not found", email)
 		return nil, errors.NewUnauthorizedError("Invalid email or password")
@@ -150,8 +150,10 @@ func (s *AuthService) Login(email, password, ip, userAgent string) (*LoginResult
 		ProfileID: constants.ProfileSystemAdmin,
 	}
 
-	ctx := context.Background()
-	// Use simplified Insert if available, or just generic Insert
+	ctx = context.Background() // Use Passed context or keep system context?
+	// Actually, for session creation, we can use passed context with timeout.
+	// But here we want to ensure session is created even if request cancels? Maybe.
+	// Let's use passed context for consistency with clean architecture.
 	if _, err := s.persistence.Insert(ctx, constants.TableSession, sessionStruct.ToSObject(), systemContext); err != nil {
 		return nil, fmt.Errorf("failed to persist session: %w", err)
 	}
@@ -164,7 +166,7 @@ func (s *AuthService) Login(email, password, ip, userAgent string) (*LoginResult
 }
 
 // ValidateSession checks if a session token is valid and active in the database
-func (s *AuthService) ValidateSession(tokenString string) (*auth.Claims, error) {
+func (s *AuthService) ValidateSession(ctx context.Context, tokenString string) (*auth.Claims, error) {
 	// 1. Verify JWT signature and claims
 	claims, err := auth.ValidateToken(tokenString)
 	if err != nil {
@@ -175,7 +177,7 @@ func (s *AuthService) ValidateSession(tokenString string) (*auth.Claims, error) 
 	var isRevoked bool
 	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ? LIMIT 1", constants.FieldIsRevoked, constants.TableSession, constants.FieldID)
 
-	err = s.db.QueryRow(query, claims.RegisteredClaims.ID).Scan(&isRevoked)
+	err = s.db.QueryRowContext(ctx, query, claims.RegisteredClaims.ID).Scan(&isRevoked)
 	if err == sql.ErrNoRows {
 		return nil, errors.NewUnauthorizedError("Session not found")
 	}
@@ -200,14 +202,14 @@ func (s *AuthService) TouchSession(sessionID string) {
 }
 
 // Logout Revokes a session
-func (s *AuthService) Logout(tokenString string) error {
+func (s *AuthService) Logout(ctx context.Context, tokenString string) error {
 	claims, err := auth.DecodeToken(tokenString)
 	if err != nil {
 		return errors.NewValidationError("token", "Invalid token")
 	}
 
 	query := fmt.Sprintf("UPDATE %s SET %s = 1 WHERE %s = ?", constants.TableSession, constants.FieldIsRevoked, constants.FieldID)
-	_, err = s.db.Exec(query, claims.RegisteredClaims.ID)
+	_, err = s.db.ExecContext(ctx, query, claims.RegisteredClaims.ID)
 	if err == nil {
 		log.Printf("👋 User logged out: %s (Session: %s)", claims.RegisteredClaims.Subject, claims.RegisteredClaims.ID)
 	}
@@ -215,7 +217,7 @@ func (s *AuthService) Logout(tokenString string) error {
 }
 
 // ChangePassword updates a user's password
-func (s *AuthService) ChangePassword(userID, currentPassword, newPassword string) error {
+func (s *AuthService) ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error {
 	// 1. Validate Strength
 	if err := auth.ValidatePasswordStrength(newPassword); err != nil {
 		return err
@@ -224,7 +226,7 @@ func (s *AuthService) ChangePassword(userID, currentPassword, newPassword string
 	// 2. Load current password
 	var storedPassword sql.NullString
 	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ? LIMIT 1", constants.FieldPassword, constants.TableUser, constants.FieldID)
-	err := s.db.QueryRow(query, userID).Scan(&storedPassword)
+	err := s.db.QueryRowContext(ctx, query, userID).Scan(&storedPassword)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve user: %w", err)
 	}
@@ -246,7 +248,7 @@ func (s *AuthService) ChangePassword(userID, currentPassword, newPassword string
 
 	// 5. Update
 	updateQuery := fmt.Sprintf("UPDATE %s SET %s = ?, %s = NOW() WHERE %s = ?", constants.TableUser, constants.FieldPassword, constants.FieldLastModifiedDate, constants.FieldID)
-	_, err = s.db.Exec(updateQuery, newHash, userID)
+	_, err = s.db.ExecContext(ctx, updateQuery, newHash, userID)
 	if err == nil {
 		log.Printf("🔐 Password changed for user: %s", userID)
 	}
@@ -254,7 +256,7 @@ func (s *AuthService) ChangePassword(userID, currentPassword, newPassword string
 }
 
 // GetUserByID retrieves a user session object by ID
-func (s *AuthService) GetUserByID(userID string) (*models.UserSession, error) {
+func (s *AuthService) GetUserByID(ctx context.Context, userID string) (*models.UserSession, error) {
 	// Reusing the struct from Login helper basically
 	var user struct {
 		ID        string
@@ -268,7 +270,7 @@ func (s *AuthService) GetUserByID(userID string) (*models.UserSession, error) {
 		constants.FieldID, constants.FieldUsername, constants.FieldEmail, constants.FieldProfileID, constants.FieldRoleID,
 		constants.TableUser, constants.FieldID)
 
-	err := s.db.QueryRow(query, userID).Scan(&user.ID, &user.Username, &user.Email, &user.ProfileId, &user.RoleId)
+	err := s.db.QueryRowContext(ctx, query, userID).Scan(&user.ID, &user.Username, &user.Email, &user.ProfileId, &user.RoleId)
 	if err != nil {
 		return nil, err
 	}

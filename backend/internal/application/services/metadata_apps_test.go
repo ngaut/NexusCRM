@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -35,9 +36,9 @@ func TestMetadataService_Apps_IsDefault(t *testing.T) {
 			IsDefault:   true,
 		}
 
-		err := ms.CreateApp(app)
+		err := ms.CreateApp(context.Background(), app)
 		require.NoError(t, err)
-		defer ms.DeleteApp(appID)
+		defer func() { _ = ms.DeleteApp(context.Background(), appID) }()
 
 		// Verify DB
 		var isDefault bool
@@ -54,16 +55,16 @@ func TestMetadataService_Apps_IsDefault(t *testing.T) {
 			Label:     "Test Update",
 			IsDefault: false,
 		}
-		err := ms.CreateApp(initialApp)
+		err := ms.CreateApp(context.Background(), initialApp)
 		require.NoError(t, err)
-		defer ms.DeleteApp(appID)
+		defer func() { _ = ms.DeleteApp(context.Background(), appID) }()
 
 		updates := &models.AppConfig{
 			ID:        appID,
 			IsDefault: true,
 		}
 
-		err = ms.UpdateApp(appID, updates)
+		err = ms.UpdateApp(context.Background(), appID, updates)
 		require.NoError(t, err)
 
 		// Verify DB

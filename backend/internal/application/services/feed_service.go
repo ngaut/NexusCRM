@@ -73,7 +73,7 @@ func (s *FeedService) mapToComment(record models.SObject) *models.SystemComment 
 			return nil
 		}(),
 		IsResolved:  record.GetBool(constants.FieldSysComment_IsResolved),
-		CreatedBy:   record.GetString(constants.FieldCreatedByID),
+		CreatedByID: record.GetString(constants.FieldCreatedByID),
 		CreatedDate: record.GetTime(constants.FieldCreatedDate),
 	}
 }

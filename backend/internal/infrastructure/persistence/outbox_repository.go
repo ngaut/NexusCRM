@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/nexuscrm/backend/pkg/utils"
@@ -52,7 +53,7 @@ func (r *OutboxRepository) Enqueue(ctx context.Context, exec Executor, eventType
 	// OutboxService defined constants. Ideally constants should be in shared.
 	// For now, I'll accept 'status' or just hardcode 'pending' if this is Enqueue.
 	// OutboxService uses "pending".
-	status := "pending"
+	status := constants.OutboxStatusPending
 
 	_, err = exec.ExecContext(ctx, query, id, eventType, payloadJSON, status)
 	if err != nil {
@@ -72,7 +73,7 @@ func (r *OutboxRepository) GetPendingEvents(ctx context.Context, limit int) ([]O
 		LIMIT ?
 	`, constants.TableOutboxEvent)
 
-	rows, err := r.db.QueryContext(ctx, query, "pending", limit)
+	rows, err := r.db.QueryContext(ctx, query, constants.OutboxStatusPending, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query pending events: %w", err)
 	}
@@ -82,6 +83,7 @@ func (r *OutboxRepository) GetPendingEvents(ctx context.Context, limit int) ([]O
 	for rows.Next() {
 		var e OutboxEvent
 		if err := rows.Scan(&e.ID, &e.EventType, &e.Payload, &e.RetryCount); err != nil {
+			log.Printf("Warning: failed to scan outbox event: %v", err)
 			continue
 		}
 		events = append(events, e)
@@ -99,7 +101,7 @@ func (r *OutboxRepository) ClaimEvent(ctx context.Context, exec Executor, id str
 	`, constants.TableOutboxEvent)
 
 	var claimedID string
-	err := exec.QueryRowContext(ctx, query, id, "pending").Scan(&claimedID)
+	err := exec.QueryRowContext(ctx, query, id, constants.OutboxStatusPending).Scan(&claimedID)
 	if err == sql.ErrNoRows {
 		return "", nil // Already claimed
 	}
@@ -114,14 +116,14 @@ func (r *OutboxRepository) UpdateStatus(ctx context.Context, exec Executor, id s
 	var query string
 	var args []interface{}
 
-	if status == "processed" {
+	if status == string(constants.OutboxStatusProcessed) {
 		query = fmt.Sprintf(`
 			UPDATE %s 
 			SET status = ?, processed_date = NOW(), last_modified_date = NOW()
 			WHERE id = ?
 		`, constants.TableOutboxEvent)
 		args = []interface{}{status, id}
-	} else if status == "failed" {
+	} else if status == string(constants.OutboxStatusFailed) {
 		query = fmt.Sprintf(`
 			UPDATE %s 
 			SET status = ?, error_message = ?, last_modified_date = NOW()
@@ -155,7 +157,7 @@ func (r *OutboxRepository) CleanupProcessed(ctx context.Context, cutoff time.Tim
 		WHERE status = ? AND processed_date < ?
 	`, constants.TableOutboxEvent)
 
-	result, err := r.db.ExecContext(ctx, query, "processed", cutoff)
+	result, err := r.db.ExecContext(ctx, query, constants.OutboxStatusProcessed, cutoff)
 	if err != nil {
 		return 0, err
 	}

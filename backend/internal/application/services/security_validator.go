@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -32,7 +33,7 @@ func NewSecurityValidator(permissions *PermissionService, metadata *MetadataServ
 }
 
 // ValidateAndRewrite parses the SQL, validates permissions, and rewrites it for RLS
-func (v *SecurityValidator) ValidateAndRewrite(sql string, params []interface{}, user *models.UserSession) (string, []interface{}, error) {
+func (v *SecurityValidator) ValidateAndRewrite(ctx context.Context, sql string, params []interface{}, user *models.UserSession) (string, []interface{}, error) {
 	// 1. Parse SQL
 	stmtNodes, _, err := v.parser.Parse(sql, "", "")
 	if err != nil {
@@ -69,7 +70,7 @@ func (v *SecurityValidator) ValidateAndRewrite(sql string, params []interface{},
 	// We do this after the visitor pass to avoid modifying AST while visiting it
 	// For simple single-table queries, we inject into the Where clause.
 	if !constants.IsSuperUser(user.ProfileID) {
-		if err := v.applyRLS(selectStmt, user); err != nil {
+		if err := v.applyRLS(ctx, selectStmt, user); err != nil {
 			return "", nil, err
 		}
 	}
@@ -88,7 +89,7 @@ func (v *SecurityValidator) ValidateAndRewrite(sql string, params []interface{},
 }
 
 // applyRLS injects "AND owner_id = 'userID'" into the WHERE clause
-func (v *SecurityValidator) applyRLS(stmt *ast.SelectStmt, user *models.UserSession) error {
+func (v *SecurityValidator) applyRLS(ctx context.Context, stmt *ast.SelectStmt, user *models.UserSession) error {
 	// Strategy: If the FROM clause targets a table that needs RLS, add filter.
 	// Limitation: Complex joins are hard. We target the *primary* table in standard CRM usage.
 
@@ -110,7 +111,7 @@ func (v *SecurityValidator) applyRLS(stmt *ast.SelectStmt, user *models.UserSess
 	objName := tn.Name.O
 
 	// Check metadata for owner_id presence
-	schema := v.metadata.GetSchema(objName)
+	schema := v.metadata.GetSchema(ctx, objName)
 	if schema == nil {
 		return nil // Unknown object, likely system or error, let permission check handle it
 	}

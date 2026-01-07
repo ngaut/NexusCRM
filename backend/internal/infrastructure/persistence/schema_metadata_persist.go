@@ -157,7 +157,7 @@ func (r *SchemaRepository) BatchSaveFieldMetadata(fields []FieldWithContext, exe
 				return err
 			}
 
-			valuePlaceholders = append(valuePlaceholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())")
+			valuePlaceholders = append(valuePlaceholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())")
 			args = append(args, fc.FieldID, fc.ObjectID)
 			args = append(args, values...)
 		}
@@ -166,7 +166,7 @@ func (r *SchemaRepository) BatchSaveFieldMetadata(fields []FieldWithContext, exe
 			id, object_id, api_name, label, type, required, `+"`unique`"+`, 
 			default_value, help_text, is_system, is_name_field, options,
 			min_length, max_length, reference_to, formula, return_type, rollup_config,
-			is_master_detail, delete_rule, relationship_name,
+			is_master_detail, is_polymorphic, delete_rule, relationship_name,
 			created_date, last_modified_date
 		) VALUES %s
 		ON DUPLICATE KEY UPDATE
@@ -186,6 +186,7 @@ func (r *SchemaRepository) BatchSaveFieldMetadata(fields []FieldWithContext, exe
 			return_type = VALUES(return_type),
 			rollup_config = VALUES(rollup_config),
 			is_master_detail = VALUES(is_master_detail),
+			is_polymorphic = VALUES(is_polymorphic),
 			delete_rule = VALUES(delete_rule),
 			relationship_name = VALUES(relationship_name),
 			last_modified_date = NOW()
@@ -219,21 +220,22 @@ func (r *SchemaRepository) PrepareFieldForBatch(tableName string, col schema.Col
 		// e.g. "created_by_id" -> "Created By Id"
 		// We can also strip "_id" suffix if desired, but for now simple humanization is safer
 		name := strings.ReplaceAll(col.Name, "_", " ")
-		label = strings.Title(name) // Standard Go strings.Title (or use a better caser if available)
+		label = strings.Title(name)
 	}
 
 	f := FieldWithContext{
 		ObjectID: objectID,
 		FieldID:  fieldID,
 		Field: &models.FieldMetadata{
-			APIName:     col.Name,
-			Label:       label,
-			Type:        models.FieldType(fieldType),
-			Required:    required,
-			Unique:      col.Unique,
-			IsSystem:    isSystem,
-			IsNameField: isNameField,
-			ReferenceTo: WrapStringToSlice(col.ReferenceTo),
+			APIName:       col.Name,
+			Label:         label,
+			Type:          models.FieldType(fieldType),
+			Required:      required,
+			Unique:        col.Unique,
+			IsSystem:      isSystem,
+			IsNameField:   isNameField,
+			ReferenceTo:   col.ReferenceTo,
+			IsPolymorphic: col.IsPolymorphic,
 		},
 	}
 

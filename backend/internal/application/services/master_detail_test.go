@@ -67,7 +67,7 @@ func TestMasterDetail_CascadeDelete(t *testing.T) {
 	}
 	require.NoError(t, schemaMgr.CreateTableWithStrictMetadata(context.Background(), masterDef, masterMeta))
 	// Clean up schema after test
-	defer schemaMgr.DropTable(masterObjName)
+	defer func() { _ = schemaMgr.DropTable(masterObjName) }()
 
 	// Define Detail Object (Task)
 	detailObjName := fmt.Sprintf("task_%d", time.Now().UnixNano())
@@ -91,7 +91,7 @@ func TestMasterDetail_CascadeDelete(t *testing.T) {
 		SharingModel: models.SharingModel(constants.SharingModelPublicReadWrite),
 	}
 	require.NoError(t, schemaMgr.CreateTableWithStrictMetadata(context.Background(), detailDef, detailMeta))
-	defer schemaMgr.DropTable(detailObjName)
+	defer func() { _ = schemaMgr.DropTable(detailObjName) }()
 
 	// 4. Update Metadata to enforce Master-Detail
 	// CreateTableFromDefinition registers basic metadata. We need to update the relationship field.

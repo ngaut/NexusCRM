@@ -37,7 +37,7 @@ func TestMetadataService_Objects_ThemeColor_Integration(t *testing.T) {
 	}
 
 	// 4. Create Object
-	err := ms.CreateSchemaOptimized(&objDef)
+	err := ms.CreateSchemaOptimized(context.Background(), &objDef)
 	assert.NoError(t, err)
 
 	// 5. Verify Metadata Persistence

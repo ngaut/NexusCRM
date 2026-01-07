@@ -123,14 +123,6 @@ func ContainsStringIgnoreCase(slice []string, item string) bool {
 	return false
 }
 
-// WrapStringToSlice converts a single string to a slice (for ReferenceTo field conversion)
-func WrapStringToSlice(s string) []string {
-	if s == "" {
-		return nil
-	}
-	return []string{s}
-}
-
 // SliceToNullJSON converts a []string to sql.NullString as JSON array
 func SliceToNullJSON(slice []string) sql.NullString {
 	if len(slice) == 0 {
@@ -220,7 +212,7 @@ func ExecuteQuery(ctx context.Context, executor Executor, q query.QueryResult) (
 	if err != nil {
 		return nil, fmt.Errorf("query execution error: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	results, err := ScanRows(rows)
 	if err != nil {
@@ -266,7 +258,7 @@ func GrantInitialObjectPermissions(exec Executor, objectAPIName string, tablePro
 	if err != nil {
 		return fmt.Errorf("failed to fetch profiles: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	for rows.Next() {
 		var profileID string

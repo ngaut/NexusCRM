@@ -115,7 +115,7 @@ func (fe *FlowExecutor) mapEventToTrigger(eventType string) string {
 
 // executeMatchingFlows finds and executes Flows that match the trigger
 func (fe *FlowExecutor) executeMatchingFlows(ctx context.Context, triggerType string, payload RecordEventPayload) error {
-	flows := fe.metadata.GetFlows()
+	flows := fe.metadata.GetFlows(ctx)
 	log.Printf("🔍 FlowExecutor: checking %d flows for trigger '%s' on object '%s'", len(flows), triggerType, payload.ObjectAPIName)
 
 	for _, flow := range flows {
@@ -408,7 +408,7 @@ func (fe *FlowExecutor) executeApprovalLogic(ctx context.Context, config map[str
 
 	// For multistep flows, create instance and find approval step
 	if flowID != "" && fe.flowInstanceManager != nil {
-		flow := fe.metadata.GetFlow(flowID)
+		flow := fe.metadata.GetFlow(ctx, flowID)
 		if flow != nil && flow.FlowType == constants.FlowTypeMultistep {
 			instance, err := fe.flowInstanceManager.CreateInstance(ctx, flow, payload.ObjectAPIName, recordID, payload.CurrentUser)
 			if err != nil {

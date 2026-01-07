@@ -153,9 +153,7 @@ func (b *Builder) Join(joinType string, table string, alias string, on string) *
 func (b *Builder) Where(condition string, value ...interface{}) *Builder {
 	b.whereClauses = append(b.whereClauses, condition)
 	if len(value) > 0 {
-		for _, v := range value {
-			b.params = append(b.params, v)
-		}
+		b.params = append(b.params, value...)
 	}
 	return b
 }

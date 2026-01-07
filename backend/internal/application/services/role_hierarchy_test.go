@@ -34,7 +34,9 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 	// Clean up any existing test roles
 	cleanupRoles := []string{repRoleID, managerRoleID, vpRoleID, ceoRoleID}
 	for _, roleID := range cleanupRoles {
-		db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableRole), roleID)
+		if _, err := db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableRole), roleID); err != nil {
+			t.Logf("Failed to cleanup role %s: %v", roleID, err)
+		}
 	}
 
 	// Create roles in reverse order (children first, then parents)
@@ -63,7 +65,9 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 	// Clean up test users
 	testUsers := []string{ceoUserID, vpUserID, managerUserID, repUserID, siblingUserID}
 	for _, userID := range testUsers {
-		db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableUser), userID)
+		if _, err := db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableUser), userID); err != nil {
+			t.Logf("Failed to cleanup user %s: %v", userID, err)
+		}
 	}
 
 	profileID := constants.ProfileStandardUser
@@ -190,10 +194,14 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 
 	// Cleanup
 	for _, userID := range testUsers {
-		db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableUser), userID)
+		if _, err := db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableUser), userID); err != nil {
+			t.Logf("Failed to cleanup user %s: %v", userID, err)
+		}
 	}
 	for _, roleID := range cleanupRoles {
-		db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableRole), roleID)
+		if _, err := db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableRole), roleID); err != nil {
+			t.Logf("Failed to cleanup role %s: %v", roleID, err)
+		}
 	}
 
 	t.Log("✅ Role Hierarchy tests completed successfully")

@@ -10,7 +10,7 @@ import (
 // ==================== Action CRUD ====================
 
 // CreateAction creates a new action
-func (ms *MetadataService) CreateAction(action *models.ActionMetadata) error {
+func (ms *MetadataService) CreateAction(ctx context.Context, action *models.ActionMetadata) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
@@ -19,23 +19,23 @@ func (ms *MetadataService) CreateAction(action *models.ActionMetadata) error {
 		action.ID = GenerateID()
 	}
 	if action.Name == "" {
-		return fmt.Errorf("Action Name is required")
+		return fmt.Errorf("action name is required")
 	}
 	if action.Label == "" {
-		return fmt.Errorf("Action Label is required")
+		return fmt.Errorf("action label is required")
 	}
 	if action.Type == "" {
-		return fmt.Errorf("Action Type is required")
+		return fmt.Errorf("action type is required")
 	}
 
 	// Check for duplicate ID
-	existing, _ := ms.repo.GetAction(context.Background(), action.ID)
+	existing, _ := ms.repo.GetAction(ctx, action.ID)
 	if existing != nil {
 		return fmt.Errorf("action with ID '%s' already exists", action.ID)
 	}
 
 	// Check for duplicate (object_api_name, name) - this is the unique constraint
-	exists, err := ms.repo.CheckActionExists(context.Background(), action.ObjectAPIName, action.Name)
+	exists, err := ms.repo.CheckActionExists(ctx, action.ObjectAPIName, action.Name)
 	if err != nil {
 		return fmt.Errorf("failed to check for existing action: %w", err)
 	}
@@ -44,7 +44,7 @@ func (ms *MetadataService) CreateAction(action *models.ActionMetadata) error {
 	}
 
 	// Insert into database via Repo
-	if err := ms.repo.CreateAction(context.Background(), action); err != nil {
+	if err := ms.repo.CreateAction(ctx, action); err != nil {
 		return fmt.Errorf("failed to insert action: %w", err)
 	}
 
@@ -52,12 +52,12 @@ func (ms *MetadataService) CreateAction(action *models.ActionMetadata) error {
 }
 
 // UpdateAction updates an existing action
-func (ms *MetadataService) UpdateAction(actionID string, updates *models.ActionMetadata) error {
+func (ms *MetadataService) UpdateAction(ctx context.Context, actionID string, updates *models.ActionMetadata) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	// Find existing action
-	existing, err := ms.repo.GetAction(context.Background(), actionID)
+	existing, err := ms.repo.GetAction(ctx, actionID)
 	if err != nil || existing == nil {
 		return fmt.Errorf("action with ID '%s' not found", actionID)
 	}
@@ -66,7 +66,7 @@ func (ms *MetadataService) UpdateAction(actionID string, updates *models.ActionM
 	updates.ID = actionID
 
 	// Update in database via Repo
-	if err := ms.repo.UpdateAction(context.Background(), actionID, updates); err != nil {
+	if err := ms.repo.UpdateAction(ctx, actionID, updates); err != nil {
 		return fmt.Errorf("failed to update action: %w", err)
 	}
 
@@ -74,9 +74,9 @@ func (ms *MetadataService) UpdateAction(actionID string, updates *models.ActionM
 }
 
 // DeleteAction deletes an action
-func (ms *MetadataService) DeleteAction(actionID string) error {
+func (ms *MetadataService) DeleteAction(ctx context.Context, actionID string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	return ms.repo.DeleteAction(context.Background(), actionID)
+	return ms.repo.DeleteAction(ctx, actionID)
 }

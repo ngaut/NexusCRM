@@ -14,7 +14,7 @@ import (
 // ==================== Schema CRUD Methods ====================
 
 // CreateSchema creates a new custom object schema and physical table
-func (ms *MetadataService) CreateSchema(schema *models.ObjectMetadata) error {
+func (ms *MetadataService) CreateSchema(ctx context.Context, schema *models.ObjectMetadata) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
@@ -36,7 +36,7 @@ func (ms *MetadataService) CreateSchema(schema *models.ObjectMetadata) error {
 	}
 
 	// Check if metadata exists in DB
-	existing, err := ms.repo.GetSchemaByAPIName(context.Background(), schema.APIName)
+	existing, err := ms.repo.GetSchemaByAPIName(ctx, schema.APIName)
 	if err == nil && existing != nil {
 		return errors.NewConflictError("Object Metadata", "api_name", schema.APIName)
 	}
@@ -51,7 +51,7 @@ func (ms *MetadataService) CreateSchema(schema *models.ObjectMetadata) error {
 	}
 
 	// Create Table (Strict Mode: Fails if metadata conflicts)
-	if err := ms.schemaMgr.CreateTableWithStrictMetadata(context.Background(), def, schema); err != nil {
+	if err := ms.schemaMgr.CreateTableWithStrictMetadata(ctx, def, schema); err != nil {
 		return fmt.Errorf("failed to create schema via SchemaManager: %w", err)
 	}
 
@@ -60,7 +60,7 @@ func (ms *MetadataService) CreateSchema(schema *models.ObjectMetadata) error {
 
 	// Persist Layout to _System_Layout
 	// Persist Layout to _System_Layout via Repo
-	if err := ms.repo.UpsertLayout(context.Background(), &defaultLayout); err != nil {
+	if err := ms.repo.UpsertLayout(ctx, &defaultLayout); err != nil {
 		log.Printf("⚠️ Failed to auto-create default layout for %s: %v", schema.APIName, err)
 	} else {
 		log.Printf("✅ Auto-created default layout for %s", schema.APIName)
@@ -72,7 +72,7 @@ func (ms *MetadataService) CreateSchema(schema *models.ObjectMetadata) error {
 
 // CreateSchemaOptimized creates a new object schema using batch metadata registration
 // This is faster than CreateSchema for objects with many fields
-func (ms *MetadataService) CreateSchemaOptimized(schema *models.ObjectMetadata) error {
+func (ms *MetadataService) CreateSchemaOptimized(ctx context.Context, schema *models.ObjectMetadata) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
@@ -90,14 +90,14 @@ func (ms *MetadataService) CreateSchemaOptimized(schema *models.ObjectMetadata) 
 	}
 
 	// Check if metadata exists in DB
-	existing, err := ms.repo.GetSchemaByAPIName(context.Background(), schema.APIName)
+	existing, err := ms.repo.GetSchemaByAPIName(ctx, schema.APIName)
 	if err == nil && existing != nil {
 		return errors.NewConflictError("Object Metadata", "api_name", schema.APIName)
 	}
 
 	// Create table with STRICT metadata registration (Fails on Unique Constraint)
 	// Note: PrepareTableDefinition updates schema with defaults, so we pass it back
-	if err := ms.schemaMgr.CreateTableWithStrictMetadata(context.Background(), def, schema); err != nil {
+	if err := ms.schemaMgr.CreateTableWithStrictMetadata(ctx, def, schema); err != nil {
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
 
@@ -114,12 +114,12 @@ func (ms *MetadataService) CreateSchemaOptimized(schema *models.ObjectMetadata) 
 // InvalidateCache/invalidateCacheLocked moved to metadata_service.go
 
 // UpdateSchema updates an existing object schema
-func (ms *MetadataService) UpdateSchema(apiName string, updates *models.ObjectMetadata) error {
+func (ms *MetadataService) UpdateSchema(ctx context.Context, apiName string, updates *models.ObjectMetadata) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	// Check if exists
-	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), apiName)
+	obj, err := ms.repo.GetSchemaByAPIName(ctx, apiName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object with API name '%s' not found", apiName)
 	}
@@ -149,6 +149,9 @@ func (ms *MetadataService) UpdateSchema(apiName string, updates *models.ObjectMe
 	if updates.SharingModel != "" {
 		obj.SharingModel = updates.SharingModel
 	}
+	if updates.ThemeColor != nil {
+		obj.ThemeColor = updates.ThemeColor
+	}
 
 	// Use helper to persist changes
 	if err := ms.schemaMgr.SaveObjectMetadata(obj, ms.db); err != nil {
@@ -160,12 +163,12 @@ func (ms *MetadataService) UpdateSchema(apiName string, updates *models.ObjectMe
 }
 
 // DeleteSchema deletes a custom object schema and drops its table
-func (ms *MetadataService) DeleteSchema(apiName string) error {
+func (ms *MetadataService) DeleteSchema(ctx context.Context, apiName string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	// Check if exists
-	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), apiName)
+	obj, err := ms.repo.GetSchemaByAPIName(ctx, apiName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object with API name '%s' not found", apiName)
 	}
@@ -295,7 +298,7 @@ func (ms *MetadataService) BatchCreateSchemas(schemas []models.ObjectMetadata) e
 			}
 			for _, field := range schema.Fields {
 				for _, profileID := range profiles {
-					fieldPerm := models.FieldPermission{
+					fieldPerm := models.SystemFieldPerms{
 						ProfileID:     &profileID,
 						ObjectAPIName: schema.APIName,
 						FieldAPIName:  field.APIName,

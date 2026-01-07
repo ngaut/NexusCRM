@@ -7,7 +7,7 @@ import (
 )
 
 // FieldType is defined in pkg/constants
-type FieldType = constants.FieldType
+type FieldType = constants.SchemaFieldType
 
 // SharingModel is defined in pkg/constants
 type SharingModel = constants.SharingModel

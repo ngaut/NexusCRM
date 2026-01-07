@@ -23,7 +23,7 @@ func NewPermissionRepository(db *sql.DB) *PermissionRepository {
 }
 
 // LoadObjectPermission queries the database for a specific object permission
-func (r *PermissionRepository) LoadObjectPermission(ctx context.Context, profileID, objectAPIName string) (*models.ObjectPermission, error) {
+func (r *PermissionRepository) LoadObjectPermission(ctx context.Context, profileID, objectAPIName string) (*models.SystemObjectPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT profile_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all
 		FROM %s
@@ -31,7 +31,7 @@ func (r *PermissionRepository) LoadObjectPermission(ctx context.Context, profile
 		LIMIT 1
 	`, constants.TableObjectPerms)
 
-	var p models.ObjectPermission
+	var p models.SystemObjectPerms
 	err := r.db.QueryRowContext(ctx, query, profileID, strings.ToLower(objectAPIName)).Scan(
 		&p.ProfileID, &p.ObjectAPIName,
 		&p.AllowRead, &p.AllowCreate, &p.AllowEdit, &p.AllowDelete,
@@ -49,7 +49,7 @@ func (r *PermissionRepository) LoadObjectPermission(ctx context.Context, profile
 }
 
 // LoadFieldPermission queries the database for a specific field permission
-func (r *PermissionRepository) LoadFieldPermission(ctx context.Context, profileID, objectAPIName, fieldAPIName string) (*models.FieldPermission, error) {
+func (r *PermissionRepository) LoadFieldPermission(ctx context.Context, profileID, objectAPIName, fieldAPIName string) (*models.SystemFieldPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT profile_id, object_api_name, field_api_name, readable, editable
 		FROM %s
@@ -57,7 +57,7 @@ func (r *PermissionRepository) LoadFieldPermission(ctx context.Context, profileI
 		LIMIT 1
 	`, constants.TableFieldPerms)
 
-	var p models.FieldPermission
+	var p models.SystemFieldPerms
 	err := r.db.QueryRowContext(ctx, query, profileID, strings.ToLower(objectAPIName), strings.ToLower(fieldAPIName)).Scan(
 		&p.ProfileID, &p.ObjectAPIName, &p.FieldAPIName,
 		&p.Readable, &p.Editable,
@@ -74,7 +74,7 @@ func (r *PermissionRepository) LoadFieldPermission(ctx context.Context, profileI
 }
 
 // LoadEffectiveObjectPermission loads permissions considering Profile AND Permission Sets
-func (r *PermissionRepository) LoadEffectiveObjectPermission(ctx context.Context, user *models.UserSession, objectAPIName string) (*models.ObjectPermission, error) {
+func (r *PermissionRepository) LoadEffectiveObjectPermission(ctx context.Context, user *models.UserSession, objectAPIName string) (*models.SystemObjectPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT 
 			MAX(allow_read), MAX(allow_create), MAX(allow_edit), MAX(allow_delete), MAX(view_all), MAX(modify_all)
@@ -87,7 +87,7 @@ func (r *PermissionRepository) LoadEffectiveObjectPermission(ctx context.Context
 		)
 	`, constants.TableObjectPerms, constants.TablePermissionSetAssignment)
 
-	var p models.ObjectPermission
+	var p models.SystemObjectPerms
 	p.ObjectAPIName = objectAPIName
 
 	var rr, c, e, d, va, ma sql.NullBool
@@ -114,7 +114,7 @@ func (r *PermissionRepository) LoadEffectiveObjectPermission(ctx context.Context
 }
 
 // LoadEffectiveFieldPermission loads field permissions considering Profile AND Permission Sets
-func (r *PermissionRepository) LoadEffectiveFieldPermission(ctx context.Context, user *models.UserSession, objectAPIName, fieldAPIName string) (*models.FieldPermission, error) {
+func (r *PermissionRepository) LoadEffectiveFieldPermission(ctx context.Context, user *models.UserSession, objectAPIName, fieldAPIName string) (*models.SystemFieldPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT MAX(readable), MAX(editable)
 		FROM %s
@@ -136,7 +136,7 @@ func (r *PermissionRepository) LoadEffectiveFieldPermission(ctx context.Context,
 		return nil, nil
 	}
 
-	return &models.FieldPermission{
+	return &models.SystemFieldPerms{
 		ObjectAPIName: objectAPIName,
 		FieldAPIName:  fieldAPIName,
 		Readable:      readable.Bool,
@@ -145,7 +145,7 @@ func (r *PermissionRepository) LoadEffectiveFieldPermission(ctx context.Context,
 }
 
 // ListObjectPermissions retrieves all object permissions for a profile
-func (r *PermissionRepository) ListObjectPermissions(ctx context.Context, profileID string) ([]models.ObjectPermission, error) {
+func (r *PermissionRepository) ListObjectPermissions(ctx context.Context, profileID string) ([]models.SystemObjectPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT profile_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all
 		FROM %s
@@ -158,9 +158,9 @@ func (r *PermissionRepository) ListObjectPermissions(ctx context.Context, profil
 	}
 	defer rows.Close()
 
-	var perms []models.ObjectPermission
+	var perms []models.SystemObjectPerms
 	for rows.Next() {
-		var p models.ObjectPermission
+		var p models.SystemObjectPerms
 		if err := rows.Scan(&p.ProfileID, &p.ObjectAPIName, &p.AllowRead, &p.AllowCreate, &p.AllowEdit, &p.AllowDelete, &p.ViewAll, &p.ModifyAll); err != nil {
 			continue
 		}
@@ -171,7 +171,7 @@ func (r *PermissionRepository) ListObjectPermissions(ctx context.Context, profil
 }
 
 // ListFieldPermissions retrieves all field permissions for a profile
-func (r *PermissionRepository) ListFieldPermissions(ctx context.Context, profileID string) ([]models.FieldPermission, error) {
+func (r *PermissionRepository) ListFieldPermissions(ctx context.Context, profileID string) ([]models.SystemFieldPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT profile_id, object_api_name, field_api_name, readable, editable
 		FROM %s
@@ -184,9 +184,9 @@ func (r *PermissionRepository) ListFieldPermissions(ctx context.Context, profile
 	}
 	defer rows.Close()
 
-	var perms []models.FieldPermission
+	var perms []models.SystemFieldPerms
 	for rows.Next() {
-		var p models.FieldPermission
+		var p models.SystemFieldPerms
 		if err := rows.Scan(&p.ProfileID, &p.ObjectAPIName, &p.FieldAPIName, &p.Readable, &p.Editable); err != nil {
 			continue
 		}
@@ -197,16 +197,16 @@ func (r *PermissionRepository) ListFieldPermissions(ctx context.Context, profile
 }
 
 // UpsertObjectPermission creates or updates an object permission
-func (r *PermissionRepository) UpsertObjectPermission(ctx context.Context, perm models.ObjectPermission) error {
+func (r *PermissionRepository) UpsertObjectPermission(ctx context.Context, perm models.SystemObjectPerms) error {
 	return r.upsertObjectPermission(ctx, r.db, perm)
 }
 
 // UpsertObjectPermissionTx creates or updates an object permission within a transaction
-func (r *PermissionRepository) UpsertObjectPermissionTx(ctx context.Context, tx *sql.Tx, perm models.ObjectPermission) error {
+func (r *PermissionRepository) UpsertObjectPermissionTx(ctx context.Context, tx *sql.Tx, perm models.SystemObjectPerms) error {
 	return r.upsertObjectPermission(ctx, tx, perm)
 }
 
-func (r *PermissionRepository) upsertObjectPermission(ctx context.Context, exec Executor, perm models.ObjectPermission) error {
+func (r *PermissionRepository) upsertObjectPermission(ctx context.Context, exec Executor, perm models.SystemObjectPerms) error {
 	id := utils.GenerateID()
 	query := fmt.Sprintf(`
 		INSERT INTO %s (id, profile_id, permission_set_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all, created_date, last_modified_date)
@@ -226,16 +226,16 @@ func (r *PermissionRepository) upsertObjectPermission(ctx context.Context, exec 
 }
 
 // UpsertFieldPermission creates or updates a field permission
-func (r *PermissionRepository) UpsertFieldPermission(ctx context.Context, perm models.FieldPermission) error {
+func (r *PermissionRepository) UpsertFieldPermission(ctx context.Context, perm models.SystemFieldPerms) error {
 	return r.upsertFieldPermission(ctx, r.db, perm)
 }
 
 // UpsertFieldPermissionTx creates or updates a field permission within a transaction
-func (r *PermissionRepository) UpsertFieldPermissionTx(ctx context.Context, tx *sql.Tx, perm models.FieldPermission) error {
+func (r *PermissionRepository) UpsertFieldPermissionTx(ctx context.Context, tx *sql.Tx, perm models.SystemFieldPerms) error {
 	return r.upsertFieldPermission(ctx, tx, perm)
 }
 
-func (r *PermissionRepository) upsertFieldPermission(ctx context.Context, exec Executor, perm models.FieldPermission) error {
+func (r *PermissionRepository) upsertFieldPermission(ctx context.Context, exec Executor, perm models.SystemFieldPerms) error {
 	id := utils.GenerateID()
 	query := fmt.Sprintf(`
 		INSERT INTO %s (id, profile_id, permission_set_id, object_api_name, field_api_name, readable, editable, created_date, last_modified_date)
@@ -306,7 +306,7 @@ func (r *PermissionRepository) GrantInitialPermissions(ctx context.Context, obje
 // ==================== Permission Set Extensions ====================
 
 // ListPermissionSetObjectPermissions retrieves all object permissions for a permission set
-func (r *PermissionRepository) ListPermissionSetObjectPermissions(ctx context.Context, permissionSetID string) ([]models.ObjectPermission, error) {
+func (r *PermissionRepository) ListPermissionSetObjectPermissions(ctx context.Context, permissionSetID string) ([]models.SystemObjectPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT permission_set_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all
 		FROM %s
@@ -319,9 +319,9 @@ func (r *PermissionRepository) ListPermissionSetObjectPermissions(ctx context.Co
 	}
 	defer rows.Close()
 
-	var perms []models.ObjectPermission
+	var perms []models.SystemObjectPerms
 	for rows.Next() {
-		var p models.ObjectPermission
+		var p models.SystemObjectPerms
 		if err := rows.Scan(&p.PermissionSetID, &p.ObjectAPIName, &p.AllowRead, &p.AllowCreate, &p.AllowEdit, &p.AllowDelete, &p.ViewAll, &p.ModifyAll); err != nil {
 			continue
 		}
@@ -331,7 +331,7 @@ func (r *PermissionRepository) ListPermissionSetObjectPermissions(ctx context.Co
 }
 
 // ListPermissionSetFieldPermissions retrieves all field permissions for a permission set
-func (r *PermissionRepository) ListPermissionSetFieldPermissions(ctx context.Context, permissionSetID string) ([]models.FieldPermission, error) {
+func (r *PermissionRepository) ListPermissionSetFieldPermissions(ctx context.Context, permissionSetID string) ([]models.SystemFieldPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT permission_set_id, object_api_name, field_api_name, readable, editable
 		FROM %s
@@ -344,9 +344,9 @@ func (r *PermissionRepository) ListPermissionSetFieldPermissions(ctx context.Con
 	}
 	defer rows.Close()
 
-	var perms []models.FieldPermission
+	var perms []models.SystemFieldPerms
 	for rows.Next() {
-		var p models.FieldPermission
+		var p models.SystemFieldPerms
 		if err := rows.Scan(&p.PermissionSetID, &p.ObjectAPIName, &p.FieldAPIName, &p.Readable, &p.Editable); err != nil {
 			continue
 		}
@@ -356,7 +356,7 @@ func (r *PermissionRepository) ListPermissionSetFieldPermissions(ctx context.Con
 }
 
 // ListEffectiveObjectPermissionsForUser returns aggregated permissions for a user
-func (r *PermissionRepository) ListEffectiveObjectPermissionsForUser(ctx context.Context, userID, profileID string) ([]models.ObjectPermission, error) {
+func (r *PermissionRepository) ListEffectiveObjectPermissionsForUser(ctx context.Context, userID, profileID string) ([]models.SystemObjectPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT 
 			object_api_name,
@@ -375,9 +375,9 @@ func (r *PermissionRepository) ListEffectiveObjectPermissionsForUser(ctx context
 	}
 	defer rows.Close()
 
-	var perms []models.ObjectPermission
+	var perms []models.SystemObjectPerms
 	for rows.Next() {
-		var p models.ObjectPermission
+		var p models.SystemObjectPerms
 		var r, c, e, d, va, ma sql.NullBool
 		if err := rows.Scan(&p.ObjectAPIName, &r, &c, &e, &d, &va, &ma); err != nil {
 			continue
@@ -394,7 +394,7 @@ func (r *PermissionRepository) ListEffectiveObjectPermissionsForUser(ctx context
 }
 
 // ListEffectiveFieldPermissionsForUser returns aggregated field permissions for a user
-func (r *PermissionRepository) ListEffectiveFieldPermissionsForUser(ctx context.Context, userID, profileID string) ([]models.FieldPermission, error) {
+func (r *PermissionRepository) ListEffectiveFieldPermissionsForUser(ctx context.Context, userID, profileID string) ([]models.SystemFieldPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT 
 			object_api_name, field_api_name,
@@ -413,9 +413,9 @@ func (r *PermissionRepository) ListEffectiveFieldPermissionsForUser(ctx context.
 	}
 	defer rows.Close()
 
-	var perms []models.FieldPermission
+	var perms []models.SystemFieldPerms
 	for rows.Next() {
-		var p models.FieldPermission
+		var p models.SystemFieldPerms
 		var r, e sql.NullBool
 		if err := rows.Scan(&p.ObjectAPIName, &p.FieldAPIName, &r, &e); err != nil {
 			continue

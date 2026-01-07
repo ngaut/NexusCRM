@@ -54,9 +54,9 @@ func (r *SystemRepository) GetLogs(ctx context.Context, limit int) ([]*models.Sy
 }
 
 // GetRecentItems retrieves recently viewed items for a user
-func (r *SystemRepository) GetRecentItems(ctx context.Context, userID string, limit int) ([]*models.RecentItem, error) {
+func (r *SystemRepository) GetRecentItems(ctx context.Context, userID string, limit int) ([]*models.SystemRecent, error) {
 	if userID == "" {
-		return []*models.RecentItem{}, nil
+		return []*models.SystemRecent{}, nil
 	}
 
 	if limit <= 0 {
@@ -76,9 +76,9 @@ func (r *SystemRepository) GetRecentItems(ctx context.Context, userID string, li
 	}
 	defer rows.Close()
 
-	items := make([]*models.RecentItem, 0)
+	items := make([]*models.SystemRecent, 0)
 	for rows.Next() {
-		var item models.RecentItem
+		var item models.SystemRecent
 
 		if err := rows.Scan(&item.ID, &item.UserID, &item.ObjectAPIName, &item.RecordID, &item.RecordName, &item.Timestamp); err != nil {
 			continue
@@ -138,7 +138,9 @@ func (r *SystemRepository) GetAllConfigs(ctx context.Context) ([]*models.SystemC
 		}
 
 		config.IsSecret = isSecret != 0
-		config.Description = description
+		if description != nil {
+			config.Description = *description
+		}
 
 		configs = append(configs, &config)
 	}
@@ -186,7 +188,7 @@ func (r *SystemRepository) GetUserIDByEmail(ctx context.Context, email string) (
 }
 
 // BatchUpsertProfiles inserts multiple profiles using direct SQL
-func (r *SystemRepository) BatchUpsertProfiles(ctx context.Context, profiles []models.Profile) error {
+func (r *SystemRepository) BatchUpsertProfiles(ctx context.Context, profiles []models.SystemProfile) error {
 	if len(profiles) == 0 {
 		return nil
 	}

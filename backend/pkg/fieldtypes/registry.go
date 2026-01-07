@@ -43,7 +43,9 @@ func GetRegistry() *Registry {
 		defaultRegistry = &Registry{
 			types: make(map[string]FieldTypeDefinition),
 		}
-		defaultRegistry.loadFromEmbedded()
+		if err := defaultRegistry.loadFromEmbedded(); err != nil {
+			panic("failed to load field types: " + err.Error())
+		}
 	})
 	return defaultRegistry
 }

@@ -55,10 +55,13 @@ func newConnection() (*TiDBConnection, error) {
 		// Remote host (e.g., TiDB Cloud) - register TLS config with ServerName
 		// Use sync.Once to prevent panic on duplicate registration (e.g., in tests)
 		tlsOnce.Do(func() {
-			mysql.RegisterTLSConfig("tidb", &tls.Config{
+			if err := mysql.RegisterTLSConfig("tidb", &tls.Config{
 				MinVersion: tls.VersionTLS12,
 				ServerName: host, // Required for TLS verification
-			})
+			}); err != nil {
+				// Just log as we can't return error from sync.Once
+				fmt.Printf("Failed to register TLS config: %v\n", err)
+			}
 		})
 		tlsParam = "&tls=tidb"
 	}

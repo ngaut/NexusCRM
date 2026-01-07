@@ -12,30 +12,30 @@ import (
 // ==================== Validation Rule CRUD ====================
 
 // CreateValidationRule creates a new validation rule
-func (ms *MetadataService) CreateValidationRule(rule *models.ValidationRule) error {
+func (ms *MetadataService) CreateValidationRule(ctx context.Context, rule *models.ValidationRule) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	// Validate
 	rule.ObjectAPIName = strings.ToLower(rule.ObjectAPIName)
 	if rule.ObjectAPIName == "" {
-		return fmt.Errorf("Object API Name is required")
+		return fmt.Errorf("object API name is required")
 	}
 	if rule.Name == "" {
-		return fmt.Errorf("Rule Name is required")
+		return fmt.Errorf("rule name is required")
 	}
 	if rule.Condition == "" {
-		return fmt.Errorf("Error Condition Formula is required")
+		return fmt.Errorf("error condition formula is required")
 	}
 	if rule.ErrorMessage == "" {
-		return fmt.Errorf("Error Message is required")
+		return fmt.Errorf("error message is required")
 	}
 
 	if rule.ID == "" {
 		rule.ID = GenerateID()
 	}
 
-	if err := ms.repo.CreateValidationRule(context.Background(), rule); err != nil {
+	if err := ms.repo.CreateValidationRule(ctx, rule); err != nil {
 		return fmt.Errorf("failed to insert validation rule: %w", err)
 	}
 
@@ -43,12 +43,12 @@ func (ms *MetadataService) CreateValidationRule(rule *models.ValidationRule) err
 }
 
 // UpdateValidationRule updates an existing validation rule
-func (ms *MetadataService) UpdateValidationRule(id string, updates *models.ValidationRule) error {
+func (ms *MetadataService) UpdateValidationRule(ctx context.Context, id string, updates *models.ValidationRule) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	// Find the rule in DB
-	existingRule, err := ms.repo.GetValidationRule(context.Background(), id)
+	existingRule, err := ms.repo.GetValidationRule(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to get validation rule: %w", err)
 	}
@@ -71,7 +71,7 @@ func (ms *MetadataService) UpdateValidationRule(id string, updates *models.Valid
 	}
 
 	// Update DB
-	if err := ms.repo.UpdateValidationRule(context.Background(), id, existingRule); err != nil {
+	if err := ms.repo.UpdateValidationRule(ctx, id, existingRule); err != nil {
 		return fmt.Errorf("failed to update validation rule: %w", err)
 	}
 
@@ -79,11 +79,11 @@ func (ms *MetadataService) UpdateValidationRule(id string, updates *models.Valid
 }
 
 // DeleteValidationRule deletes a validation rule
-func (ms *MetadataService) DeleteValidationRule(id string) error {
+func (ms *MetadataService) DeleteValidationRule(ctx context.Context, id string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	if err := ms.repo.DeleteValidationRule(context.Background(), id); err != nil {
+	if err := ms.repo.DeleteValidationRule(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete validation rule: %w", err)
 	}
 	return nil

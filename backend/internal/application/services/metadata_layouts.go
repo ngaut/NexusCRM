@@ -13,7 +13,7 @@ import (
 // ==================== Layout Methods ====================
 
 // GetLayout returns the layout for an object
-func (ms *MetadataService) GetLayout(apiName string, profileID *string) *models.PageLayout {
+func (ms *MetadataService) GetLayout(ctx context.Context, apiName string, profileID *string) *models.PageLayout {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
@@ -21,9 +21,9 @@ func (ms *MetadataService) GetLayout(apiName string, profileID *string) *models.
 
 	// 1. If profileID provided, try to find assigned layout
 	if profileID != nil {
-		layoutID, err := ms.repo.GetLayoutIDForProfile(context.Background(), *profileID, apiName)
+		layoutID, err := ms.repo.GetLayoutIDForProfile(ctx, *profileID, apiName)
 		if err == nil && layoutID != "" {
-			l, err := ms.repo.GetLayout(context.Background(), layoutID)
+			l, err := ms.repo.GetLayout(ctx, layoutID)
 			if err == nil && l != nil {
 				layout = l
 			}
@@ -32,7 +32,7 @@ func (ms *MetadataService) GetLayout(apiName string, profileID *string) *models.
 
 	// 2. Fallback: get all layouts for object and pick first
 	if layout == nil {
-		layouts, err := ms.repo.GetLayouts(context.Background(), apiName)
+		layouts, err := ms.repo.GetLayouts(ctx, apiName)
 		if err == nil && len(layouts) > 0 {
 			layout = layouts[0]
 		}
@@ -40,7 +40,7 @@ func (ms *MetadataService) GetLayout(apiName string, profileID *string) *models.
 
 	// 3. Last resort: generate default layout from schema
 	if layout == nil {
-		obj, err := ms.repo.GetSchemaByAPIName(context.Background(), apiName)
+		obj, err := ms.repo.GetSchemaByAPIName(ctx, apiName)
 		if err != nil || obj == nil {
 			return nil
 		}
@@ -78,15 +78,15 @@ func (ms *MetadataService) GetLayout(apiName string, profileID *string) *models.
 
 	// 4. Augment with Related Lists (Auto-Discovery) if missing
 	if layout != nil && len(layout.RelatedLists) == 0 {
-		ms.augmentLayoutWithRelatedLists(layout)
+		ms.augmentLayoutWithRelatedLists(ctx, layout)
 	}
 
 	return layout
 }
 
 // augmentLayoutWithRelatedLists finds objects that lookup to the current object and adds them as related lists
-func (ms *MetadataService) augmentLayoutWithRelatedLists(layout *models.PageLayout) {
-	results, err := ms.repo.GetRelatedListConfigs(context.Background(), layout.ObjectAPIName)
+func (ms *MetadataService) augmentLayoutWithRelatedLists(ctx context.Context, layout *models.PageLayout) {
+	results, err := ms.repo.GetRelatedListConfigs(ctx, layout.ObjectAPIName)
 	if err != nil {
 		log.Printf("⚠️ Failed to query child relationships for %s: %v", layout.ObjectAPIName, err)
 		return
@@ -126,32 +126,32 @@ func (ms *MetadataService) augmentLayoutWithRelatedLists(layout *models.PageLayo
 }
 
 // SaveLayout saves or updates a page layout
-func (ms *MetadataService) SaveLayout(layout *models.PageLayout) error {
+func (ms *MetadataService) SaveLayout(ctx context.Context, layout *models.PageLayout) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	return ms.repo.SaveLayout(context.Background(), layout)
+	return ms.repo.SaveLayout(ctx, layout)
 }
 
 // DeleteLayout soft-deletes a layout
-func (ms *MetadataService) DeleteLayout(layoutID string) error {
+func (ms *MetadataService) DeleteLayout(ctx context.Context, layoutID string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	return ms.repo.DeleteLayout(context.Background(), layoutID)
+	return ms.repo.DeleteLayout(ctx, layoutID)
 }
 
 // AssignLayoutToProfile assigns a layout to a profile
-func (ms *MetadataService) AssignLayoutToProfile(profileID, objectAPIName, layoutID string) error {
+func (ms *MetadataService) AssignLayoutToProfile(ctx context.Context, profileID, objectAPIName, layoutID string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	return ms.repo.AssignLayoutToProfile(context.Background(), profileID, objectAPIName, layoutID)
+	return ms.repo.AssignLayoutToProfile(ctx, profileID, objectAPIName, layoutID)
 }
 
 // addFieldToLayout adds a new field to the first section of the object's default layout
 // NOTE: Assumes ms.mu is already locked
-func (ms *MetadataService) addFieldToLayout(objectAPIName, fieldAPIName string) error {
+func (ms *MetadataService) addFieldToLayout(ctx context.Context, objectAPIName, fieldAPIName string) error {
 	// Lock held by caller
 
 	// 1. Find the default layout. We use SQL because GetLayouts fetches all.
@@ -162,7 +162,7 @@ func (ms *MetadataService) addFieldToLayout(objectAPIName, fieldAPIName string) 
 	// `metadata_layouts.go` original had `err := ms.db.QueryRow...` to get one.
 
 	// Ideally we add `GetLayouts` usage.
-	layouts, err := ms.repo.GetLayouts(context.Background(), objectAPIName)
+	layouts, err := ms.repo.GetLayouts(ctx, objectAPIName)
 	if err != nil {
 		return fmt.Errorf("failed to query layout: %w", err)
 	}
@@ -185,7 +185,7 @@ func (ms *MetadataService) addFieldToLayout(objectAPIName, fieldAPIName string) 
 			layout.Sections[0].Fields = append(layout.Sections[0].Fields, fieldAPIName)
 
 			// 4. Save updated layout
-			if err := ms.repo.SaveLayout(context.Background(), layout); err != nil {
+			if err := ms.repo.SaveLayout(ctx, layout); err != nil {
 				return fmt.Errorf("failed to update layout: %w", err)
 			}
 		}

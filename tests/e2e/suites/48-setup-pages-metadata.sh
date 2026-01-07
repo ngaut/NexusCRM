@@ -94,9 +94,10 @@ test_filter_enabled_pages() {
     }')
     
     if echo "$response" | grep -q '"records"'; then
-        local count=$(echo "$response" | grep -o '"is_enabled":true' | wc -l)
+        # Use jq for robust counting (handles spacing/formatting differences)
+        local count=$(echo "$response" | jq '.records | length')
         echo "  Found $count enabled setup pages"
-        if [ $count -ge 8 ]; then
+        if [ "$count" -ge 8 ]; then
             test_passed "Filter by is_enabled returns expected results"
         else
             test_failed "Expected at least 8 enabled pages, got $count"

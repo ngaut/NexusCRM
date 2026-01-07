@@ -10,17 +10,15 @@ import (
 )
 
 // GetActiveTheme returns the currently active theme
-func (ms *MetadataService) GetActiveTheme() (*models.Theme, error) {
+func (ms *MetadataService) GetActiveTheme(ctx context.Context) (*models.Theme, error) {
 	// No lock needed for simple read (consistent with previous implementation)
-	return ms.repo.GetActiveTheme(context.Background())
+	return ms.repo.GetActiveTheme(ctx)
 }
 
 // UpsertTheme creates or updates a theme
-func (ms *MetadataService) UpsertTheme(theme *models.Theme) error {
+func (ms *MetadataService) UpsertTheme(ctx context.Context, theme *models.Theme) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-
-	ctx := context.Background()
 
 	// Check if exists by Name
 	existing, err := ms.repo.GetThemeByName(ctx, theme.Name)
@@ -50,11 +48,11 @@ func (ms *MetadataService) UpsertTheme(theme *models.Theme) error {
 }
 
 // ActivateTheme sets a specific theme as active and deactivates all others
-func (ms *MetadataService) ActivateTheme(themeID string) error {
+func (ms *MetadataService) ActivateTheme(ctx context.Context, themeID string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	if err := ms.repo.ActivateTheme(context.Background(), themeID); err != nil {
+	if err := ms.repo.ActivateTheme(ctx, themeID); err != nil {
 		return err
 	}
 

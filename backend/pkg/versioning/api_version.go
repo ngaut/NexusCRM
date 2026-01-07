@@ -38,11 +38,15 @@ func ParseVersion(header string) APIVersion {
 	return APIVersion{Major: major, Minor: minor}
 }
 
+type contextKey string
+
+const keyAPIVersion contextKey = "api_version"
+
 // VersionMiddleware injects the API version into the request context
 func VersionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		version := ParseVersion(r.Header.Get("X-API-Version"))
-		ctx := context.WithValue(r.Context(), "api_version", version)
+		ctx := context.WithValue(r.Context(), keyAPIVersion, version)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

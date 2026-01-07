@@ -87,6 +87,7 @@ func (s *ApprovalService) Submit(ctx context.Context, req SubmitRequest, user *m
 		constants.FieldSysApprovalWorkItem_RecordID:      req.RecordID,
 		constants.FieldSysApprovalWorkItem_Status:        constants.ApprovalStatusPending,
 		constants.FieldSysApprovalWorkItem_SubmittedByID: user.ID,
+		constants.FieldSysApprovalWorkItem_SubmittedDate: time.Now().UTC(),
 		constants.FieldSysApprovalWorkItem_ApproverID:    approverID,
 		constants.FieldSysApprovalWorkItem_Comments:      req.Comments,
 	}

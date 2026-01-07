@@ -20,11 +20,11 @@ type MockMetadataService struct {
 	flows []*models.Flow
 }
 
-func (m *MockMetadataService) GetFlows() []*models.Flow {
+func (m *MockMetadataService) GetFlows(ctx context.Context) []*models.Flow {
 	return m.flows
 }
 
-func (m *MockMetadataService) GetFlow(id string) *models.Flow {
+func (m *MockMetadataService) GetFlow(ctx context.Context, id string) *models.Flow {
 	for _, f := range m.flows {
 		if f.ID == id {
 			return f

@@ -24,7 +24,7 @@ func (ps *PersistenceService) Insert(
 	data models.SObject,
 	currentUser *models.UserSession,
 ) (models.SObject, error) {
-	schema, err := ps.prepareOperation(objectName, constants.PermCreate, currentUser)
+	schema, err := ps.prepareOperation(ctx, objectName, constants.PermCreate, currentUser)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (ps *PersistenceService) Insert(
 	}
 
 	// Validate Static Rules
-	validationRules := ps.metadata.GetValidationRules(objectName)
+	validationRules := ps.metadata.GetValidationRules(ctx, objectName)
 	if err := ps.validator.ValidateRecord(data, schema, validationRules, nil); err != nil {
 		return nil, err
 	}

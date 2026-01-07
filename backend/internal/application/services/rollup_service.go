@@ -31,7 +31,7 @@ func NewRollupService(db *sql.DB, metadata *MetadataService, txManager *Transact
 // The tx parameter ensures rollup updates participate in the caller's transaction for ACID compliance.
 // Pass nil for tx to execute outside a transaction (not recommended for data consistency).
 func (rs *RollupService) ProcessRollups(ctx context.Context, tx *sql.Tx, childObjName string, childRecord models.SObject) error {
-	affected, err := rs.FindAffectedRollups(childObjName, childRecord)
+	affected, err := rs.FindAffectedRollups(ctx, childObjName, childRecord)
 	if err != nil {
 		return err
 	}
@@ -73,11 +73,11 @@ type AffectedRollup struct {
 
 // FindAffectedRollups identifies parent records that need rollup recalculation
 // based on a change to a child record.
-func (rs *RollupService) FindAffectedRollups(childObjName string, childRecord models.SObject) ([]AffectedRollup, error) {
+func (rs *RollupService) FindAffectedRollups(ctx context.Context, childObjName string, childRecord models.SObject) ([]AffectedRollup, error) {
 	var affected []AffectedRollup
 
 	// iterate over all schemas to find objects that have a rollup summary pointing to this child object
-	schemas := rs.metadata.GetSchemas()
+	schemas := rs.metadata.GetSchemas(ctx)
 	for _, parentSchema := range schemas {
 		for _, field := range parentSchema.Fields {
 			// Check if it's a Rollup Summary field

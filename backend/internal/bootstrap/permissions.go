@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"context"
 	_ "embed"
 	"log"
 
@@ -38,7 +39,7 @@ func InitializePermissions(permSvc *services.PermissionService, metadata *servic
 
 	// Step 2: Ensure ALL objects in metadata have permissions for system_admin and standard_user
 	profiles := []string{constants.ProfileSystemAdmin, constants.ProfileStandardUser}
-	schemas := metadata.GetSchemas()
+	schemas := metadata.GetSchemas(context.Background())
 
 	log.Printf("   ...Batching permission updates for %d objects across %d profiles...", len(schemas), len(profiles))
 
@@ -75,7 +76,7 @@ func InitializePermissions(permSvc *services.PermissionService, metadata *servic
 				}
 			}
 
-			perm := models.ObjectPermission{
+			perm := models.SystemObjectPerms{
 				ProfileID:     &profileID,
 				ObjectAPIName: schema.APIName,
 				AllowRead:     read,

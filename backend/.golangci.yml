@@ -1,0 +1,52 @@
+# GolangCI-Lint Configuration (v2 format)
+# This file documents deliberate linting policy decisions for the NexusCRM backend.
+
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - staticcheck
+  settings:
+    errcheck:
+      # Exclude specific function calls from errcheck.
+      # These are deliberate policy decisions, not workarounds.
+      exclude-functions:
+        # sql.Rows.Close() errors are extremely rare (only on catastrophic connection failures)
+        # and there's no meaningful recovery action. Logging would just add noise.
+        - (*database/sql.Rows).Close
+        - (database/sql.Rows).Close
+        # sql.DB.Close() is called in defers at shutdown - errors are unrecoverable
+        - (*database/sql.DB).Close
+        - (database/sql.DB).Close
+        # TLS config registration errors are handled via sync.Once; can't return from init
+        - github.com/go-sql-driver/mysql.RegisterTLSConfig
+
+    staticcheck:
+      checks:
+        - "all"
+        # Style preferences (QF = quickfix suggestions)
+        - "-QF1001"  # "could apply De Morgan's law" - readability preference
+        - "-QF1003"  # "could use tagged switch" - style preference
+        - "-QF1007"  # "could merge conditional" - style preference
+        - "-QF1008"  # "could remove embedded field from selector" - readability preference
+        - "-QF1011"  # "could omit type from declaration" - style preference
+        # Style preferences (ST = style)
+        - "-ST1000"  # package comments - not critical for dev stage
+        - "-ST1003"  # ID naming conventions - existing codebase uses mixed style
+        - "-ST1005"  # error strings should not be capitalized - legacy patterns
+        - "-ST1016"  # methods on same type should have same receiver name
+        - "-ST1020"  # comment form for exported methods - style preference
+        - "-ST1021"  # comment form for exported types - style preference
+        - "-ST1023"  # could omit type from declaration - style preference
+        # Deprecation warnings (SA = staticcheck analysis)
+        - "-SA1019"  # deprecated - we know strings.Title is deprecated, will address later
+        - "-SA1029"  # context.WithValue key type - existing pattern
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

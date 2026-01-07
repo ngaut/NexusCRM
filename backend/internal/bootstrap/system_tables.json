@@ -206,7 +206,7 @@
             {
                 "name": "reference_to",
                 "label": "Reference To",
-                "type": "VARCHAR(255)",
+                "type": "JSON",
                 "nullable": true
             },
             {
@@ -314,6 +314,12 @@
             {
                 "name": "is_master_detail",
                 "label": "Master-Detail",
+                "type": "TINYINT(1)",
+                "default": "0"
+            },
+            {
+                "name": "is_polymorphic",
+                "label": "Polymorphic",
                 "type": "TINYINT(1)",
                 "default": "0"
             },
@@ -577,7 +583,9 @@
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
-                "referenceTo": "_System_Role"
+                "referenceTo": [
+                    "_System_Role"
+                ]
             },
             {
                 "name": "is_active",
@@ -598,7 +606,9 @@
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
-                "referenceTo": "_System_User"
+                "referenceTo": [
+                    "_System_User"
+                ]
             },
             {
                 "name": "created_by_id",
@@ -606,7 +616,9 @@
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
-                "referenceTo": "_System_User"
+                "referenceTo": [
+                    "_System_User"
+                ]
             },
             {
                 "name": "last_modified_by_id",
@@ -614,7 +626,9 @@
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
-                "referenceTo": "_System_User"
+                "referenceTo": [
+                    "_System_User"
+                ]
             },
             {
                 "name": "created_date",
@@ -701,7 +715,9 @@
                 "type": "VARCHAR(255)",
                 "nullable": false,
                 "logicalType": "Lookup",
-                "referenceTo": "_System_Profile"
+                "referenceTo": [
+                    "_System_Profile"
+                ]
             },
             {
                 "name": "role_id",
@@ -709,7 +725,9 @@
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
-                "referenceTo": "_System_Role"
+                "referenceTo": [
+                    "_System_Role"
+                ]
             },
             {
                 "name": "is_active",
@@ -730,7 +748,9 @@
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
-                "referenceTo": "_System_User"
+                "referenceTo": [
+                    "_System_User"
+                ]
             },
             {
                 "name": "created_by_id",
@@ -738,7 +758,9 @@
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
-                "referenceTo": "_System_User"
+                "referenceTo": [
+                    "_System_User"
+                ]
             },
             {
                 "name": "last_modified_by_id",
@@ -746,7 +768,9 @@
                 "type": "VARCHAR(255)",
                 "nullable": true,
                 "logicalType": "Lookup",
-                "referenceTo": "_System_User"
+                "referenceTo": [
+                    "_System_User"
+                ]
             },
             {
                 "name": "last_login_date",
@@ -807,7 +831,9 @@
                 "type": "VARCHAR(255)",
                 "nullable": false,
                 "logicalType": "Lookup",
-                "referenceTo": "_System_User"
+                "referenceTo": [
+                    "_System_User"
+                ]
             },
             {
                 "name": "token",
@@ -1185,6 +1211,31 @@
                 "name": "created_date",
                 "type": "DATETIME",
                 "nullable": false
+            },
+            {
+                "name": "owner_id",
+                "label": "Owner",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "created_by_id",
+                "label": "Created By",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "last_modified_by_id",
+                "label": "Last Modified By",
+                "type": "VARCHAR(255)",
+                "nullable": true
+            },
+            {
+                "name": "is_deleted",
+                "label": "Deleted",
+                "type": "TINYINT(1)",
+                "nullable": false,
+                "default": "0"
             },
             {
                 "name": "last_modified_date",
@@ -2127,7 +2178,9 @@
                 "type": "VARCHAR(255)",
                 "nullable": false,
                 "logicalType": "Lookup",
-                "referenceTo": "_System_User"
+                "referenceTo": [
+                    "_System_User"
+                ]
             },
             {
                 "name": "deleted_date",
@@ -2611,11 +2664,11 @@
             },
             {
                 "name": "old_value",
-                "type": "TEXT"
+                "type": "LONGTEXT"
             },
             {
                 "name": "new_value",
-                "type": "TEXT"
+                "type": "LONGTEXT"
             },
             {
                 "name": "changed_by_id",
@@ -2649,6 +2702,44 @@
                 "columns": [
                     "changed_at"
                 ]
+            }
+        ]
+    },
+    {
+        "tableName": "_System_SystemLog",
+        "tableType": "system_core",
+        "category": "utility",
+        "description": "System operation logs",
+        "columns": [
+            {
+                "name": "id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
+                "name": "timestamp",
+                "type": "DATETIME",
+                "nullable": false
+            },
+            {
+                "name": "level",
+                "type": "VARCHAR(50)",
+                "nullable": false
+            },
+            {
+                "name": "source",
+                "type": "VARCHAR(255)",
+                "nullable": false
+            },
+            {
+                "name": "message",
+                "type": "TEXT",
+                "nullable": false
+            },
+            {
+                "name": "details",
+                "type": "TEXT",
+                "nullable": true
             }
         ]
     },

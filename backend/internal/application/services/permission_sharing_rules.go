@@ -40,7 +40,7 @@ func (ps *PermissionService) isUserInRoleOrBelow(userRoleID, targetRoleID *strin
 // checkSharingRuleAccess evaluates if a sharing rule grants access to a record
 func (ps *PermissionService) checkSharingRuleAccess(
 	record models.SObject,
-	rule *models.SharingRule,
+	rule *models.SystemSharingRule,
 	user *models.UserSession,
 	operation string,
 ) bool {

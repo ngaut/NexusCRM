@@ -147,7 +147,7 @@ func assertRelationshipIntegrity(db *sql.DB, result *AssertionResult) {
 		log.Printf("   ⚠️  Could not query fields: %v", err)
 		return
 	}
-	defer func() { _ = fRows.Close() }()
+	defer func() { fRows.Close() }()
 
 	for fRows.Next() {
 		var objName, fieldName, refToJSON, fType string
@@ -282,7 +282,7 @@ func assertNamingConventions(db *sql.DB, result *AssertionResult) {
 				})
 			}
 		}
-		_ = fRows.Close()
+		fRows.Close()
 	}
 }
 
@@ -305,7 +305,10 @@ func assertFormulaValidity(db *sql.DB, result *AssertionResult) {
 
 	for rows.Next() {
 		var objName, fieldName, expression string
-		rows.Scan(&objName, &fieldName, &expression)
+		if err := rows.Scan(&objName, &fieldName, &expression); err != nil {
+			log.Printf("Failed to scan formula row: %v", err)
+			return
+		}
 
 		// Validate syntax (dry run)
 		if err := engine.Validate(expression, map[string]interface{}{}); err != nil {

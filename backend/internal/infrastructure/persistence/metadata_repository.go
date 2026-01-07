@@ -45,9 +45,9 @@ var fieldColumns = []string{
 	constants.FieldObjectID,
 	constants.FieldAPIName,
 	constants.FieldLabel,
-	"`" + constants.FieldMetaType + "`",
-	constants.FieldIsRequired,
-	"`" + constants.FieldIsUnique + "`",
+	"`" + constants.FieldType + "`",
+	constants.FieldRequired,
+	"`" + constants.FieldUnique + "`",
 	constants.FieldIsSystem,
 	constants.FieldSysField_IsNameField,
 	"`" + constants.FieldSysField_Options + "`",
@@ -58,6 +58,7 @@ var fieldColumns = []string{
 	constants.FieldSysField_Formula,
 	constants.FieldSysField_ReturnType,
 	constants.FieldSysField_DefaultValue,
+	constants.FieldSysField_IsPolymorphic,
 	constants.FieldSysField_HelpText,
 	constants.FieldDescription,
 	constants.FieldSysField_TrackHistory,
@@ -523,7 +524,7 @@ func (r *MetadataRepository) GetFlow(ctx context.Context, id string) (*models.Fl
 }
 
 // GetSharingRules queries sharing rules for an object
-func (r *MetadataRepository) GetSharingRules(ctx context.Context, objectAPIName string) ([]*models.SharingRule, error) {
+func (r *MetadataRepository) GetSharingRules(ctx context.Context, objectAPIName string) ([]*models.SystemSharingRule, error) {
 	query := fmt.Sprintf("SELECT %s FROM %s WHERE LOWER(object_api_name) = LOWER(?)", strings.Join(sharingRuleColumns, ", "), constants.TableSharingRule)
 	rows, err := r.db.QueryContext(ctx, query, objectAPIName)
 	if err != nil {
@@ -531,9 +532,9 @@ func (r *MetadataRepository) GetSharingRules(ctx context.Context, objectAPIName 
 	}
 	defer rows.Close()
 
-	rules := make([]*models.SharingRule, 0)
+	rules := make([]*models.SystemSharingRule, 0)
 	for rows.Next() {
-		var rule models.SharingRule
+		var rule models.SystemSharingRule
 		var roleID, groupID sql.NullString
 		if err := rows.Scan(&rule.ID, &rule.ObjectAPIName, &rule.Name, &rule.Criteria, &rule.AccessLevel, &roleID, &groupID); err != nil {
 			continue
@@ -643,14 +644,17 @@ func (r *MetadataRepository) CreateFlow(ctx context.Context, flow *models.Flow) 
 
 	query := fmt.Sprintf(`INSERT INTO %s (
 		id, name, trigger_object, trigger_type, trigger_condition, action_type, action_config, 
-		status, flow_type, schedule, schedule_timezone, last_run_at, next_run_at, is_running, last_modified_date
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, constants.TableFlow)
+		status, flow_type, schedule, schedule_timezone, last_run_at, next_run_at, is_running, 
+		created_date, last_modified_date
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, constants.TableFlow)
 
+	now := time.Now()
 	_, err = r.db.ExecContext(ctx, query,
 		flow.ID, flow.Name, flow.TriggerObject, flow.TriggerType, flow.TriggerCondition,
 		flow.ActionType, actionConfigJSON, flow.Status, flow.FlowType,
 		flow.Schedule, flow.ScheduleTimezone, flow.LastRunAt, flow.NextRunAt, flow.IsRunning,
-		time.Now(), // Explicitly set last_modified_date
+		now, // created_date
+		now, // last_modified_date
 	)
 	return err
 }
@@ -847,9 +851,9 @@ func (r *MetadataRepository) DeleteLayout(ctx context.Context, layoutID string) 
 // AssignLayoutToProfile assigns a layout to a profile
 func (r *MetadataRepository) AssignLayoutToProfile(ctx context.Context, profileID, objectAPIName, layoutID string) error {
 	query := fmt.Sprintf(`
-		INSERT INTO %s (profile_id, object_api_name, layout_id) 
-		VALUES (?, ?, ?)
-		ON DUPLICATE KEY UPDATE layout_id = VALUES(layout_id)
+		INSERT INTO %s (profile_id, object_api_name, layout_id, created_date, last_modified_date) 
+		VALUES (?, ?, ?, NOW(), NOW())
+		ON DUPLICATE KEY UPDATE layout_id = VALUES(layout_id), last_modified_date = NOW()
 	`, constants.TableProfileLayout)
 
 	_, err := r.db.ExecContext(ctx, query, profileID, objectAPIName, layoutID)
@@ -1224,6 +1228,43 @@ func (r *MetadataRepository) UpsertSetupPage(ctx context.Context, page *models.S
 	return err
 }
 
+// GetSetupPages returns all setup pages
+func (r *MetadataRepository) GetSetupPages(ctx context.Context) ([]models.SetupPage, error) {
+	query := fmt.Sprintf(`
+		SELECT 
+			id, label, icon, component_name, category, 
+			page_order, permission_required, is_enabled, description,
+			created_date, last_modified_date 
+		FROM %s 
+		ORDER BY page_order ASC`, constants.TableSetupPage)
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var pages []models.SetupPage
+	for rows.Next() {
+		var p models.SetupPage
+		var createdDateVal, lastModifiedDateVal interface{}
+
+		if err := rows.Scan(
+			&p.ID, &p.Label, &p.Icon, &p.ComponentName, &p.Category,
+			&p.PageOrder, &p.PermissionRequired, &p.IsEnabled, &p.Description,
+			&createdDateVal, &lastModifiedDateVal,
+		); err != nil {
+			return nil, err
+		}
+
+		p.CreatedDate = parseTime(createdDateVal)
+		p.LastModifiedDate = parseTime(lastModifiedDateVal)
+		pages = append(pages, p)
+	}
+
+	return pages, rows.Err()
+}
+
 // ==================== Theme Methods ====================
 
 func (r *MetadataRepository) scanTheme(row Scannable) (*models.Theme, error) {
@@ -1330,7 +1371,7 @@ func (r *MetadataRepository) ActivateTheme(ctx context.Context, themeID string) 
 
 // UpsertAutoNumber inserts or updates an auto number configuration
 func (r *MetadataRepository) UpsertAutoNumber(ctx context.Context, id, objectAPIName, fieldAPIName, displayFormat string, startingNumber, currentNumber int) error {
-	query := fmt.Sprintf("INSERT INTO %s (id, object_api_name, field_api_name, display_format, starting_number, current_number) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE display_format = VALUES(display_format)", constants.TableAutoNumber)
+	query := fmt.Sprintf("INSERT INTO %s (id, object_api_name, field_api_name, display_format, starting_number, current_number, created_date, last_modified_date) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE display_format = VALUES(display_format), last_modified_date = NOW()", constants.TableAutoNumber)
 	_, err := r.db.ExecContext(ctx, query, id, objectAPIName, fieldAPIName, displayFormat, startingNumber, currentNumber)
 	return err
 }
@@ -1434,7 +1475,7 @@ func (r *MetadataRepository) scanObject(row Scannable) (*models.ObjectMetadata, 
 func (r *MetadataRepository) scanField(row Scannable) (*models.FieldMetadata, string, error) {
 	var field models.FieldMetadata
 	var id, objectAPIName string
-	var required, unique, isSystem, trackHistory, isNameField, isMasterDetail sql.NullBool
+	var required, unique, isSystem, trackHistory, isNameField, isMasterDetail, isPolymorphic sql.NullBool
 	var options, referenceTo, formula, returnType, defaultValue, helpText, controllingField, picklistDependency, rollupConfig, deleteRule, relationshipName, regex, regexMessage, validator, description sql.NullString
 	var minValue, maxValue sql.NullFloat64
 	var minLength, maxLength sql.NullInt64
@@ -1443,7 +1484,7 @@ func (r *MetadataRepository) scanField(row Scannable) (*models.FieldMetadata, st
 		&id, &objectAPIName, &field.APIName, &field.Label, &field.Type,
 		&required, &unique, &isSystem, &isNameField, &options,
 		&referenceTo, &deleteRule, &isMasterDetail, &relationshipName,
-		&formula, &returnType, &defaultValue, &helpText, &description,
+		&formula, &returnType, &defaultValue, &isPolymorphic, &helpText, &description,
 		&trackHistory, &minValue, &maxValue, &minLength, &maxLength,
 		&regex, &regexMessage, &validator, &controllingField,
 		&picklistDependency, &rollupConfig,
@@ -1458,6 +1499,7 @@ func (r *MetadataRepository) scanField(row Scannable) (*models.FieldMetadata, st
 	field.TrackHistory = trackHistory.Bool
 	field.IsNameField = isNameField.Bool
 	field.IsMasterDetail = isMasterDetail.Bool
+	field.IsPolymorphic = isPolymorphic.Bool
 
 	if formula.Valid {
 		field.Formula = &formula.String

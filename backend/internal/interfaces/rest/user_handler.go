@@ -40,7 +40,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, err := h.svcMgr.Auth.CreateUser(services.CreateUserRequest{
+	user, err := h.svcMgr.Auth.CreateUser(c.Request.Context(), services.CreateUserRequest{
 		Name:      req.Name,
 		Email:     req.Email,
 		Password:  req.Password,
@@ -82,7 +82,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		if userID == "" {
 			return errors.NewValidationError(constants.FieldID, "is required")
 		}
-		return h.svcMgr.Auth.UpdateUser(userID, services.UpdateUserRequest{
+		return h.svcMgr.Auth.UpdateUser(c.Request.Context(), userID, services.UpdateUserRequest{
 			Name:      req.Name,
 			Email:     req.Email,
 			Password:  req.Password,
@@ -99,21 +99,21 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		if userID == "" {
 			return errors.NewValidationError(constants.FieldID, "is required")
 		}
-		return h.svcMgr.Auth.DeleteUser(userID)
+		return h.svcMgr.Auth.DeleteUser(c.Request.Context(), userID)
 	})
 }
 
 // GetUsers handles GET /api/auth/users
 func (h *UserHandler) GetUsers(c *gin.Context) {
 	HandleGetEnvelope(c, "users", func() (interface{}, error) {
-		return h.svcMgr.Auth.GetUsers()
+		return h.svcMgr.Auth.GetUsers(c.Request.Context())
 	})
 }
 
 // GetProfiles handles GET /api/auth/profiles
 func (h *UserHandler) GetProfiles(c *gin.Context) {
 	HandleGetEnvelope(c, "profiles", func() (interface{}, error) {
-		return h.svcMgr.Auth.GetProfiles()
+		return h.svcMgr.Auth.GetProfiles(c.Request.Context())
 	})
 }
 
@@ -142,7 +142,7 @@ func (h *UserHandler) UpdateProfilePermissions(c *gin.Context) {
 	// Helper handles binding
 	HandleUpdateEnvelope(c, "", "Permissions updated successfully", &perms, func() error {
 		for _, p := range perms {
-			perm := models.ObjectPermission{
+			perm := models.SystemObjectPerms{
 				ProfileID:     &profileID,
 				ObjectAPIName: p.ObjectAPIName,
 				AllowRead:     p.AllowRead,
@@ -181,7 +181,7 @@ func (h *UserHandler) UpdateProfileFieldPermissions(c *gin.Context) {
 
 	HandleUpdateEnvelope(c, "", "Field permissions updated successfully", &perms, func() error {
 		for _, p := range perms {
-			perm := models.FieldPermission{
+			perm := models.SystemFieldPerms{
 				ProfileID:     &profileID,
 				ObjectAPIName: p.ObjectAPIName,
 				FieldAPIName:  p.FieldAPIName,
@@ -222,7 +222,7 @@ func (h *UserHandler) UpdatePermissionSetPermissions(c *gin.Context) {
 
 	HandleUpdateEnvelope(c, "", "Permissions updated successfully", &perms, func() error {
 		for _, p := range perms {
-			perm := models.ObjectPermission{
+			perm := models.SystemObjectPerms{
 				PermissionSetID: &permSetID,
 				ObjectAPIName:   p.ObjectAPIName,
 				AllowRead:       p.AllowRead,
@@ -261,7 +261,7 @@ func (h *UserHandler) UpdatePermissionSetFieldPermissions(c *gin.Context) {
 
 	HandleUpdateEnvelope(c, "", "Field permissions updated successfully", &perms, func() error {
 		for _, p := range perms {
-			perm := models.FieldPermission{
+			perm := models.SystemFieldPerms{
 				PermissionSetID: &permSetID,
 				ObjectAPIName:   p.ObjectAPIName,
 				FieldAPIName:    p.FieldAPIName,

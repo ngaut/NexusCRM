@@ -14,7 +14,8 @@
     "users": [
         {
             "id": "10000000-0000-0000-0000-000000000001",
-            "name": "System Administrator",
+            "first_name": "System",
+            "last_name": "Administrator",
             "email": "admin@test.com",
             "password": "Admin123!",
             "profile_id": "system_admin"

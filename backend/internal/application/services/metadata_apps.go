@@ -12,10 +12,10 @@ import (
 
 // ==================== App Methods ====================
 
-func (ms *MetadataService) GetApps() []*models.AppConfig {
+func (ms *MetadataService) GetApps(ctx context.Context) []*models.AppConfig {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	apps, err := ms.repo.GetAllApps(context.Background())
+	apps, err := ms.repo.GetAllApps(ctx)
 	if err != nil {
 		log.Printf("Failed to get apps: %v", err)
 		return []*models.AppConfig{}
@@ -23,10 +23,10 @@ func (ms *MetadataService) GetApps() []*models.AppConfig {
 	return apps
 }
 
-func (ms *MetadataService) GetApp(id string) *models.AppConfig {
+func (ms *MetadataService) GetApp(ctx context.Context, id string) *models.AppConfig {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	app, err := ms.repo.GetApp(context.Background(), id)
+	app, err := ms.repo.GetApp(ctx, id)
 	if err != nil {
 		log.Printf("Warning: Failed to query app %s: %v", id, err)
 		return nil
@@ -35,20 +35,20 @@ func (ms *MetadataService) GetApp(id string) *models.AppConfig {
 }
 
 // CreateApp creates a new app configuration
-func (ms *MetadataService) CreateApp(app *models.AppConfig) error {
+func (ms *MetadataService) CreateApp(ctx context.Context, app *models.AppConfig) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	// Validate
 	if app.ID == "" {
-		return fmt.Errorf("App ID is required")
+		return fmt.Errorf("app ID is required")
 	}
 	if app.Label == "" {
-		return fmt.Errorf("App Label is required")
+		return fmt.Errorf("app label is required")
 	}
 
 	// Check if exists
-	existing, err := ms.repo.GetApp(context.Background(), app.ID)
+	existing, err := ms.repo.GetApp(ctx, app.ID)
 	if err != nil {
 		return fmt.Errorf("failed to check app existence: %w", err)
 	}
@@ -59,7 +59,7 @@ func (ms *MetadataService) CreateApp(app *models.AppConfig) error {
 	// Insert into DB via Repo
 	app.CreatedDate = time.Now()
 	app.LastModifiedDate = time.Now()
-	if err := ms.repo.CreateApp(context.Background(), app); err != nil {
+	if err := ms.repo.CreateApp(ctx, app); err != nil {
 		return fmt.Errorf("failed to insert app: %w", err)
 	}
 
@@ -67,12 +67,12 @@ func (ms *MetadataService) CreateApp(app *models.AppConfig) error {
 }
 
 // UpdateApp updates an existing app configuration
-func (ms *MetadataService) UpdateApp(appID string, updates *models.AppConfig) error {
+func (ms *MetadataService) UpdateApp(ctx context.Context, appID string, updates *models.AppConfig) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	// Check if exists
-	existing, err := ms.repo.GetApp(context.Background(), appID)
+	existing, err := ms.repo.GetApp(ctx, appID)
 	if err != nil {
 		return fmt.Errorf("failed to check app existence: %w", err)
 	}
@@ -109,7 +109,7 @@ func (ms *MetadataService) UpdateApp(appID string, updates *models.AppConfig) er
 	existing.LastModifiedDate = time.Now()
 
 	// Update DB via Repo
-	if err := ms.repo.UpdateApp(context.Background(), appID, existing); err != nil {
+	if err := ms.repo.UpdateApp(ctx, appID, existing); err != nil {
 		return fmt.Errorf("failed to update app: %w", err)
 	}
 
@@ -117,20 +117,20 @@ func (ms *MetadataService) UpdateApp(appID string, updates *models.AppConfig) er
 }
 
 // DeleteApp deletes an app configuration
-func (ms *MetadataService) DeleteApp(appID string) error {
+func (ms *MetadataService) DeleteApp(ctx context.Context, appID string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	return ms.repo.DeleteApp(context.Background(), appID)
+	return ms.repo.DeleteApp(ctx, appID)
 }
 
 // CreateObjectInApp creates a new object and automatically calculates navigation
-func (ms *MetadataService) CreateObjectInApp(appID string, schema *models.ObjectMetadata) error {
+func (ms *MetadataService) CreateObjectInApp(ctx context.Context, appID string, schema *models.ObjectMetadata) error {
 	// 1. Set AppID on schema
 	schema.AppID = &appID
 
 	// 2. Create the Schema
-	if err := ms.CreateSchema(schema); err != nil {
+	if err := ms.CreateSchema(ctx, schema); err != nil {
 		return err
 	}
 
@@ -138,7 +138,7 @@ func (ms *MetadataService) CreateObjectInApp(appID string, schema *models.Object
 	ms.mu.Lock() // Re-acquire lock for App update (CreateSchema has its own lock)
 	defer ms.mu.Unlock()
 
-	app, err := ms.repo.GetApp(context.Background(), appID)
+	app, err := ms.repo.GetApp(ctx, appID)
 	if err != nil || app == nil {
 		// Just log warning if app not found, main object creation succeeded
 		log.Printf("⚠️ Warning: Created object %s but failed to find app %s to add navigation", schema.APIName, appID)
@@ -161,7 +161,7 @@ func (ms *MetadataService) CreateObjectInApp(appID string, schema *models.Object
 	app.NavigationItems = append(app.NavigationItems, newItem)
 
 	// Persist App Update via Repo
-	if err := ms.repo.UpdateApp(context.Background(), appID, app); err != nil {
+	if err := ms.repo.UpdateApp(ctx, appID, app); err != nil {
 		log.Printf("⚠️ Warning: Created object %s but failed to update app navigation: %v", schema.APIName, err)
 	}
 

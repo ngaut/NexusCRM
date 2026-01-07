@@ -48,7 +48,7 @@ func TestFormulaFields_Integration(t *testing.T) {
 		SharingModel: constants.SharingModelPublicReadWrite, // Correct constant
 	}
 	// Use MetadataService to create schema (handles layout and system fields)
-	if err := metadataService.CreateSchema(&objDef); err != nil {
+	if err := metadataService.CreateSchema(context.Background(), &objDef); err != nil {
 		t.Fatalf("Failed to create object: %v", err)
 	}
 
@@ -58,7 +58,7 @@ func TestFormulaFields_Integration(t *testing.T) {
 		Label:   "Price",
 		Type:    constants.FieldTypeNumber,
 	}
-	if err := metadataService.CreateField(objName, &priceField); err != nil {
+	if err := metadataService.CreateField(context.Background(), objName, &priceField); err != nil {
 		t.Fatalf("Failed to create price field: %v", err)
 	}
 
@@ -67,7 +67,7 @@ func TestFormulaFields_Integration(t *testing.T) {
 		Label:   "Quantity",
 		Type:    constants.FieldTypeNumber,
 	}
-	if err := metadataService.CreateField(objName, &qtyField); err != nil {
+	if err := metadataService.CreateField(context.Background(), objName, &qtyField); err != nil {
 		t.Fatalf("Failed to create quantity field: %v", err)
 	}
 
@@ -81,7 +81,7 @@ func TestFormulaFields_Integration(t *testing.T) {
 		Formula:    &formulaExpr,
 		ReturnType: &returnType,
 	}
-	if err := metadataService.CreateField(objName, &totalField); err != nil {
+	if err := metadataService.CreateField(context.Background(), objName, &totalField); err != nil {
 		t.Fatalf("Failed to create formula field: %v", err)
 	}
 
@@ -214,9 +214,14 @@ func TestFormulaFields_Integration(t *testing.T) {
 			totalVal = float64(v)
 		case []byte:
 			// DECIMAL comes back as bytes in some drivers
-			fmt.Sscanf(string(v), "%f", &totalVal)
+			if _, err := fmt.Sscanf(string(v), "%f", &totalVal); err != nil {
+				t.Fatalf("Failed to parse calculated value: %v", err)
+			}
 		case string:
-			fmt.Sscanf(v, "%f", &totalVal)
+			if _, err := fmt.Sscanf(v, "%f", &totalVal); err != nil {
+				// Handle error or ignore if test specific
+				totalVal = 0
+			}
 		}
 
 		// 20.0 * 2 = 40.0
@@ -278,7 +283,7 @@ func TestFormulaValidation(t *testing.T) {
 		PluralLabel:  fmt.Sprintf("Formula Validation Tests %d", ts),
 		SharingModel: constants.SharingModelPublicReadWrite,
 	}
-	if err := metadataService.CreateSchema(&objDef); err != nil {
+	if err := metadataService.CreateSchema(context.Background(), &objDef); err != nil {
 		t.Fatalf("Failed to create object: %v", err)
 	}
 
@@ -288,7 +293,7 @@ func TestFormulaValidation(t *testing.T) {
 		Label:   "Amount",
 		Type:    constants.FieldTypeNumber,
 	}
-	if err := metadataService.CreateField(objName, &amountField); err != nil {
+	if err := metadataService.CreateField(context.Background(), objName, &amountField); err != nil {
 		t.Fatalf("Failed to create amount field: %v", err)
 	}
 
@@ -302,7 +307,7 @@ func TestFormulaValidation(t *testing.T) {
 			Formula:    &formulaExpr,
 			ReturnType: &returnType,
 		}
-		err := metadataService.CreateField(objName, &validField)
+		err := metadataService.CreateField(context.Background(), objName, &validField)
 		if err != nil {
 			t.Errorf("Expected valid formula to succeed, got error: %v", err)
 		} else {
@@ -320,7 +325,7 @@ func TestFormulaValidation(t *testing.T) {
 			Formula:    &formulaExpr,
 			ReturnType: &returnType,
 		}
-		err := metadataService.CreateField(objName, &invalidField)
+		err := metadataService.CreateField(context.Background(), objName, &invalidField)
 		if err == nil {
 			t.Error("Expected invalid formula syntax to fail, but it succeeded")
 		} else {
@@ -338,7 +343,7 @@ func TestFormulaValidation(t *testing.T) {
 			Formula:    &formulaExpr,
 			ReturnType: &returnType,
 		}
-		err := metadataService.CreateField(objName, &emptyField)
+		err := metadataService.CreateField(context.Background(), objName, &emptyField)
 		if err == nil {
 			t.Error("Expected empty formula to fail, but it succeeded")
 		} else {
@@ -355,7 +360,7 @@ func TestFormulaValidation(t *testing.T) {
 			Formula:    nil,
 			ReturnType: &returnType,
 		}
-		err := metadataService.CreateField(objName, &nilField)
+		err := metadataService.CreateField(context.Background(), objName, &nilField)
 		if err == nil {
 			t.Error("Expected nil formula to fail, but it succeeded")
 		} else {

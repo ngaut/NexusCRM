@@ -51,18 +51,18 @@ func (qs *QueryService) hydrateVirtualFields(
 
 		// Hydrate formula fields
 		for _, field := range formulaFields {
-			ctx := &formula.Context{
+			formulaCtx := &formula.Context{
 				Record: record,
 			}
 			if currentUser != nil {
-				ctx.User = map[string]interface{}{
+				formulaCtx.User = map[string]interface{}{
 					constants.FieldID:    currentUser.ID,
 					constants.FieldName:  currentUser.Name,
 					constants.FieldEmail: currentUser.Email,
 				}
 			}
 
-			result, err := qs.formula.Evaluate(*field.Formula, ctx)
+			result, err := qs.formula.Evaluate(*field.Formula, formulaCtx)
 			if err != nil {
 				// Log the error for debugging/monitoring instead of silently failing
 				log.Printf("⚠️ Formula evaluation error on field '%s': %v", field.APIName, err)
@@ -120,7 +120,7 @@ func (qs *QueryService) hydrateLookupNames(ctx context.Context, rows []models.SO
 		}
 
 		// Get the schema for the referenced object to find the name field
-		refSchema := qs.metadata.GetSchema(refObject)
+		refSchema := qs.metadata.GetSchema(ctx, refObject)
 		if refSchema == nil {
 			continue
 		}
@@ -187,11 +187,12 @@ func (qs *QueryService) hydrateLookupNames(ctx context.Context, rows []models.SO
 
 // Calculate evaluates formula fields for a given record
 func (qs *QueryService) Calculate(
+	ctx context.Context,
 	objectName string,
 	record models.SObject,
 	user *models.UserSession,
 ) (models.SObject, error) {
-	schema := qs.metadata.GetSchema(objectName)
+	schema := qs.metadata.GetSchema(ctx, objectName)
 	if schema == nil {
 		return nil, pkgErrors.NewNotFoundError("Object", objectName)
 	}
@@ -206,7 +207,7 @@ func (qs *QueryService) Calculate(
 	// AND coerce types (e.g. string "123" to float64 for Number fields) to ensure formula engine works
 	record = NormalizeSObject(schema, record)
 
-	ctx := &formula.Context{
+	formulaCtx := &formula.Context{
 		Record: record,
 		User:   userMap,
 		// Fetcher could be added here if we want relationships
@@ -221,7 +222,7 @@ func (qs *QueryService) Calculate(
 		}
 
 		if strings.EqualFold(string(field.Type), string(constants.FieldTypeFormula)) && expr != "" {
-			val, err := qs.formula.Evaluate(expr, ctx)
+			val, err := qs.formula.Evaluate(expr, formulaCtx)
 			if err != nil {
 				// We log or return? Return error for API visibility.
 				// But we might want partial success?
@@ -229,7 +230,7 @@ func (qs *QueryService) Calculate(
 				return nil, fmt.Errorf("failed to evaluate formula %s: %v", field.APIName, err)
 			}
 			record[field.APIName] = val
-			ctx.Record[field.APIName] = val
+			formulaCtx.Record[field.APIName] = val
 		}
 	}
 

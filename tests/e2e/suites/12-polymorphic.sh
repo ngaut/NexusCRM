@@ -83,6 +83,7 @@ test_polymorphic_flow() {
     # 6. Verify Read Path (Check _type)
     echo "Verifying read path metadata..."
     local c1_get=$(api_get "/api/data/$child_name/$c1_id")
+    echo "DEBUG: c1_get response: $c1_get"
     local c2_get=$(api_get "/api/data/$child_name/$c2_id")
     
     # JSON extract of what_id_type

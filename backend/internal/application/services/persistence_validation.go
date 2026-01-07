@@ -72,7 +72,7 @@ func (s *PersistenceService) generateSystemFields(
 	isInsert bool,
 ) models.SObject {
 	// 1. Get Schema
-	schema := s.metadata.GetSchema(objectName)
+	schema := s.metadata.GetSchema(context.Background(), objectName)
 	if schema == nil {
 		// Should not happen as validated before
 		return data
@@ -94,8 +94,11 @@ func (s *PersistenceService) generateSystemFields(
 
 		if field.IsSystem {
 			// ID
-			if fieldName == constants.FieldID && isInsert && !exists {
-				result[constants.FieldID] = GenerateID()
+			if fieldName == constants.FieldID && isInsert {
+				val, ok := result[constants.FieldID]
+				if !ok || val == "" {
+					result[constants.FieldID] = GenerateID()
+				}
 				continue
 			}
 

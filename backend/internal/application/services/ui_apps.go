@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -11,27 +12,27 @@ import (
 // ==================== App Methods ====================
 
 // GetApps delegates to MetadataService
-func (s *UIMetadataService) GetApps() []*models.AppConfig {
-	return s.metadata.GetApps()
+func (s *UIMetadataService) GetApps(ctx context.Context) []*models.AppConfig {
+	return s.metadata.GetApps(ctx)
 }
 
 // CreateApp delegates to MetadataService
-func (s *UIMetadataService) CreateApp(app *models.AppConfig) error {
-	return s.metadata.CreateApp(app)
+func (s *UIMetadataService) CreateApp(ctx context.Context, app *models.AppConfig) error {
+	return s.metadata.CreateApp(ctx, app)
 }
 
 // UpdateApp delegates to MetadataService
-func (s *UIMetadataService) UpdateApp(appID string, updates *models.AppConfig) error {
-	return s.metadata.UpdateApp(appID, updates)
+func (s *UIMetadataService) UpdateApp(ctx context.Context, appID string, updates *models.AppConfig) error {
+	return s.metadata.UpdateApp(ctx, appID, updates)
 }
 
 // DeleteApp delegates to MetadataService
-func (s *UIMetadataService) DeleteApp(appID string) error {
-	return s.metadata.DeleteApp(appID)
+func (s *UIMetadataService) DeleteApp(ctx context.Context, appID string) error {
+	return s.metadata.DeleteApp(ctx, appID)
 }
 
 // UpdateAppTx updates an app within a transaction
-func (s *UIMetadataService) UpdateAppTx(tx *sql.Tx, appID string, updates *models.AppConfig) error {
+func (s *UIMetadataService) UpdateAppTx(ctx context.Context, tx *sql.Tx, appID string, updates *models.AppConfig) error {
 	updates.ID = appID
 	navigationItemsJSON, err := MarshalJSONOrDefault(updates.NavigationItems, "[]")
 	if err != nil {
@@ -44,7 +45,7 @@ func (s *UIMetadataService) UpdateAppTx(tx *sql.Tx, appID string, updates *model
 		WHERE id = ?
 	`, constants.TableApp)
 	// Use ID as Name
-	_, err = tx.Exec(query, updates.ID, updates.Label, updates.Description, updates.Icon, navigationItemsJSON, appID)
+	_, err = tx.ExecContext(ctx, query, updates.ID, updates.Label, updates.Description, updates.Icon, navigationItemsJSON, appID)
 	if err != nil {
 		return fmt.Errorf("failed to update app in transaction: %w", err)
 	}
@@ -52,9 +53,12 @@ func (s *UIMetadataService) UpdateAppTx(tx *sql.Tx, appID string, updates *model
 }
 
 // AddAppNavigationItemTx adds a new navigation item to an existing app within a transaction
-func (s *UIMetadataService) AddAppNavigationItemTx(tx *sql.Tx, appID string, item models.NavigationItem) error {
+func (s *UIMetadataService) AddAppNavigationItemTx(ctx context.Context, tx *sql.Tx, appID string, item models.NavigationItem) error {
 	// Get current state from DB (outside of Tx, but acceptable for this operation)
-	app := s.metadata.GetApp(appID)
+	app := s.metadata.GetApp(ctx, appID)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to get app: %w", err)
+	// }
 	if app == nil {
 		return fmt.Errorf("app with ID '%s' not found", appID)
 	}
@@ -62,13 +66,13 @@ func (s *UIMetadataService) AddAppNavigationItemTx(tx *sql.Tx, appID string, ite
 	// Appending to the slice in the new struct
 	app.NavigationItems = append(app.NavigationItems, item)
 
-	return s.UpdateAppTx(tx, appID, app)
+	return s.UpdateAppTx(ctx, tx, appID, app)
 }
 
 // RemoveObjectFromAllAppsTx removes an object from all app navigation items within a transaction
 // This is called when an object is deleted to maintain referential integrity
-func (s *UIMetadataService) RemoveObjectFromAllAppsTx(tx *sql.Tx, objectAPIName string) error {
-	apps := s.metadata.GetApps()
+func (s *UIMetadataService) RemoveObjectFromAllAppsTx(ctx context.Context, tx *sql.Tx, objectAPIName string) error {
+	apps := s.metadata.GetApps(ctx)
 
 	for _, app := range apps {
 		updated := false
@@ -86,7 +90,7 @@ func (s *UIMetadataService) RemoveObjectFromAllAppsTx(tx *sql.Tx, objectAPIName 
 		// If this app had the object, update it
 		if updated {
 			app.NavigationItems = newItems
-			if err := s.UpdateAppTx(tx, app.ID, app); err != nil {
+			if err := s.UpdateAppTx(ctx, tx, app.ID, app); err != nil {
 				return err
 			}
 		}
@@ -96,12 +100,15 @@ func (s *UIMetadataService) RemoveObjectFromAllAppsTx(tx *sql.Tx, objectAPIName 
 }
 
 // AddAppNavigationItem adds a new navigation item to an existing app
-func (s *UIMetadataService) AddAppNavigationItem(appID string, item models.NavigationItem) error {
-	app := s.metadata.GetApp(appID)
+func (s *UIMetadataService) AddAppNavigationItem(ctx context.Context, appID string, item models.NavigationItem) error {
+	app := s.metadata.GetApp(ctx, appID)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to get app: %w", err)
+	// }
 	if app == nil {
 		return fmt.Errorf("app with ID '%s' not found", appID)
 	}
 
 	app.NavigationItems = append(app.NavigationItems, item)
-	return s.metadata.UpdateApp(appID, app)
+	return s.metadata.UpdateApp(ctx, appID, app)
 }

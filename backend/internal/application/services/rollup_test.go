@@ -61,7 +61,7 @@ func TestRollupSummary_Sum(t *testing.T) {
 		SharingModel: models.SharingModel(constants.SharingModelPublicReadWrite),
 	}
 	require.NoError(t, schemaMgr.CreateTableWithStrictMetadata(context.Background(), parentDef, parentMeta))
-	defer schemaMgr.DropTable(parentName)
+	defer func() { _ = schemaMgr.DropTable(parentName) }()
 
 	// 2. Define Child Object (LineItem)
 	childName := fmt.Sprintf("line_item_%d", time.Now().UnixNano())
@@ -86,7 +86,7 @@ func TestRollupSummary_Sum(t *testing.T) {
 		SharingModel: models.SharingModel(constants.SharingModelPublicReadWrite),
 	}
 	require.NoError(t, schemaMgr.CreateTableWithStrictMetadata(context.Background(), childDef, childMeta))
-	defer schemaMgr.DropTable(childName)
+	defer func() { _ = schemaMgr.DropTable(childName) }()
 
 	// 3. Register Metadata & Rollup
 

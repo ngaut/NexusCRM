@@ -47,7 +47,7 @@ type ActionContext struct {
 // ExecuteAction executes an action by ID with the given context record and user
 func (as *ActionService) ExecuteAction(ctx context.Context, actionID string, contextRecord models.SObject, user *models.UserSession) error {
 	// Find the action in metadata cache
-	action := as.findAction(actionID)
+	action := as.findAction(ctx, actionID)
 	if action == nil {
 		return fmt.Errorf("action not found: %s", actionID)
 	}
@@ -92,8 +92,8 @@ func (as *ActionService) ExecuteActionDirect(ctx context.Context, action *models
 }
 
 // findAction searches for an action by ID using MetadataService
-func (as *ActionService) findAction(actionID string) *models.ActionMetadata {
-	return as.metadata.GetActionByID(actionID)
+func (as *ActionService) findAction(ctx context.Context, actionID string) *models.ActionMetadata {
+	return as.metadata.GetActionByID(ctx, actionID)
 }
 
 // executeCreateRecord creates a new record based on action configuration

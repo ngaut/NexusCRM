@@ -3,8 +3,6 @@ package models
 import (
 	"database/sql"
 	"time"
-
-	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // SObject represents a generic record
@@ -93,85 +91,6 @@ type RecycleBinItem struct {
 	RecordName    string `json:"record_name"`
 	DeletedBy     string `json:"deleted_by"`
 	DeletedDate   string `json:"deleted_date"`
-}
-
-// SystemFile represents a file record
-type SystemFile struct {
-	ID             string    `json:"id,omitempty"`
-	TargetID       string    `json:"target_id"`
-	TargetObject   string    `json:"target_object"`
-	OrganizationID string    `json:"organization_id"`
-	Filename       string    `json:"filename"`
-	Path           string    `json:"path"`
-	MimeType       string    `json:"mime_type"`
-	Size           int64     `json:"size"`
-	UploadedBy     string    `json:"uploaded_by"`
-	CreatedDate    time.Time `json:"created_date"`
-}
-
-func (f *SystemFile) ToSObject() SObject {
-	return SObject{
-		constants.FieldID:               f.ID,
-		constants.FieldSysFile_ParentID: f.TargetID,
-		// TargetObject and OrganizationID are not in _System_File table definition
-		constants.FieldSysFile_Name:        f.Filename,
-		constants.FieldSysFile_StoragePath: f.Path,
-		constants.FieldSysFile_MimeType:    f.MimeType,
-		constants.FieldSysFile_SizeBytes:   f.Size,
-		constants.FieldCreatedByID:         f.UploadedBy,
-		constants.FieldCreatedDate:         f.CreatedDate,
-	}
-}
-
-// SystemComment represents a comment record
-type SystemComment struct {
-	ID              string    `json:"id,omitempty"`
-	Body            string    `json:"body"`
-	ObjectAPIName   string    `json:"object_api_name"`
-	RecordID        string    `json:"record_id"`
-	ParentCommentID *string   `json:"parent_comment_id,omitempty"`
-	IsResolved      bool      `json:"is_resolved"`
-	CreatedBy       string    `json:"created_by"`
-	CreatedDate     time.Time `json:"created_date"`
-}
-
-func (c *SystemComment) ToSObject() SObject {
-	m := SObject{
-		constants.FieldSysComment_Body:          c.Body,
-		constants.FieldSysComment_ObjectAPIName: c.ObjectAPIName,
-		constants.FieldSysComment_RecordID:      c.RecordID,
-		constants.FieldSysComment_IsResolved:    c.IsResolved,
-		constants.FieldCreatedByID:              c.CreatedBy,
-		constants.FieldCreatedDate:              c.CreatedDate,
-	}
-	if c.ID != "" {
-		m[constants.FieldID] = c.ID
-	}
-	if c.ParentCommentID != nil {
-		m[constants.FieldSysComment_ParentCommentID] = *c.ParentCommentID
-	}
-	return m
-}
-
-// RecentItem represents a recently viewed item
-type RecentItem struct {
-	ID            string `json:"id"`
-	UserID        string `json:"user_id"`
-	ObjectAPIName string `json:"object_api_name"`
-	RecordID      string `json:"record_id"`
-	RecordName    string `json:"record_name"`
-	Timestamp     string `json:"timestamp"`
-}
-
-func (r *RecentItem) ToSObject() SObject {
-	return SObject{
-		constants.FieldID:                      r.ID,
-		constants.FieldSysRecent_UserID:        r.UserID,
-		constants.FieldSysRecent_ObjectAPIName: r.ObjectAPIName,
-		constants.FieldSysRecent_RecordID:      r.RecordID,
-		constants.FieldSysRecent_RecordName:    r.RecordName,
-		constants.FieldSysRecent_Timestamp:     r.Timestamp,
-	}
 }
 
 // Transaction represents a database transaction

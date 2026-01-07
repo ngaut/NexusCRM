@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +24,7 @@ func NewFlowHandler(svc *services.ServiceManager) *FlowHandler {
 // GetAllFlows handles GET /api/metadata/flows
 func (h *FlowHandler) GetAllFlows(c *gin.Context) {
 	HandleGetEnvelope(c, "flows", func() (interface{}, error) {
-		return h.svc.Metadata.GetFlows(), nil
+		return h.svc.Metadata.GetFlows(c.Request.Context()), nil
 	})
 }
 
@@ -31,7 +32,7 @@ func (h *FlowHandler) GetAllFlows(c *gin.Context) {
 func (h *FlowHandler) GetFlow(c *gin.Context) {
 	flowID := c.Param("flowId")
 	HandleGetEnvelope(c, "", func() (interface{}, error) {
-		flow := h.svc.Metadata.GetFlow(flowID)
+		flow := h.svc.Metadata.GetFlow(c.Request.Context(), flowID)
 		if flow == nil {
 			return nil, errors.NewNotFoundError("Flow", flowID)
 		}
@@ -52,7 +53,7 @@ func (h *FlowHandler) CreateFlow(c *gin.Context) {
 		if flow.ActionType == "" && flow.FlowType != constants.FlowTypeMultistep {
 			return errors.NewValidationError("action_type", "Action type is required for simple flows")
 		}
-		return h.svc.Metadata.CreateFlow(&flow)
+		return h.svc.Metadata.CreateFlow(c.Request.Context(), &flow)
 	})
 }
 
@@ -62,11 +63,11 @@ func (h *FlowHandler) UpdateFlow(c *gin.Context) {
 	var updates models.Flow
 
 	HandleUpdateEnvelope(c, "", "Flow updated successfully", &updates, func() error {
-		if err := h.svc.Metadata.UpdateFlow(flowID, &updates); err != nil {
+		if err := h.svc.Metadata.UpdateFlow(c.Request.Context(), flowID, &updates); err != nil {
 			return err
 		}
 		// Re-fetch to ensure response reflects server state
-		if updated := h.svc.Metadata.GetFlow(flowID); updated != nil {
+		if updated := h.svc.Metadata.GetFlow(c.Request.Context(), flowID); updated != nil {
 			updates = *updated
 		}
 		return nil
@@ -77,7 +78,7 @@ func (h *FlowHandler) UpdateFlow(c *gin.Context) {
 func (h *FlowHandler) DeleteFlow(c *gin.Context) {
 	flowID := c.Param("flowId")
 	HandleDeleteEnvelope(c, "Flow deleted successfully", func() error {
-		return h.svc.Metadata.DeleteFlow(flowID)
+		return h.svc.Metadata.DeleteFlow(c.Request.Context(), flowID)
 	})
 }
 
@@ -112,7 +113,7 @@ func (h *FlowHandler) ExecuteFlow(c *gin.Context) {
 	}
 
 	// Validate and get flow
-	flow, err := h.validateFlowForExecution(flowID, user)
+	flow, err := h.validateFlowForExecution(c.Request.Context(), flowID, user)
 	if err != nil {
 		RespondError(c, err.code, err.message)
 		return
@@ -140,8 +141,8 @@ type flowError struct {
 }
 
 // validateFlowForExecution validates flow exists, is active, and user has permission
-func (h *FlowHandler) validateFlowForExecution(flowID string, user *models.UserSession) (*models.Flow, *flowError) {
-	flow := h.svc.Metadata.GetFlow(flowID)
+func (h *FlowHandler) validateFlowForExecution(ctx context.Context, flowID string, user *models.UserSession) (*models.Flow, *flowError) {
+	flow := h.svc.Metadata.GetFlow(ctx, flowID)
 	if flow == nil {
 		return nil, &flowError{404, "Flow not found: " + flowID}
 	}
@@ -195,7 +196,7 @@ func (h *FlowHandler) executeCreateRecord(
 	}
 
 	// Validate target object exists
-	if h.svc.Metadata.GetSchema(targetObject) == nil {
+	if h.svc.Metadata.GetSchema(c.Request.Context(), targetObject) == nil {
 		RespondError(c, 400, "Target object does not exist: "+targetObject)
 		return nil, nil
 	}
@@ -231,7 +232,7 @@ func (h *FlowHandler) executeUpdateRecord(
 	}
 
 	// Validate object exists
-	if h.svc.Metadata.GetSchema(objectName) == nil {
+	if h.svc.Metadata.GetSchema(c.Request.Context(), objectName) == nil {
 		RespondError(c, 400, "Object does not exist: "+objectName)
 		return nil, nil
 	}

@@ -52,7 +52,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Delegate to AuthService
-	result, err := h.svcMgr.Auth.Login(req.Email, req.Password, c.ClientIP(), c.Request.UserAgent())
+	result, err := h.svcMgr.Auth.Login(c.Request.Context(), req.Email, req.Password, c.ClientIP(), c.Request.UserAgent())
 	if err != nil {
 		RespondError(c, errors.GetHTTPStatus(err), err.Error())
 		return
@@ -91,7 +91,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	HandleDeleteEnvelope(c, "Logged out successfully", func() error {
-		return h.svcMgr.Auth.Logout(tokenString.(string))
+		return h.svcMgr.Auth.Logout(c.Request.Context(), tokenString.(string))
 	})
 }
 
@@ -137,7 +137,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		}
 		user := userInterface.(auth.UserSession)
 
-		return h.svcMgr.Auth.ChangePassword(user.ID, req.CurrentPassword, req.NewPassword)
+		return h.svcMgr.Auth.ChangePassword(c.Request.Context(), user.ID, req.CurrentPassword, req.NewPassword)
 	})
 }
 

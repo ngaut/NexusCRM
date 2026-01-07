@@ -83,7 +83,7 @@ func (s *SchedulerService) Stop() {
 
 // runPendingJobs finds and executes all due scheduled flows
 func (s *SchedulerService) runPendingJobs() {
-	flows := s.metadata.GetScheduledFlows()
+	flows := s.metadata.GetScheduledFlows(context.Background())
 
 	now := time.Now().UTC()
 	for _, flow := range flows {

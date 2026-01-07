@@ -17,7 +17,6 @@ import (
 	"github.com/nexuscrm/mcp/pkg/contextstore"
 	"github.com/nexuscrm/mcp/pkg/mcp"
 	mcp_models "github.com/nexuscrm/mcp/pkg/models"
-	"github.com/nexuscrm/mcp/pkg/server"
 	mcp_server "github.com/nexuscrm/mcp/pkg/server"
 	"github.com/nexuscrm/shared/pkg/constants"
 )
@@ -172,8 +171,8 @@ func main() {
 	persistencePath := "data/context_store.json"
 	sharedContextStore := contextstore.NewContextStore(persistencePath)
 
-	toolBus := server.NewToolBusService(mcpClient, sharedContextStore)
-	mcpHandler := server.NewHandler(toolBus)
+	toolBus := mcp_server.NewToolBusService(mcpClient, sharedContextStore)
+	mcpHandler := mcp_server.NewHandler(toolBus)
 
 	// Inject shared store into Agent Handler too
 	agentHandler := mcp_server.NewAgentHandler(agentUserExtractor, sharedContextStore)
@@ -400,6 +399,13 @@ func main() {
 		{
 			notifications.GET("/", notificationHandler.GetNotifications)
 			notifications.POST("/:id/read", notificationHandler.MarkAsRead)
+		}
+
+		// Protected Setup routes
+		setup := api.Group("/setup")
+		setup.Use(requireAuth)
+		{
+			setup.GET("/pages", uiHandler.GetSetupPages)
 		}
 
 		// Protected Agent routes

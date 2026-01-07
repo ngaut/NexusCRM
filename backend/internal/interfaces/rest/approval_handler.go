@@ -1,6 +1,8 @@
 package rest
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/shared/pkg/constants"
@@ -153,7 +155,7 @@ func (h *ApprovalHandler) CheckProcess(c *gin.Context) {
 	// Delegate to service
 	process, err := h.svc.Approval.CheckProcess(c.Request.Context(), objectAPIName, user)
 	if err != nil {
-		// Log error but generally we just want to know if it exists or not
+		log.Printf("Warning: failed to check approval process for %s: %v", objectAPIName, err)
 	}
 
 	processName := ""

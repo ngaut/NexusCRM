@@ -51,23 +51,13 @@ func NewPermissionService(db *database.TiDBConnection, metadata *MetadataService
 
 // ==================== Object Permission Queries ====================
 
-// loadObjectPermission queries the database for a specific object permission
-func (ps *PermissionService) loadObjectPermission(profileID, objectAPIName string) (*models.ObjectPermission, error) {
-	return ps.repo.LoadObjectPermission(context.Background(), profileID, objectAPIName)
-}
-
-// loadFieldPermission queries the database for a specific field permission
-func (ps *PermissionService) loadFieldPermission(profileID, objectAPIName, fieldAPIName string) (*models.FieldPermission, error) {
-	return ps.repo.LoadFieldPermission(context.Background(), profileID, objectAPIName, fieldAPIName)
-}
-
 // loadEffectiveObjectPermission loads permissions considering Profile AND Permission Sets
-func (ps *PermissionService) loadEffectiveObjectPermission(user *models.UserSession, objectAPIName string) (*models.ObjectPermission, error) {
+func (ps *PermissionService) loadEffectiveObjectPermission(user *models.UserSession, objectAPIName string) (*models.SystemObjectPerms, error) {
 	return ps.repo.LoadEffectiveObjectPermission(context.Background(), user, objectAPIName)
 }
 
 // loadEffectiveFieldPermission loads field permissions considering Profile AND Permission Sets
-func (ps *PermissionService) loadEffectiveFieldPermission(user *models.UserSession, objectAPIName, fieldAPIName string) (*models.FieldPermission, error) {
+func (ps *PermissionService) loadEffectiveFieldPermission(user *models.UserSession, objectAPIName, fieldAPIName string) (*models.SystemFieldPerms, error) {
 	return ps.repo.LoadEffectiveFieldPermission(context.Background(), user, objectAPIName, fieldAPIName)
 }
 
@@ -216,29 +206,29 @@ func (ps *PermissionService) GetEffectiveSchema(schema *models.ObjectMetadata, u
 }
 
 // GetObjectPermissions retrieves all object permissions for a profile
-func (ps *PermissionService) GetObjectPermissions(profileID string) ([]models.ObjectPermission, error) {
+func (ps *PermissionService) GetObjectPermissions(profileID string) ([]models.SystemObjectPerms, error) {
 	return ps.repo.ListObjectPermissions(context.Background(), profileID)
 }
 
 // UpdateObjectPermission creates or updates an object permission
-func (ps *PermissionService) UpdateObjectPermission(perm models.ObjectPermission) error {
+func (ps *PermissionService) UpdateObjectPermission(perm models.SystemObjectPerms) error {
 	return ps.repo.UpsertObjectPermission(context.Background(), perm)
 }
 
 // UpdateObjectPermissionTx creates or updates an object permission within a transaction
-func (ps *PermissionService) UpdateObjectPermissionTx(tx *sql.Tx, perm models.ObjectPermission) error {
+func (ps *PermissionService) UpdateObjectPermissionTx(tx *sql.Tx, perm models.SystemObjectPerms) error {
 	return ps.repo.UpsertObjectPermissionTx(context.Background(), tx, perm)
 }
 
 // updateObjectPermission creates or updates an object permission using the provided executor
 
 // GetFieldPermissions retrieves all field permissions for a profile
-func (ps *PermissionService) GetFieldPermissions(profileID string) ([]models.FieldPermission, error) {
+func (ps *PermissionService) GetFieldPermissions(profileID string) ([]models.SystemFieldPerms, error) {
 	return ps.repo.ListFieldPermissions(context.Background(), profileID)
 }
 
 // UpdateFieldPermission creates or updates a field permission
-func (ps *PermissionService) UpdateFieldPermission(perm models.FieldPermission) error {
+func (ps *PermissionService) UpdateFieldPermission(perm models.SystemFieldPerms) error {
 	return ps.repo.UpsertFieldPermission(context.Background(), perm)
 }
 
@@ -257,7 +247,7 @@ func isFieldSystemReadOnly(metadata *MetadataService, objectAPIName string, fiel
 
 	// If we have metadata, check the field's is_system flag
 	if metadata != nil {
-		schema := metadata.GetSchema(objectAPIName)
+		schema := metadata.GetSchema(context.Background(), objectAPIName)
 		if schema != nil {
 			for _, field := range schema.Fields {
 				if field.APIName == fieldAPIName {

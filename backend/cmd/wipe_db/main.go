@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/go-sql-driver/mysql"
-	_ "github.com/go-sql-driver/mysql"
+
 	"github.com/joho/godotenv"
 )
 
@@ -39,7 +39,7 @@ func main() {
 	}
 
 	// Register TLS config for TiDB Cloud
-	mysql.RegisterTLSConfig("tidb", &tls.Config{
+	_ = mysql.RegisterTLSConfig("tidb", &tls.Config{
 		MinVersion: tls.VersionTLS12,
 	})
 
@@ -65,7 +65,8 @@ func main() {
 		log.Fatalf("failed to ping db: %v", err)
 	}
 
-	log.Println("⚠️  Wiping database...")
+	log.Printf("⚠️  Using DSN: %s", dsn)
+	log.Printf("⚠️  Wiping database: %s", database)
 
 	// Disable foreign key checks to allow dropping tables in any order
 	if _, err := db.Exec("SET FOREIGN_KEY_CHECKS = 0"); err != nil {

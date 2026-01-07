@@ -136,7 +136,7 @@ func (h *DataHandler) GetRecord(c *gin.Context) {
 		record := records[0]
 
 		// Secure Read: Check single record access (Ownership/Sharing)
-		schema := h.svc.Metadata.GetSchema(objectApiName)
+		schema := h.svc.Metadata.GetSchema(c.Request.Context(), objectApiName)
 		if schema != nil {
 			if !h.svc.Permissions.CheckRecordAccess(schema, record, constants.PermRead, user) {
 				// Return PermissionError (403) or NotFound (404) depending on security policy.
@@ -179,8 +179,7 @@ func (h *DataHandler) UpdateRecord(c *gin.Context) {
 	objectApiName := strings.ToLower(c.Param("objectApiName"))
 	id := c.Param("id")
 
-	var updates models.SObject
-	updates = make(models.SObject)
+	updates := make(models.SObject)
 
 	HandleUpdateEnvelope(c, "", "Record updated successfully", &updates, func() error {
 		return h.svc.Persistence.Update(c.Request.Context(), objectApiName, id, updates, user)
@@ -226,6 +225,6 @@ func (h *DataHandler) Calculate(c *gin.Context) {
 	}
 
 	HandleGetEnvelope(c, "record", func() (interface{}, error) {
-		return h.svc.QuerySvc.Calculate(objectApiName, record, user)
+		return h.svc.QuerySvc.Calculate(c.Request.Context(), objectApiName, record, user)
 	})
 }

@@ -49,7 +49,7 @@ func (qs *QueryService) Query(
 		return nil, fmt.Errorf("insufficient permissions to read %s", req.ObjectAPIName)
 	}
 
-	schema := qs.metadata.GetSchema(req.ObjectAPIName)
+	schema := qs.metadata.GetSchema(ctx, req.ObjectAPIName)
 	if schema == nil {
 		return nil, pkgErrors.NewNotFoundError("Object", req.ObjectAPIName)
 	}
@@ -58,7 +58,7 @@ func (qs *QueryService) Query(
 	builder := query.From(req.ObjectAPIName).WithMetadata(schema)
 
 	// Start with system fields from metadata
-	visibleFields := qs.metadata.GetSystemFields(req.ObjectAPIName)
+	visibleFields := qs.metadata.GetSystemFields(ctx, req.ObjectAPIName)
 
 	// Add custom fields that are visible
 	for _, field := range schema.Fields {
@@ -155,7 +155,7 @@ func (qs *QueryService) SearchSingleObject(ctx context.Context, objectName strin
 		return []models.SObject{}, nil
 	}
 
-	schema := qs.metadata.GetSchema(objectName)
+	schema := qs.metadata.GetSchema(ctx, objectName)
 	if schema == nil {
 		return nil, pkgErrors.NewNotFoundError("Object", objectName)
 	}
@@ -263,7 +263,7 @@ func (qs *QueryService) SearchSingleObject(ctx context.Context, objectName strin
 
 // GlobalSearch searches across all objects
 func (qs *QueryService) GlobalSearch(ctx context.Context, term string, currentUser *models.UserSession) ([]models.SearchResult, error) { // Added ctx
-	schemas := qs.metadata.GetSchemas()
+	schemas := qs.metadata.GetSchemas(ctx)
 	results := make([]models.SearchResult, 0)
 
 	for _, schema := range schemas {
@@ -299,7 +299,7 @@ func (qs *QueryService) RunAnalytics(ctx context.Context, analyticsQuery models.
 		return nil, fmt.Errorf("access denied: cannot read %s", objectName)
 	}
 
-	schema := qs.metadata.GetSchema(objectName)
+	schema := qs.metadata.GetSchema(ctx, objectName)
 	if schema == nil {
 		return nil, pkgErrors.NewNotFoundError("Object", objectName)
 	}
@@ -379,7 +379,7 @@ func (qs *QueryService) RunAnalytics(ctx context.Context, analyticsQuery models.
 func (qs *QueryService) ExecuteRawSQL(ctx context.Context, sql string, params []interface{}, user *models.UserSession) ([]models.SObject, error) {
 	// Validate and Rewrite SQL (RLS/FLS)
 	// This ensures users can only see what they are allowed to see.
-	safeSQL, safeParams, err := qs.validator.ValidateAndRewrite(sql, params, user)
+	safeSQL, safeParams, err := qs.validator.ValidateAndRewrite(ctx, sql, params, user)
 	if err != nil {
 		return nil, fmt.Errorf("security validation failed: %w", err)
 	}

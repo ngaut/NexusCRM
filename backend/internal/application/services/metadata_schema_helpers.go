@@ -79,10 +79,7 @@ func (ms *MetadataService) PrepareTableDefinition(schema *models.ObjectMetadata)
 				}
 			}
 		}
-		if len(field.ReferenceTo) == 1 {
-			colDef.ReferenceTo = field.ReferenceTo[0] // Single reference -> add FK
-		}
-		colDef.AllReferences = field.ReferenceTo
+		colDef.ReferenceTo = field.ReferenceTo
 		def.Columns = append(def.Columns, colDef)
 
 		// If Polymorphic, add a "Type" column to store the object type of the reference

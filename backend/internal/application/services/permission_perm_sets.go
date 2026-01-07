@@ -10,17 +10,17 @@ import (
 // ==================== Permission Set Permissions ====================
 
 // GetPermissionSetObjectPermissions retrieves all object permissions for a permission set
-func (ps *PermissionService) GetPermissionSetObjectPermissions(permissionSetID string) ([]models.ObjectPermission, error) {
+func (ps *PermissionService) GetPermissionSetObjectPermissions(permissionSetID string) ([]models.SystemObjectPerms, error) {
 	return ps.repo.ListPermissionSetObjectPermissions(context.Background(), permissionSetID)
 }
 
 // GetPermissionSetFieldPermissions retrieves all field permissions for a permission set
-func (ps *PermissionService) GetPermissionSetFieldPermissions(permissionSetID string) ([]models.FieldPermission, error) {
+func (ps *PermissionService) GetPermissionSetFieldPermissions(permissionSetID string) ([]models.SystemFieldPerms, error) {
 	return ps.repo.ListPermissionSetFieldPermissions(context.Background(), permissionSetID)
 }
 
 // UpdatePermissionSetObjectPermission creates or updates an object permission for a permission set
-func (ps *PermissionService) UpdatePermissionSetObjectPermission(perm models.ObjectPermission) error {
+func (ps *PermissionService) UpdatePermissionSetObjectPermission(perm models.SystemObjectPerms) error {
 	if perm.PermissionSetID == nil || *perm.PermissionSetID == "" {
 		return fmt.Errorf("permission_set_id is required")
 	}
@@ -28,7 +28,7 @@ func (ps *PermissionService) UpdatePermissionSetObjectPermission(perm models.Obj
 }
 
 // UpdatePermissionSetFieldPermission creates or updates a field permission for a permission set
-func (ps *PermissionService) UpdatePermissionSetFieldPermission(perm models.FieldPermission) error {
+func (ps *PermissionService) UpdatePermissionSetFieldPermission(perm models.SystemFieldPerms) error {
 	if perm.PermissionSetID == nil || *perm.PermissionSetID == "" {
 		return fmt.Errorf("permission_set_id is required")
 	}
@@ -38,7 +38,7 @@ func (ps *PermissionService) UpdatePermissionSetFieldPermission(perm models.Fiel
 // ==================== Effective Permissions (Admin View) ====================
 
 // GetEffectiveObjectPermissions returns the merged object permissions for a specific user
-func (ps *PermissionService) GetEffectiveObjectPermissions(userID string) ([]models.ObjectPermission, error) {
+func (ps *PermissionService) GetEffectiveObjectPermissions(userID string) ([]models.SystemObjectPerms, error) {
 	ctx := context.Background()
 	profileID, err := ps.repo.GetUserProfileID(ctx, userID)
 	if err != nil {
@@ -49,7 +49,7 @@ func (ps *PermissionService) GetEffectiveObjectPermissions(userID string) ([]mod
 }
 
 // GetEffectiveFieldPermissions returns the merged field permissions for a specific user
-func (ps *PermissionService) GetEffectiveFieldPermissions(userID string) ([]models.FieldPermission, error) {
+func (ps *PermissionService) GetEffectiveFieldPermissions(userID string) ([]models.SystemFieldPerms, error) {
 	ctx := context.Background()
 	profileID, err := ps.repo.GetUserProfileID(ctx, userID)
 	if err != nil {

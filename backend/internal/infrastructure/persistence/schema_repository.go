@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"strings"
+
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // SchemaRepository handles direct database schema operations (DDL) and system registry updates
@@ -68,53 +70,68 @@ func (r *SchemaRepository) mapSQLTypeToLogical(sqlType string) string {
 
 // MapFieldTypeToSQL converts logical field types to SQL column types
 // This is used by MetadataService to prepare TableDefinition
-// Now uses the centralized fieldtypes registry loaded from shared/constants/fieldTypes.json
+// It handles both Logical Types (from constants) and Physical SQL Types (for system tables)
 func (r *SchemaRepository) MapFieldTypeToSQL(fieldType string) string {
-	// Simplified mapping for now, should ideally load from registry
-	switch fieldType {
-	case "Text":
+	// 1. Check Logical Types (using shared constants)
+	switch constants.SchemaFieldType(fieldType) {
+	case constants.FieldTypeText:
 		return "VARCHAR(255)"
-	case "TextArea":
+	case constants.FieldTypeTextArea:
 		return "TEXT"
-	case "LongTextArea":
+	case constants.FieldTypeLongTextArea:
 		return "LONGTEXT"
-	case "Number":
+	case constants.FieldTypeRichText:
+		return "LONGTEXT"
+	case constants.FieldTypeNumber:
 		return "DECIMAL(18,6)"
-	case "Currency":
+	case constants.FieldTypeCurrency:
 		return "DECIMAL(18,2)"
-	case "Percent":
+	case constants.FieldTypePercent:
 		return "DECIMAL(5,2)"
-	case "Checkbox":
+	case constants.FieldTypeBoolean:
 		return "BOOLEAN"
-	case "Date":
+	case constants.FieldTypeDate:
 		return "DATE"
-	case "DateTime":
+	case constants.FieldTypeDateTime:
 		return "DATETIME"
-	case "Email":
+	case constants.FieldTypeEmail:
 		return "VARCHAR(255)"
-	case "Phone":
+	case constants.FieldTypePhone:
 		return "VARCHAR(50)"
-	case "URL":
+	case constants.FieldTypeURL:
 		return "VARCHAR(255)"
-	case "Picklist":
+	case constants.FieldTypePicklist:
 		return "VARCHAR(255)"
-	case "MultiPicklist":
+	case constants.FieldTypeMultiPicklist:
 		return "JSON" // Stored as JSON array
-	case "Lookup":
+	case constants.FieldTypeLookup, constants.FieldTypeMasterDetail:
 		return "VARCHAR(36)" // UUID
-	case "MasterDetail":
-		return "VARCHAR(36)" // UUID
-	case "AutoNumber":
+	case constants.FieldTypeAutoNumber:
 		return "VARCHAR(255)" // Usually string based format
-	case "Formula":
+	case constants.FieldTypeFormula:
 		return "VARCHAR(255)" // Depends on return type, handled by buildColumnDDL
-	case "EncryptedString":
+	case constants.FieldTypePassword, constants.FieldTypeEncryptedString:
 		return "VARCHAR(255)"
-	case "RichText":
-		return "LONGTEXT"
-	case "JSON":
+	case constants.FieldTypeJSON:
 		return "JSON"
-	default:
-		return "VARCHAR(255)"
 	}
+
+	// 2. Check Raw SQL Types (Passthrough for System Tables)
+	// We allow specific raw types that match what we use in system_tables.json
+	upper := strings.ToUpper(fieldType)
+	switch upper {
+	case "INT", "INTEGER", "TINYINT", "TINYINT(1)", "BIGINT", "SMALLINT":
+		return fieldType // Keep original casing/precision if needed, usually uppercase
+	case "DATETIME", "TIMESTAMP", "DATE":
+		return upper
+	case "TEXT", "MEDIUMTEXT", "LONGTEXT", "JSON":
+		return upper
+	case "BOOLEAN", "BOOL":
+		return "BOOLEAN"
+	case "VARCHAR(255)", "VARCHAR(36)", "VARCHAR(50)", "CHAR(36)":
+		return fieldType
+	}
+
+	// Default fallback
+	return "VARCHAR(255)"
 }

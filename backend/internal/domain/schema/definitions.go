@@ -5,20 +5,20 @@ type ColumnDefinition struct {
 	Name             string   `json:"name"`
 	Label            string   `json:"label,omitempty"` // User-friendly label (defaults to Title Cased Name)
 	Type             string   `json:"type"`
-	LogicalType      string   `json:"logical_type,omitempty"` // Optional: Override logical type (e.g. Password, Picklist)
-	PrimaryKey       bool     `json:"primary_key,omitempty"`
+	LogicalType      string   `json:"logicalType,omitempty"` // Optional: Override logical type (e.g. Password, Picklist)
+	PrimaryKey       bool     `json:"primaryKey,omitempty"`
 	Unique           bool     `json:"unique,omitempty"`
 	Nullable         bool     `json:"nullable,omitempty"`
 	Default          string   `json:"default,omitempty"`
-	AutoIncrement    bool     `json:"auto_increment,omitempty"`
-	ReferenceTo      string   `json:"reference_to,omitempty"`
-	AllReferences    []string `json:"all_references,omitempty"`
+	AutoIncrement    bool     `json:"autoIncrement,omitempty"`
+	ReferenceTo      []string `json:"referenceTo,omitempty"`
+	IsPolymorphic    bool     `json:"isPolymorphic,omitempty"`
 	Formula          string   `json:"formula,omitempty"`
-	ReturnType       string   `json:"return_type,omitempty"`
-	OnDelete         string   `json:"on_delete,omitempty"` // CASCADE, SET NULL, RESTRICT
-	IsMasterDetail   bool     `json:"is_master_detail,omitempty"`
-	RelationshipName string   `json:"relationship_name,omitempty"`
-	IsNameField      bool     `json:"is_name_field,omitempty"`
+	ReturnType       string   `json:"returnType,omitempty"`
+	OnDelete         string   `json:"onDelete,omitempty"` // CASCADE, SET NULL, RESTRICT
+	IsMasterDetail   bool     `json:"isMasterDetail,omitempty"`
+	RelationshipName string   `json:"relationshipName,omitempty"`
+	IsNameField      bool     `json:"isNameField,omitempty"`
 	Options          []string `json:"options,omitempty"`
 	Length           int      `json:"length,omitempty"`
 }
@@ -34,20 +34,20 @@ type IndexDefinition struct {
 type ForeignKeyDefinition struct {
 	Column     string `json:"column"`
 	References string `json:"references"` // format: "tableName(columnName)"
-	OnDelete   string `json:"on_delete,omitempty"`
-	OnUpdate   string `json:"on_update,omitempty"`
+	OnDelete   string `json:"onDelete,omitempty"`
+	OnUpdate   string `json:"onUpdate,omitempty"`
 }
 
 // TableDefinition represents a complete table schema
 type TableDefinition struct {
-	TableName     string                 `json:"table_name"`
-	TableType     string                 `json:"table_type"` // system_core, system_metadata, custom_object
-	Category      string                 `json:"category"`   // auth, metadata, crm, etc.
+	TableName     string                 `json:"tableName"`
+	TableType     string                 `json:"tableType"` // system_core, system_metadata, custom_object
+	Category      string                 `json:"category"`  // auth, metadata, crm, etc.
 	Label         string                 `json:"label,omitempty"`
 	Description   string                 `json:"description"`
-	IsManaged     bool                   `json:"is_managed,omitempty"`
-	SchemaVersion string                 `json:"schema_version,omitempty"`
+	IsManaged     bool                   `json:"isManaged,omitempty"`
+	SchemaVersion string                 `json:"schemaVersion,omitempty"`
 	Columns       []ColumnDefinition     `json:"columns"`
 	Indices       []IndexDefinition      `json:"indices,omitempty"`
-	ForeignKeys   []ForeignKeyDefinition `json:"foreign_keys,omitempty"`
+	ForeignKeys   []ForeignKeyDefinition `json:"foreignKeys,omitempty"`
 }

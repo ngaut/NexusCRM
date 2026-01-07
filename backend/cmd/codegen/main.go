@@ -33,16 +33,16 @@ type TableDefinition struct {
 }
 
 type ColumnDef struct {
-	Name          string `json:"name"`
-	Type          string `json:"type"`
-	PrimaryKey    bool   `json:"primaryKey,omitempty"`
-	Nullable      bool   `json:"nullable,omitempty"`
-	Unique        bool   `json:"unique,omitempty"`
-	Default       string `json:"default,omitempty"`
-	AutoIncrement bool   `json:"autoIncrement,omitempty"`
-	LogicalType   string `json:"logicalType,omitempty"`
-	ReferenceTo   string `json:"referenceTo,omitempty"`
-	IsNameField   bool   `json:"isNameField,omitempty"`
+	Name          string   `json:"name"`
+	Type          string   `json:"type"`
+	PrimaryKey    bool     `json:"primaryKey,omitempty"`
+	Nullable      bool     `json:"nullable,omitempty"`
+	Unique        bool     `json:"unique,omitempty"`
+	Default       string   `json:"default,omitempty"`
+	AutoIncrement bool     `json:"autoIncrement,omitempty"`
+	LogicalType   string   `json:"logicalType,omitempty"`
+	ReferenceTo   []string `json:"referenceTo,omitempty"`
+	IsNameField   bool     `json:"isNameField,omitempty"`
 }
 
 type IndexDef struct {
@@ -64,114 +64,114 @@ type genContext struct {
 	timestamp string
 }
 
-var commonFields = map[string]string{
+var commonFieldNames = []string{
 	// Primary/Core fields
-	"id":           "FieldID",
-	"name":         "FieldName",
-	"api_name":     "FieldAPIName",
-	"label":        "FieldLabel",
-	"plural_label": "FieldPluralLabel",
-	"description":  "FieldDescription",
+	"id",
+	"name",
+	"api_name",
+	"label",
+	"plural_label",
+	"description",
 
 	// Audit fields
-	"created_date":        "FieldCreatedDate",
-	"created_by_id":       "FieldCreatedByID",
-	"last_modified_date":  "FieldLastModifiedDate",
-	"last_modified_by_id": "FieldLastModifiedByID",
-	"owner_id":            "FieldOwnerID",
-	"is_deleted":          "FieldIsDeleted",
-	"created_by":          "FieldCreatedBy",
+	"created_date",
+	"created_by_id",
+	"last_modified_date",
+	"last_modified_by_id",
+	"owner_id",
+	"is_deleted",
+	"created_by",
 
 	// User fields
-	"email":             "FieldEmail",
-	"username":          "FieldUsername",
-	"password":          "FieldPassword",
-	"first_name":        "FieldFirstName",
-	"last_name":         "FieldLastName",
-	"profile_id":        "FieldProfileID",
-	"permission_set_id": "FieldPermissionSetID",
-	"role_id":           "FieldRoleID",
-	"is_active":         "FieldIsActive",
-	"last_login_date":   "FieldLastLoginDate",
+	"email",
+	"username",
+	"password",
+	"first_name",
+	"last_name",
+	"profile_id",
+	"permission_set_id",
+	"role_id",
+	"is_active",
+	"last_login_date",
 
 	// Object/Field Metadata
-	"type":         "FieldMetaType",
-	"object_id":    "FieldObjectID",
-	"reference_to": "FieldReferenceTo",
-	"subject":      "FieldSubject",
-	"is_custom":    "FieldIsCustom",
-	"is_system":    "FieldIsSystem",
-	"required":     "FieldIsRequired",
-	"unique":       "FieldIsUnique",
+	"type",
+	"object_id",
+	"reference_to",
+	"subject",
+	"is_custom",
+	"is_system",
+	"required",
+	"unique",
 
 	// Flow/Action fields
-	"status":     "FieldStatus",
-	"sort_order": "FieldSortOrder",
-	"condition":  "FieldCondition",
-	"config":     "FieldConfig",
+	"status",
+	"sort_order",
+	"condition",
+	"config",
 
 	// Approval fields
-	"process_id":     "FieldProcessID",
-	"work_item_id":   "FieldWorkItemID",
-	"submitted_date": "FieldSubmittedDate",
-	"approver_id":    "FieldApproverID",
-	"approved_by_id": "FieldApprovedByID",
-	"approved_date":  "FieldApprovedDate",
-	"comments":       "FieldComments",
-	"entry_criteria": "FieldEntryCriteria",
-	"approver_type":  "FieldApproverType",
+	"process_id",
+	"work_item_id",
+	"submitted_date",
+	"approver_id",
+	"approved_by_id",
+	"approved_date",
+	"comments",
+	"entry_criteria",
+	"approver_type",
 
 	// Flow/Step fields
-	"flow_id":          "FieldFlowID",
-	"flow_instance_id": "FieldFlowInstanceID",
-	"flow_step_id":     "FieldFlowStepID",
-	"current_step_id":  "FieldCurrentStepID",
-	"step_name":        "FieldStepName",
-	"step_order":       "FieldStepOrder",
-	"step_type":        "FieldStepType",
-	"action_type":      "FieldActionType",
-	"trigger_type":     "FieldTriggerType",
-	"trigger_object":   "FieldTriggerObject",
-	"on_success_step":  "FieldOnSuccessStep",
-	"on_failure_step":  "FieldOnFailureStep",
+	"flow_id",
+	"flow_instance_id",
+	"flow_step_id",
+	"current_step_id",
+	"step_name",
+	"step_order",
+	"step_type",
+	"action_type",
+	"trigger_type",
+	"trigger_object",
+	"on_success_step",
+	"on_failure_step",
 
 	// Recycle Bin fields
-	"record_id":       "FieldRecordID",
-	"object_api_name": "FieldObjectAPIName",
-	"record_name":     "FieldRecordName",
-	"deleted_by":      "FieldDeletedBy",
-	"deleted_date":    "FieldDeletedDate",
+	"record_id",
+	"object_api_name",
+	"record_name",
+	"deleted_by",
+	"deleted_date",
 
 	// Recent Items fields
-	"user_id":   "FieldUserID",
-	"timestamp": "FieldTimestamp",
+	"user_id",
+	"timestamp",
 
 	// Config fields
-	"key_name":  "FieldKeyName",
-	"value":     "FieldValue",
-	"is_secret": "FieldIsSecret",
+	"key_name",
+	"value",
+	"is_secret",
 
 	// Log fields
-	"level":   "FieldLevel",
-	"source":  "FieldSource",
-	"message": "FieldMessage",
-	"details": "FieldDetails",
+	"level",
+	"source",
+	"message",
+	"details",
 
 	// Session fields
-	"token":         "FieldToken",
-	"expires_at":    "FieldExpiresAt",
-	"last_activity": "FieldLastActivity",
-	"ip_address":    "FieldIPAddress",
-	"user_agent":    "FieldUserAgent",
-	"is_revoked":    "FieldIsRevoked",
+	"token",
+	"expires_at",
+	"last_activity",
+	"ip_address",
+	"user_agent",
+	"is_revoked",
 
 	// Metadata fields
-	"table_name":     "FieldTableName",
-	"table_type":     "FieldTableType",
-	"category":       "FieldCategory",
-	"filters":        "FieldFilters",
-	"is_managed":     "FieldIsManaged",
-	"schema_version": "FieldSchemaVersion",
+	"table_name",
+	"table_type",
+	"category",
+	"filters",
+	"is_managed",
+	"schema_version",
 }
 
 func main() {
@@ -310,15 +310,14 @@ func generateGoFieldConstants(ctx *genContext, projectRoot string) error {
 	sb.WriteString("// Common field names (backward compatible)\n")
 	sb.WriteString("const (\n")
 
-	// Sort common fields for deterministic output
-	var commonKeys []string
-	for k := range commonFields {
-		commonKeys = append(commonKeys, k)
-	}
-	sort.Strings(commonKeys)
+	// Sort common fields for deterministic output (slice is already sorted in code if we keep it sorted, but let's sort to be safe)
+	sort.Strings(commonFieldNames)
 
-	for _, field := range commonKeys {
-		constName := commonFields[field]
+	for _, field := range commonFieldNames {
+		// ALGORITHMIC NAMING: Field + PascalCase
+		pascalName := snakeToPascal(field)
+		constName := "Field" + pascalName
+
 		sb.WriteString(fmt.Sprintf("\t%s = \"%s\"\n", constName, field))
 	}
 	sb.WriteString(")\n\n")
@@ -389,7 +388,7 @@ func generateGoStructs(ctx *genContext, projectRoot string) error {
 	})
 
 	for _, t := range sortedTables {
-		structName := "Gen" + tableNameToStructName(t.TableName) // Prefix with Gen to avoid conflicts
+		structName := tableNameToStructName(t.TableName) // Removed Gen prefix for direct usage
 
 		// Add description as comment
 		if t.Description != "" {
@@ -466,31 +465,32 @@ func generateTypeScript(ctx *genContext, projectRoot string) error {
 	sb.WriteString("// ==================== Common Fields ====================\n\n")
 	sb.WriteString("export const COMMON_FIELDS = {\n")
 
-	// Sort keys for deterministic output
-	var commonKeys []string
-	for k := range commonFields {
-		commonKeys = append(commonKeys, k)
-	}
-	sort.Strings(commonKeys)
+	sort.Strings(commonFieldNames)
 
-	for _, field := range commonKeys {
+	for _, field := range commonFieldNames {
 		// Convert "FieldID" to "ID" for cleaner TS constants
-		constName := commonFields[field]
-		constName = strings.TrimPrefix(constName, "Field")
-		// Special cases to maintain mapping
-		if constName == "APIName" {
-			constName = "API_NAME"
-		} else if constName == "CreatedDate" {
-			constName = "CREATED_DATE"
-		} else if constName == "LastModifiedDate" {
-			constName = "LAST_MODIFIED_DATE"
-		} else if constName == "MetaType" || constName == "Type" {
-			constName = "TYPE"
-		} else {
-			// Convert PascalCase to SNAKE_CASE for TS constants
-			constName = pascalToSnake(constName)
-		}
-		sb.WriteString(fmt.Sprintf("    %s: '%s',\n", strings.ToUpper(constName), field))
+		// Algorithm: snakeToPascal -> upper snake case?
+		// e.g. "created_date" -> "CreatedDate" -> "CREATED_DATE"
+
+		// Use helper
+		pascalName := snakeToPascal(field) // "CreatedDate"
+
+		// Handle legacy overrides
+
+		// Convert Pascal to Snake for TS Constant Key: "CreatedDate" -> "CREATED_DATE"
+		// Using pascalToSnake helper then Upper
+		snakeName := pascalToSnake(pascalName)
+		constName := strings.ToUpper(snakeName)
+
+		// Special cases from original code:
+		// if constName == "APIName" -> "API_NAME" (handled by pascalToSnake usually?)
+		// pascalToSnake("APIName") -> "api_name"?
+		// Let's check pascalToSnake implementation.
+		// "API" -> "Api" -> "api".
+		// So "APIName" -> "ApiName" -> "api_name".
+		// Upper -> "API_NAME". Correct.
+
+		sb.WriteString(fmt.Sprintf("    %s: '%s',\n", constName, field))
 	}
 	sb.WriteString("} as const;\n\n")
 
@@ -985,7 +985,7 @@ func generateMCPTypes(ctx *genContext, projectRoot string) error {
 			continue
 		}
 
-		structName := "Gen" + tableNameToStructName(t.TableName) // Prefix to avoid conflicts
+		structName := tableNameToStructName(t.TableName) // Removed Gen prefix
 
 		if t.Description != "" {
 			sb.WriteString(fmt.Sprintf("// %s represents the %s table (generated).\n", structName, t.TableName))
@@ -1085,6 +1085,7 @@ func snakeToPascal(s string) string {
 	result = strings.ReplaceAll(result, "Html", "HTML")
 	result = strings.ReplaceAll(result, "Json", "JSON")
 	result = strings.ReplaceAll(result, "Sql", "SQL")
+	result = strings.ReplaceAll(result, "Ip", "IP")
 
 	return result
 }
@@ -1195,12 +1196,4 @@ func sqlTypeToTSType(sqlType string, logicalType string) string {
 	default:
 		return "unknown"
 	}
-}
-
-// isExportedIdentifier checks if identifier is valid Go exported identifier
-func isExportedIdentifier(s string) bool {
-	if len(s) == 0 {
-		return false
-	}
-	return unicode.IsUpper(rune(s[0]))
 }

@@ -21,11 +21,11 @@ func normalizeWidgets(widgets []models.WidgetConfig) []models.WidgetConfig {
 // ==================== Dashboard Methods ====================
 
 // GetDashboards returns all dashboards
-func (ms *MetadataService) GetDashboards(user *models.UserSession) []*models.DashboardConfig {
+func (ms *MetadataService) GetDashboards(ctx context.Context, user *models.UserSession) []*models.DashboardConfig {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	dashboards, err := ms.repo.GetAllDashboards(context.Background())
+	dashboards, err := ms.repo.GetAllDashboards(ctx)
 	if err != nil {
 		log.Printf("Failed to get dashboards: %v", err)
 		return []*models.DashboardConfig{}
@@ -35,10 +35,10 @@ func (ms *MetadataService) GetDashboards(user *models.UserSession) []*models.Das
 }
 
 // GetDashboard returns a dashboard by ID
-func (ms *MetadataService) GetDashboard(id string) *models.DashboardConfig {
+func (ms *MetadataService) GetDashboard(ctx context.Context, id string) *models.DashboardConfig {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	dashboard, err := ms.repo.GetDashboard(context.Background(), id)
+	dashboard, err := ms.repo.GetDashboard(ctx, id)
 	if err != nil {
 		return nil
 	}
@@ -46,19 +46,19 @@ func (ms *MetadataService) GetDashboard(id string) *models.DashboardConfig {
 }
 
 // CreateDashboard creates a new dashboard
-func (ms *MetadataService) CreateDashboard(dashboard *models.DashboardConfig) error {
+func (ms *MetadataService) CreateDashboard(ctx context.Context, dashboard *models.DashboardConfig) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	if dashboard.Label == "" {
-		return fmt.Errorf("Dashboard Label is required")
+		return fmt.Errorf("dashboard label is required")
 	}
 
 	if dashboard.ID == "" {
 		dashboard.ID = GenerateID()
 	}
 
-	existing, _ := ms.repo.GetDashboard(context.Background(), dashboard.ID)
+	existing, _ := ms.repo.GetDashboard(ctx, dashboard.ID)
 	if existing != nil {
 		return fmt.Errorf("dashboard with ID '%s' already exists", dashboard.ID)
 	}
@@ -72,7 +72,7 @@ func (ms *MetadataService) CreateDashboard(dashboard *models.DashboardConfig) er
 	}
 
 	// Insert into DB via Repo
-	if err := ms.repo.CreateDashboard(context.Background(), dashboard); err != nil {
+	if err := ms.repo.CreateDashboard(ctx, dashboard); err != nil {
 		return fmt.Errorf("failed to insert dashboard: %w", err)
 	}
 
@@ -80,11 +80,11 @@ func (ms *MetadataService) CreateDashboard(dashboard *models.DashboardConfig) er
 }
 
 // UpdateDashboard updates an existing dashboard
-func (ms *MetadataService) UpdateDashboard(id string, updates *models.DashboardConfig) error {
+func (ms *MetadataService) UpdateDashboard(ctx context.Context, id string, updates *models.DashboardConfig) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	existing, err := ms.repo.GetDashboard(context.Background(), id)
+	existing, err := ms.repo.GetDashboard(ctx, id)
 	if err != nil || existing == nil {
 		return fmt.Errorf("dashboard with ID '%s' not found", id)
 	}
@@ -107,7 +107,7 @@ func (ms *MetadataService) UpdateDashboard(id string, updates *models.DashboardC
 	existing.Widgets = normalizeWidgets(existing.Widgets)
 
 	// Update DB via Repo
-	if err := ms.repo.UpdateDashboard(context.Background(), id, existing); err != nil {
+	if err := ms.repo.UpdateDashboard(ctx, id, existing); err != nil {
 		return fmt.Errorf("failed to update dashboard: %w", err)
 	}
 
@@ -115,14 +115,14 @@ func (ms *MetadataService) UpdateDashboard(id string, updates *models.DashboardC
 }
 
 // DeleteDashboard deletes a dashboard
-func (ms *MetadataService) DeleteDashboard(id string) error {
+func (ms *MetadataService) DeleteDashboard(ctx context.Context, id string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	existing, _ := ms.repo.GetDashboard(context.Background(), id)
+	existing, _ := ms.repo.GetDashboard(ctx, id)
 	if existing == nil {
 		return fmt.Errorf("dashboard with ID '%s' not found", id)
 	}
 
-	return ms.repo.DeleteDashboard(context.Background(), id)
+	return ms.repo.DeleteDashboard(ctx, id)
 }

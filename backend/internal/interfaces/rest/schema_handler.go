@@ -17,7 +17,7 @@ import (
 // GetSchemas handles GET /api/metadata/objects
 func (h *MetadataHandler) GetSchemas(c *gin.Context) {
 	HandleGetEnvelope(c, "schemas", func() (interface{}, error) {
-		return h.svc.GetSchemas(), nil
+		return h.svc.GetSchemas(c.Request.Context()), nil
 	})
 }
 
@@ -28,7 +28,7 @@ func (h *MetadataHandler) GetSchema(c *gin.Context) {
 
 	HandleGetEnvelope(c, "schema", func() (interface{}, error) {
 		// Get effective schema (filtered by permissions)
-		schema := h.svc.GetEffectiveSchema(apiName, user)
+		schema := h.svc.GetEffectiveSchema(c.Request.Context(), apiName, user)
 		if schema == nil {
 			return nil, appErrors.NewNotFoundError("Schema", apiName)
 		}
@@ -55,11 +55,11 @@ func (h *MetadataHandler) CreateSchema(c *gin.Context) {
 
 		// Use CreateObjectInApp if AppID is present
 		if schema.AppID != nil && *schema.AppID != "" {
-			if err := h.svc.Metadata.CreateObjectInApp(*schema.AppID, schema); err != nil {
+			if err := h.svc.Metadata.CreateObjectInApp(c.Request.Context(), *schema.AppID, schema); err != nil {
 				return err
 			}
 		} else {
-			if err := h.svc.Metadata.CreateSchema(schema); err != nil {
+			if err := h.svc.Metadata.CreateSchema(c.Request.Context(), schema); err != nil {
 				return err
 			}
 		}
@@ -69,7 +69,7 @@ func (h *MetadataHandler) CreateSchema(c *gin.Context) {
 		// but we still need to grant permissions.
 		err := h.svc.TxManager.WithTransaction(func(tx *sql.Tx) error {
 			adminProfileID := constants.ProfileSystemAdmin
-			perm := models.ObjectPermission{
+			perm := models.SystemObjectPerms{
 				ProfileID:     &adminProfileID,
 				ObjectAPIName: schema.APIName,
 				AllowRead:     true,
@@ -105,7 +105,7 @@ func (h *MetadataHandler) UpdateSchema(c *gin.Context) {
 	apiName := strings.ToLower(c.Param("apiName"))
 	var updates models.ObjectMetadata
 	HandleUpdateEnvelope(c, "schema", "Schema updated successfully", &updates, func() error {
-		return h.svc.Metadata.UpdateSchema(apiName, &updates)
+		return h.svc.Metadata.UpdateSchema(c.Request.Context(), apiName, &updates)
 	})
 }
 
@@ -117,7 +117,7 @@ func (h *MetadataHandler) DeleteSchema(c *gin.Context) {
 
 	HandleDeleteEnvelope(c, "Object deleted successfully", func() error {
 		// Step 1: Drop table (DDL - auto-commits, cannot be in transaction)
-		if err := h.svc.Metadata.DeleteSchema(apiName); err != nil {
+		if err := h.svc.Metadata.DeleteSchema(c.Request.Context(), apiName); err != nil {
 			return err
 		}
 
@@ -126,7 +126,7 @@ func (h *MetadataHandler) DeleteSchema(c *gin.Context) {
 		// We only need to manually clean up app navigation items
 		err := h.svc.TxManager.WithTransaction(func(tx *sql.Tx) error {
 			// Remove object from all app navigation items
-			if err := h.svc.UIMetadata.RemoveObjectFromAllAppsTx(tx, apiName); err != nil {
+			if err := h.svc.UIMetadata.RemoveObjectFromAllAppsTx(c.Request.Context(), tx, apiName); err != nil {
 				log.Printf("⚠️  Warning: Failed to remove object '%s' from app navigation: %v", apiName, err)
 				// Don't fail the entire deletion if this cleanup fails
 				// The object is already deleted from DB, this is just UI cleanup
@@ -168,7 +168,7 @@ func (h *MetadataHandler) CreateField(c *gin.Context) {
 			}
 		}
 
-		if err := h.svc.Metadata.CreateField(objectAPIName, &field); err != nil {
+		if err := h.svc.Metadata.CreateField(c.Request.Context(), objectAPIName, &field); err != nil {
 			return err
 		}
 
@@ -186,7 +186,7 @@ func (h *MetadataHandler) UpdateField(c *gin.Context) {
 
 	// No return key for UpdateField
 	HandleUpdateEnvelope(c, "", "Field updated successfully", &updates, func() error {
-		return h.svc.Metadata.UpdateField(objectAPIName, fieldAPIName, &updates)
+		return h.svc.Metadata.UpdateField(c.Request.Context(), objectAPIName, fieldAPIName, &updates)
 	})
 }
 
@@ -198,7 +198,7 @@ func (h *MetadataHandler) DeleteField(c *gin.Context) {
 	fieldAPIName := c.Param("fieldApiName")
 
 	HandleDeleteEnvelope(c, "Field deleted successfully", func() error {
-		return h.svc.Metadata.DeleteField(objectAPIName, fieldAPIName)
+		return h.svc.Metadata.DeleteField(c.Request.Context(), objectAPIName, fieldAPIName)
 	})
 }
 
@@ -210,7 +210,7 @@ func (h *MetadataHandler) CreateValidationRule(c *gin.Context) {
 
 	var rule models.ValidationRule
 	HandleCreateEnvelope(c, "rule", "Validation rule created successfully", &rule, func() error {
-		return h.svc.Metadata.CreateValidationRule(&rule)
+		return h.svc.Metadata.CreateValidationRule(c.Request.Context(), &rule)
 	})
 }
 
@@ -222,7 +222,7 @@ func (h *MetadataHandler) UpdateValidationRule(c *gin.Context) {
 	var updates models.ValidationRule
 	// No return key for UpdateValidationRule? Check existing... "c.JSON(OK, ... message)". Yes.
 	HandleUpdateEnvelope(c, "", "Validation rule updated successfully", &updates, func() error {
-		return h.svc.Metadata.UpdateValidationRule(id, &updates)
+		return h.svc.Metadata.UpdateValidationRule(c.Request.Context(), id, &updates)
 	})
 }
 
@@ -232,7 +232,7 @@ func (h *MetadataHandler) DeleteValidationRule(c *gin.Context) {
 
 	id := c.Param(constants.FieldID)
 	HandleDeleteEnvelope(c, "Validation rule deleted successfully", func() error {
-		return h.svc.Metadata.DeleteValidationRule(id)
+		return h.svc.Metadata.DeleteValidationRule(c.Request.Context(), id)
 	})
 }
 
@@ -243,7 +243,7 @@ func (h *MetadataHandler) GetValidationRules(c *gin.Context) {
 		if objectAPIName == "" {
 			return nil, appErrors.NewValidationError("objectApiName", "is required")
 		}
-		return h.svc.Metadata.GetValidationRules(objectAPIName), nil
+		return h.svc.Metadata.GetValidationRules(c.Request.Context(), objectAPIName), nil
 	})
 }
 

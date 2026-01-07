@@ -22,7 +22,7 @@ func (ps *PersistenceService) Delete(
 	id string,
 	currentUser *models.UserSession,
 ) error {
-	schema, err := ps.prepareOperation(objectName, constants.PermDelete, currentUser)
+	schema, err := ps.prepareOperation(ctx, objectName, constants.PermDelete, currentUser)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (ps *PersistenceService) Delete(
 
 	// Check child relationships
 	if schema != nil {
-		children := ps.metadata.GetChildRelationships(objectName)
+		children := ps.metadata.GetChildRelationships(ctx, objectName)
 		for _, childSchema := range children {
 			for _, field := range childSchema.Fields {
 				isLookup := strings.EqualFold(string(field.Type), string(constants.FieldTypeLookup))
@@ -165,7 +165,7 @@ func (ps *PersistenceService) Delete(
 // Always use strings.EqualFold for DeleteRule comparisons to ensure case-insensitive matching.
 // DESIGN ASSUMPTION: Object API names are case-insensitive (see ContainsStringIgnoreCase).
 func (ps *PersistenceService) cascadeDeleteChildren(ctx context.Context, user *models.UserSession, parentObjName, parentID string) error {
-	schemas := ps.metadata.GetSchemas()
+	schemas := ps.metadata.GetSchemas(ctx)
 
 	for _, schema := range schemas {
 		for _, field := range schema.Fields {

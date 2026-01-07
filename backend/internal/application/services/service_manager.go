@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -114,20 +115,20 @@ func (sm *ServiceManager) RefreshMetadataCache() error {
 }
 
 // Metadata delegation methods
-func (sm *ServiceManager) GetSchema(apiName string) *models.ObjectMetadata {
-	return sm.Metadata.GetSchema(apiName)
+func (sm *ServiceManager) GetSchema(ctx context.Context, apiName string) *models.ObjectMetadata {
+	return sm.Metadata.GetSchema(ctx, apiName)
 }
 
-func (sm *ServiceManager) GetEffectiveSchema(apiName string, user *models.UserSession) *models.ObjectMetadata {
-	schema := sm.Metadata.GetSchema(apiName)
+func (sm *ServiceManager) GetEffectiveSchema(ctx context.Context, apiName string, user *models.UserSession) *models.ObjectMetadata {
+	schema := sm.Metadata.GetSchema(ctx, apiName)
 	if schema == nil {
 		return nil
 	}
 	return sm.Permissions.GetEffectiveSchema(schema, user)
 }
 
-func (sm *ServiceManager) GetSchemas() []*models.ObjectMetadata {
-	return sm.Metadata.GetSchemas()
+func (sm *ServiceManager) GetSchemas(ctx context.Context) []*models.ObjectMetadata {
+	return sm.Metadata.GetSchemas(ctx)
 }
 
 // App and Tab management

@@ -3,11 +3,9 @@ package formula
 import (
 	"encoding/json"
 	"fmt"
-	"sync"
 
 	"github.com/nexuscrm/backend/pkg/auth"
 	"github.com/nexuscrm/backend/pkg/expression"
-	expression_pkg "github.com/nexuscrm/backend/pkg/expression"
 )
 
 // Context holds the evaluation context for formulas
@@ -67,7 +65,6 @@ type CompiledFormula struct {
 // Engine is the formula evaluation engine backed by expression engine
 type Engine struct {
 	exprEngine *expression.Engine
-	mu         sync.RWMutex
 }
 
 // FunctionDefinition represents a formula function definition for API responses
@@ -95,8 +92,8 @@ func (e *Engine) Compile(expression string) (*CompiledFormula, error) {
 }
 
 // ToSQL converts an expression string to a SQL WHERE clause and arguments
-func ToSQL(expression string) (string, []interface{}, error) {
-	return expression_pkg.ToSQL(expression)
+func ToSQL(expr string) (string, []interface{}, error) {
+	return expression.ToSQL(expr)
 }
 
 // Validate validates a formula expression syntax
@@ -198,8 +195,5 @@ func (e *Engine) registerBuiltinFunctions() {
 
 // ClearCache clears the formula cache
 func (e *Engine) ClearCache() {
-	// Expression engine handles its own cache privately
-	if e.exprEngine != nil {
-		// e.exprEngine.ClearCache() // if supported
-	}
+
 }

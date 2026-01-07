@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -31,7 +32,7 @@ func InitializeStandardActions(metadataService *services.MetadataService) error 
 	}
 
 	// Step 2: Ensure 'Edit' and 'Delete' exist for ALL objects in metadata
-	schemas := metadataService.GetSchemas()
+	schemas := metadataService.GetSchemas(context.Background())
 	log.Printf("   ...Ensuring %d standard actions for %d objects...", len(actions), len(schemas))
 
 	for _, schema := range schemas {
@@ -44,7 +45,7 @@ func InitializeStandardActions(metadataService *services.MetadataService) error 
 				Icon:          action.Icon,
 			}
 
-			if err := metadataService.CreateAction(newAction); err != nil {
+			if err := metadataService.CreateAction(context.Background(), newAction); err != nil {
 				// Only log if it's not a duplicate/exists error
 				errStr := err.Error()
 				if !strings.Contains(errStr, "already exists") {

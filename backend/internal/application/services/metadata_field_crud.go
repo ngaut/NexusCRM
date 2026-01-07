@@ -16,7 +16,7 @@ import (
 // ==================== Field CRUD Methods ====================
 
 // CreateField creates a new field for an object
-func (ms *MetadataService) CreateField(objectAPIName string, field *models.FieldMetadata) error {
+func (ms *MetadataService) CreateField(ctx context.Context, objectAPIName string, field *models.FieldMetadata) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
@@ -37,7 +37,7 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 	// Master-Detail Validation/Enforcement
 	if field.IsMasterDetail {
 		if field.Type != constants.FieldTypeLookup {
-			return errors.NewValidationError(constants.FieldMetaType, "Master-Detail relationship is only valid for Lookup fields")
+			return errors.NewValidationError(constants.FieldType, "Master-Detail relationship is only valid for Lookup fields")
 		}
 		// Enforce defaults for Master-Detail
 		field.Required = true
@@ -66,7 +66,7 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 	}
 
 	// Get the object to ensure it exists
-	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), objectAPIName)
+	obj, err := ms.repo.GetSchemaByAPIName(ctx, objectAPIName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object '%s' not found", objectAPIName)
 	}
@@ -128,10 +128,7 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 	if field.DefaultValue != nil {
 		colDef.Default = "'" + *field.DefaultValue + "'"
 	}
-	if len(field.ReferenceTo) == 1 {
-		colDef.ReferenceTo = field.ReferenceTo[0]
-	}
-	colDef.AllReferences = field.ReferenceTo
+	colDef.ReferenceTo = field.ReferenceTo
 	if field.Formula != nil {
 		colDef.Formula = *field.Formula
 	}
@@ -175,7 +172,7 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 	}
 
 	// Add to default layout
-	if err := ms.addFieldToLayout(objectAPIName, field.APIName); err != nil {
+	if err := ms.addFieldToLayout(ctx, objectAPIName, field.APIName); err != nil {
 		log.Printf("Warning: Failed to add field %s to layout: %v", field.APIName, err)
 	}
 
@@ -183,7 +180,7 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 	if ms.permissionSvc != nil {
 		profiles := []string{constants.ProfileSystemAdmin, constants.ProfileStandardUser}
 		for _, profileID := range profiles {
-			fieldPerm := models.FieldPermission{
+			fieldPerm := models.SystemFieldPerms{
 				ProfileID:     &profileID,
 				ObjectAPIName: objectAPIName,
 				FieldAPIName:  field.APIName,
@@ -213,7 +210,7 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 
 		anID := GenerateAutoNumberID(objectAPIName, field.APIName)
 		// Default starting_number to 1 (current_number = 0)
-		if err := ms.repo.UpsertAutoNumber(context.Background(), anID, objectAPIName, field.APIName, format, 1, 0); err != nil {
+		if err := ms.repo.UpsertAutoNumber(ctx, anID, objectAPIName, field.APIName, format, 1, 0); err != nil {
 			log.Printf("⚠️ Failed to register auto-number metadata: %v", err)
 		}
 	}
@@ -223,12 +220,12 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 }
 
 // UpdateField updates an existing field
-func (ms *MetadataService) UpdateField(objectAPIName, fieldAPIName string, updates *models.FieldMetadata) error {
+func (ms *MetadataService) UpdateField(ctx context.Context, objectAPIName, fieldAPIName string, updates *models.FieldMetadata) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	// Get the object
-	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), objectAPIName)
+	obj, err := ms.repo.GetSchemaByAPIName(ctx, objectAPIName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object '%s' not found", objectAPIName)
 	}
@@ -299,12 +296,12 @@ func (ms *MetadataService) UpdateField(objectAPIName, fieldAPIName string, updat
 }
 
 // DeleteField deletes a field from an object
-func (ms *MetadataService) DeleteField(objectAPIName, fieldAPIName string) error {
+func (ms *MetadataService) DeleteField(ctx context.Context, objectAPIName, fieldAPIName string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	// Get the object
-	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), objectAPIName)
+	obj, err := ms.repo.GetSchemaByAPIName(ctx, objectAPIName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object '%s' not found", objectAPIName)
 	}
@@ -336,12 +333,12 @@ func (ms *MetadataService) DeleteField(objectAPIName, fieldAPIName string) error
 }
 
 // BatchSyncSystemFields batch-upserts multiple system fields (metadata only, no DDL)
-func (ms *MetadataService) BatchSyncSystemFields(objectAPIName string, fields []models.FieldMetadata) error {
+func (ms *MetadataService) BatchSyncSystemFields(ctx context.Context, objectAPIName string, fields []models.FieldMetadata) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	// Get object ID
-	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), objectAPIName)
+	obj, err := ms.repo.GetSchemaByAPIName(ctx, objectAPIName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object '%s' not found", objectAPIName)
 	}

@@ -317,14 +317,6 @@ func ToNullInt64(i interface{}) sql.NullInt64 {
 	}
 }
 
-// WrapStringToSlice converts a single string to a slice (for ReferenceTo field conversion)
-func WrapStringToSlice(s string) []string {
-	if s == "" {
-		return nil
-	}
-	return []string{s}
-}
-
 // SliceToNullJSON converts a []string to sql.NullString as JSON array
 func SliceToNullJSON(slice []string) sql.NullString {
 	if len(slice) == 0 {

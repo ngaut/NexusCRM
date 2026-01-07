@@ -57,7 +57,7 @@ func isSensitiveKey(key string) bool {
 func (h *ActionHandler) GetActions(c *gin.Context) {
 	objectName := c.Param("objectName")
 	HandleGetEnvelope(c, "actions", func() (interface{}, error) {
-		actions := h.svc.Metadata.GetActions(objectName)
+		actions := h.svc.Metadata.GetActions(c.Request.Context(), objectName)
 		sanitized := make([]*models.ActionMetadata, len(actions))
 		for i, a := range actions {
 			sanitized[i] = sanitizeAction(a)
@@ -69,7 +69,7 @@ func (h *ActionHandler) GetActions(c *gin.Context) {
 // GetAllActions handles GET /api/metadata/actions
 func (h *ActionHandler) GetAllActions(c *gin.Context) {
 	HandleGetEnvelope(c, "actions", func() (interface{}, error) {
-		actions := h.svc.Metadata.GetAllActions()
+		actions := h.svc.Metadata.GetAllActions(c.Request.Context())
 		sanitized := make([]*models.ActionMetadata, len(actions))
 		for i, a := range actions {
 			sanitized[i] = sanitizeAction(a)
@@ -82,7 +82,7 @@ func (h *ActionHandler) GetAllActions(c *gin.Context) {
 func (h *ActionHandler) GetAction(c *gin.Context) {
 	actionID := c.Param("actionId")
 	HandleGetEnvelope(c, "action", func() (interface{}, error) {
-		action := h.svc.Metadata.GetActionByID(actionID)
+		action := h.svc.Metadata.GetActionByID(c.Request.Context(), actionID)
 		if action == nil {
 			return nil, appErrors.NewNotFoundError("Action", actionID)
 		}
@@ -94,7 +94,7 @@ func (h *ActionHandler) GetAction(c *gin.Context) {
 func (h *ActionHandler) CreateAction(c *gin.Context) {
 	var action models.ActionMetadata
 	HandleCreateEnvelope(c, "action", "Action created successfully", &action, func() error {
-		err := h.svc.Metadata.CreateAction(&action)
+		err := h.svc.Metadata.CreateAction(c.Request.Context(), &action)
 		if err == nil {
 			// Sanitize response
 			safe := sanitizeAction(&action)
@@ -111,7 +111,7 @@ func (h *ActionHandler) UpdateAction(c *gin.Context) {
 	// No key returned, just message, but if envelope returns data we should check.
 	// HandleUpdateEnvelope passed &updates.
 	HandleUpdateEnvelope(c, "", "Action updated successfully", &updates, func() error {
-		return h.svc.Metadata.UpdateAction(actionID, &updates)
+		return h.svc.Metadata.UpdateAction(c.Request.Context(), actionID, &updates)
 		// updates struct is used for input parsing. Its config might contain secrets being SET.
 		// We shouldn't return secrets back (echoing them).
 		// Typically UPDATE response might just be "success" or the updated object.
@@ -128,7 +128,7 @@ func (h *ActionHandler) UpdateAction(c *gin.Context) {
 func (h *ActionHandler) DeleteAction(c *gin.Context) {
 	actionID := c.Param("actionId")
 	HandleDeleteEnvelope(c, "Action deleted successfully", func() error {
-		return h.svc.Metadata.DeleteAction(actionID)
+		return h.svc.Metadata.DeleteAction(c.Request.Context(), actionID)
 	})
 }
 

@@ -1,29 +1,32 @@
 package constants
 
-// FieldType represents the type of a field
-type FieldType string
+// SchemaFieldType represents the type of a field
+type SchemaFieldType string
 
 const (
-	FieldTypeText          FieldType = "Text"
-	FieldTypeNumber        FieldType = "Number"
-	FieldTypeCurrency      FieldType = "Currency"
-	FieldTypeDate          FieldType = "Date"
-	FieldTypeDateTime      FieldType = "DateTime"
-	FieldTypePicklist      FieldType = "Picklist"
-	FieldTypeEmail         FieldType = "Email"
-	FieldTypePhone         FieldType = "Phone"
-	FieldTypeTextArea      FieldType = "TextArea"
-	FieldTypeLookup        FieldType = "Lookup"
-	FieldTypeURL           FieldType = "Url"
-	FieldTypeBoolean       FieldType = "Boolean"
-	FieldTypeFormula       FieldType = "Formula"
-	FieldTypePercent       FieldType = "Percent"
-	FieldTypeRollupSummary FieldType = "RollupSummary"
-	FieldTypeJSON          FieldType = "JSON"
-	FieldTypeLongTextArea  FieldType = "LongTextArea"
-	FieldTypeRichText      FieldType = "RichText"
-	FieldTypePassword      FieldType = "Password"
-	FieldTypeAutoNumber    FieldType = "AutoNumber"
+	FieldTypeText            SchemaFieldType = "Text"
+	FieldTypeNumber          SchemaFieldType = "Number"
+	FieldTypeCurrency        SchemaFieldType = "Currency"
+	FieldTypeDate            SchemaFieldType = "Date"
+	FieldTypeDateTime        SchemaFieldType = "DateTime"
+	FieldTypePicklist        SchemaFieldType = "Picklist"
+	FieldTypeEmail           SchemaFieldType = "Email"
+	FieldTypePhone           SchemaFieldType = "Phone"
+	FieldTypeTextArea        SchemaFieldType = "TextArea"
+	FieldTypeLookup          SchemaFieldType = "Lookup"
+	FieldTypeURL             SchemaFieldType = "Url"
+	FieldTypeBoolean         SchemaFieldType = "Boolean"
+	FieldTypeFormula         SchemaFieldType = "Formula"
+	FieldTypePercent         SchemaFieldType = "Percent"
+	FieldTypeRollupSummary   SchemaFieldType = "RollupSummary"
+	FieldTypeJSON            SchemaFieldType = "JSON"
+	FieldTypeLongTextArea    SchemaFieldType = "LongTextArea"
+	FieldTypeRichText        SchemaFieldType = "RichText"
+	FieldTypePassword        SchemaFieldType = "Password"
+	FieldTypeAutoNumber      SchemaFieldType = "AutoNumber"
+	FieldTypeMultiPicklist   SchemaFieldType = "MultiPicklist"
+	FieldTypeMasterDetail    SchemaFieldType = "MasterDetail"
+	FieldTypeEncryptedString SchemaFieldType = "EncryptedString"
 )
 
 // GetAllFieldTypes returns all valid field types as a slice of strings
@@ -49,6 +52,9 @@ func GetAllFieldTypes() []string {
 		string(FieldTypeRichText),
 		string(FieldTypePassword),
 		string(FieldTypeAutoNumber),
+		string(FieldTypeMultiPicklist),
+		string(FieldTypeMasterDetail),
+		string(FieldTypeEncryptedString),
 	}
 }
 
@@ -76,4 +82,13 @@ type ObjectCategory string
 const (
 	ObjectCategoryCustom ObjectCategory = "Custom"
 	ObjectCategorySystem ObjectCategory = "System"
+)
+
+// OutboxEventStatus represents the processing status of outbox events
+type OutboxEventStatus string
+
+const (
+	OutboxStatusPending   OutboxEventStatus = "pending"
+	OutboxStatusProcessed OutboxEventStatus = "processed"
+	OutboxStatusFailed    OutboxEventStatus = "failed"
 )

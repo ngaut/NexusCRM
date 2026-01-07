@@ -82,7 +82,7 @@ test_create_group() {
     local group_name="e2e_test_queue_$(date +%s)"
     local payload='{
         "name": "'$group_name'",
-        "label": "E2E Test Queue",
+        "label": "E2E Test Queue '$group_name'",
         "type": "Queue",
         "email": "testqueue@example.com"
     }'
@@ -106,7 +106,7 @@ test_create_permission_set() {
     local permset_name="e2e_test_permset_$(date +%s)"
     local payload='{
         "name": "'$permset_name'",
-        "label": "E2E Test Permission Set",
+        "label": "E2E Test Permission Set '$permset_name'",
         "description": "Permission set created for E2E testing",
         "is_active": true
     }'

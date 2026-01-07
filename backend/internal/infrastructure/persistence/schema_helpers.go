@@ -111,13 +111,17 @@ func (r *SchemaRepository) prepareFieldDBValues(field *models.FieldMetadata) ([]
 	if field.IsMasterDetail {
 		isMasterDetail = 1
 	}
+	isPolymorphic := 0
+	if field.IsPolymorphic {
+		isPolymorphic = 1
+	}
 
 	// Order matches FieldInsertQuery
 	return []interface{}{
 		field.APIName, field.Label, field.Type, required, unique,
 		defaultValue, helpText, isSystem, isNameField, optionsJSON,
 		minLength, maxLength, referenceTo, formula, returnType, rollupConfigJSON,
-		isMasterDetail, deleteRule, relationshipName,
+		isMasterDetail, isPolymorphic, deleteRule, relationshipName,
 	}, nil
 }
 
@@ -155,9 +159,9 @@ func (r *SchemaRepository) getFieldInsertQuery() string {
 		id, object_id, api_name, label, type, required, `+"`unique`"+`,
 		default_value, help_text, is_system, is_name_field, options,
 		min_length, max_length, reference_to, formula, return_type, rollup_config,
-		is_master_detail, delete_rule, relationship_name,
+		is_master_detail, is_polymorphic, delete_rule, relationship_name,
 		created_date, last_modified_date
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
 	ON DUPLICATE KEY UPDATE
 		label = VALUES(label),
 		type = VALUES(type),
@@ -175,6 +179,7 @@ func (r *SchemaRepository) getFieldInsertQuery() string {
 		return_type = VALUES(return_type),
 		rollup_config = VALUES(rollup_config),
 		is_master_detail = VALUES(is_master_detail),
+		is_polymorphic = VALUES(is_polymorphic),
 		delete_rule = VALUES(delete_rule),
 		relationship_name = VALUES(relationship_name),
 		last_modified_date = NOW()

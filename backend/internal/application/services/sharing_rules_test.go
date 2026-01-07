@@ -28,9 +28,15 @@ func TestSharingRules_Integration(t *testing.T) {
 	marketingRoleID := "test-sharing-marketing-role"
 
 	// Clean up
-	db.Exec("DELETE FROM _System_SharingRule WHERE id LIKE 'test-sharing-%'")
-	db.Exec("DELETE FROM _System_User WHERE id LIKE 'test-sharing-%'")
-	db.Exec("DELETE FROM _System_Role WHERE id LIKE 'test-sharing-%'")
+	if _, err := db.Exec("DELETE FROM _System_SharingRule WHERE id LIKE 'test-sharing-%'"); err != nil {
+		t.Logf("Failed to cleanup sharing rules: %v", err)
+	}
+	if _, err := db.Exec("DELETE FROM _System_User WHERE id LIKE 'test-sharing-%'"); err != nil {
+		t.Logf("Failed to cleanup users: %v", err)
+	}
+	if _, err := db.Exec("DELETE FROM _System_Role WHERE id LIKE 'test-sharing-%'"); err != nil {
+		t.Logf("Failed to cleanup roles: %v", err)
+	}
 
 	// Create roles
 	_, err = db.Exec("INSERT INTO _System_Role (id, name, description, parent_role_id, created_date, last_modified_date) VALUES (?, ?, ?, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
@@ -164,9 +170,16 @@ func TestSharingRules_Integration(t *testing.T) {
 	})
 
 	// Cleanup
-	db.Exec("DELETE FROM _System_SharingRule WHERE id LIKE 'test-sharing-%'")
-	db.Exec("DELETE FROM _System_User WHERE id LIKE 'test-sharing-%'")
-	db.Exec("DELETE FROM _System_Role WHERE id LIKE 'test-sharing-%'")
+	// Cleanup
+	if _, err := db.Exec("DELETE FROM _System_SharingRule WHERE id LIKE 'test-sharing-%'"); err != nil {
+		t.Logf("Cleanup failed: %v", err)
+	}
+	if _, err := db.Exec("DELETE FROM _System_User WHERE id LIKE 'test-sharing-%'"); err != nil {
+		t.Logf("Cleanup failed: %v", err)
+	}
+	if _, err := db.Exec("DELETE FROM _System_Role WHERE id LIKE 'test-sharing-%'"); err != nil {
+		t.Logf("Cleanup failed: %v", err)
+	}
 
 	t.Log("✅ Sharing Rules tests completed successfully")
 }

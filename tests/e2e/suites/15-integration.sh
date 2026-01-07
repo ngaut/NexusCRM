@@ -84,7 +84,7 @@ test_setup_queues_and_groups() {
     # Create West Coast Queue
     local queue_payload='{
         "name": "west_coast_queue_'$TIMESTAMP'",
-        "label": "West Coast Queue",
+        "label": "West Coast Queue '$TIMESTAMP'",
         "type": "Queue",
         "email": "westcoast@example.com"
     }'
@@ -114,7 +114,7 @@ test_setup_queues_and_groups() {
     # Create VP of Sales Group
     local vp_payload='{
         "name": "vp_sales_group_'$TIMESTAMP'",
-        "label": "VP of Sales Group",
+        "label": "VP of Sales Group '$TIMESTAMP'",
         "type": "Regular"
     }'
     

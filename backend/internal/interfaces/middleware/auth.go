@@ -38,7 +38,7 @@ func RequireAuth(authSvc *services.AuthService) gin.HandlerFunc {
 		tokenString := parts[1]
 
 		// Validate token and session via AuthService
-		claims, err := authSvc.ValidateSession(tokenString)
+		claims, err := authSvc.ValidateSession(c.Request.Context(), tokenString)
 		if err != nil {
 			// Determine status code based on error type?
 			// For now, 401 is safe for all session failures

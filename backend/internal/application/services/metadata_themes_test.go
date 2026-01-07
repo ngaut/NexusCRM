@@ -53,7 +53,7 @@ func TestMetadataService_Themes_Integration(t *testing.T) {
 		Density:  "compact",
 	}
 
-	err = ms.UpsertTheme(&newTheme)
+	err = ms.UpsertTheme(context.Background(), &newTheme)
 	assert.NoError(t, err)
 	// We need to fetch it to get ID because UpsertTheme by Name likely generated one
 	// But we passed empty ID, so it generated one. We need to query it back by Name
@@ -63,15 +63,15 @@ func TestMetadataService_Themes_Integration(t *testing.T) {
 	newTheme.ID = fetchedID
 
 	// 4. Test GetActiveTheme
-	_, err = ms.GetActiveTheme()
+	_, err = ms.GetActiveTheme(context.Background())
 	assert.NoError(t, err)
 
 	// 5. Test ActivateTheme
-	err = ms.ActivateTheme(newTheme.ID)
+	err = ms.ActivateTheme(context.Background(), newTheme.ID)
 	assert.NoError(t, err)
 
 	// Verify it is active
-	active2, err := ms.GetActiveTheme()
+	active2, err := ms.GetActiveTheme(context.Background())
 	assert.NoError(t, err)
 	assert.NotNil(t, active2)
 	assert.Equal(t, newTheme.ID, active2.ID)

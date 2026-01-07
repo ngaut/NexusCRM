@@ -71,6 +71,7 @@ ensure_test_objects() {
             "api_name": "account",
             "description": "Account (Test Object)",
             "is_custom": true,
+            "theme_color": "#3b82f6",
             "list_fields": ["name", "industry", "website", "phone"]
         }' > /dev/null
     fi
@@ -81,8 +82,8 @@ ensure_test_objects() {
     ensure_field "account" "phone" '{"api_name": "phone", "label": "Phone", "type": "Phone"}'
     ensure_field "account" "website" '{"api_name": "website", "label": "Website", "type": "Url"}'
 
-    # Update list fields
-    api_patch "/api/metadata/objects/account" '{"list_fields": ["name", "industry", "type", "website", "phone"]}' > /dev/null
+    # Update list fields and theme color
+    api_patch "/api/metadata/objects/account" '{"list_fields": ["name", "industry", "type", "website", "phone"], "theme_color": "#3b82f6"}' > /dev/null
 
 
     # ==========================
