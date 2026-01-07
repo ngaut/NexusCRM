@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/utils"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // UserSession represents the user session data stored in JWT

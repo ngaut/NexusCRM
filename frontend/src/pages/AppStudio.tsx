@@ -10,6 +10,7 @@ import { StudioDashboardEditor } from '../components/studio/StudioDashboardEdito
 import { AppSettingsEditor } from '../components/studio/AppSettingsEditor';
 import { getColorClasses } from '../core/utils/colorClasses';
 import { useErrorToast } from '../components/ui/Toast';
+import { Logger } from '../core/services/Logger';
 
 type EditorMode = 'object' | 'dashboard' | 'settings' | 'permissions' | null;
 
@@ -87,7 +88,7 @@ export const AppStudio: React.FC = () => {
             }
         } catch (error) {
             // App loading failure - log for debugging, handled via empty state
-            console.warn('AppStudio: Failed to load app:', error instanceof Error ? error.message : error);
+            Logger.warn('AppStudio: Failed to load app:', error instanceof Error ? error.message : error);
         } finally {
             setLoading(false);
         }
@@ -99,7 +100,7 @@ export const AppStudio: React.FC = () => {
             setAvailableObjects(response.schemas || []);
         } catch (error) {
             // Objects loading failure - log for debugging, handled via empty state
-            console.warn('AppStudio: Failed to load objects:', error instanceof Error ? error.message : error);
+            Logger.warn('AppStudio: Failed to load objects:', error instanceof Error ? error.message : error);
         }
     };
 
@@ -210,7 +211,7 @@ export const AppStudio: React.FC = () => {
             setEditor({ mode: 'dashboard', dashboardId: newDashboardId });
             return true;
         } catch (error) {
-            console.warn('AppStudio: Failed to add dashboard:', error instanceof Error ? error.message : error);
+            Logger.warn('AppStudio: Failed to add dashboard:', error instanceof Error ? error.message : error);
             errorToast('Failed to add dashboard. Please try again.');
             return false;
         }
@@ -237,7 +238,7 @@ export const AppStudio: React.FC = () => {
             }
             return true;
         } catch (error) {
-            console.warn('AppStudio: Failed to add web link:', error instanceof Error ? error.message : error);
+            Logger.warn('AppStudio: Failed to add web link:', error instanceof Error ? error.message : error);
             errorToast('Failed to add web link. Please try again.');
             return false;
         }
@@ -248,7 +249,7 @@ export const AppStudio: React.FC = () => {
         // If not new app, auto-save order
         if (!isNewApp) {
             metadataAPI.updateApp(app.id, { navigation_items: items }).catch((error) => {
-                console.warn('AppStudio: Failed to save nav order:', error instanceof Error ? error.message : error);
+                Logger.warn('AppStudio: Failed to save nav order:', error instanceof Error ? error.message : error);
                 errorToast('Failed to save navigation order. Please try again.');
             });
         }
@@ -260,7 +261,7 @@ export const AppStudio: React.FC = () => {
 
         if (!isNewApp) {
             metadataAPI.updateApp(app.id, { navigation_items: updatedItems }).catch((error) => {
-                console.warn('AppStudio: Failed to remove nav item:', error instanceof Error ? error.message : error);
+                Logger.warn('AppStudio: Failed to remove nav item:', error instanceof Error ? error.message : error);
                 errorToast('Failed to remove item. Please try again.');
             });
         }

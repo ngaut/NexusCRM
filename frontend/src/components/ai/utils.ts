@@ -33,14 +33,22 @@ export const formatRelativeTime = (date: Date | string | undefined): string => {
     return new Date(timestamp).toLocaleDateString(APP_LOCALE, { month: 'short', day: 'numeric' });
 };
 
+import { formatDate as coreFormatDate, formatDateTime as coreFormatDateTime } from '../../core/utils/formatting';
+
 export const formatDate = (timestamp: number): string => {
-    return new Date(timestamp).toLocaleDateString(APP_LOCALE, { month: 'short', day: 'numeric' });
+    return coreFormatDate(timestamp);
 };
 
 /**
  * Format a date as a full timestamp for tooltip display
  */
 export const formatFullTime = (date: Date | string | undefined): string => {
+    // Keeping local implementation for formatFullTime as it seems specific to AI tooltips (includes hour12, etc) 
+    // or I can verify if core has equivalent. Core formatDateTime uses toLocaleString which is similar but maybe not identical options.
+    // Let's keep formatFullTime local for now as it wasn't flagged as exact duplicate, or checking...
+    // Wait, formatFullTime in ai/utils uses { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }
+    // Core formatDateTime uses { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+    // They are different. formatFullTime seems to be "condensed date time".
     if (!date) return '';
     const timestamp = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(timestamp.getTime())) return '';
@@ -54,12 +62,12 @@ export const formatFullTime = (date: Date | string | undefined): string => {
 };
 
 export const formatDateTime = (timestamp: number): string => {
-    return new Date(timestamp).toLocaleString(APP_LOCALE, {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric'
-    });
+    // ai/utils formatDateTime: month, day, hour, minute (numeric). NO YEAR.
+    // core formatDateTime: YEAR, month, day, hour, minute.
+    // They are DIFFERENT. Redundancy report said "Utility Functions ... formatDate is implemented redundantly".
+    // I should check if I should effectively change the AI display to use the core standard (with year) or keep it distinct.
+    // Usually standardizing is better. Let's look at relative time.
+    return coreFormatDateTime(timestamp);
 };
 
 export const buildDisplayItems = (messages: ChatMessage[]): DisplayItem[] => {

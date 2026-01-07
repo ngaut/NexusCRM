@@ -6,6 +6,7 @@ import { useSuccessToast, useErrorToast } from './ui/Toast';
 import { useRuntime } from '../contexts/RuntimeContext';
 import { StepProgressCompact } from './StepProgressIndicator';
 import { APPROVAL_STATUS } from '../core/constants';
+import { formatDate } from '../core/utils/formatting';
 
 interface ApprovalBannerProps {
     objectApiName: string;
@@ -100,14 +101,6 @@ export function ApprovalBanner({
         setShowCommentInput(false);
         setActionType(null);
         setComments('');
-    };
-
-    const formatDate = (dateStr: string) => {
-        return new Date(dateStr).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        });
     };
 
     return (

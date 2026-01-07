@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/domain/events"
-	"github.com/nexuscrm/shared/pkg/models"
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/query"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // Delete soft-deletes a record with ACID transaction guarantees
@@ -117,12 +117,14 @@ func (ps *PersistenceService) Delete(
 
 		binID := fmt.Sprintf("%s-%d", id, time.Now().UnixNano())
 		binQ := query.Insert(constants.TableRecycleBin, models.SObject{
-			constants.FieldID:            binID,
-			constants.FieldRecordID:      id,
-			constants.FieldObjectAPIName: objectName,
-			constants.FieldRecordName:    recordName,
-			constants.FieldDeletedBy:     deletedBy,
-			constants.FieldDeletedDate:   NowTimestamp(),
+			constants.FieldID:               binID,
+			constants.FieldRecordID:         id,
+			constants.FieldObjectAPIName:    objectName,
+			constants.FieldRecordName:       recordName,
+			constants.FieldDeletedBy:        deletedBy,
+			constants.FieldDeletedDate:      NowTimestamp(),
+			constants.FieldCreatedDate:      NowTimestamp(),
+			constants.FieldLastModifiedDate: NowTimestamp(),
 		}).Build()
 
 		if _, err := tx.Exec(binQ.SQL, binQ.Params...); err != nil {

@@ -26,6 +26,32 @@ const (
 	FieldTypeAutoNumber    FieldType = "AutoNumber"
 )
 
+// GetAllFieldTypes returns all valid field types as a slice of strings
+func GetAllFieldTypes() []string {
+	return []string{
+		string(FieldTypeText),
+		string(FieldTypeNumber),
+		string(FieldTypeCurrency),
+		string(FieldTypeDate),
+		string(FieldTypeDateTime),
+		string(FieldTypePicklist),
+		string(FieldTypeEmail),
+		string(FieldTypePhone),
+		string(FieldTypeTextArea),
+		string(FieldTypeLookup),
+		string(FieldTypeURL),
+		string(FieldTypeBoolean),
+		string(FieldTypeFormula),
+		string(FieldTypePercent),
+		string(FieldTypeRollupSummary),
+		string(FieldTypeJSON),
+		string(FieldTypeLongTextArea),
+		string(FieldTypeRichText),
+		string(FieldTypePassword),
+		string(FieldTypeAutoNumber),
+	}
+}
+
 // SharingModel represents object-level sharing model
 type SharingModel string
 

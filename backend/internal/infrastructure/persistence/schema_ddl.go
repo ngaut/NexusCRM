@@ -1,4 +1,4 @@
-package services
+package persistence
 
 import (
 	"fmt"
@@ -10,14 +10,14 @@ import (
 )
 
 // buildColumnDDL generates DDL for a single column
-func (sm *SchemaManager) buildColumnDDL(col schema.ColumnDefinition) string {
+func (r *SchemaRepository) buildColumnDDL(col schema.ColumnDefinition) string {
 	var sb strings.Builder
 
 	// Check if this is a Formula field with an expression
 	if col.Formula != "" && strings.EqualFold(col.LogicalType, string(constants.FieldTypeFormula)) {
 		// Use generated column syntax for Formula fields
 		// Determine SQL type from return_type
-		sqlType := sm.MapFieldTypeToSQL(col.ReturnType)
+		sqlType := r.MapFieldTypeToSQL(col.ReturnType)
 		if sqlType == "" || sqlType == "VARCHAR(255)" {
 			// Default to DECIMAL for numeric formulas, or VARCHAR for text
 			if col.ReturnType == "" || col.ReturnType == string(constants.FieldTypeNumber) || col.ReturnType == string(constants.FieldTypeCurrency) || col.ReturnType == string(constants.FieldTypePercent) {
@@ -26,7 +26,7 @@ func (sm *SchemaManager) buildColumnDDL(col schema.ColumnDefinition) string {
 		}
 
 		// Convert formula expression to SQL (inline, no placeholders)
-		formulaSQL := sm.convertFormulaToSQL(col.Formula)
+		formulaSQL := r.convertFormulaToSQL(col.Formula)
 
 		sb.WriteString(fmt.Sprintf("`%s` %s GENERATED ALWAYS AS (%s) VIRTUAL",
 			col.Name, sqlType, formulaSQL))
@@ -34,7 +34,17 @@ func (sm *SchemaManager) buildColumnDDL(col schema.ColumnDefinition) string {
 	}
 
 	// Standard column DDL
-	sqlType := sm.MapFieldTypeToSQL(col.Type)
+	sqlType := r.MapFieldTypeToSQL(col.Type)
+
+	// Explicit Length handling (Right Code implementation)
+	// If Length is specified for Text-like types, use VARCHAR(Length)
+	if col.Length > 0 {
+		upper := strings.ToUpper(sqlType)
+		if strings.HasPrefix(upper, "VARCHAR") || strings.HasPrefix(upper, "TEXT") || strings.HasPrefix(upper, "CHAR") {
+			sqlType = fmt.Sprintf("VARCHAR(%d)", col.Length)
+		}
+	}
+
 	sb.WriteString(fmt.Sprintf("`%s` %s", col.Name, sqlType))
 
 	if !col.Nullable {
@@ -58,7 +68,7 @@ func (sm *SchemaManager) buildColumnDDL(col schema.ColumnDefinition) string {
 
 // convertFormulaToSQL converts a formula expression to inline SQL for generated columns
 // This is different from ToSQL which uses placeholders - here we need inline values
-func (sm *SchemaManager) convertFormulaToSQL(formula string) string {
+func (r *SchemaRepository) convertFormulaToSQL(formula string) string {
 	// For simple arithmetic expressions, the formula can often be used directly
 	// as column references match SQL column names
 	// Examples: "price * quantity" -> "price * quantity"
@@ -85,7 +95,7 @@ func (sm *SchemaManager) convertFormulaToSQL(formula string) string {
 }
 
 // buildForeignKeyDDL generates DDL for a foreign key constraint
-func (sm *SchemaManager) buildForeignKeyDDL(fk schema.ForeignKeyDefinition) string {
+func (r *SchemaRepository) buildForeignKeyDDL(fk schema.ForeignKeyDefinition) string {
 	ddl := fmt.Sprintf("FOREIGN KEY (`%s`) REFERENCES %s", fk.Column, fk.References)
 	if fk.OnDelete != "" {
 		ddl += fmt.Sprintf(" ON DELETE %s", fk.OnDelete)
@@ -97,7 +107,7 @@ func (sm *SchemaManager) buildForeignKeyDDL(fk schema.ForeignKeyDefinition) stri
 }
 
 // buildIndexDDL generates inline index DDL for CREATE TABLE statement
-func (sm *SchemaManager) buildIndexDDL(tableName string, idx schema.IndexDefinition) string {
+func (r *SchemaRepository) buildIndexDDL(tableName string, idx schema.IndexDefinition) string {
 	// Generate index name if not provided
 	indexName := idx.Name
 	if indexName == "" {
@@ -113,7 +123,7 @@ func (sm *SchemaManager) buildIndexDDL(tableName string, idx schema.IndexDefinit
 }
 
 // ValidateFormula validates a formula expression syntax by attempting to compile it
-func (sm *SchemaManager) ValidateFormula(formulaStr string, env map[string]interface{}) error {
+func (r *SchemaRepository) ValidateFormula(formulaStr string, env map[string]interface{}) error {
 	// Use the higher-level formula engine to validate (includes built-ins like BCRYPT)
 	engine := formula.NewEngine()
 	return engine.Validate(formulaStr, env)

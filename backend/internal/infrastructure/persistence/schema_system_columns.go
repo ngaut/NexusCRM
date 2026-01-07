@@ -1,4 +1,4 @@
-package services
+package persistence
 
 import (
 	"strings"
@@ -12,7 +12,7 @@ import (
 
 // GetStandardSystemColumns returns the default columns for every custom object
 // This serves as the Single Source of Truth for system field definitions.
-func (sm *SchemaManager) GetStandardSystemColumns() []schema.ColumnDefinition {
+func (r *SchemaRepository) GetStandardSystemColumns() []schema.ColumnDefinition {
 	return []schema.ColumnDefinition{
 		{
 			Name:       constants.FieldID,
@@ -41,14 +41,15 @@ func (sm *SchemaManager) GetStandardSystemColumns() []schema.ColumnDefinition {
 			Nullable: true,
 		},
 		{
-			Name:    constants.FieldCreatedDate,
-			Type:    "DATETIME",
-			Default: "CURRENT_TIMESTAMP",
+			Name: constants.FieldCreatedDate,
+			Type: "DATETIME",
+			// Default removed to avoid 'Invalid default value' error in strict mode.
+			// PersistenceService populates this.
 		},
 		{
-			Name:    constants.FieldLastModifiedDate,
-			Type:    "DATETIME",
-			Default: "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+			Name: constants.FieldLastModifiedDate,
+			Type: "DATETIME",
+			// PersistenceService populates this.
 		},
 		{
 			Name:     constants.FieldIsDeleted,
@@ -62,18 +63,18 @@ func (sm *SchemaManager) GetStandardSystemColumns() []schema.ColumnDefinition {
 // GetStandardFieldMetadata returns field metadata for standard system columns
 // This is derived from GetStandardSystemColumns() to avoid duplication of column defs,
 // but adds logical metadata properties like Labels and Types.
-func (sm *SchemaManager) GetStandardFieldMetadata() []models.FieldMetadata {
-	columns := sm.GetStandardSystemColumns()
+func (r *SchemaRepository) GetStandardFieldMetadata() []models.FieldMetadata {
+	columns := r.GetStandardSystemColumns()
 	fields := make([]models.FieldMetadata, 0, len(columns))
 
 	for _, col := range columns {
 		field := models.FieldMetadata{
 			APIName:  col.Name,
 			Label:    col.Name,
-			Type:     models.FieldType(sm.mapSQLTypeToLogical(col.Type)),
-			Required: !col.Nullable && !sm.IsSystemColumn(col.Name),
+			Type:     models.FieldType(r.mapSQLTypeToLogical(col.Type)),
+			Required: !col.Nullable && !r.IsSystemColumn(col.Name),
 			Unique:   col.Unique,
-			IsSystem: sm.IsSystemColumn(col.Name),
+			IsSystem: r.IsSystemColumn(col.Name),
 		}
 
 		// Set special flags and refining Types

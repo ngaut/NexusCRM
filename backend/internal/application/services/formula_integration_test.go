@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/application/services"
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 func TestFormulaFields_Integration(t *testing.T) {
@@ -43,8 +43,8 @@ func TestFormulaFields_Integration(t *testing.T) {
 	objName := fmt.Sprintf("product_%d", time.Now().UnixNano())
 	objDef := models.ObjectMetadata{
 		APIName:      objName,
-		Label:        "Product",
-		PluralLabel:  "Products",
+		Label:        fmt.Sprintf("Product %d", time.Now().UnixNano()),
+		PluralLabel:  fmt.Sprintf("Products %d", time.Now().UnixNano()),
 		SharingModel: constants.SharingModelPublicReadWrite, // Correct constant
 	}
 	// Use MetadataService to create schema (handles layout and system fields)
@@ -270,11 +270,12 @@ func TestFormulaValidation(t *testing.T) {
 	metadataService := services.NewMetadataService(dbConn, schemaManager)
 
 	// Create a test object
-	objName := fmt.Sprintf("formula_validation_%d", time.Now().UnixNano())
+	ts := time.Now().UnixNano()
+	objName := fmt.Sprintf("formula_validation_%d", ts)
 	objDef := models.ObjectMetadata{
 		APIName:      objName,
-		Label:        "Formula Validation Test",
-		PluralLabel:  "Formula Validation Tests",
+		Label:        fmt.Sprintf("Formula Validation Test %d", ts),
+		PluralLabel:  fmt.Sprintf("Formula Validation Tests %d", ts),
 		SharingModel: constants.SharingModelPublicReadWrite,
 	}
 	if err := metadataService.CreateSchema(&objDef); err != nil {

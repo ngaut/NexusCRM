@@ -20,6 +20,7 @@ type ColumnDefinition struct {
 	RelationshipName string   `json:"relationship_name,omitempty"`
 	IsNameField      bool     `json:"is_name_field,omitempty"`
 	Options          []string `json:"options,omitempty"`
+	Length           int      `json:"length,omitempty"`
 }
 
 // IndexDefinition represents an index on a table

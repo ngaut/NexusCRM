@@ -31,6 +31,7 @@ type ColumnJSON struct {
 	Nullable      bool   `json:"nullable,omitempty"`
 	Unique        bool   `json:"unique,omitempty"`
 	Default       string `json:"default,omitempty"`
+	Length        int    `json:"length,omitempty"`
 	AutoIncrement bool   `json:"autoIncrement,omitempty"`
 	LogicalType   string `json:"logicalType,omitempty"`
 	ReferenceTo   string `json:"referenceTo,omitempty"`
@@ -82,6 +83,7 @@ func GetSystemTableDefinitions() []schema.TableDefinition {
 				LogicalType:   jc.LogicalType,
 				ReferenceTo:   jc.ReferenceTo,
 				IsNameField:   jc.IsNameField,
+				Length:        jc.Length,
 			}
 			def.Columns = append(def.Columns, col)
 		}

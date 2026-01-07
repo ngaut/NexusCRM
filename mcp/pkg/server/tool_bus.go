@@ -10,6 +10,7 @@ import (
 	"github.com/nexuscrm/mcp/pkg/contextstore"
 	"github.com/nexuscrm/mcp/pkg/mcp"
 	"github.com/nexuscrm/mcp/pkg/models"
+	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 const (
@@ -358,7 +359,7 @@ func (s *ToolBusService) HandleListTools(ctx context.Context, params json.RawMes
 				},
 				"type": map[string]interface{}{
 					"type":        "string",
-					"enum":        []string{"Text", "Number", "Currency", "Boolean", "Date", "DateTime", "Email", "Phone", "URL", "Picklist", "Lookup", "RollupSummary", "Formula", "TextArea", "LongTextArea", "RichText", "Percent", "JSON", "Password", "AutoNumber"},
+					"enum":        constants.GetAllFieldTypes(),
 					"description": "Field type. Use 'Formula' for calculated fields.",
 				},
 				"required": map[string]interface{}{

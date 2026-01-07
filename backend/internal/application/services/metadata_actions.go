@@ -1,10 +1,9 @@
 package services
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
 
@@ -30,37 +29,22 @@ func (ms *MetadataService) CreateAction(action *models.ActionMetadata) error {
 	}
 
 	// Check for duplicate ID
-	existing, _ := ms.queryAction(action.ID)
+	existing, _ := ms.repo.GetAction(context.Background(), action.ID)
 	if existing != nil {
 		return fmt.Errorf("action with ID '%s' already exists", action.ID)
 	}
 
 	// Check for duplicate (object_api_name, name) - this is the unique constraint
-	var existingCount int
-	checkQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE object_api_name = ? AND name = ?", constants.TableAction)
-	if err := ms.db.QueryRow(checkQuery, action.ObjectAPIName, action.Name).Scan(&existingCount); err != nil {
+	exists, err := ms.repo.CheckActionExists(context.Background(), action.ObjectAPIName, action.Name)
+	if err != nil {
 		return fmt.Errorf("failed to check for existing action: %w", err)
 	}
-	if existingCount > 0 {
+	if exists {
 		return fmt.Errorf("action '%s' already exists for object '%s'", action.Name, action.ObjectAPIName)
 	}
 
-	// Serialize config to JSON
-	configJSON, err := MarshalJSONOrDefault(action.Config, "{}")
-	if err != nil {
-		return fmt.Errorf("failed to serialize config: %w", err)
-	}
-
-	// Insert into database
-	var targetObject sql.NullString
-	if action.TargetObject != nil {
-		targetObject = ToNullString(action.TargetObject)
-	}
-
-	query := fmt.Sprintf("INSERT INTO %s (id, object_api_name, name, label, type, icon, target_object, config) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", constants.TableAction)
-	_, err = ms.db.Exec(query, action.ID, action.ObjectAPIName, action.Name, action.Label,
-		action.Type, action.Icon, targetObject, configJSON)
-	if err != nil {
+	// Insert into database via Repo
+	if err := ms.repo.CreateAction(context.Background(), action); err != nil {
 		return fmt.Errorf("failed to insert action: %w", err)
 	}
 
@@ -73,7 +57,7 @@ func (ms *MetadataService) UpdateAction(actionID string, updates *models.ActionM
 	defer ms.mu.Unlock()
 
 	// Find existing action
-	existing, err := ms.queryAction(actionID)
+	existing, err := ms.repo.GetAction(context.Background(), actionID)
 	if err != nil || existing == nil {
 		return fmt.Errorf("action with ID '%s' not found", actionID)
 	}
@@ -81,25 +65,8 @@ func (ms *MetadataService) UpdateAction(actionID string, updates *models.ActionM
 	// Preserve ID
 	updates.ID = actionID
 
-	// Merge updates. We treat `updates` as the source of truth for modifyable fields.
-	// ID is preserved from argument. Config is re-serialized.
-
-	// Serialize config to JSON
-	configJSON, err := MarshalJSONOrDefault(updates.Config, "{}")
-	if err != nil {
-		return fmt.Errorf("failed to serialize config: %w", err)
-	}
-
-	// Update in database
-	var targetObject sql.NullString
-	if updates.TargetObject != nil {
-		targetObject = ToNullString(updates.TargetObject)
-	}
-
-	query := fmt.Sprintf(`UPDATE %s SET object_api_name=?, name=?, label=?, type=?, icon=?, target_object=?, config=? WHERE id=?`, constants.TableAction)
-	_, err = ms.db.Exec(query, updates.ObjectAPIName, updates.Name, updates.Label,
-		updates.Type, updates.Icon, targetObject, configJSON, actionID)
-	if err != nil {
+	// Update in database via Repo
+	if err := ms.repo.UpdateAction(context.Background(), actionID, updates); err != nil {
 		return fmt.Errorf("failed to update action: %w", err)
 	}
 
@@ -111,5 +78,5 @@ func (ms *MetadataService) DeleteAction(actionID string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	return ms.deleteMetadataRecord(constants.TableAction, actionID, "action")
+	return ms.repo.DeleteAction(context.Background(), actionID)
 }

@@ -2,6 +2,7 @@ import { RegistryBase } from '@shared/utils';
 import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { dataAPI } from '../infrastructure/api/data';
 import * as Icons from 'lucide-react';
+import { Logger } from '../core/services/Logger';
 
 /**
  * Setup Page Definition (matches _System_SetupPage schema)
@@ -77,7 +78,7 @@ class SetupRegistryClass extends RegistryBase<SetupPageDefinition> {
 
             this.loaded = true;
         } catch (error) {
-            console.warn('Failed to load setup pages from metadata, using fallback empty array:', error);
+            Logger.warn('Failed to load setup pages from metadata, using fallback empty array:', error);
             this.clear();
             this.loaded = true;
         }

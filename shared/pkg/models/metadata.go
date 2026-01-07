@@ -93,17 +93,19 @@ type ListView struct {
 
 // PageLayout represents page layout configuration
 type PageLayout struct {
-	ID            string              `json:"id"`
-	ObjectAPIName string              `json:"object_api_name"`
-	LayoutName    string              `json:"layout_name"`
-	Type          string              `json:"type,omitempty"` // Detail, Edit, Create, List
-	IsDefault     bool                `json:"is_default,omitempty"`
-	CompactLayout []string            `json:"compact_layout"`
-	Tabs          []string            `json:"tabs,omitempty"`
-	Sections      []PageSection       `json:"sections"`
-	RelatedLists  []RelatedListConfig `json:"related_lists"`
-	HeaderActions []ActionConfig      `json:"header_actions"`
-	QuickActions  []ActionConfig      `json:"quick_actions"`
+	ID               string              `json:"id"`
+	ObjectAPIName    string              `json:"object_api_name"`
+	LayoutName       string              `json:"layout_name"`
+	Type             string              `json:"type,omitempty"` // Detail, Edit, Create, List
+	IsDefault        bool                `json:"is_default,omitempty"`
+	CompactLayout    []string            `json:"compact_layout"`
+	Tabs             []string            `json:"tabs,omitempty"`
+	Sections         []PageSection       `json:"sections"`
+	RelatedLists     []RelatedListConfig `json:"related_lists"`
+	HeaderActions    []ActionConfig      `json:"header_actions"`
+	QuickActions     []ActionConfig      `json:"quick_actions"`
+	CreatedDate      time.Time           `json:"created_date,omitempty"`
+	LastModifiedDate time.Time           `json:"last_modified_date,omitempty"`
 }
 
 // PageSection represents a section in a page layout
@@ -225,23 +227,27 @@ type NavigationItem struct {
 
 // AppConfig represents application configuration
 type AppConfig struct {
-	ID              string           `json:"id"`
-	Label           string           `json:"label"`
-	Description     string           `json:"description"`
-	Icon            string           `json:"icon"`
-	Color           string           `json:"color"`
-	IsDefault       bool             `json:"is_default"`
-	NavigationItems []NavigationItem `json:"navigation_items,omitempty"`
+	ID               string           `json:"id"`
+	Label            string           `json:"label"`
+	Description      string           `json:"description"`
+	Icon             string           `json:"icon"`
+	Color            string           `json:"color"`
+	IsDefault        bool             `json:"is_default"`
+	NavigationItems  []NavigationItem `json:"navigation_items,omitempty"`
+	CreatedDate      time.Time        `json:"created_date,omitempty"`
+	LastModifiedDate time.Time        `json:"last_modified_date,omitempty"`
 }
 
 // Theme represents a visual theme
 type Theme struct {
-	ID       string                 `json:"id"`
-	Name     string                 `json:"name"`
-	IsActive bool                   `json:"is_active"`
-	Colors   map[string]interface{} `json:"colors"`
-	Density  string                 `json:"density"`
-	LogoURL  *string                `json:"logo_url,omitempty"`
+	ID               string                 `json:"id"`
+	Name             string                 `json:"name"`
+	IsActive         bool                   `json:"is_active"`
+	Colors           map[string]interface{} `json:"colors"`
+	Density          string                 `json:"density"`
+	LogoURL          *string                `json:"logo_url,omitempty"`
+	CreatedDate      time.Time              `json:"created_date,omitempty"`
+	LastModifiedDate time.Time              `json:"last_modified_date,omitempty"`
 }
 
 // DashboardConfig represents dashboard configuration

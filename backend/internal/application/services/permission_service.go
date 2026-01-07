@@ -1,13 +1,13 @@
 package services
 
 import (
+	"context"
 	"database/sql"
-	"fmt"
-	"log"
 	"strings"
 	"sync"
 
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/formula"
 	"github.com/nexuscrm/shared/pkg/constants"
@@ -27,6 +27,7 @@ import (
 type PermissionService struct {
 	db       *database.TiDBConnection
 	metadata *MetadataService
+	repo     *persistence.PermissionRepository
 	formula  *formula.Engine
 
 	// Role hierarchy cache: maps role_id -> parent_role_id
@@ -39,6 +40,7 @@ func NewPermissionService(db *database.TiDBConnection, metadata *MetadataService
 	ps := &PermissionService{
 		db:                 db,
 		metadata:           metadata,
+		repo:               persistence.NewPermissionRepository(db.DB()),
 		formula:            formula.NewEngine(),
 		roleHierarchyCache: make(map[string]*string),
 	}
@@ -51,129 +53,22 @@ func NewPermissionService(db *database.TiDBConnection, metadata *MetadataService
 
 // loadObjectPermission queries the database for a specific object permission
 func (ps *PermissionService) loadObjectPermission(profileID, objectAPIName string) (*models.ObjectPermission, error) {
-	query := fmt.Sprintf(`
-		SELECT profile_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all
-		FROM %s
-		WHERE profile_id = ? AND object_api_name = ?
-		LIMIT 1
-	`, constants.TableObjectPerms)
-
-	var p models.ObjectPermission
-	err := ps.db.QueryRow(query, profileID, strings.ToLower(objectAPIName)).Scan(
-		&p.ProfileID, &p.ObjectAPIName,
-		&p.AllowRead, &p.AllowCreate, &p.AllowEdit, &p.AllowDelete,
-		&p.ViewAll, &p.ModifyAll,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, nil // No permission record = no access
-	}
-	if err != nil {
-		log.Printf("⚠️ PermissionService: failed to load object permission for %s/%s: %v", profileID, objectAPIName, err)
-		return nil, err
-	}
-
-	return &p, nil
+	return ps.repo.LoadObjectPermission(context.Background(), profileID, objectAPIName)
 }
 
 // loadFieldPermission queries the database for a specific field permission
 func (ps *PermissionService) loadFieldPermission(profileID, objectAPIName, fieldAPIName string) (*models.FieldPermission, error) {
-	query := fmt.Sprintf(`
-		SELECT profile_id, object_api_name, field_api_name, readable, editable
-		FROM %s
-		WHERE profile_id = ? AND object_api_name = ? AND field_api_name = ?
-		LIMIT 1
-	`, constants.TableFieldPerms)
-
-	var p models.FieldPermission
-	err := ps.db.QueryRow(query, profileID, strings.ToLower(objectAPIName), strings.ToLower(fieldAPIName)).Scan(
-		&p.ProfileID, &p.ObjectAPIName, &p.FieldAPIName,
-		&p.Readable, &p.Editable,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, nil // No field permission = use object-level defaults
-	}
-	if err != nil {
-		log.Printf("⚠️ PermissionService: failed to load field permission for %s/%s.%s: %v", profileID, objectAPIName, fieldAPIName, err)
-		return nil, err
-	}
-
-	return &p, nil
+	return ps.repo.LoadFieldPermission(context.Background(), profileID, objectAPIName, fieldAPIName)
 }
 
 // loadEffectiveObjectPermission loads permissions considering Profile AND Permission Sets
 func (ps *PermissionService) loadEffectiveObjectPermission(user *models.UserSession, objectAPIName string) (*models.ObjectPermission, error) {
-	query := fmt.Sprintf(`
-		SELECT 
-			MAX(allow_read), MAX(allow_create), MAX(allow_edit), MAX(allow_delete), MAX(view_all), MAX(modify_all)
-		FROM %s
-		WHERE object_api_name = ?
-		AND (
-			profile_id = ? 
-			OR 
-			permission_set_id IN (SELECT permission_set_id FROM %s WHERE assignee_id = ?)
-		)
-	`, constants.TableObjectPerms, constants.TablePermissionSetAssignment)
-
-	var p models.ObjectPermission
-	p.ObjectAPIName = objectAPIName
-	// ProfileID and PermissionSetID are irrelevant in aggregated view, kept nil
-
-	// We scan into NullBool to detect if logic returned rows (though aggregation always returns 1 row, if no matches, values are NULL)
-	var r, c, e, d, va, ma sql.NullBool
-
-	err := ps.db.QueryRow(query, strings.ToLower(objectAPIName), user.ProfileID, user.ID).Scan(
-		&r, &c, &e, &d, &va, &ma,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	if !r.Valid {
-		// All are NULL -> No permissions defined for this object for this user
-		return nil, nil // No access
-	}
-
-	p.AllowRead = r.Bool
-	p.AllowCreate = c.Bool
-	p.AllowEdit = e.Bool
-	p.AllowDelete = d.Bool
-	p.ViewAll = va.Bool
-	p.ModifyAll = ma.Bool
-
-	return &p, nil
+	return ps.repo.LoadEffectiveObjectPermission(context.Background(), user, objectAPIName)
 }
 
 // loadEffectiveFieldPermission loads field permissions considering Profile AND Permission Sets
 func (ps *PermissionService) loadEffectiveFieldPermission(user *models.UserSession, objectAPIName, fieldAPIName string) (*models.FieldPermission, error) {
-	query := fmt.Sprintf(`
-		SELECT MAX(readable), MAX(editable)
-		FROM %s
-		WHERE object_api_name = ? AND field_api_name = ?
-		AND (
-			profile_id = ? 
-			OR 
-			permission_set_id IN (SELECT permission_set_id FROM %s WHERE assignee_id = ?)
-		)
-	`, constants.TableFieldPerms, constants.TablePermissionSetAssignment)
-
-	var r, e sql.NullBool
-	err := ps.db.QueryRow(query, strings.ToLower(objectAPIName), strings.ToLower(fieldAPIName), user.ProfileID, user.ID).Scan(&r, &e)
-	if err != nil {
-		return nil, err
-	}
-
-	if !r.Valid {
-		return nil, nil
-	}
-
-	return &models.FieldPermission{
-		ObjectAPIName: objectAPIName,
-		FieldAPIName:  fieldAPIName,
-		Readable:      r.Bool,
-		Editable:      e.Bool,
-	}, nil
+	return ps.repo.LoadEffectiveFieldPermission(context.Background(), user, objectAPIName, fieldAPIName)
 }
 
 // ==================== Core Permission Checks ====================
@@ -322,120 +217,29 @@ func (ps *PermissionService) GetEffectiveSchema(schema *models.ObjectMetadata, u
 
 // GetObjectPermissions retrieves all object permissions for a profile
 func (ps *PermissionService) GetObjectPermissions(profileID string) ([]models.ObjectPermission, error) {
-	query := fmt.Sprintf(`
-		SELECT profile_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all
-		FROM %s
-		WHERE profile_id = ?
-	`, constants.TableObjectPerms)
-
-	rows, err := ps.db.Query(query, profileID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var perms []models.ObjectPermission
-	for rows.Next() {
-		var p models.ObjectPermission
-		if err := rows.Scan(&p.ProfileID, &p.ObjectAPIName, &p.AllowRead, &p.AllowCreate, &p.AllowEdit, &p.AllowDelete, &p.ViewAll, &p.ModifyAll); err != nil {
-			continue
-		}
-		perms = append(perms, p)
-	}
-
-	return perms, nil
+	return ps.repo.ListObjectPermissions(context.Background(), profileID)
 }
 
 // UpdateObjectPermission creates or updates an object permission
 func (ps *PermissionService) UpdateObjectPermission(perm models.ObjectPermission) error {
-	return ps.updateObjectPermission(ps.db, perm)
+	return ps.repo.UpsertObjectPermission(context.Background(), perm)
 }
 
 // UpdateObjectPermissionTx creates or updates an object permission within a transaction
 func (ps *PermissionService) UpdateObjectPermissionTx(tx *sql.Tx, perm models.ObjectPermission) error {
-	return ps.updateObjectPermission(tx, perm)
+	return ps.repo.UpsertObjectPermissionTx(context.Background(), tx, perm)
 }
 
 // updateObjectPermission creates or updates an object permission using the provided executor
-func (ps *PermissionService) updateObjectPermission(exec Executor, perm models.ObjectPermission) error {
-	// Generate ID if likely new (won't hurt ON DUPLICATE constraint)
-	id := GenerateID()
-
-	query := fmt.Sprintf(`
-		INSERT INTO %s (id, profile_id, permission_set_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE
-			allow_read = VALUES(allow_read),
-			allow_create = VALUES(allow_create),
-			allow_edit = VALUES(allow_edit),
-			allow_delete = VALUES(allow_delete),
-			view_all = VALUES(view_all),
-			modify_all = VALUES(modify_all)
-	`, constants.TableObjectPerms)
-
-	_, err := exec.Exec(query, id, perm.ProfileID, perm.PermissionSetID, perm.ObjectAPIName, perm.AllowRead, perm.AllowCreate, perm.AllowEdit, perm.AllowDelete, perm.ViewAll, perm.ModifyAll)
-	if err == nil {
-		target := "Unknown"
-		if perm.ProfileID != nil {
-			target = *perm.ProfileID
-		}
-		if perm.PermissionSetID != nil {
-			target = "PermSet:" + *perm.PermissionSetID
-		}
-		log.Printf("🛡️ Updated object permission for %s on %s", target, perm.ObjectAPIName)
-	}
-	return err
-}
 
 // GetFieldPermissions retrieves all field permissions for a profile
 func (ps *PermissionService) GetFieldPermissions(profileID string) ([]models.FieldPermission, error) {
-	query := fmt.Sprintf(`
-		SELECT profile_id, object_api_name, field_api_name, readable, editable
-		FROM %s
-		WHERE profile_id = ?
-	`, constants.TableFieldPerms)
-
-	rows, err := ps.db.Query(query, profileID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var perms []models.FieldPermission
-	for rows.Next() {
-		var p models.FieldPermission
-		if err := rows.Scan(&p.ProfileID, &p.ObjectAPIName, &p.FieldAPIName, &p.Readable, &p.Editable); err != nil {
-			continue
-		}
-		perms = append(perms, p)
-	}
-
-	return perms, nil
+	return ps.repo.ListFieldPermissions(context.Background(), profileID)
 }
 
 // UpdateFieldPermission creates or updates a field permission
 func (ps *PermissionService) UpdateFieldPermission(perm models.FieldPermission) error {
-	id := GenerateID()
-	query := fmt.Sprintf(`
-		INSERT INTO %s (id, profile_id, permission_set_id, object_api_name, field_api_name, readable, editable)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE
-			readable = VALUES(readable),
-			editable = VALUES(editable)
-	`, constants.TableFieldPerms)
-
-	_, err := ps.db.Exec(query, id, perm.ProfileID, perm.PermissionSetID, perm.ObjectAPIName, perm.FieldAPIName, perm.Readable, perm.Editable)
-	if err == nil {
-		target := "Unknown"
-		if perm.ProfileID != nil {
-			target = *perm.ProfileID
-		}
-		if perm.PermissionSetID != nil {
-			target = "PermSet:" + *perm.PermissionSetID
-		}
-		log.Printf("🛡️ Updated field permission for %s on %s.%s", target, perm.ObjectAPIName, perm.FieldAPIName)
-	}
-	return err
+	return ps.repo.UpsertFieldPermission(context.Background(), perm)
 }
 
 // isFieldSystemReadOnlyByName checks if a field is a system read-only field based on its name
@@ -468,7 +272,7 @@ func isFieldSystemReadOnly(metadata *MetadataService, objectAPIName string, fiel
 
 // GrantInitialPermissions grants default permissions for a new object to all profiles
 func (ps *PermissionService) GrantInitialPermissions(objectAPIName string) error {
-	return GrantInitialObjectPermissions(ps.db, objectAPIName, constants.TableProfile, constants.TableObjectPerms, constants.ProfileSystemAdmin)
+	return ps.repo.GrantInitialPermissions(context.Background(), objectAPIName)
 }
 
 // Role hierarchy functions are in permission_role_hierarchy.go:

@@ -1,6 +1,7 @@
 import { dataAPI } from '../../infrastructure/api/data';
 import { metadataAPI } from '../../infrastructure/api/metadata'; // Assuming this exists or will use dataAPI for everything
 import { TiDBServiceManager } from '../actions/ActionHandlerTypes';
+import { Logger } from '../services/Logger';
 
 /**
  * Client-side adapter for TiDBServiceManager.
@@ -21,7 +22,7 @@ export const clientDBAdapter: TiDBServiceManager = {
         },
         async query(sql: string, args: unknown[] = []) {
             // Placeholder: client-side SQL not fully supported, direct implementation or generic fallback
-            console.warn('persistence.query called on client - SQL support limited');
+            Logger.warn('persistence.query called on client - SQL support limited');
             return [];
         }
     },
@@ -58,7 +59,7 @@ export const clientDBAdapter: TiDBServiceManager = {
         // This is synchronous in the interface but API is async.
         // For client-side, this might need pre-loading or architectural change.
         // Returning null/undefined as basic fallback, handlers should handle this or use async methods.
-        console.warn('getSchema (sync) called on clientDBAdapter - not fully supported');
+        Logger.warn('getSchema (sync) called on clientDBAdapter - not fully supported');
         return null;
     }
 };

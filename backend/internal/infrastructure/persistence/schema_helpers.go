@@ -1,4 +1,4 @@
-package services
+package persistence
 
 import (
 	"database/sql"
@@ -11,7 +11,7 @@ import (
 
 // Helper methods to eliminate redundancy and ensuring consistency in metadata persistence
 
-func (sm *SchemaManager) prepareObjectDBValues(obj *models.ObjectMetadata) ([]interface{}, error) {
+func (r *SchemaRepository) prepareObjectDBValues(obj *models.ObjectMetadata) ([]interface{}, error) {
 	description := ToNullString(obj.Description)
 	var icon sql.NullString
 	if obj.Icon != "" {
@@ -49,7 +49,7 @@ func (sm *SchemaManager) prepareObjectDBValues(obj *models.ObjectMetadata) ([]in
 	}, nil
 }
 
-func (sm *SchemaManager) prepareFieldDBValues(field *models.FieldMetadata) ([]interface{}, error) {
+func (r *SchemaRepository) prepareFieldDBValues(field *models.FieldMetadata) ([]interface{}, error) {
 	defaultValue := ToNullString(field.DefaultValue)
 	helpText := ToNullString(field.HelpText)
 	minLength := ToNullInt64(field.MinLength)
@@ -121,7 +121,7 @@ func (sm *SchemaManager) prepareFieldDBValues(field *models.FieldMetadata) ([]in
 	}, nil
 }
 
-func (sm *SchemaManager) getObjectInsertQuery() string {
+func (r *SchemaRepository) getObjectInsertQuery() string {
 	return fmt.Sprintf(`INSERT INTO %s (
 		id, api_name, label, plural_label, icon, description, 
 		is_custom, sharing_model, app_id, list_fields, path_field, theme_color, table_type,
@@ -142,7 +142,7 @@ func (sm *SchemaManager) getObjectInsertQuery() string {
 	`, constants.TableObject)
 }
 
-func (sm *SchemaManager) getObjectStrictInsertQuery() string {
+func (r *SchemaRepository) getObjectStrictInsertQuery() string {
 	return fmt.Sprintf(`INSERT INTO %s (
 		id, api_name, label, plural_label, icon, description, 
 		is_custom, sharing_model, app_id, list_fields, path_field, theme_color, table_type,
@@ -150,7 +150,7 @@ func (sm *SchemaManager) getObjectStrictInsertQuery() string {
 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`, constants.TableObject)
 }
 
-func (sm *SchemaManager) getFieldInsertQuery() string {
+func (r *SchemaRepository) getFieldInsertQuery() string {
 	return fmt.Sprintf(`INSERT INTO %s (
 		id, object_id, api_name, label, type, required, `+"`unique`"+`,
 		default_value, help_text, is_system, is_name_field, options,

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/pkg/query"
 	"github.com/nexuscrm/backend/pkg/utils"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // Scannable is an interface for something that can scan into a destination (sql.Row or sql.Rows)

@@ -1,7 +1,7 @@
 import { RegistryBase } from '@shared/utils';
 import { PageLayout, LayoutType } from '../types';
 import { metadataAPI } from '../infrastructure/api/metadata';
-
+import { Logger } from '../core/services/Logger';
 
 export class LayoutRegistryClass extends RegistryBase<PageLayout> {
     constructor() {
@@ -32,7 +32,7 @@ export class LayoutRegistryClass extends RegistryBase<PageLayout> {
                 return response.layout;
             }
         } catch (error) {
-            console.warn(`Failed to load layout for ${objectName} (${type}) from API, falling back to default.`, error);
+            Logger.warn(`Failed to load layout for ${objectName} (${type}) from API, falling back to default.`, error);
         }
 
         // 3. Generate a default layout if nothing exists
@@ -72,7 +72,7 @@ export class LayoutRegistryClass extends RegistryBase<PageLayout> {
         try {
             await metadataAPI.saveLayout(layout);
         } catch (error) {
-            console.error('Failed to save layout via API', error);
+            Logger.error('Failed to save layout via API', error);
             throw error;
         }
 

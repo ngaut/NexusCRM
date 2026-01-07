@@ -1,20 +1,23 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
 	"sync"
 
-	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/backend/pkg/errors"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // MetadataService manages CRM metadata
 type MetadataService struct {
 	db        *database.TiDBConnection
 	schemaMgr *SchemaManager
+	repo      *persistence.MetadataRepository
 	mu        sync.RWMutex
 
 	// Cache
@@ -32,6 +35,7 @@ func NewMetadataService(db *database.TiDBConnection, schemaMgr *SchemaManager) *
 	return &MetadataService{
 		db:        db,
 		schemaMgr: schemaMgr,
+		repo:      persistence.NewMetadataRepository(db.DB()),
 	}
 }
 
@@ -57,7 +61,7 @@ func (ms *MetadataService) refreshCacheLocked() error {
 	log.Println("🔄 Refreshing metadata cache...")
 
 	// 1. Load all schemas
-	schemas, err := ms.queryAllSchemas()
+	schemas, err := ms.repo.GetAllSchemas(context.Background())
 	if err != nil {
 		return err
 	}

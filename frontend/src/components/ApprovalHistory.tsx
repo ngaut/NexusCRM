@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle, XCircle, Send, User, MessageSquare } from 'lucide-react';
 import { approvalsAPI, ApprovalWorkItem } from '../infrastructure/api/approvals';
 import { APPROVAL_STATUS } from '../core/constants';
+import { formatDateTime } from '../core/utils/formatting';
 
 interface ApprovalHistoryProps {
     objectApiName: string;
@@ -29,15 +30,6 @@ export function ApprovalHistory({ objectApiName, recordId }: ApprovalHistoryProp
         };
         fetchHistory();
     }, [objectApiName, recordId]);
-
-    const formatDate = (dateStr: string) => {
-        return new Date(dateStr).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
 
     const getStatusInfo = (status: string) => {
         switch (status) {
@@ -95,7 +87,7 @@ export function ApprovalHistory({ objectApiName, recordId }: ApprovalHistoryProp
                                 </span>
                             </div>
                             <span className="text-xs text-gray-400">
-                                {formatDate(item.submitted_date)}
+                                {formatDateTime(item.submitted_date)}
                             </span>
                         </div>
 
@@ -108,7 +100,7 @@ export function ApprovalHistory({ objectApiName, recordId }: ApprovalHistoryProp
 
                         {item.approved_date && (
                             <div className="text-xs text-gray-400 mt-1">
-                                {item.status === APPROVAL_STATUS.APPROVED ? 'Approved' : 'Rejected'} on {formatDate(item.approved_date)}
+                                {item.status === APPROVAL_STATUS.APPROVED ? 'Approved' : 'Rejected'} on {formatDateTime(item.approved_date)}
                             </div>
                         )}
                     </div>

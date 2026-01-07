@@ -7,6 +7,7 @@
  */
 
 import { ActionHandlerModule } from '../ActionHandlerTypes';
+import { Logger } from '../../services/Logger';
 
 // Simple inline formula evaluation (safe subset)
 function safeEvaluateFormula(formula: string, context: { record: Record<string, unknown>; user?: Record<string, unknown> }): unknown {
@@ -14,7 +15,7 @@ function safeEvaluateFormula(formula: string, context: { record: Record<string, 
         const fn = new Function('record', 'user', `"use strict"; return (${formula});`);
         return fn(context.record, context.user);
     } catch (e) {
-        console.error('Formula evaluation error:', e);
+        Logger.error('Formula evaluation error:', e);
         return undefined;
     }
 }
@@ -49,7 +50,7 @@ export const handler: ActionHandlerModule = {
 
         handler: async (db, record, config, flowName, tx, _, currentUser) => {
             if (!config.target_object) {
-                console.warn(`[CreateRecordHandler] Missing target_object configuration`);
+                Logger.warn(`[CreateRecordHandler] Missing target_object configuration`);
                 return;
             }
 

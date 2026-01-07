@@ -8,14 +8,16 @@ import (
 
 // SystemAuditLog represents an audit log entry
 type SystemAuditLog struct {
-	ID            string    `json:"id,omitempty"`
-	ObjectAPIName string    `json:"object_api_name"`
-	RecordID      string    `json:"record_id"`
-	FieldName     string    `json:"field_name"`
-	OldValue      string    `json:"old_value"`
-	NewValue      string    `json:"new_value"`
-	ChangedByID   string    `json:"changed_by_id"`
-	ChangedAt     time.Time `json:"changed_at"`
+	ID               string    `json:"id,omitempty"`
+	ObjectAPIName    string    `json:"object_api_name"`
+	RecordID         string    `json:"record_id"`
+	FieldName        string    `json:"field_name"`
+	OldValue         string    `json:"old_value"`
+	NewValue         string    `json:"new_value"`
+	ChangedByID      string    `json:"changed_by_id"`
+	ChangedAt        time.Time `json:"changed_at"`
+	CreatedDate      time.Time `json:"created_date,omitempty"`
+	LastModifiedDate time.Time `json:"last_modified_date,omitempty"`
 }
 
 func (a *SystemAuditLog) ToSObject() SObject {

@@ -37,8 +37,7 @@ func (s *AuthService) CreateUser(req CreateUserRequest) (*models.UserSession, er
 	}
 
 	// 3. Check for Existing User
-	var exists bool
-	err := s.db.QueryRow(fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE %s = ?)", constants.TableUser, constants.FieldEmail), req.Email).Scan(&exists)
+	exists, err := s.userRepo.CheckUserExistsByEmail(context.Background(), req.Email)
 	if err != nil {
 		return nil, fmt.Errorf("database error: %w", err)
 	}
@@ -108,8 +107,7 @@ type UpdateUserRequest struct {
 // UpdateUser updates an existing user's information
 func (s *AuthService) UpdateUser(userID string, req UpdateUserRequest) error {
 	// 1. Check Existence
-	var exists bool
-	err := s.db.QueryRow(fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE %s = ?)", constants.TableUser, constants.FieldID), userID).Scan(&exists)
+	exists, err := s.userRepo.CheckUserExistsByID(context.Background(), userID)
 	if err != nil {
 		return fmt.Errorf("database error: %w", err)
 	}
@@ -133,9 +131,8 @@ func (s *AuthService) UpdateUser(userID string, req UpdateUserRequest) error {
 		}
 
 		// Check for email uniqueness
-		var emailExists bool
-		checkQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE %s = ? AND %s != ?)", constants.TableUser, constants.FieldEmail, constants.FieldID)
-		if err := s.db.QueryRow(checkQuery, req.Email, userID).Scan(&emailExists); err != nil {
+		emailExists, err := s.userRepo.CheckEmailConflict(context.Background(), req.Email, userID)
+		if err != nil {
 			return fmt.Errorf("database error checking email: %w", err)
 		}
 		if emailExists {
@@ -188,8 +185,7 @@ func (s *AuthService) UpdateUser(userID string, req UpdateUserRequest) error {
 // DeleteUser removes a user from the system
 func (s *AuthService) DeleteUser(userID string) error {
 	// Check Existence
-	var exists bool
-	err := s.db.QueryRow(fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE %s = ?)", constants.TableUser, constants.FieldID), userID).Scan(&exists)
+	exists, err := s.userRepo.CheckUserExistsByID(context.Background(), userID)
 	if err != nil {
 		return fmt.Errorf("database error: %w", err)
 	}

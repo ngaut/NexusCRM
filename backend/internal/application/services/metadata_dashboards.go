@@ -1,10 +1,10 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
 
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
 
@@ -25,7 +25,7 @@ func (ms *MetadataService) GetDashboards(user *models.UserSession) []*models.Das
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	dashboards, err := ms.queryDashboards()
+	dashboards, err := ms.repo.GetAllDashboards(context.Background())
 	if err != nil {
 		log.Printf("Failed to get dashboards: %v", err)
 		return []*models.DashboardConfig{}
@@ -38,7 +38,7 @@ func (ms *MetadataService) GetDashboards(user *models.UserSession) []*models.Das
 func (ms *MetadataService) GetDashboard(id string) *models.DashboardConfig {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	dashboard, err := ms.queryDashboard(id)
+	dashboard, err := ms.repo.GetDashboard(context.Background(), id)
 	if err != nil {
 		return nil
 	}
@@ -58,7 +58,7 @@ func (ms *MetadataService) CreateDashboard(dashboard *models.DashboardConfig) er
 		dashboard.ID = GenerateID()
 	}
 
-	existing, _ := ms.queryDashboard(dashboard.ID)
+	existing, _ := ms.repo.GetDashboard(context.Background(), dashboard.ID)
 	if existing != nil {
 		return fmt.Errorf("dashboard with ID '%s' already exists", dashboard.ID)
 	}
@@ -66,25 +66,13 @@ func (ms *MetadataService) CreateDashboard(dashboard *models.DashboardConfig) er
 	// Normalize widgets: ensure IDs
 	dashboard.Widgets = normalizeWidgets(dashboard.Widgets)
 
-	widgetsJSON, err := MarshalJSONOrDefault(dashboard.Widgets, "[]")
-	if err != nil {
-		return fmt.Errorf("failed to marshal widgets: %w", err)
+	// Layout default
+	if dashboard.Layout == "" {
+		dashboard.Layout = "two-column"
 	}
 
-	layout := dashboard.Layout
-	if layout == "" {
-		layout = "two-column"
-	}
-
-	description := dashboard.Description
-	if description == nil {
-		empty := ""
-		description = &empty
-	}
-
-	query := fmt.Sprintf("INSERT INTO %s (id, name, description, layout, widgets) VALUES (?, ?, ?, ?, ?)", constants.TableDashboard)
-	_, err = ms.db.Exec(query, dashboard.ID, dashboard.Label, *description, layout, widgetsJSON)
-	if err != nil {
+	// Insert into DB via Repo
+	if err := ms.repo.CreateDashboard(context.Background(), dashboard); err != nil {
 		return fmt.Errorf("failed to insert dashboard: %w", err)
 	}
 
@@ -96,11 +84,12 @@ func (ms *MetadataService) UpdateDashboard(id string, updates *models.DashboardC
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	existing, err := ms.queryDashboard(id)
+	existing, err := ms.repo.GetDashboard(context.Background(), id)
 	if err != nil || existing == nil {
 		return fmt.Errorf("dashboard with ID '%s' not found", id)
 	}
 
+	// Update existing fields with provided updates
 	if updates.Label != "" {
 		existing.Label = updates.Label
 	}
@@ -110,19 +99,15 @@ func (ms *MetadataService) UpdateDashboard(id string, updates *models.DashboardC
 	if updates.Layout != "" {
 		existing.Layout = updates.Layout
 	}
-
-	existing.ID = id
-
-	// Normalize widgets: ensure IDs
-	existing.Widgets = normalizeWidgets(existing.Widgets)
-
-	widgetsJSON, err := MarshalJSONOrDefault(existing.Widgets, "[]")
-	if err != nil {
-		return fmt.Errorf("failed to marshal widgets: %w", err)
+	if updates.Description != nil {
+		existing.Description = updates.Description
 	}
 
-	query := fmt.Sprintf("UPDATE %s SET name = ?, description = ?, layout = ?, widgets = ? WHERE id = ?", constants.TableDashboard)
-	if _, err := ms.db.Exec(query, existing.Label, existing.Description, existing.Layout, string(widgetsJSON), id); err != nil {
+	existing.ID = id
+	existing.Widgets = normalizeWidgets(existing.Widgets)
+
+	// Update DB via Repo
+	if err := ms.repo.UpdateDashboard(context.Background(), id, existing); err != nil {
 		return fmt.Errorf("failed to update dashboard: %w", err)
 	}
 
@@ -134,15 +119,10 @@ func (ms *MetadataService) DeleteDashboard(id string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	existing, _ := ms.queryDashboard(id)
+	existing, _ := ms.repo.GetDashboard(context.Background(), id)
 	if existing == nil {
 		return fmt.Errorf("dashboard with ID '%s' not found", id)
 	}
 
-	_, err := ms.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableDashboard), id)
-	if err != nil {
-		return fmt.Errorf("failed to delete dashboard: %w", err)
-	}
-
-	return nil
+	return ms.repo.DeleteDashboard(context.Background(), id)
 }

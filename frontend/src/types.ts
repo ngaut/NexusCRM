@@ -20,6 +20,19 @@ export interface FieldTypeInfo {
   isPlugin: boolean;
 }
 
+import {
+  SystemUser,
+  SystemProfile,
+  SystemRole,
+  SystemGroup,
+  SystemGroupMember,
+  SystemPermissionSet,
+  SystemPermissionSetAssignment,
+  SystemSharingRule,
+  SystemObjectPerms,
+  SystemFieldPerms
+} from './generated-schema';
+
 export type SharingModel = 'Private' | 'PublicRead' | 'PublicReadWrite';
 
 export interface FieldMetadata {
@@ -91,83 +104,42 @@ export interface ObjectMetadata {
 
 // --- Permissions & Security ---
 
-export interface Profile {
-  id: string;
-  name: string;
-  description?: string;
-  is_system?: boolean; // If true, cannot be deleted (e.g. System Admin)
-}
+// Note: SystemProfile has 'name', 'description', 'is_active', 'is_system', 'is_deleted', etc.
+// The manual Profile interface had 'id', 'name', 'description', 'is_system'.
+// SystemProfile satisfies this.
+export interface Profile extends SystemProfile { }
 
-export interface Role {
-  id: string;
-  name: string;
-  parent_role_id?: string;
-}
+export interface Role extends SystemRole { }
 
 // --- Groups & Queues ---
 
-export interface Group {
-  id: string;
-  name: string;
-  label: string;
-  type: 'Queue' | 'Regular';
-  email?: string;
-  created_date?: string;
-}
+export interface Group extends SystemGroup { }
 
-export interface GroupMember {
-  id: string;
-  group_id: string;
-  user_id: string;
+export interface GroupMember extends Omit<SystemGroupMember, 'id' | 'created_date' | 'last_modified_date' | 'is_deleted'> {
+  id?: string;
   created_date?: string;
 }
 
 // --- Permission Sets ---
 
-export interface PermissionSet {
-  id: string;
-  name: string;
-  label: string;
-  description?: string;
-  is_active: boolean;
+export interface PermissionSet extends SystemPermissionSet { }
+
+export interface PermissionSetAssignment extends Omit<SystemPermissionSetAssignment, 'id' | 'created_date' | 'last_modified_date' | 'is_deleted'> {
+  id?: string;
   created_date?: string;
 }
 
-export interface PermissionSetAssignment {
-  id: string;
-  assignee_id: string;
-  permission_set_id: string;
-  created_date?: string;
+export interface ObjectPermission extends Omit<SystemObjectPerms, 'id' | 'created_date' | 'last_modified_date'> {
+  // Allow optional system fields for updates
+  id?: string;
 }
 
-export interface ObjectPermission {
-  profile_id?: string;
-  permission_set_id?: string;
-  object_api_name: string;
-  allow_read: boolean;
-  allow_create: boolean;
-  allow_edit: boolean;
-  allow_delete: boolean;
-  view_all: boolean;
-  modify_all: boolean;
+export interface FieldPermission extends Omit<SystemFieldPerms, 'id' | 'created_date' | 'last_modified_date'> {
+  id?: string;
 }
 
-export interface FieldPermission {
-  profile_id?: string;
-  permission_set_id?: string;
-  object_api_name: string;
-  field_api_name: string;
-  readable: boolean;
-  editable: boolean;
-}
-
-export interface SharingRule {
-  id: string;
-  object_api_name: string;
-  name: string;
-  criteria: string; // SQL/JS condition e.g. "Industry = 'Technology'"
+export interface SharingRule extends Omit<SystemSharingRule, 'access_level'> {
   access_level: 'Read' | 'Edit';
-  share_with_role_id: string; // The Role that gains access
 }
 
 export interface ProfileLayoutAssignment {
@@ -195,16 +167,15 @@ export interface UserSession {
   role_id?: string;
 }
 
-export interface User {
-  id: string;
+export interface User extends SystemUser {
+  // SystemUser has 'username', 'first_name', 'last_name'.
+  // 'name' is often a computed display name (e.g. first + last or username).
+  // We keep it here to avoid breaking UI that relies on 'user.name'.
   name: string;
-  email: string;
-  profile_id: string;
-  role_id?: string;
-  is_active: boolean;
+  // SystemUser has 'last_login_date'. Map 'last_login' to it if needed, or allow both.
   last_login?: string;
-  created_date?: string;
-  password?: string; // Optional for updates
+  // Password is not part of the standard API response for User but is needed for creation/updates
+  password?: string;
 }
 
 // --- Layout & Experience Metadata ---

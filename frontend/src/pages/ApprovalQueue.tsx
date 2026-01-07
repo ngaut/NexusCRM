@@ -6,6 +6,7 @@ import { COMMON_FIELDS, ROUTES } from '../core/constants';
 import { Button } from '../components/ui/Button';
 import { useSuccessToast, useErrorToast } from '../components/ui/Toast';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
+import { formatDateTime } from '../core/utils/formatting';
 
 export function ApprovalQueue() {
     const navigate = useNavigate();
@@ -75,16 +76,6 @@ export function ApprovalQueue() {
 
     const viewRecord = (workItem: ApprovalWorkItem) => {
         navigate(ROUTES.OBJECT.DETAIL(workItem[COMMON_FIELDS.OBJECT_API_NAME] as string, workItem[COMMON_FIELDS.RECORD_ID] as string));
-    };
-
-    const formatDate = (dateStr: string) => {
-        return new Date(dateStr).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
     };
 
     return (
@@ -178,7 +169,7 @@ export function ApprovalQueue() {
                                         <div className="flex items-center gap-1">
                                             <div className="sr-only">Calendar</div>
                                             <Calendar className="w-4 h-4" />
-                                            {formatDate(item[COMMON_FIELDS.SUBMITTED_DATE] as string)}
+                                            {formatDateTime(item[COMMON_FIELDS.SUBMITTED_DATE] as string)}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/backend/pkg/formula"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -33,6 +34,10 @@ type ServiceManager struct {
 	Validation      *ValidationService
 	Outbox          *OutboxService
 	Scheduler       *SchedulerService
+
+	// Repositories
+	UserRepo   *persistence.UserRepository
+	SystemRepo *persistence.SystemRepository
 }
 
 // NewServiceManager creates a new service manager with all dependencies wired
@@ -48,6 +53,10 @@ func NewServiceManager(db *database.TiDBConnection) *ServiceManager {
 	sm.Metadata = NewMetadataService(db, sm.Schema)
 	sm.UIMetadata = NewUIMetadataService(db, sm.Metadata)
 
+	// Logic layer Repositories
+	sm.UserRepo = persistence.NewUserRepository(db.DB())
+	sm.SystemRepo = persistence.NewSystemRepository(db.DB())
+
 	// Validation Service
 	formulaEngine := formula.NewEngine()
 	sm.Validation = NewValidationService(formulaEngine)
@@ -62,7 +71,7 @@ func NewServiceManager(db *database.TiDBConnection) *ServiceManager {
 	sm.Outbox = NewOutboxService(db, sm.EventBus, sm.TxManager)
 	sm.Persistence.SetOutbox(sm.Outbox)
 
-	sm.Auth = NewAuthService(db, sm.Persistence)
+	sm.Auth = NewAuthService(db, sm.Persistence, sm.UserRepo)
 	sm.ActionSvc = NewActionService(sm.Metadata, sm.Persistence, sm.Permissions, sm.TxManager)
 
 	// FlowInstanceService must be created before FlowExecutor (dependency order)
@@ -71,7 +80,7 @@ func NewServiceManager(db *database.TiDBConnection) *ServiceManager {
 	// FlowExecutor now takes all dependencies via constructor (no Set* methods)
 	sm.FlowExecutor = NewFlowExecutor(sm.Metadata, sm.ActionSvc, sm.EventBus, sm.FlowInstanceSvc, sm.Persistence)
 
-	sm.System = NewSystemManager(db, sm.Persistence)
+	sm.System = NewSystemManager(sm.Persistence, sm.SystemRepo)
 	sm.Feed = NewFeedService(sm.Persistence, sm.QuerySvc)
 	sm.Notification = NewNotificationService(sm.Persistence, sm.QuerySvc)
 

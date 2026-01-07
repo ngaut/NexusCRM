@@ -38,16 +38,16 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 	}
 
 	// Create roles in reverse order (children first, then parents)
-	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id) VALUES (?, 'CEO', 'Chief Executive Officer', NULL)", constants.TableRole), ceoRoleID)
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id, created_date, last_modified_date) VALUES (?, 'CEO', 'Chief Executive Officer', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableRole), ceoRoleID)
 	require.NoError(t, err)
 
-	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id) VALUES (?, 'VP', 'Vice President', ?)", constants.TableRole), vpRoleID, ceoRoleID)
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id, created_date, last_modified_date) VALUES (?, 'VP', 'Vice President', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableRole), vpRoleID, ceoRoleID)
 	require.NoError(t, err)
 
-	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id) VALUES (?, 'Manager', 'Sales Manager', ?)", constants.TableRole), managerRoleID, vpRoleID)
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id, created_date, last_modified_date) VALUES (?, 'Manager', 'Sales Manager', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableRole), managerRoleID, vpRoleID)
 	require.NoError(t, err)
 
-	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id) VALUES (?, 'Rep', 'Sales Representative', ?)", constants.TableRole), repRoleID, managerRoleID)
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id, created_date, last_modified_date) VALUES (?, 'Rep', 'Sales Representative', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableRole), repRoleID, managerRoleID)
 	require.NoError(t, err)
 
 	// Refresh role hierarchy cache
@@ -69,31 +69,31 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 	profileID := constants.ProfileStandardUser
 
 	// Create users with roles - correct column names
-	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active, created_date, last_modified_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableUser),
 		ceoUserID, "ceo_user", "ceo@example.com", "pass", "CEO", "User", profileID, ceoRoleID, 1)
 	if err != nil {
 		t.Fatalf("Failed to create ceo user: %v", err)
 	}
 
-	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active, created_date, last_modified_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableUser),
 		vpUserID, "vp_user", "vp@example.com", "pass", "VP", "User", profileID, vpRoleID, 1)
 	if err != nil {
 		t.Fatalf("Failed to create vp user: %v", err)
 	}
 
-	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active, created_date, last_modified_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableUser),
 		managerUserID, "manager_user", "manager@test.com", "pass", "Manager", "User", profileID, managerRoleID, 1)
 	if err != nil {
 		t.Fatalf("Failed to create manager user: %v", err)
 	}
 
-	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active, created_date, last_modified_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableUser),
 		repUserID, "rep_user", "rep@test.com", "pass", "Rep", "User", profileID, repRoleID, 1)
 	if err != nil {
 		t.Fatalf("Failed to create rep user: %v", err)
 	}
 
-	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", constants.TableUser),
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active, created_date, last_modified_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableUser),
 		siblingUserID, "sibling_user", "sibling@test.com", "pass", "Sibling", "User", profileID, repRoleID, 1)
 	if err != nil {
 		t.Fatalf("Failed to create sibling user: %v", err)

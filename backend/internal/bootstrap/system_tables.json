@@ -114,15 +114,13 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -354,15 +352,13 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -449,15 +445,13 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -543,15 +537,13 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ]
     },
@@ -628,15 +620,13 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -768,15 +758,13 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -823,7 +811,8 @@
             },
             {
                 "name": "token",
-                "type": "VARCHAR(512)",
+                "type": "Text",
+                "length": 750,
                 "nullable": false,
                 "unique": true
             },
@@ -835,8 +824,7 @@
             {
                 "name": "last_activity",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "ip_address",
@@ -854,14 +842,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -928,14 +914,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -1001,14 +985,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -1078,14 +1060,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -1139,14 +1119,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -1206,14 +1184,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ]
     },
@@ -1264,14 +1240,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ]
     },
@@ -1315,14 +1289,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ]
     },
@@ -1340,8 +1312,7 @@
             {
                 "name": "timestamp",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "level",
@@ -1365,14 +1336,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -1422,20 +1391,17 @@
             {
                 "name": "timestamp",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -1486,14 +1452,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ]
     },
@@ -1536,14 +1500,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -1613,8 +1575,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "created_by_id",
@@ -1634,7 +1595,7 @@
             {
                 "name": "is_deleted",
                 "type": "BOOLEAN",
-                "default": "false"
+                "default": "0"
             },
             {
                 "name": "schedule",
@@ -1670,8 +1631,7 @@
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -1748,8 +1708,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "created_by_id",
@@ -1769,13 +1728,12 @@
             {
                 "name": "is_deleted",
                 "type": "BOOLEAN",
-                "default": "false"
+                "default": "0"
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -1846,8 +1804,7 @@
             {
                 "name": "started_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "paused_date",
@@ -1872,8 +1829,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_by_id",
@@ -1975,14 +1931,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2034,14 +1988,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2116,14 +2068,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2182,20 +2132,17 @@
             {
                 "name": "deleted_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2234,14 +2181,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2276,14 +2221,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2367,14 +2310,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2444,14 +2385,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2528,14 +2467,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2604,8 +2541,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "is_deleted",
@@ -2625,8 +2561,7 @@
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2690,20 +2625,17 @@
             {
                 "name": "changed_at",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2760,14 +2692,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2825,14 +2755,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2879,8 +2807,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "is_deleted",
@@ -2891,8 +2818,7 @@
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ]
     },
@@ -2920,8 +2846,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "is_deleted",
@@ -2932,8 +2857,7 @@
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -2993,8 +2917,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "is_deleted",
@@ -3005,8 +2928,7 @@
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ]
     },
@@ -3034,8 +2956,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "is_deleted",
@@ -3046,8 +2967,7 @@
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -3123,8 +3043,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_by_id",
@@ -3222,8 +3141,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_by_id",
@@ -3335,8 +3253,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_by_id",
@@ -3422,8 +3339,7 @@
             {
                 "name": "submitted_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "approver_id",
@@ -3458,8 +3374,7 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_by_id",
@@ -3561,13 +3476,11 @@
             },
             {
                 "name": "created_date",
-                "type": "DATETIME",
-                "default": "CURRENT_TIMESTAMP"
+                "type": "DATETIME"
             },
             {
                 "name": "last_modified_date",
-                "type": "DATETIME",
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "type": "DATETIME"
             }
         ],
         "indices": [
@@ -3623,14 +3536,12 @@
             {
                 "name": "created_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP"
+                "nullable": false
             },
             {
                 "name": "last_modified_date",
                 "type": "DATETIME",
-                "nullable": false,
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "nullable": false
             }
         ],
         "indices": [
@@ -3824,13 +3735,11 @@
             },
             {
                 "name": "created_date",
-                "type": "DATETIME",
-                "default": "CURRENT_TIMESTAMP"
+                "type": "DATETIME"
             },
             {
                 "name": "last_modified_date",
-                "type": "DATETIME",
-                "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                "type": "DATETIME"
             },
             {
                 "name": "is_deleted",

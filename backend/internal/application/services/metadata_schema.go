@@ -2,10 +2,8 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 
 	domainSchema "github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/backend/pkg/errors"
@@ -38,7 +36,7 @@ func (ms *MetadataService) CreateSchema(schema *models.ObjectMetadata) error {
 	}
 
 	// Check if metadata exists in DB
-	existing, err := ms.querySchemaByAPIName(schema.APIName)
+	existing, err := ms.repo.GetSchemaByAPIName(context.Background(), schema.APIName)
 	if err == nil && existing != nil {
 		return errors.NewConflictError("Object Metadata", "api_name", schema.APIName)
 	}
@@ -61,20 +59,11 @@ func (ms *MetadataService) CreateSchema(schema *models.ObjectMetadata) error {
 	defaultLayout := ms.GenerateDefaultLayout(schema)
 
 	// Persist Layout to _System_Layout
-	layoutJSON, err := json.Marshal(defaultLayout)
-	if err == nil {
-		query := fmt.Sprintf("INSERT INTO %s (id, object_api_name, config) VALUES (?, ?, ?)", constants.TableLayout)
-		_, err = ms.db.Exec(
-			query,
-			defaultLayout.ID,
-			schema.APIName,
-			string(layoutJSON),
-		)
-		if err != nil {
-			log.Printf("⚠️ Failed to auto-create default layout for %s: %v", schema.APIName, err)
-		} else {
-			log.Printf("✅ Auto-created default layout for %s", schema.APIName)
-		}
+	// Persist Layout to _System_Layout via Repo
+	if err := ms.repo.UpsertLayout(context.Background(), &defaultLayout); err != nil {
+		log.Printf("⚠️ Failed to auto-create default layout for %s: %v", schema.APIName, err)
+	} else {
+		log.Printf("✅ Auto-created default layout for %s", schema.APIName)
 	}
 
 	ms.invalidateCacheLocked()
@@ -101,7 +90,7 @@ func (ms *MetadataService) CreateSchemaOptimized(schema *models.ObjectMetadata) 
 	}
 
 	// Check if metadata exists in DB
-	existing, err := ms.querySchemaByAPIName(schema.APIName)
+	existing, err := ms.repo.GetSchemaByAPIName(context.Background(), schema.APIName)
 	if err == nil && existing != nil {
 		return errors.NewConflictError("Object Metadata", "api_name", schema.APIName)
 	}
@@ -114,12 +103,8 @@ func (ms *MetadataService) CreateSchemaOptimized(schema *models.ObjectMetadata) 
 
 	// Auto-generate default layout (same as CreateSchema)
 	defaultLayout := ms.GenerateDefaultLayout(schema)
-	layoutJSON, err := json.Marshal(defaultLayout)
-	if err == nil {
-		query := fmt.Sprintf("INSERT INTO %s (id, object_api_name, config) VALUES (?, ?, ?)", constants.TableLayout)
-		if _, err := ms.db.Exec(query, defaultLayout.ID, schema.APIName, string(layoutJSON)); err != nil {
-			log.Printf("⚠️ Failed to insert default layout for %s: %v", schema.APIName, err)
-		}
+	if err := ms.repo.UpsertLayout(context.Background(), &defaultLayout); err != nil {
+		log.Printf("⚠️ Failed to insert default layout for %s: %v", schema.APIName, err)
 	}
 
 	ms.invalidateCacheLocked()
@@ -134,7 +119,7 @@ func (ms *MetadataService) UpdateSchema(apiName string, updates *models.ObjectMe
 	defer ms.mu.Unlock()
 
 	// Check if exists
-	obj, err := ms.querySchemaByAPIName(apiName)
+	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), apiName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object with API name '%s' not found", apiName)
 	}
@@ -180,7 +165,7 @@ func (ms *MetadataService) DeleteSchema(apiName string) error {
 	defer ms.mu.Unlock()
 
 	// Check if exists
-	obj, err := ms.querySchemaByAPIName(apiName)
+	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), apiName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object with API name '%s' not found", apiName)
 	}
@@ -203,9 +188,8 @@ func (ms *MetadataService) EnsureDefaultListView(objectAPIName string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	var count int
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE object_api_name = ?", constants.TableListView)
-	if err := ms.db.QueryRow(query, objectAPIName).Scan(&count); err != nil {
+	count, err := ms.repo.CountListViews(context.Background(), objectAPIName)
+	if err != nil {
 		return fmt.Errorf("failed to check list views: %w", err)
 	}
 
@@ -216,11 +200,18 @@ func (ms *MetadataService) EnsureDefaultListView(objectAPIName string) error {
 	id := GenerateID()
 	label := "All"
 	filterExpr := ""
-	fieldsJSON := fmt.Sprintf(`["%s", "%s", "%s"]`, constants.FieldName, constants.FieldCreatedDate, constants.FieldOwnerID)
+	// Default fields: Name, CreatedDate, Owner
+	fields := []string{constants.FieldName, constants.FieldCreatedDate, constants.FieldOwnerID}
 
-	insQuery := fmt.Sprintf("INSERT INTO %s (id, object_api_name, label, filter_expr, fields) VALUES (?, ?, ?, ?, ?)", constants.TableListView)
-	_, err := ms.db.Exec(insQuery, id, objectAPIName, label, filterExpr, fieldsJSON)
-	if err != nil {
+	view := &models.ListView{
+		ID:            id,
+		ObjectAPIName: objectAPIName,
+		Label:         label,
+		FilterExpr:    filterExpr,
+		Fields:        fields,
+	}
+
+	if err := ms.repo.CreateListView(context.Background(), view); err != nil {
 		return fmt.Errorf("failed to insert default list view: %w", err)
 	}
 	log.Printf("✅ Auto-created default list view for %s", objectAPIName)
@@ -283,22 +274,14 @@ func (ms *MetadataService) BatchCreateSchemas(schemas []models.ObjectMetadata) e
 
 	// D. Batch Layouts
 	log.Printf("📦 Batch inserting %d layouts in _System_Layout...", len(layouts))
-	// Using manual batch insert for layouts because no BatchSaveLayouts exists yet
-	// and SchemaManager is not aware of PageLayouts (MetadataService domain)
 	if len(layouts) > 0 {
-		values := []string{}
-		args := []interface{}{}
-		for _, l := range layouts {
-			layoutJSON, err := json.Marshal(l)
-			if err != nil {
-				log.Printf("⚠️ Failed to marshal layout for %s: %v", l.ObjectAPIName, err)
-				continue
-			}
-			values = append(values, "(?, ?, ?)")
-			args = append(args, l.ID, l.ObjectAPIName, string(layoutJSON))
+		ctx := context.Background()
+		// Convert []models.PageLayout to []*models.PageLayout for BatchUpsertLayouts
+		layoutPointers := make([]*models.PageLayout, len(layouts))
+		for i := range layouts {
+			layoutPointers[i] = &layouts[i]
 		}
-		query := fmt.Sprintf("INSERT INTO %s (id, object_api_name, config) VALUES %s", constants.TableLayout, strings.Join(values, ","))
-		if _, err := ms.db.Exec(query, args...); err != nil {
+		if err := ms.repo.BatchUpsertLayouts(ctx, layoutPointers); err != nil {
 			log.Printf("⚠️ Failed to batch insert layouts: %v", err)
 		}
 	}

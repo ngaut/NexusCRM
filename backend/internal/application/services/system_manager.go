@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nexuscrm/backend/internal/infrastructure/database"
-	"github.com/nexuscrm/backend/pkg/query"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 	"golang.org/x/crypto/bcrypt"
@@ -16,15 +15,15 @@ import (
 
 // SystemManager handles system-level operations
 type SystemManager struct {
-	db          *database.TiDBConnection
 	persistence *PersistenceService
+	repo        *persistence.SystemRepository
 }
 
 // NewSystemManager creates a new SystemManager
-func NewSystemManager(db *database.TiDBConnection, persistence *PersistenceService) *SystemManager {
+func NewSystemManager(persistence *PersistenceService, repo *persistence.SystemRepository) *SystemManager {
 	return &SystemManager{
-		db:          db,
 		persistence: persistence,
+		repo:        repo,
 	}
 }
 
@@ -72,36 +71,7 @@ func (sm *SystemManager) LogEvent(level, source, message string, details *string
 
 // GetLogs retrieves system logs
 func (sm *SystemManager) GetLogs(limit int) ([]*models.SystemLog, error) {
-	if limit <= 0 {
-		limit = 100
-	}
-
-	q := query.From(constants.TableLog).
-		Select([]string{constants.FieldID, constants.FieldTimestamp, constants.FieldLevel, constants.FieldSource, constants.FieldMessage, constants.FieldDetails}).
-		OrderBy(constants.FieldTimestamp, constants.SortDESC).
-		Limit(limit).
-		Build()
-
-	rows, err := sm.db.Query(q.SQL, q.Params...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	logs := make([]*models.SystemLog, 0)
-	for rows.Next() {
-		var log models.SystemLog
-		var details *string
-
-		if err := rows.Scan(&log.ID, &log.Timestamp, &log.Level, &log.Source, &log.Message, &details); err != nil {
-			continue
-		}
-
-		log.Details = details
-		logs = append(logs, &log)
-	}
-
-	return logs, nil
+	return sm.repo.GetLogs(context.Background(), limit)
 }
 
 // TrackRecent tracks a recently viewed record
@@ -141,92 +111,17 @@ func (sm *SystemManager) GetRecentItems(currentUser *models.UserSession, limit i
 	if currentUser == nil {
 		return []*models.RecentItem{}, nil
 	}
-
-	if limit <= 0 {
-		limit = 10
-	}
-
-	q := query.From(constants.TableRecent).
-		Select([]string{constants.FieldID, constants.FieldUserID, constants.FieldObjectAPIName, constants.FieldRecordID, constants.FieldRecordName, constants.FieldTimestamp}).
-		Where(constants.FieldUserID+" = ?", currentUser.ID).
-		OrderBy(constants.FieldTimestamp, constants.SortDESC).
-		Limit(limit).
-		Build()
-
-	rows, err := sm.db.Query(q.SQL, q.Params...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	items := make([]*models.RecentItem, 0)
-	for rows.Next() {
-		var item models.RecentItem
-
-		if err := rows.Scan(&item.ID, &item.UserID, &item.ObjectAPIName, &item.RecordID, &item.RecordName, &item.Timestamp); err != nil {
-			continue
-		}
-
-		items = append(items, &item)
-	}
-
-	return items, nil
+	return sm.repo.GetRecentItems(context.Background(), currentUser.ID, limit)
 }
 
 // GetConfig retrieves a system configuration value
 func (sm *SystemManager) GetConfig(key string) (*string, error) {
-	q := query.From(constants.TableConfig).
-		Select([]string{constants.FieldValue}).
-		Where(constants.FieldKeyName+" = ?", key).
-		Limit(1).
-		Build()
-
-	rows, err := sm.db.Query(q.SQL, q.Params...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	if rows.Next() {
-		var value string
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-		return &value, nil
-	}
-
-	return nil, nil
+	return sm.repo.GetConfig(context.Background(), key)
 }
 
 // GetAllConfigs retrieves all system configurations
 func (sm *SystemManager) GetAllConfigs() ([]*models.SystemConfig, error) {
-	q := query.From(constants.TableConfig).
-		Select([]string{constants.FieldKeyName, constants.FieldValue, constants.FieldIsSecret, constants.FieldDescription}).
-		Build()
-
-	rows, err := sm.db.Query(q.SQL, q.Params...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	configs := make([]*models.SystemConfig, 0)
-	for rows.Next() {
-		var config models.SystemConfig
-		var isSecret int
-		var description *string
-
-		if err := rows.Scan(&config.KeyName, &config.Value, &isSecret, &description); err != nil {
-			continue
-		}
-
-		config.IsSecret = isSecret != 0
-		config.Description = description
-
-		configs = append(configs, &config)
-	}
-
-	return configs, nil
+	return sm.repo.GetAllConfigs(context.Background())
 }
 
 // SetConfig sets a system configuration value
@@ -246,10 +141,12 @@ func (sm *SystemManager) SetConfig(key string, value string, isSecret bool, desc
 	}
 
 	// Check existence
-	var existingKey string
-	err := sm.db.QueryRow(fmt.Sprintf("SELECT key_name FROM %s WHERE key_name = ?", constants.TableConfig), key).Scan(&existingKey)
+	exists, err := sm.repo.CheckConfigExists(ctx, key)
+	if err != nil {
+		return fmt.Errorf("failed to check config existence: %w", err)
+	}
 
-	if err == nil {
+	if exists {
 		// Update
 		if err := sm.persistence.Update(ctx, constants.TableConfig, key, config.ToSObject(), systemContext); err != nil {
 			return fmt.Errorf("failed to update config %s: %w", key, err)
@@ -281,9 +178,12 @@ func (sm *SystemManager) UpsertProfile(id, name, description string, isSystem bo
 	}
 
 	// Check existence by Name (Unique Key) or ID
-	var existingID string
-	err := sm.db.QueryRow(fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableProfile, constants.FieldName), name).Scan(&existingID)
-	if err == nil {
+	existingID, err := sm.repo.GetProfileIDByName(ctx, name)
+	if err != nil {
+		return fmt.Errorf("failed to check profile existence: %w", err)
+	}
+
+	if existingID != "" {
 		// Update
 		profile.ID = existingID
 		if err := sm.persistence.Update(ctx, constants.TableProfile, existingID, profile.ToSObject(), systemContext); err != nil {
@@ -337,9 +237,12 @@ func (sm *SystemManager) UpsertUser(id, name, email, password, profileID string)
 	}
 
 	// Check existence by Email (Unique Key)
-	var existingID string
-	err = sm.db.QueryRow(fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableUser, constants.FieldEmail), email).Scan(&existingID)
-	if err == nil {
+	existingID, err := sm.repo.GetUserIDByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("failed to check user existence: %w", err)
+	}
+
+	if existingID != "" {
 		// Update
 		user.ID = existingID // Force ID to match existing
 		if err := sm.persistence.Update(ctx, constants.TableUser, existingID, user.ToSObject(), systemContext); err != nil {
@@ -347,17 +250,6 @@ func (sm *SystemManager) UpsertUser(id, name, email, password, profileID string)
 		}
 	} else {
 		// Insert
-		// If SQL error other than NoRows
-		// Check error type (database/sql needed? No, Scan returns sql.ErrNoRows which is generic but package sql not imported?
-		// "database/sql" is not imported in this file?
-		// Check top imports. YES, "github.com/nexuscrm/backend/internal/infrastructure/database" only?
-		// No top of file: `	"github.com/nexuscrm/backend/internal/infrastructure/database"` -> wrapper.
-		// Wait, `Scan` returns `sql.ErrNoRows`. I need to import "database/sql".
-
-		// Assuming Insert if err != nil (simplistic, but typically checking ErrNoRows is better).
-		// I will check error string if unsure, or Add Import.
-		// I'll assume Insert.
-
 		if _, err := sm.persistence.Insert(ctx, constants.TableUser, user.ToSObject(), systemContext); err != nil {
 			return fmt.Errorf("failed to insert user %s: %w", email, err)
 		}
@@ -367,28 +259,7 @@ func (sm *SystemManager) UpsertUser(id, name, email, password, profileID string)
 
 // BatchUpsertProfiles inserts multiple profiles using direct SQL for performance during bootstrap
 func (sm *SystemManager) BatchUpsertProfiles(profiles []models.Profile) error {
-	if len(profiles) == 0 {
-		return nil
-	}
-
-	values := []string{}
-	args := []interface{}{}
-
-	for _, p := range profiles {
-		values = append(values, "(?, ?, ?, ?, ?)")
-		args = append(args, p.ID, p.Name, p.Description, p.IsActive, p.IsSystem)
-	}
-
-	query := fmt.Sprintf(
-		"INSERT INTO %s (id, name, description, is_active, is_system) VALUES %s ON DUPLICATE KEY UPDATE description=VALUES(description), is_active=VALUES(is_active), is_system=VALUES(is_system)",
-		constants.TableProfile,
-		strings.Join(values, ","),
-	)
-
-	if _, err := sm.db.Exec(query, args...); err != nil {
-		return fmt.Errorf("batch upsert profiles failed: %w", err)
-	}
-	return nil
+	return sm.repo.BatchUpsertProfiles(context.Background(), profiles)
 }
 
 // BatchUpsertUsers inserts multiple users using direct SQL for performance during bootstrap
@@ -400,14 +271,11 @@ func (sm *SystemManager) BatchUpsertUsers(users []models.SystemUser) error {
 
 	// Pre-calculated bcrypt hash for "Admin123!" (cost 10)
 	// This saves ~100ms per user during bootstrap
-	// Generated using bcrypt.GenerateFromPassword([]byte("Admin123!"), bcrypt.DefaultCost)
-	// Just use dynamic map cache to be safe and correct
 	hashCache := make(map[string]string)
 
-	values := []string{}
-	args := []interface{}{}
+	preparedUsers := make([]models.SystemUser, len(users))
 
-	for _, u := range users {
+	for i, u := range users {
 		hashedPwd, ok := hashCache[u.Password]
 		if !ok {
 			h, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
@@ -421,25 +289,12 @@ func (sm *SystemManager) BatchUpsertUsers(users []models.SystemUser) error {
 		// Calculate Names
 		// Caller (InitializeSystemData) is responsible for splitting Name into FirstName/LastName
 		// stored in u.FirstName and u.LastName
-		firstName, lastName := u.FirstName, u.LastName
 
-		values = append(values, "(?, ?, ?, ?, ?, ?, ?, ?)")
-		// ID, Username, Email, Password, FirstName, LastName, ProfileID, IsActive
-		args = append(args, u.ID, u.Email, u.Email, hashedPwd, firstName, lastName, u.ProfileID, true)
+		// Create a copy with hashed password
+		preparedUser := u
+		preparedUser.Password = hashedPwd
+		preparedUsers[i] = preparedUser
 	}
 
-	query := fmt.Sprintf(
-		`INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, is_active) 
-		VALUES %s 
-		ON DUPLICATE KEY UPDATE 
-		username=VALUES(username), password=VALUES(password), first_name=VALUES(first_name), 
-		last_name=VALUES(last_name), profile_id=VALUES(profile_id), is_active=VALUES(is_active)`,
-		constants.TableUser,
-		strings.Join(values, ","),
-	)
-
-	if _, err := sm.db.Exec(query, args...); err != nil {
-		return fmt.Errorf("batch upsert users failed: %w", err)
-	}
-	return nil
+	return sm.repo.BatchUpsertUsers(context.Background(), preparedUsers)
 }

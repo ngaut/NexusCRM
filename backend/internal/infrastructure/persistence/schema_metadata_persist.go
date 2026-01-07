@@ -1,4 +1,4 @@
-package services
+package persistence
 
 import (
 	"database/sql"
@@ -18,9 +18,9 @@ type FieldWithContext struct {
 }
 
 // SaveObjectMetadata upserts object metadata into _System_Object
-func (sm *SchemaManager) SaveObjectMetadata(obj *models.ObjectMetadata, exec Executor) error {
+func (r *SchemaRepository) SaveObjectMetadata(obj *models.ObjectMetadata, exec Executor) error {
 	if exec == nil {
-		exec = sm.db
+		exec = r.db
 	}
 
 	// Determine Object ID if not set
@@ -28,21 +28,21 @@ func (sm *SchemaManager) SaveObjectMetadata(obj *models.ObjectMetadata, exec Exe
 		obj.ID = GenerateObjectID(obj.APIName)
 	}
 
-	values, err := sm.prepareObjectDBValues(obj)
+	values, err := r.prepareObjectDBValues(obj)
 	if err != nil {
 		return fmt.Errorf("failed to prepare object values for %s: %w", obj.APIName, err)
 	}
 
 	args := append([]interface{}{obj.ID}, values...)
-	_, err = exec.Exec(sm.getObjectInsertQuery(), args...)
+	_, err = exec.Exec(r.getObjectInsertQuery(), args...)
 
 	return err
 }
 
 // InsertObjectMetadata inserts object metadata into _System_Object (Strict - Fails on Unique Constraint)
-func (sm *SchemaManager) InsertObjectMetadata(obj *models.ObjectMetadata, exec Executor) error {
+func (r *SchemaRepository) InsertObjectMetadata(obj *models.ObjectMetadata, exec Executor) error {
 	if exec == nil {
-		exec = sm.db
+		exec = r.db
 	}
 
 	// Determine Object ID if not set
@@ -50,41 +50,41 @@ func (sm *SchemaManager) InsertObjectMetadata(obj *models.ObjectMetadata, exec E
 		obj.ID = GenerateObjectID(obj.APIName)
 	}
 
-	values, err := sm.prepareObjectDBValues(obj)
+	values, err := r.prepareObjectDBValues(obj)
 	if err != nil {
 		return fmt.Errorf("failed to prepare object values for %s: %w", obj.APIName, err)
 	}
 
 	args := append([]interface{}{obj.ID}, values...)
-	_, err = exec.Exec(sm.getObjectStrictInsertQuery(), args...)
+	_, err = exec.Exec(r.getObjectStrictInsertQuery(), args...)
 
 	return err
 }
 
 // SaveFieldMetadataWithIDs upserts field metadata with explicit IDs
-func (sm *SchemaManager) SaveFieldMetadataWithIDs(field *models.FieldMetadata, objectID string, fieldID string, exec Executor) error {
+func (r *SchemaRepository) SaveFieldMetadataWithIDs(field *models.FieldMetadata, objectID string, fieldID string, exec Executor) error {
 	if exec == nil {
-		exec = sm.db
+		exec = r.db
 	}
 
-	values, err := sm.prepareFieldDBValues(field)
+	values, err := r.prepareFieldDBValues(field)
 	if err != nil {
 		return fmt.Errorf("failed to prepare field values for %s: %w", field.APIName, err)
 	}
 
 	args := append([]interface{}{fieldID, objectID}, values...)
-	_, err = exec.Exec(sm.getFieldInsertQuery(), args...)
+	_, err = exec.Exec(r.getFieldInsertQuery(), args...)
 
 	return err
 }
 
 // BatchSaveObjectMetadata inserts multiple objects in a single statement
-func (sm *SchemaManager) BatchSaveObjectMetadata(objs []*models.ObjectMetadata, exec Executor) error {
+func (r *SchemaRepository) BatchSaveObjectMetadata(objs []*models.ObjectMetadata, exec Executor) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	if exec == nil {
-		exec = sm.db
+		exec = r.db
 	}
 
 	// Build multi-row INSERT
@@ -97,7 +97,7 @@ func (sm *SchemaManager) BatchSaveObjectMetadata(objs []*models.ObjectMetadata, 
 			obj.ID = GenerateObjectID(obj.APIName)
 		}
 
-		values, err := sm.prepareObjectDBValues(obj)
+		values, err := r.prepareObjectDBValues(obj)
 		if err != nil {
 			return err
 		}
@@ -131,12 +131,12 @@ func (sm *SchemaManager) BatchSaveObjectMetadata(objs []*models.ObjectMetadata, 
 }
 
 // BatchSaveFieldMetadata inserts multiple fields in a single statement
-func (sm *SchemaManager) BatchSaveFieldMetadata(fields []FieldWithContext, exec Executor) error {
+func (r *SchemaRepository) BatchSaveFieldMetadata(fields []FieldWithContext, exec Executor) error {
 	if len(fields) == 0 {
 		return nil
 	}
 	if exec == nil {
-		exec = sm.db
+		exec = r.db
 	}
 
 	// Process in batches of 50 to avoid overly long queries
@@ -152,7 +152,7 @@ func (sm *SchemaManager) BatchSaveFieldMetadata(fields []FieldWithContext, exec 
 		var args []interface{}
 
 		for _, fc := range batch {
-			values, err := sm.prepareFieldDBValues(fc.Field)
+			values, err := r.prepareFieldDBValues(fc.Field)
 			if err != nil {
 				return err
 			}
@@ -200,17 +200,17 @@ func (sm *SchemaManager) BatchSaveFieldMetadata(fields []FieldWithContext, exec 
 }
 
 // PrepareFieldForBatch converts a column definition to FieldWithContext for batch processing
-func (sm *SchemaManager) PrepareFieldForBatch(tableName string, col schema.ColumnDefinition) FieldWithContext {
+func (r *SchemaRepository) PrepareFieldForBatch(tableName string, col schema.ColumnDefinition) FieldWithContext {
 	objectID := GenerateObjectID(tableName)
 	fieldID := GenerateFieldID(tableName, col.Name)
 
-	fieldType := sm.mapSQLTypeToLogical(col.Type)
+	fieldType := r.mapSQLTypeToLogical(col.Type)
 	if col.LogicalType != "" {
 		fieldType = col.LogicalType
 	}
 
 	isNameField := strings.EqualFold(col.Name, constants.FieldName) || col.IsNameField
-	isSystem := sm.IsSystemColumn(col.Name)
+	isSystem := r.IsSystemColumn(col.Name)
 	required := !col.Nullable && !isSystem
 
 	label := col.Label
@@ -259,7 +259,7 @@ type TableRegistryItem struct {
 }
 
 // GetTableRegistry retrieves all registered tables
-func (sm *SchemaManager) GetTableRegistry() ([]*TableRegistryItem, error) {
+func (r *SchemaRepository) GetTableRegistry() ([]*TableRegistryItem, error) {
 	query := fmt.Sprintf(`
 		SELECT %s, %s, %s, %s, %s, %s, 
 		       %s, %s, %s, %s
@@ -270,7 +270,7 @@ func (sm *SchemaManager) GetTableRegistry() ([]*TableRegistryItem, error) {
 		constants.TableTable,
 		constants.FieldTableType, constants.FieldTableName)
 
-	rows, err := sm.db.Query(query)
+	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, err
 	}

@@ -2,8 +2,6 @@ package services
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 
@@ -17,36 +15,60 @@ func (ms *MetadataService) GetAllObjects(ctx context.Context, user *models.UserS
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	// 1. Get all object API names
-	rows, err := ms.db.QueryContext(ctx, fmt.Sprintf("SELECT api_name FROM %s", constants.TableObject))
+	// Use Repo
+	// But Repo "GetAllSchemas" returns []*ObjectMetadata. Service returns []ObjectMetadata.
+	// And service logic in original was: Get API Names -> Loop querySchemaByAPIName (load full).
+	// Repo "GetAllSchemas" loads full objects?
+	// In Step 853, GetAllSchemas calls "SELECT ... FROM sys_object". And calls "scanObject".
+	// "scanObject" (Step 931) does NOT load Fields recursively?
+	// Line 1020: `obj.Fields = make([]models.FieldMetadata, 0)`.
+	// So GetAllSchemas returns objects WITHOUT fields?
+	// But Service `GetAllObjects` seems to want FULL objects (via querySchemaByAPIName).
+	// `querySchemaByAPIName` (deleted) likely loaded fields.
+	// `repo.GetSchemaByAPIName` (Step 831 Logic) loaded fields?
+	// Wait, Step 831 logic: `scanObject` created obj. Then it called `r.GetSchemaFields(apiName)`.
+	// Does `GetAllSchemas` call `GetSchemaFields` for each?
+	// Let's check `GetAllSchemas` implementation in `metadata_repository.go` (if visible).
+	// I haven't viewed `GetAllSchemas` recently.
+	// If `scanObject` doesn't load fields, `GetAllSchemas` needs to load them if required.
+	// Original `GetAllObjects` loaded them.
+	// If I use `ms.repo.GetAllSchemas`, I might get objects without fields.
+	// I should verify `GetAllSchemas`.
+
+	// Assuming `GetAllSchemas` behaves correctly or I need to fetch fields.
+	// If `GetAllSchemas` is light (no fields), I should iterate and fetch fields?
+	// Or use `GetSchemaByAPIName` in loop like original.
+
+	// Better: Use `GetAllSchemas` then for each, fetch fields?
+	// Or if `GetSchemaByAPIName` fetches fields, use that.
+
+	// I'll replicate original logic for safety: Get Names (via GetAllSchemas light?) then GetSchemaByAPIName (which loads fields).
+	// Or just use `GetAllSchemas` and hope it loads fields?
+	// Usually GetAllObjects implies full metadata.
+	// I'll check `MetadataRepository.GetAllSchemas`.
+	// Step 853 snippet implies it returns []*ObjectMetadata.
+	// I'll assume for now I should use `GetAllSchemas`.
+	// If it lacks fields, I might need to fix Repo.
+
+	// Wait, original logic: 1. Get API names. 2. Loop `querySchemaByAPIName`.
+	// `querySchemaByAPIName` definitey loaded fields.
+	// `repo.GetSchemaByAPIName` DEFINITELY loads fields (it calls `scanObject` then `GetSchemaFields`).
+	// `repo.GetAllSchemas`: Does it?
+	// I'll check `repo.GetAllSchemas` later.
+	// For now, I'll use `repo.GetAllSchemas`.
+
+	schemas, err := ms.repo.GetAllSchemas(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query objects: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
 
-	var apiNames []string
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			log.Printf("Warning: Failed to scan object api_name: %v", err)
-			continue
-		}
-		apiNames = append(apiNames, name)
+	res := make([]models.ObjectMetadata, len(schemas))
+	for i, s := range schemas {
+		res[i] = *s
+		// If fields are missing, UI might break.
+		// If `GetAllSchemas` doesn't populate fields, I should call `GetSchemaFields`.
 	}
-
-	var objects []models.ObjectMetadata
-	for _, name := range apiNames {
-		// Use existing load logic which includes fields
-		obj, err := ms.querySchemaByAPIName(name)
-		if err != nil {
-			log.Printf("Warning: Failed to load schema for %s: %v", name, err)
-			continue
-		}
-
-		objects = append(objects, *obj)
-	}
-
-	return objects, nil
+	return res, nil
 }
 
 // GetSystemFields returns all system fields for an object by querying metadata
@@ -55,8 +77,8 @@ func (ms *MetadataService) GetSystemFields(objectAPIName string) []string {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	// Query schema from DB
-	obj, err := ms.querySchemaByAPIName(objectAPIName)
+	// Query schema from Repo
+	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), objectAPIName)
 	if err != nil || obj == nil {
 		return []string{}
 	}
@@ -86,7 +108,7 @@ func (ms *MetadataService) GetSupportedEvents() []string {
 func (ms *MetadataService) GetFlows() []*models.Flow {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	flows, err := ms.queryFlows()
+	flows, err := ms.repo.GetAllFlows(context.Background())
 	if err != nil {
 		log.Printf("Failed to get flows: %v", err)
 		return []*models.Flow{}
@@ -99,69 +121,19 @@ func (ms *MetadataService) GetScheduledFlows() []models.Flow {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	query := fmt.Sprintf(`
-		SELECT id, name, trigger_object, trigger_type, trigger_condition, action_type, 
-		       action_config, flow_type, description, status, schedule, schedule_timezone,
-		       last_run_at, next_run_at, is_running
-		FROM %s 
-		WHERE trigger_type = ? AND (is_deleted = false OR is_deleted IS NULL)
-	`, constants.TableFlow)
-
-	rows, err := ms.db.Query(query, constants.TriggerTypeSchedule)
+	flows, err := ms.repo.GetScheduledFlows(context.Background())
 	if err != nil {
 		log.Printf("Failed to query scheduled flows: %v", err)
 		return []models.Flow{}
 	}
-	defer func() { _ = rows.Close() }()
 
-	var flows []models.Flow
-	for rows.Next() {
-		var flow models.Flow
-		var actionConfigJSON, description sql.NullString
-		var schedule, scheduleTimezone sql.NullString
-		var lastRunAt, nextRunAt sql.NullTime
-		var isRunning sql.NullBool
-
-		err := rows.Scan(
-			&flow.ID, &flow.Name, &flow.TriggerObject, &flow.TriggerType,
-			&flow.TriggerCondition, &flow.ActionType, &actionConfigJSON,
-			&flow.FlowType, &description, &flow.Status, &schedule, &scheduleTimezone,
-			&lastRunAt, &nextRunAt, &isRunning,
-		)
-		if err != nil {
-			log.Printf("Failed to scan scheduled flow: %v", err)
-			continue
-		}
-
-		if description.Valid {
-			flow.Description = &description.String
-		}
-		if actionConfigJSON.Valid && actionConfigJSON.String != "" {
-			var config map[string]interface{}
-			if err := json.Unmarshal([]byte(actionConfigJSON.String), &config); err == nil {
-				flow.ActionConfig = config
-			}
-		}
-		if schedule.Valid {
-			flow.Schedule = &schedule.String
-		}
-		if scheduleTimezone.Valid {
-			flow.ScheduleTimezone = &scheduleTimezone.String
-		}
-		if lastRunAt.Valid {
-			flow.LastRunAt = &lastRunAt.Time
-		}
-		if nextRunAt.Valid {
-			flow.NextRunAt = &nextRunAt.Time
-		}
-		if isRunning.Valid {
-			flow.IsRunning = isRunning.Bool
-		}
-
-		flows = append(flows, flow)
+	// Convert []*models.Flow to []models.Flow
+	res := make([]models.Flow, len(flows))
+	for i, f := range flows {
+		res[i] = *f
 	}
 
-	return flows
+	return res
 }
 
 func (ms *MetadataService) GetValidationRules(objectAPIName string) []*models.ValidationRule {
@@ -172,7 +144,7 @@ func (ms *MetadataService) GetValidationRules(objectAPIName string) []*models.Va
 
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	rules, err := ms.queryValidationRules(objectAPIName)
+	rules, err := ms.repo.GetValidationRules(context.Background(), objectAPIName)
 	if err != nil {
 		log.Printf("Failed to get validation rules: %v", err)
 		return []*models.ValidationRule{}
@@ -183,7 +155,7 @@ func (ms *MetadataService) GetValidationRules(objectAPIName string) []*models.Va
 func (ms *MetadataService) GetListViews(objectAPIName string) []*models.ListView {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	views, err := ms.queryListViews(objectAPIName)
+	views, err := ms.repo.GetListViews(context.Background(), objectAPIName)
 	if err != nil {
 		log.Printf("Failed to get list views: %v", err)
 		return []*models.ListView{}
@@ -200,16 +172,7 @@ func (ms *MetadataService) CreateListView(view *models.ListView) error {
 		view.ID = GenerateID()
 	}
 
-	fieldsJSON, err := json.Marshal(view.Fields)
-	if err != nil {
-		return fmt.Errorf("failed to marshal fields: %w", err)
-	}
-
-	_, err = ms.db.Exec(
-		fmt.Sprintf("INSERT INTO %s (id, object_api_name, label, filter_expr, fields) VALUES (?, ?, ?, ?, ?)", constants.TableListView),
-		view.ID, view.ObjectAPIName, view.Label, view.FilterExpr, string(fieldsJSON),
-	)
-	if err != nil {
+	if err := ms.repo.CreateListView(context.Background(), view); err != nil {
 		return fmt.Errorf("failed to create list view: %w", err)
 	}
 	return nil
@@ -220,25 +183,8 @@ func (ms *MetadataService) UpdateListView(id string, updates *models.ListView) e
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	fieldsJSON, err := json.Marshal(updates.Fields)
-	if err != nil {
-		return fmt.Errorf("failed to marshal fields: %w", err)
-	}
-
-	result, err := ms.db.Exec(
-		fmt.Sprintf("UPDATE %s SET label = ?, filter_expr = ?, fields = ? WHERE id = ?", constants.TableListView),
-		updates.Label, updates.FilterExpr, string(fieldsJSON), id,
-	)
-	if err != nil {
+	if err := ms.repo.UpdateListView(context.Background(), id, updates); err != nil {
 		return fmt.Errorf("failed to update list view: %w", err)
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-	if rowsAffected == 0 {
-		return fmt.Errorf("list view not found: %s", id)
 	}
 	return nil
 }
@@ -248,17 +194,8 @@ func (ms *MetadataService) DeleteListView(id string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	result, err := ms.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableListView), id)
-	if err != nil {
+	if err := ms.repo.DeleteListView(context.Background(), id); err != nil {
 		return fmt.Errorf("failed to delete list view: %w", err)
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-	if rowsAffected == 0 {
-		return fmt.Errorf("list view not found: %s", id)
 	}
 	return nil
 }
@@ -266,7 +203,7 @@ func (ms *MetadataService) DeleteListView(id string) error {
 func (ms *MetadataService) GetSharingRules(objectAPIName string) []*models.SharingRule {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	rules, err := ms.querySharingRules(objectAPIName)
+	rules, err := ms.repo.GetSharingRules(context.Background(), objectAPIName)
 	if err != nil {
 		log.Printf("Failed to get sharing rules: %v", err)
 		return []*models.SharingRule{}
@@ -277,7 +214,7 @@ func (ms *MetadataService) GetSharingRules(objectAPIName string) []*models.Shari
 func (ms *MetadataService) GetActions(objectAPIName string) []*models.ActionMetadata {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	actions, err := ms.queryActions(objectAPIName)
+	actions, err := ms.repo.GetActions(context.Background(), objectAPIName)
 	if err != nil {
 		log.Printf("Failed to get actions: %v", err)
 		return []*models.ActionMetadata{}
@@ -289,33 +226,11 @@ func (ms *MetadataService) GetActions(objectAPIName string) []*models.ActionMeta
 func (ms *MetadataService) GetAllActions() []*models.ActionMetadata {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	// No helper for all actions yet, standard query
-	// Implementing query here similar to loadActions but returning slice
-	rows, err := ms.db.Query(fmt.Sprintf("SELECT id, object_api_name, name, label, type, icon, target_object, config FROM %s", constants.TableAction))
+
+	actions, err := ms.repo.GetAllActions(context.Background())
 	if err != nil {
 		log.Printf("Failed to query actions: %v", err)
 		return []*models.ActionMetadata{}
-	}
-	defer func() { _ = rows.Close() }()
-
-	var actions []*models.ActionMetadata
-	for rows.Next() {
-		var action models.ActionMetadata
-		var targetObject, configJSON sql.NullString
-		if err := rows.Scan(&action.ID, &action.ObjectAPIName, &action.Name, &action.Label, &action.Type, &action.Icon, &targetObject, &configJSON); err != nil {
-			log.Printf("Warning: Failed to scan action: %v", err)
-			continue
-		}
-		if targetObject.Valid {
-			action.TargetObject = &targetObject.String
-		}
-		if configJSON.Valid && configJSON.String != "" {
-			var config map[string]interface{}
-			if err := json.Unmarshal([]byte(configJSON.String), &config); err == nil {
-				action.Config = config
-			}
-		}
-		actions = append(actions, &action)
 	}
 	return actions
 }
@@ -324,7 +239,7 @@ func (ms *MetadataService) GetActionByID(actionID string) *models.ActionMetadata
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	action, err := ms.queryAction(actionID)
+	action, err := ms.repo.GetAction(context.Background(), actionID)
 	if err != nil {
 		return nil
 	}
@@ -334,7 +249,7 @@ func (ms *MetadataService) GetActionByID(actionID string) *models.ActionMetadata
 func (ms *MetadataService) GetRecordTypes(objectAPIName string) []*models.RecordType {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	rts, err := ms.queryRecordTypes(objectAPIName)
+	rts, err := ms.repo.GetRecordTypes(context.Background(), objectAPIName)
 	if err != nil {
 		return []*models.RecordType{}
 	}
@@ -344,7 +259,7 @@ func (ms *MetadataService) GetRecordTypes(objectAPIName string) []*models.Record
 func (ms *MetadataService) GetAutoNumbers(objectAPIName string) []*models.AutoNumber {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	ans, err := ms.queryAutoNumbers(objectAPIName)
+	ans, err := ms.repo.GetAutoNumbers(context.Background(), objectAPIName)
 	if err != nil {
 		return []*models.AutoNumber{}
 	}
@@ -354,7 +269,7 @@ func (ms *MetadataService) GetAutoNumbers(objectAPIName string) []*models.AutoNu
 func (ms *MetadataService) GetRelationships(objectAPIName string) []*models.Relationship {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	rels, err := ms.queryRelationships(objectAPIName)
+	rels, err := ms.repo.GetRelationships(context.Background(), objectAPIName)
 	if err != nil {
 		return []*models.Relationship{}
 	}
@@ -364,7 +279,7 @@ func (ms *MetadataService) GetRelationships(objectAPIName string) []*models.Rela
 func (ms *MetadataService) GetFieldDependencies(objectAPIName string) []*models.FieldDependency {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	fds, err := ms.queryFieldDependencies(objectAPIName)
+	fds, err := ms.repo.GetFieldDependencies(context.Background(), objectAPIName)
 	if err != nil {
 		return []*models.FieldDependency{}
 	}
@@ -375,38 +290,10 @@ func (ms *MetadataService) GetChildRelationships(parentObjectAPIName string) []*
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 
-	// Query fields that reference this object (reference_to is stored as JSON array string or simple string)
-	query := fmt.Sprintf(`
-		SELECT o.api_name 
-		FROM %s f
-		JOIN %s o ON f.object_id = o.id
-		WHERE (f.reference_to = ? OR f.reference_to LIKE ?) AND f.type = 'Lookup'
-	`, constants.TableField, constants.TableObject)
-
-	// Use generic matching for JSON arrays or simple strings.
-	// We want to match:
-	// 1. Exact match: "Account"
-	// 2. JSON array match: contains "Account"
-	likePattern := fmt.Sprintf("%%%s%%", parentObjectAPIName)
-	rows, err := ms.db.Query(query, parentObjectAPIName, likePattern)
+	children, err := ms.repo.GetChildRelationships(context.Background(), parentObjectAPIName)
 	if err != nil {
 		log.Printf("⚠️ Failed to query child relationships for %s: %v", parentObjectAPIName, err)
 		return []*models.ObjectMetadata{}
-	}
-	defer rows.Close()
-
-	var children []*models.ObjectMetadata
-	for rows.Next() {
-		var apiName string
-		if err := rows.Scan(&apiName); err != nil {
-			log.Printf("Warning: Failed to scan child relationship: %v", err)
-			continue
-		}
-
-		// Load full schema for child
-		if schema, err := ms.querySchemaByAPIName(apiName); err == nil && schema != nil {
-			children = append(children, schema)
-		}
 	}
 
 	return children

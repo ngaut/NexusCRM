@@ -1,6 +1,7 @@
-package services
+package persistence
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -281,4 +282,57 @@ func GenerateAutoNumberID(objectAPIName, fieldAPIName string) string {
 // GenerateAppID generates a standardized ID for an app
 func GenerateAppID(apiName string) string {
 	return constants.PrefixApp + apiName
+}
+
+// ==================== SQL Helpers ====================
+
+// ToNullString converts a *string to sql.NullString for database operations
+func ToNullString(s *string) sql.NullString {
+	if s != nil {
+		return sql.NullString{String: *s, Valid: true}
+	}
+	return sql.NullString{Valid: false}
+}
+
+// ToNullInt64 converts a *int or *int64 to sql.NullInt64
+func ToNullInt64(i interface{}) sql.NullInt64 {
+	if i == nil {
+		return sql.NullInt64{Valid: false}
+	}
+	switch v := i.(type) {
+	case *int:
+		if v == nil {
+			return sql.NullInt64{Valid: false}
+		}
+		return sql.NullInt64{Int64: int64(*v), Valid: true}
+	case *int64:
+		if v == nil {
+			return sql.NullInt64{Valid: false}
+		}
+		return sql.NullInt64{Int64: *v, Valid: true}
+	case int:
+		return sql.NullInt64{Int64: int64(v), Valid: true}
+	default:
+		return sql.NullInt64{Valid: false}
+	}
+}
+
+// WrapStringToSlice converts a single string to a slice (for ReferenceTo field conversion)
+func WrapStringToSlice(s string) []string {
+	if s == "" {
+		return nil
+	}
+	return []string{s}
+}
+
+// SliceToNullJSON converts a []string to sql.NullString as JSON array
+func SliceToNullJSON(slice []string) sql.NullString {
+	if len(slice) == 0 {
+		return sql.NullString{Valid: false}
+	}
+	b, err := json.Marshal(slice)
+	if err != nil {
+		return sql.NullString{Valid: false}
+	}
+	return sql.NullString{String: string(b), Valid: true}
 }

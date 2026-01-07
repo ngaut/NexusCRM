@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
@@ -65,7 +66,7 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 	}
 
 	// Get the object to ensure it exists
-	obj, err := ms.querySchemaByAPIName(objectAPIName)
+	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), objectAPIName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object '%s' not found", objectAPIName)
 	}
@@ -212,11 +213,7 @@ func (ms *MetadataService) CreateField(objectAPIName string, field *models.Field
 
 		anID := GenerateAutoNumberID(objectAPIName, field.APIName)
 		// Default starting_number to 1 (current_number = 0)
-		_, err := ms.db.Exec(
-			fmt.Sprintf("INSERT INTO %s (id, object_api_name, field_api_name, display_format, starting_number, current_number) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE display_format = VALUES(display_format)", constants.TableAutoNumber),
-			anID, objectAPIName, field.APIName, format, 1, 0,
-		)
-		if err != nil {
+		if err := ms.repo.UpsertAutoNumber(context.Background(), anID, objectAPIName, field.APIName, format, 1, 0); err != nil {
 			log.Printf("⚠️ Failed to register auto-number metadata: %v", err)
 		}
 	}
@@ -231,7 +228,7 @@ func (ms *MetadataService) UpdateField(objectAPIName, fieldAPIName string, updat
 	defer ms.mu.Unlock()
 
 	// Get the object
-	obj, err := ms.querySchemaByAPIName(objectAPIName)
+	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), objectAPIName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object '%s' not found", objectAPIName)
 	}
@@ -307,7 +304,7 @@ func (ms *MetadataService) DeleteField(objectAPIName, fieldAPIName string) error
 	defer ms.mu.Unlock()
 
 	// Get the object
-	obj, err := ms.querySchemaByAPIName(objectAPIName)
+	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), objectAPIName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object '%s' not found", objectAPIName)
 	}
@@ -344,7 +341,7 @@ func (ms *MetadataService) BatchSyncSystemFields(objectAPIName string, fields []
 	defer ms.mu.Unlock()
 
 	// Get object ID
-	obj, err := ms.querySchemaByAPIName(objectAPIName)
+	obj, err := ms.repo.GetSchemaByAPIName(context.Background(), objectAPIName)
 	if err != nil || obj == nil {
 		return fmt.Errorf("object '%s' not found", objectAPIName)
 	}

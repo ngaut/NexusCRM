@@ -11,7 +11,7 @@ import (
 
 	"github.com/nexuscrm/backend/internal/domain/events"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
-	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 )
 
 // OutboxEvent status constants
@@ -26,6 +26,7 @@ const (
 // It implements the Outbox Pattern for guaranteed event delivery.
 type OutboxService struct {
 	db        *database.TiDBConnection
+	repo      *persistence.OutboxRepository
 	eventBus  *EventBus
 	txManager *TransactionManager
 
@@ -39,6 +40,7 @@ type OutboxService struct {
 func NewOutboxService(db *database.TiDBConnection, eventBus *EventBus, txManager *TransactionManager) *OutboxService {
 	return &OutboxService{
 		db:        db,
+		repo:      persistence.NewOutboxRepository(db.DB()),
 		eventBus:  eventBus,
 		txManager: txManager,
 		stopCh:    make(chan struct{}),
@@ -65,46 +67,20 @@ func (os *OutboxService) EnqueueEventTx(ctx context.Context, tx *sql.Tx, eventTy
 
 // enqueueWithTx inserts event into outbox using the provided transaction
 func (os *OutboxService) enqueueWithTx(ctx context.Context, tx *sql.Tx, eventType events.EventType, payload RecordEventPayload) error {
-	id := GenerateID()
-
-	payloadJSON, err := json.Marshal(payload)
+	id, err := os.repo.Enqueue(ctx, tx, string(eventType), payload)
 	if err != nil {
-		return fmt.Errorf("failed to marshal event payload: %w", err)
+		return err
 	}
-
-	query := fmt.Sprintf(`
-		INSERT INTO %s (id, event_type, payload, status, retry_count, created_date)
-		VALUES (?, ?, ?, ?, 0, NOW())
-	`, constants.TableOutboxEvent)
-
-	_, err = tx.ExecContext(ctx, query, id, string(eventType), payloadJSON, OutboxStatusPending)
-	if err != nil {
-		return fmt.Errorf("failed to enqueue event: %w", err)
-	}
-
 	log.Printf("✅ [Outbox] Enqueued event %s (Type: %s, ID: %s)", eventType, string(eventType), id)
 	return nil
 }
 
 // enqueueDirect inserts event directly without transaction context
 func (os *OutboxService) enqueueDirect(ctx context.Context, eventType events.EventType, payload RecordEventPayload) error {
-	id := GenerateID()
-
-	payloadJSON, err := json.Marshal(payload)
+	id, err := os.repo.Enqueue(ctx, os.db.DB(), string(eventType), payload)
 	if err != nil {
-		return fmt.Errorf("failed to marshal event payload: %w", err)
+		return err
 	}
-
-	query := fmt.Sprintf(`
-		INSERT INTO %s (id, event_type, payload, status, retry_count, created_date)
-		VALUES (?, ?, ?, ?, 0, NOW())
-	`, constants.TableOutboxEvent)
-
-	_, err = os.db.DB().ExecContext(ctx, query, id, string(eventType), payloadJSON, OutboxStatusPending)
-	if err != nil {
-		return fmt.Errorf("failed to enqueue event: %w", err)
-	}
-
 	log.Printf("✅ [Outbox] Enqueued event %s (Type: %s, ID: %s)", eventType, string(eventType), id)
 	return nil
 }
@@ -149,48 +125,18 @@ func (os *OutboxService) StopWorker() {
 // Each event is processed in its own transaction to ensure atomicity.
 func (os *OutboxService) ProcessOutbox(ctx context.Context) error {
 	// First, get IDs of pending events (non-locking query to minimize contention)
-	query := fmt.Sprintf(`
-		SELECT id, event_type, payload, retry_count
-		FROM %s
-		WHERE status = ?
-		ORDER BY created_date ASC
-		LIMIT 100
-	`, constants.TableOutboxEvent)
-
-	rows, err := os.db.DB().QueryContext(ctx, query, OutboxStatusPending)
+	// First, get pending events
+	events, err := os.repo.GetPendingEvents(ctx, 100)
 	if err != nil {
-		return fmt.Errorf("failed to query pending events: %w", err)
-	}
-	defer rows.Close()
-
-	type pendingEvent struct {
-		ID         string
-		EventType  string
-		Payload    string
-		RetryCount int
+		return err
 	}
 
-	var eventsToProcess []pendingEvent
-	for rows.Next() {
-		var e pendingEvent
-		if err := rows.Scan(&e.ID, &e.EventType, &e.Payload, &e.RetryCount); err != nil {
-			log.Printf("⚠️ Failed to scan outbox event: %v", err)
-			continue
-		}
-		eventsToProcess = append(eventsToProcess, e)
-	}
-
-	if len(eventsToProcess) > 0 {
-		log.Printf("🔄 [Outbox] Processing %d pending events", len(eventsToProcess))
-	}
-
-	// Check for errors during row iteration
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("error iterating pending events: %w", err)
+	if len(events) > 0 {
+		log.Printf("🔄 [Outbox] Processing %d pending events", len(events))
 	}
 
 	// Process each event atomically (claim, process, update status)
-	for _, e := range eventsToProcess {
+	for _, e := range events {
 		if err := os.processEventAtomic(ctx, e.ID, e.EventType, e.Payload, e.RetryCount); err != nil {
 			log.Printf("⚠️ Failed to process outbox event %s: %v", e.ID, err)
 		}
@@ -209,50 +155,40 @@ func (os *OutboxService) processEventAtomic(ctx context.Context, id, eventType, 
 	defer func() { _ = tx.Rollback() }()
 
 	// Try to claim this specific event (skip if already claimed by another worker)
-	claimQuery := fmt.Sprintf(`
-		SELECT id FROM %s 
-		WHERE id = ? AND status = ? 
-		FOR UPDATE SKIP LOCKED
-	`, constants.TableOutboxEvent)
-
-	var claimedID string
-	if err := tx.QueryRowContext(ctx, claimQuery, id, OutboxStatusPending).Scan(&claimedID); err != nil {
-		if err == sql.ErrNoRows {
-			// Already processed by another worker, skip
-			return nil
-		}
+	// Try to claim this specific event
+	claimedID, err := os.repo.ClaimEvent(ctx, tx, id)
+	if err != nil {
 		return fmt.Errorf("failed to claim event: %w", err)
+	}
+	if claimedID == "" {
+		return nil // Already processed/locked
 	}
 
 	// Parse payload
+	// Parse payload
 	var payload RecordEventPayload
 	if err := json.Unmarshal([]byte(payloadJSON), &payload); err != nil {
-		// Mark as failed within transaction
 		log.Printf("❌ [Outbox] Event %s failed payload unmarshal: %v", id, err)
-		if markErr := os.markFailedTx(ctx, tx, id, fmt.Sprintf("invalid payload: %v", err)); markErr != nil {
+		if markErr := os.repo.UpdateStatus(ctx, tx, id, OutboxStatusFailed, fmt.Sprintf("invalid payload: %v", err)); markErr != nil {
 			return fmt.Errorf("failed to mark event as failed: %w", markErr)
 		}
 		return tx.Commit()
 	}
 
 	// Publish via EventBus
+	// Publish via EventBus
 	if err := os.eventBus.Publish(ctx, events.EventType(eventType), payload); err != nil {
 		// Increment retry count
 		newRetryCount := retryCount + 1
 		if newRetryCount >= MaxRetryAttempts {
-			if markErr := os.markFailedTx(ctx, tx, id, fmt.Sprintf("max retries exceeded: %v", err)); markErr != nil {
+			if markErr := os.repo.UpdateStatus(ctx, tx, id, OutboxStatusFailed, fmt.Sprintf("max retries exceeded: %v", err)); markErr != nil {
 				return fmt.Errorf("failed to mark event as failed: %w", markErr)
 			}
 			return tx.Commit()
 		}
 
 		// Update retry count
-		updateQuery := fmt.Sprintf(`
-			UPDATE %s 
-			SET retry_count = ?, error_message = ?, last_modified_date = NOW()
-			WHERE id = ?
-		`, constants.TableOutboxEvent)
-		if _, updateErr := tx.ExecContext(ctx, updateQuery, newRetryCount, err.Error(), id); updateErr != nil {
+		if updateErr := os.repo.IncrementRetry(ctx, tx, id, newRetryCount, err.Error()); updateErr != nil {
 			return fmt.Errorf("failed to update retry count: %w", updateErr)
 		}
 		log.Printf("⚠️ [Outbox] Event %s failed (Attempt %d/%d). Error: %v", id, newRetryCount, MaxRetryAttempts, err)
@@ -260,12 +196,8 @@ func (os *OutboxService) processEventAtomic(ctx context.Context, id, eventType, 
 	}
 
 	// Mark as processed within the same transaction
-	processedQuery := fmt.Sprintf(`
-		UPDATE %s 
-		SET status = ?, processed_date = NOW(), last_modified_date = NOW()
-		WHERE id = ?
-	`, constants.TableOutboxEvent)
-	if _, err := tx.ExecContext(ctx, processedQuery, OutboxStatusProcessed, id); err != nil {
+	// Mark as processed within the same transaction
+	if err := os.repo.UpdateStatus(ctx, tx, id, OutboxStatusProcessed, ""); err != nil {
 		return fmt.Errorf("failed to mark as processed: %w", err)
 	}
 
@@ -277,36 +209,9 @@ func (os *OutboxService) processEventAtomic(ctx context.Context, id, eventType, 
 	return nil
 }
 
-// markFailedTx marks an event as failed within a transaction
-func (os *OutboxService) markFailedTx(ctx context.Context, tx *sql.Tx, id, errorMsg string) error {
-	query := fmt.Sprintf(`
-		UPDATE %s 
-		SET status = ?, error_message = ?, last_modified_date = NOW()
-		WHERE id = ?
-	`, constants.TableOutboxEvent)
-	_, err := tx.ExecContext(ctx, query, OutboxStatusFailed, errorMsg, id)
-	return err
-}
-
 // CleanupProcessed removes old processed events from the outbox.
 // This should be called periodically (e.g., daily) to prevent table bloat.
 func (os *OutboxService) CleanupProcessed(ctx context.Context, olderThan time.Duration) (int64, error) {
 	cutoff := time.Now().Add(-olderThan)
-
-	query := fmt.Sprintf(`
-		DELETE FROM %s 
-		WHERE status = ? AND processed_date < ?
-	`, constants.TableOutboxEvent)
-
-	result, err := os.db.DB().ExecContext(ctx, query, OutboxStatusProcessed, cutoff)
-	if err != nil {
-		return 0, err
-	}
-
-	count, _ := result.RowsAffected()
-	if count > 0 {
-		log.Printf("🧹 [Outbox] Cleaned up %d processed events older than %v", count, olderThan)
-	}
-
-	return count, nil
+	return os.repo.CleanupProcessed(ctx, cutoff)
 }

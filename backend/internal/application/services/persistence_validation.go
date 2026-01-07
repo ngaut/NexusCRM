@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/models"
-	"github.com/nexuscrm/shared/pkg/constants"
 	appErrors "github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/query"
+	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // checkUniqueness checks if unique fields are unique

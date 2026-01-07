@@ -299,14 +299,16 @@ func (ps *PersistenceService) Update(
 				oldVal := oldRecord[key]
 
 				auditEntryStruct := models.SystemAuditLog{
-					ID:            auditID,
-					ObjectAPIName: objectName,
-					RecordID:      id,
-					FieldName:     key,
-					OldValue:      ps.valToString(oldVal),
-					NewValue:      ps.valToString(newVal),
-					ChangedByID:   currentUser.ID,
-					ChangedAt:     time.Now(),
+					ID:               auditID,
+					ObjectAPIName:    objectName,
+					RecordID:         id,
+					FieldName:        key,
+					OldValue:         ps.valToString(oldVal),
+					NewValue:         ps.valToString(newVal),
+					ChangedByID:      currentUser.ID,
+					ChangedAt:        time.Now(),
+					CreatedDate:      time.Now(),
+					LastModifiedDate: time.Now(),
 				}
 				auditEntry := auditEntryStruct.ToSObject()
 
@@ -314,8 +316,6 @@ func (ps *PersistenceService) Update(
 				// We manually build insert for _System_AuditLog
 				auditQ := query.Insert(constants.TableAuditLog, auditEntry).Build()
 				if _, err := tx.Exec(auditQ.SQL, auditQ.Params...); err != nil {
-					// We log but don't fail transaction for audit failure?
-					// Ideally we SHOULD fail for strict audit.
 					return fmt.Errorf("failed to write audit log: %w", err)
 				}
 			}

@@ -8,6 +8,7 @@
  */
 
 import { ActionHandlerDefinition, ActionHandlerMetadata, ActionHandlerModule } from './ActionHandlerTypes';
+import { Logger } from '../services/Logger';
 
 
 /**
@@ -30,7 +31,7 @@ export class ActionHandlerRegistry {
      */
     registerAction(definition: ActionHandlerDefinition): void {
         if (this.handlers.has(definition.actionType)) {
-            console.warn(`[ActionHandlerRegistry] Overwriting existing handler: ${definition.actionType}`);
+            Logger.warn(`[ActionHandlerRegistry] Overwriting existing handler: ${definition.actionType}`);
         }
 
         this.handlers.set(definition.actionType, definition);
@@ -45,7 +46,7 @@ export class ActionHandlerRegistry {
      */
     registerModule(modulePath: string, module: ActionHandlerModule): void {
         if (this.loadedModules.has(modulePath)) {
-            console.warn(`[ActionHandlerRegistry] Module already loaded: ${modulePath}`);
+            Logger.warn(`[ActionHandlerRegistry] Module already loaded: ${modulePath}`);
             return;
         }
 
@@ -161,7 +162,7 @@ export class ActionHandlerRegistry {
                     this.registerModule(meta.handlerModule, module);
                 } catch (error: unknown) {
                     const msg = error instanceof Error ? error.message : String(error);
-                    console.error(`[ActionHandlerRegistry] Failed to load module ${meta.handlerModule}:`, msg);
+                    Logger.error(`[ActionHandlerRegistry] Failed to load module ${meta.handlerModule}:`, msg);
                 }
             }
         }

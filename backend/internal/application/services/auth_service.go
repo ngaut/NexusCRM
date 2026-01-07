@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/backend/pkg/auth"
 	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/shared/pkg/constants"
@@ -18,13 +19,15 @@ import (
 type AuthService struct {
 	db          *database.TiDBConnection
 	persistence *PersistenceService
+	userRepo    *persistence.UserRepository
 }
 
 // NewAuthService creates a new AuthService
-func NewAuthService(db *database.TiDBConnection, persistence *PersistenceService) *AuthService {
+func NewAuthService(db *database.TiDBConnection, persistence *PersistenceService, userRepo *persistence.UserRepository) *AuthService {
 	return &AuthService{
 		db:          db,
 		persistence: persistence,
+		userRepo:    userRepo,
 	}
 }
 

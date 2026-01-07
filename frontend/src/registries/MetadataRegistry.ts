@@ -5,6 +5,7 @@ import { metadataAPI } from '../infrastructure/api/metadata';
 import { FieldMetadata } from '../types';
 import { FIELD_TYPES, FieldType, OPERATORS, FieldTypeDefinition as SharedFieldTypeDefinition } from '../core/constants/SchemaDefinitions';
 import { SYSTEM_FIELDS } from '../core/constants/CommonFields';
+import { Logger } from '../core/services/Logger';
 
 // Map operator names from shared constants to symbols for UI display
 
@@ -119,7 +120,7 @@ class MetadataRegistryClass extends RegistryBase<FieldTypeDefinition> {
             });
 
         } catch (error) {
-            console.error("Failed to load dynamic field types:", error);
+            Logger.error("Failed to load dynamic field types:", error);
         }
     }
 }
