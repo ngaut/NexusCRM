@@ -9,6 +9,7 @@ import { useResizable } from '../core/hooks/useResizable';
 import { useAIStream } from '../core/hooks/useAIStream';
 import { useAIContext } from '../core/hooks/useAIContext';
 import { ChatMessage } from '../infrastructure/api/agent';
+import { EXTERNAL_SERVICES } from '../core/constants/EnvironmentConfig';
 
 export interface AIAssistantProps {
   isOpen: boolean;
@@ -250,7 +251,7 @@ export function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         toolsTokens={1800}
         totalTokens={totalTokens}
         conversationTokens={conversationTokens}
-        maxTokens={128000}
+        maxTokens={EXTERNAL_SERVICES.MAX_CONTEXT_TOKENS}
         isOpen={isContextPanelOpen}
         hasSummary={summaryInfo.hasSummary}
         tokensSaved={summaryInfo.tokensSaved}

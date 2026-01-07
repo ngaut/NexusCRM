@@ -57,13 +57,13 @@ export const MessageList: React.FC<MessageListProps> = ({
 
                     // Render Tool Block (only when not loading)
                     if ('type' in item && item.type === 'tool_block') {
-                        return <ToolExecutionSummary key={item.id} block={item as ToolBlock} formatToolName={formatToolName} />;
+                        return <ToolExecutionSummary key={item.id || `block-${idx}`} block={item as ToolBlock} formatToolName={formatToolName} />;
                     }
 
                     // Render Summary Block
                     if ('type' in item && item.type === 'summary_block') {
                         return <ConversationSummaryCard
-                            key={item.id}
+                            key={item.id || `summary-${idx}`}
                             summary={item.summary}
                             stats={item.stats}
                             compactedAt={item.compactedAt}
@@ -80,7 +80,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                             return null;
                         }
 
-                        return <div className="ml-12 mb-2" key={item.id}>
+                        return <div className="ml-12 mb-2" key={item.id || `thinking-${idx}`}>
                             <ProcessStepCard
                                 step={{
                                     id: item.id,
@@ -117,8 +117,8 @@ export const MessageList: React.FC<MessageListProps> = ({
 
                     {isProcessExpanded && (
                         <div className="mt-2 space-y-2 pl-2 border-l-2 border-slate-200">
-                            {processSteps.map((step) => (
-                                <ProcessStepCard key={step.id} step={step} formatToolName={formatToolName} />
+                            {processSteps.map((step, idx) => (
+                                <ProcessStepCard key={step.id || `step-${idx}`} step={step} formatToolName={formatToolName} />
                             ))}
                         </div>
                     )}

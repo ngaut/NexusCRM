@@ -97,6 +97,12 @@ export const EXTERNAL_SERVICES = {
      * AI Request Timeout (milliseconds)
      */
     AI_TIMEOUT_MS: parseInt(process.env.AI_TIMEOUT_MS || '30000', 10),
+
+    /**
+     * Maximum context tokens for AI Assistant
+     * Should match backend configuration
+     */
+    MAX_CONTEXT_TOKENS: parseInt(process.env.REACT_APP_MAX_CONTEXT_TOKENS || process.env.MAX_CONTEXT_TOKENS || '10000', 10),
 } as const;
 
 /**

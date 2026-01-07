@@ -201,7 +201,14 @@ func (s *AgentService) ChatStream(ctx context.Context, req ChatRequest, eventCha
 			Messages: messages,
 		}
 		compactResp, err := s.compactor.Compact(ctx, compactReq)
-		if err == nil && compactResp.TokensAfter < compactResp.TokensBefore {
+		if err != nil {
+			// Compaction failed - notify user but continue with original messages
+			emit(StreamEvent{
+				Type:    EventAutoCompact,
+				Content: fmt.Sprintf("Auto-compaction failed: %v (continuing with full context)", err),
+				IsError: true,
+			})
+		} else if compactResp.TokensAfter < compactResp.TokensBefore {
 			// Successful compaction
 			messages = compactResp.Messages
 			emit(StreamEvent{
@@ -211,7 +218,7 @@ func (s *AgentService) ChatStream(ctx context.Context, req ChatRequest, eventCha
 				TokensAfter:  compactResp.TokensAfter,
 			})
 		}
-		// If compaction fails or doesn't reduce size, continue with original messages
+		// If compaction doesn't reduce size, continue silently with original messages
 	}
 
 	// Max agent reasoning steps (not tool count, but LLM call iterations)

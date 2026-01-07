@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { agentApi, ChatMessage, StreamEvent, CompactRequest, ConversationSummary } from '../../infrastructure/api/agent';
 import { ProcessStep } from '../../components/ai/types';
 import { STORAGE_KEYS } from '../constants/ApplicationDefaults';
+import { idGenerator, createMessage, createToolCall, createProcessStep } from '../ai';
 
 export function useAIStream() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -33,24 +34,7 @@ export function useAIStream() {
                 if (response.conversation) {
                     setCurrentConversationId(response.conversation.id);
                     setMessages(response.messages as ChatMessage[]);
-                } else {
-                    // Fallback to localStorage for migration
-                    const savedMessages = localStorage.getItem(STORAGE_KEYS.AI_MESSAGES);
-                    if (savedMessages) {
-                        const parsed = JSON.parse(savedMessages);
-                        setMessages(parsed);
-                        // Migrate to server
-                        const result = await agentApi.saveConversation(parsed);
-                        setCurrentConversationId(result.id);
-                        // Refresh list
-                        const newList = await agentApi.listConversations();
-                        setConversations(newList.conversations || []);
-                    }
                 }
-            } catch {
-                // Fallback to localStorage if API fails
-                const savedMessages = localStorage.getItem(STORAGE_KEYS.AI_MESSAGES);
-                if (savedMessages) setMessages(JSON.parse(savedMessages));
             } finally {
                 setIsInitialized(true);
             }
@@ -61,9 +45,6 @@ export function useAIStream() {
     // Auto-save to server when messages change (debounced)
     useEffect(() => {
         if (!isInitialized || messages.length === 0) return;
-
-        // Also save to localStorage as backup
-        localStorage.setItem(STORAGE_KEYS.AI_MESSAGES, JSON.stringify(messages));
 
         // Debounce server save to avoid too many requests
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -83,9 +64,6 @@ export function useAIStream() {
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         };
     }, [messages, isInitialized, currentConversationId]);
-
-    // Note: processSteps are NOT persisted - they are transient streaming state
-    // and already captured in message history as tool_calls/tool results
 
     // Token Calculation
     const conversationTokens = useMemo(() => {
@@ -112,85 +90,47 @@ export function useAIStream() {
     }, [messages]);
 
     const handleStreamEvent = useCallback((event: StreamEvent) => {
-        const stepId = `step-${Date.now()}-${Math.random()}`;
-
         switch (event.type) {
-            case 'thinking':
+            case 'thinking': {
                 const thinkContent = event.content || 'Thinking...';
                 setAccumulatedThinking(prev => prev + thinkContent);
-                setProcessSteps(prev => [
-                    ...prev,
-                    {
-                        id: stepId,
-                        type: 'thinking',
-                        content: thinkContent,
-                        timestamp: new Date()
-                    }
-                ]);
+                setProcessSteps(prev => [...prev, createProcessStep.thinking(thinkContent)]);
                 break;
+            }
 
-            case 'tool_call':
+            case 'tool_call': {
                 setProcessSteps(prev => {
                     // Mark any active thinking steps as done
                     const steps = prev.map(s =>
-                        s.type === 'thinking' && !s.isDone
-                            ? { ...s, isDone: true }
-                            : s
+                        s.type === 'thinking' && !s.isDone ? { ...s, isDone: true } : s
                     );
-
-                    return [
-                        ...steps,
-                        {
-                            id: stepId,
-                            type: 'tool_call',
-                            content: `Calling ${event.tool_name}`,
-                            toolName: event.tool_name,
-                            toolArgs: event.tool_args,
-                            timestamp: new Date()
-                        }
-                    ];
+                    return [...steps, createProcessStep.toolCall(event.tool_name || '', event.tool_args)];
                 });
 
                 if (event.tool_name && event.tool_args) {
                     setMessages(prev => {
                         const lastMsg = prev[prev.length - 1];
-                        // If the last message is an assistant message and already has tool_calls, we append to it.
-                        // We also need to ensure we preserve/update the reasoning_content on this message.
+                        const newToolCall = createToolCall.call(event.tool_name!, event.tool_args!, event.tool_call_id);
+
+                        // Append to existing assistant message with tool_calls
                         if (lastMsg && lastMsg.role === 'assistant' && lastMsg.tool_calls) {
                             return [...prev.slice(0, -1), {
                                 ...lastMsg,
-                                reasoning_content: accumulatedThinking, // Persist accumulated thinking
-                                tool_calls: [...lastMsg.tool_calls, {
-                                    id: event.tool_call_id || `call_${Date.now()}`,
-                                    type: 'function',
-                                    function: {
-                                        name: event.tool_name!,
-                                        arguments: event.tool_args!
-                                    }
-                                }]
-                            }];
-                        } else {
-                            // New assistant message frame
-                            return [...prev, {
-                                role: 'assistant',
-                                content: '',
-                                reasoning_content: accumulatedThinking, // Persist accumulated thinking
-                                tool_calls: [{
-                                    id: event.tool_call_id || `call_${Date.now()}`,
-                                    type: 'function',
-                                    function: {
-                                        name: event.tool_name!,
-                                        arguments: event.tool_args!
-                                    }
-                                }]
+                                reasoning_content: accumulatedThinking,
+                                tool_calls: [...lastMsg.tool_calls, newToolCall]
                             }];
                         }
+
+                        // Create new assistant message with tool calls
+                        return [...prev, createMessage.assistantWithToolCalls([newToolCall], accumulatedThinking)];
                     });
                 }
                 break;
+            }
 
-            case 'tool_result':
+            case 'tool_result': {
                 setProcessSteps(prev => {
+                    // Find last matching tool_call (backwards search)
                     let lastMatchingIndex = -1;
                     for (let i = prev.length - 1; i >= 0; i--) {
                         if (prev[i].toolName === event.tool_name && prev[i].type === 'tool_call') {
@@ -217,31 +157,19 @@ export function useAIStream() {
                 });
 
                 if (event.tool_name && event.tool_result) {
-                    setMessages(prev => {
-                        return [...prev, {
-                            role: 'tool',
-                            name: event.tool_name,
-                            content: event.tool_result!,
-                            tool_call_id: event.tool_call_id || `call_unknown`
-                        }];
-                    });
+                    setMessages(prev => [
+                        ...prev,
+                        createMessage.tool(event.tool_name!, event.tool_result!, event.tool_call_id || 'call_unknown')
+                    ]);
                 }
                 break;
+            }
 
             case 'content':
                 setProcessSteps(prev => prev.map(s =>
-                    s.type === 'thinking' && !s.isDone
-                        ? { ...s, isDone: true }
-                        : s
+                    s.type === 'thinking' && !s.isDone ? { ...s, isDone: true } : s
                 ));
                 setStreamingContent(prev => prev + (event.content || ''));
-
-                // Also update the message list if we are streaming the final response, 
-                // ensuring reasoning is attached if it exists (though usually content stream is separate)
-                // Note: We don't usually update 'messages' for streaming content until 'done', 
-                // but if we wanted real-time persistence of reasoning + content, we'd do it here.
-                // For now, streamingContent handles the visual part, but let's make sure 
-                // the final 'done' event captures it, or we rely on 'streamingContent' visual.
                 break;
 
             case 'done':
@@ -254,10 +182,7 @@ export function useAIStream() {
 
             case 'error':
                 setIsLoading(false);
-                setMessages(prev => [
-                    ...prev,
-                    { role: 'assistant', content: `Error: ${event.content}` }
-                ]);
+                setMessages(prev => [...prev, createMessage.error(event.content || 'Unknown error')]);
                 setStreamingContent('');
                 setProcessSteps([]);
                 break;
@@ -266,29 +191,23 @@ export function useAIStream() {
                 if (event.history && event.history.length > 0) {
                     setMessages(event.history);
                 }
-                setProcessSteps(prev => [
-                    ...prev,
-                    {
-                        id: `auto-compact-${Date.now()}`,
-                        type: 'thinking' as const,
-                        content: event.content || `Context auto-compacted (${event.tokens_before?.toLocaleString()} → ${event.tokens_after?.toLocaleString()} tokens)`,
-                        timestamp: new Date(),
-                        isDone: true
-                    }
-                ]);
+                const compactMsg = event.content ||
+                    `Context auto-compacted (${event.tokens_before?.toLocaleString()} → ${event.tokens_after?.toLocaleString()} tokens)`;
+                setProcessSteps(prev => [...prev, createProcessStep.autoCompact(compactMsg)]);
                 break;
         }
-    }, []);
+    }, [accumulatedThinking]);
 
     const sendMessage = async (input: string) => {
         if (!input.trim() || isLoading) return;
 
-        const userMsg: ChatMessage = { role: 'user', content: input };
+        const userMsg = createMessage.user(input);
         const newHistory = [...messages, userMsg];
 
         setMessages(newHistory);
         setIsLoading(true);
         setProcessSteps([]);
+        idGenerator.reset(); // Reset ID counters for new turn
         setStreamingContent('');
         setAccumulatedThinking('');
         setIsProcessExpanded(true);
@@ -299,10 +218,7 @@ export function useAIStream() {
             (error) => {
                 console.warn('Stream error:', error);
                 setIsLoading(false);
-                setMessages(prev => [
-                    ...prev,
-                    { role: 'assistant', content: `Error: ${error.message}` }
-                ]);
+                setMessages(prev => [...prev, createMessage.error(error.message)]);
             },
             () => {
                 setIsLoading(false);
@@ -315,36 +231,29 @@ export function useAIStream() {
             abortControllerRef.current.abort();
             setIsLoading(false);
             if (streamingContent) {
-                setMessages(prev => [
-                    ...prev,
-                    { role: 'assistant', content: streamingContent + '\n\n*(Cancelled)*' }
-                ]);
+                setMessages(prev => [...prev, createMessage.cancelled(streamingContent)]);
                 setStreamingContent('');
             }
+            setAccumulatedThinking('');
             setIsProcessExpanded(false);
         }
     };
 
-    const clearChat = () => {
+    const clearChat = useCallback(async () => {
+        // Just clear state
         setMessages([]);
         setProcessSteps([]);
         setStreamingContent('');
         setCurrentConversationId(null);
-        localStorage.removeItem(STORAGE_KEYS.AI_MESSAGES);
-        agentApi.clearConversation().catch(() => { });
-    };
-
-    // Create a new conversation
-    const newChat = useCallback(async () => {
-        // Clear current state
-        setMessages([]);
-        setProcessSteps([]);
-        setStreamingContent('');
-        setCurrentConversationId(null);
-        localStorage.removeItem(STORAGE_KEYS.AI_MESSAGES);
     }, []);
 
-    // Select and load a specific conversation
+    const newChat = useCallback(async () => {
+        setMessages([]);
+        setProcessSteps([]);
+        setStreamingContent('');
+        setCurrentConversationId(null);
+    }, []);
+
     const selectConversation = useCallback(async (id: string) => {
         if (id === currentConversationId) return;
 
@@ -355,31 +264,26 @@ export function useAIStream() {
                 setCurrentConversationId(response.conversation.id);
                 setProcessSteps([]);
                 setStreamingContent('');
-                localStorage.setItem(STORAGE_KEYS.AI_MESSAGES, JSON.stringify(response.messages));
             }
         } catch (error) {
             console.warn('Failed to load conversation:', error);
         }
     }, [currentConversationId]);
 
-    // Delete a specific conversation
     const deleteConversation = useCallback(async (id: string) => {
         try {
             await agentApi.deleteConversation(id);
-            // Update list
             setConversations(prev => prev.filter(c => c.id !== id));
-            // If deleting current conversation, clear it
             if (id === currentConversationId) {
                 setMessages([]);
                 setCurrentConversationId(null);
-                localStorage.removeItem(STORAGE_KEYS.AI_MESSAGES);
+                setCurrentConversationId(null);
             }
         } catch (error) {
             console.warn('Failed to delete conversation:', error);
         }
     }, [currentConversationId]);
 
-    // Exposed primarily for ContextPanel interactions
     const compactMessages = async (keepInstruction?: string) => {
         if (messages.length === 0) return;
         setIsLoading(true);
@@ -392,10 +296,9 @@ export function useAIStream() {
             setMessages(response.messages);
         } catch (err) {
             console.warn('Failed to compact messages:', err);
-            setMessages(prev => [...prev, {
-                role: 'assistant',
-                content: `❌ Failed to compact context: ${err instanceof Error ? err.message : 'Unknown error'}`
-            }]);
+            setMessages(prev => [...prev, createMessage.compactError(
+                err instanceof Error ? err.message : 'Unknown error'
+            )]);
         } finally {
             setIsLoading(false);
         }
