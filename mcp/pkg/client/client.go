@@ -58,7 +58,25 @@ func (c *NexusClient) doRequest(ctx context.Context, method, path string, body i
 
 	if resp.StatusCode >= 400 {
 		respBytes, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("api error (%d): %s", resp.StatusCode, string(respBytes))
+		// Try to parse JSON error response for cleaner error messages
+		var errResp struct {
+			Message string `json:"message"`
+			Error   string `json:"error"`
+		}
+		if json.Unmarshal(respBytes, &errResp) == nil {
+			msg := errResp.Message
+			if msg == "" {
+				msg = errResp.Error
+			}
+			if msg != "" {
+				return fmt.Errorf("api error (%d): %s", resp.StatusCode, msg)
+			}
+		}
+		// Fallback to raw response if JSON parsing fails or no message field
+		if len(respBytes) > 0 {
+			return fmt.Errorf("api error (%d): %s", resp.StatusCode, string(respBytes))
+		}
+		return fmt.Errorf("api error (%d): no details provided", resp.StatusCode)
 	}
 
 	if result != nil {
@@ -121,15 +139,6 @@ func (c *NexusClient) CreateRecord(ctx context.Context, objectName string, data 
 		return "", err
 	}
 
-	// Check "record" -> "id"
-	if dataVal, ok := rawResp["record"]; ok {
-		if dataMap, ok := dataVal.(map[string]interface{}); ok {
-			if id, ok := dataMap["id"].(string); ok {
-				return id, nil
-			}
-		}
-	}
-
 	// Check "data" -> "id"
 	if dataVal, ok := rawResp["data"]; ok {
 		if dataMap, ok := dataVal.(map[string]interface{}); ok {
@@ -137,11 +146,6 @@ func (c *NexusClient) CreateRecord(ctx context.Context, objectName string, data 
 				return id, nil
 			}
 		}
-	}
-
-	// Check "id" at top level
-	if id, ok := rawResp["id"].(string); ok {
-		return id, nil
 	}
 
 	return "", fmt.Errorf("created record missing ID")
@@ -204,18 +208,13 @@ func (c *NexusClient) CreateDashboard(ctx context.Context, dashboard models.Dash
 		return "", err
 	}
 
-	// Check "dashboard" -> "id"
-	if dataVal, ok := rawResp["dashboard"]; ok {
+	// Check "data" -> "id" (Standard wrapper)
+	if dataVal, ok := rawResp["data"]; ok {
 		if dataMap, ok := dataVal.(map[string]interface{}); ok {
 			if id, ok := dataMap["id"].(string); ok {
 				return id, nil
 			}
 		}
-	}
-
-	// Check "id" at top level
-	if id, ok := rawResp["id"].(string); ok {
-		return id, nil
 	}
 
 	return "", fmt.Errorf("created dashboard missing ID")
@@ -229,18 +228,13 @@ func (c *NexusClient) CreateApp(ctx context.Context, app models.AppConfig, authT
 		return "", err
 	}
 
-	// Check "app" -> "id"
-	if dataVal, ok := rawResp["app"]; ok {
+	// Check "data" -> "id"
+	if dataVal, ok := rawResp["data"]; ok {
 		if dataMap, ok := dataVal.(map[string]interface{}); ok {
 			if id, ok := dataMap["id"].(string); ok {
 				return id, nil
 			}
 		}
-	}
-
-	// Check "id" at top level
-	if id, ok := rawResp["id"].(string); ok {
-		return id, nil
 	}
 
 	return "", fmt.Errorf("created app missing ID")
@@ -448,17 +442,13 @@ func (c *NexusClient) CreateValidationRule(ctx context.Context, rule models.Vali
 		return "", err
 	}
 
-	// Check "rule" -> "id"
-	if dataVal, ok := rawResp["rule"]; ok {
+	// Check "data" -> "id"
+	if dataVal, ok := rawResp["data"]; ok {
 		if dataMap, ok := dataVal.(map[string]interface{}); ok {
 			if id, ok := dataMap["id"].(string); ok {
 				return id, nil
 			}
 		}
-	}
-	// Fallback check
-	if id, ok := rawResp["id"].(string); ok {
-		return id, nil
 	}
 
 	return "", fmt.Errorf("created rule missing ID")
