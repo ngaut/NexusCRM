@@ -285,10 +285,16 @@ func (h *AgentHandler) GetConversation(c *gin.Context) {
 		queryReq := models.QueryRequest{
 			ObjectAPIName: ObjectAIConversation,
 			FilterExpr:    fmt.Sprintf("user_id == '%s' && is_active == true", user.ID),
+			SortField:     constants.FieldLastModifiedDate,
+			SortDirection: "desc",
 			Limit:         1,
 		}
 		records, err := h.nexusClient.Query(c.Request.Context(), queryReq, token)
-		if err != nil || len(records) == 0 {
+		if err != nil {
+			RespondError(c, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if len(records) == 0 {
 			// Return null conversation instead of 404 to avoid frontend console errors
 			c.JSON(http.StatusOK, gin.H{
 				"data": gin.H{

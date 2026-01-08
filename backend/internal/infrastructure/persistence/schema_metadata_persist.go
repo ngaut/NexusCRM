@@ -22,6 +22,9 @@ func (r *SchemaRepository) SaveObjectMetadata(obj *models.ObjectMetadata, exec E
 	if exec == nil {
 		exec = r.db
 	}
+	if exec == nil {
+		return fmt.Errorf("database connection is nil")
+	}
 
 	// Determine Object ID if not set
 	if obj.ID == "" {
