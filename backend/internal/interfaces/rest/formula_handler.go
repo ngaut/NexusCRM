@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	appErrors "github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/formula"
 	"github.com/nexuscrm/shared/pkg/constants"
 )
@@ -48,10 +49,7 @@ type SubstituteRequest struct {
 func (h *FormulaHandler) Evaluate(c *gin.Context) {
 	var req EvaluateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   err.Error(),
-		})
+		RespondAppError(c, appErrors.NewValidationError("json", err.Error()))
 		return
 	}
 
@@ -61,17 +59,16 @@ func (h *FormulaHandler) Evaluate(c *gin.Context) {
 
 	result, err := h.engine.Evaluate(req.Expression, req.Context)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   err.Error(),
-		})
+		// Evaluate failed -> User Error (Bad Request usually)
+		RespondAppError(c, appErrors.NewValidationError("expression", err.Error()))
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":    true,
-		"result":     result,
-		"expression": req.Expression,
+		"data": gin.H{
+			"result":     result,
+			"expression": req.Expression,
+		},
 	})
 }
 
@@ -81,10 +78,7 @@ func (h *FormulaHandler) Evaluate(c *gin.Context) {
 func (h *FormulaHandler) EvaluateCondition(c *gin.Context) {
 	var req EvaluateConditionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   err.Error(),
-		})
+		RespondAppError(c, appErrors.NewValidationError("json", err.Error()))
 		return
 	}
 
@@ -94,10 +88,14 @@ func (h *FormulaHandler) EvaluateCondition(c *gin.Context) {
 
 	result, err := h.engine.Evaluate(req.Expression, ctx)
 	if err != nil {
+		// Condition evaluation error -> return false in data, OR return error?
+		// Previous logic: "success: true, result: false, error: ...".
+		// Strict consistency: Return "data: false" but maybe log warning?
+		// Or return proper error?
+		// Use RespondAppError effectively kills the visibility.
+		// Let's return data: false as strict value.
 		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"result":  false, // Default to false on error for visibility conditions
-			"error":   err.Error(),
+			"data": false,
 		})
 		return
 	}
@@ -106,8 +104,7 @@ func (h *FormulaHandler) EvaluateCondition(c *gin.Context) {
 	boolResult := toBool(result)
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"result":  boolResult,
+		"data": boolResult,
 	})
 }
 
@@ -127,8 +124,7 @@ func (h *FormulaHandler) Substitute(c *gin.Context) {
 	result := substituteTemplate(req.Template, req.Record)
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"result":  result,
+		"data": result,
 	})
 }
 
@@ -145,17 +141,18 @@ func (h *FormulaHandler) Validate(c *gin.Context) {
 
 	_, err := h.engine.Compile(req.Expression)
 	if err != nil {
+		// Valid: false is a successful check result, not an HTTP error
 		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"valid":   false,
-			"error":   err.Error(),
+			"data": gin.H{
+				"valid": false,
+				"error": err.Error(),
+			},
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"valid":   true,
+		"data": gin.H{"valid": true},
 	})
 }
 
@@ -164,9 +161,10 @@ func (h *FormulaHandler) GetFunctions(c *gin.Context) {
 	functions := h.engine.GetFunctionDefinitions()
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":   true,
-		"functions": functions,
-		"count":     len(functions),
+		"data": gin.H{
+			"functions": functions,
+			"count":     len(functions),
+		},
 	})
 }
 
@@ -175,8 +173,9 @@ func (h *FormulaHandler) ClearCache(c *gin.Context) {
 	h.engine.ClearCache()
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":              true,
-		constants.FieldMessage: "Formula cache cleared successfully",
+		"data": gin.H{
+			constants.FieldMessage: "Formula cache cleared successfully",
+		},
 	})
 }
 

@@ -48,7 +48,15 @@ run_suite() {
     add_field "car" "auto_id" "AutoID" "AutoNumber" "false" "{\"default_value\": \"CAR-{000}\"}"
 
     # 5. Wait for cache
-    sleep 1
+    # 5. Wait for cache (Polling)
+    echo "  Waiting for field 'auto_id'..."
+    for i in {1..10}; do
+        meta=$(api_get "/api/metadata/objects/car")
+        if echo "$meta" | grep -q "\"api_name\":\"auto_id\""; then
+            break
+        fi
+        sleep 0.5
+    done
 
     # 6. Create first Car record
     echo "📝 Creating first Car record..."

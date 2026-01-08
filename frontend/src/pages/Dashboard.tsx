@@ -177,24 +177,29 @@ export const Dashboard: React.FC = () => {
           /* Hub View */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {dashboards.length === 0 ? (
-              <div className="col-span-full flex flex-col items-center justify-center py-24 bg-white border-2 border-dashed border-slate-200 rounded-2xl">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-400">
-                  <LayoutDashboard size={32} strokeWidth={1.5} />
+              <div className="col-span-full flex flex-col items-center justify-center py-32 bg-white/50 border-2 border-dashed border-slate-200 rounded-3xl backdrop-blur-sm">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                  <LayoutDashboard size={40} className="text-blue-500" strokeWidth={1.5} />
                 </div>
-                <h3 className="text-lg font-medium text-slate-900">No dashboards yet</h3>
-                <p className="text-slate-500 mt-1 mb-6 max-w-sm text-center">Create your first dashboard to start visualizing your data.</p>
-                <button
-                  onClick={() => {
-                    if (currentAppId) {
-                      navigate(`/studio/${currentAppId}?tab=dashboards`);
-                    } else {
-                      setShowAppContextModal(true);
-                    }
-                  }}
-                  className="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
-                >
-                  Create Dashboard
-                </button>
+                <h3 className="text-xl font-semibold text-slate-800 mb-2">Start with a Dashboard</h3>
+                <p className="text-slate-500 mb-8 max-w-md text-center leading-relaxed">
+                  Dashboards help you visualize data and track performance. Create your first one to get started.
+                </p>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => {
+                      if (currentAppId) {
+                        navigate(`/studio/${currentAppId}?tab=dashboards`);
+                      } else {
+                        setShowAppContextModal(true);
+                      }
+                    }}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5"
+                  >
+                    <Plus size={20} />
+                    Create New Dashboard
+                  </button>
+                </div>
               </div>
             ) : (
               dashboards.map(d => (

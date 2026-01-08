@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	appErrors "github.com/nexuscrm/backend/pkg/errors"
-	"github.com/nexuscrm/backend/pkg/query"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -28,23 +27,13 @@ func (s *PersistenceService) checkUniqueness(ctx context.Context, objectName str
 			continue
 		}
 
-		// Check database using builder and ExecuteQuery
-		builder := query.From(objectName).
-			Select([]string{constants.FieldID}).
-			Where(fmt.Sprintf("%s = ?", field.APIName), val).
-			Limit(1)
-
-		if excludeID != "" {
-			builder.Where(fmt.Sprintf("%s != ?", constants.FieldID), excludeID)
-		}
-
-		q := builder.Build()
-		results, err := ExecuteQuery(ctx, s.db, q)
+		// Check database using Repository
+		exists, err := s.repo.CheckUniqueness(ctx, objectName, field.APIName, val, excludeID)
 		if err != nil {
 			return err
 		}
 
-		if len(results) > 0 {
+		if exists {
 			// Found duplicate
 			return appErrors.NewConflictError(objectName, field.APIName, fmt.Sprintf("%v", val))
 		}
@@ -66,13 +55,14 @@ func (s *PersistenceService) areValuesEqual(a, b interface{}) bool {
 // generateSystemFields creates system field values based on metadata
 // This applies system field values based on metadata definitions
 func (s *PersistenceService) generateSystemFields(
+	ctx context.Context,
 	objectName string,
 	data models.SObject,
 	currentUser *models.UserSession,
 	isInsert bool,
 ) models.SObject {
 	// 1. Get Schema
-	schema := s.metadata.GetSchema(context.Background(), objectName)
+	schema := s.metadata.GetSchema(ctx, objectName)
 	if schema == nil {
 		// Should not happen as validated before
 		return data
@@ -162,9 +152,9 @@ func (s *PersistenceService) generateSystemFields(
 }
 
 // applyDefaults applies default values to fields that are missing
-func (s *PersistenceService) applyDefaults(data models.SObject, schema *models.ObjectMetadata, currentUser *models.UserSession) models.SObject {
+func (s *PersistenceService) applyDefaults(ctx context.Context, data models.SObject, schema *models.ObjectMetadata, currentUser *models.UserSession) models.SObject {
 	// Wrapper around generateSystemFields for clarity
-	return s.generateSystemFields(schema.APIName, data, currentUser, true)
+	return s.generateSystemFields(ctx, schema.APIName, data, currentUser, true)
 }
 
 // mergeRecords merges updates into base record

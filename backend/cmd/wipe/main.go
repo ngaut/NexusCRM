@@ -24,6 +24,16 @@ func main() {
 	}
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, password, host, port, database)
+
+	// Safety Check: Prevent accidental wipe in production
+	env := os.Getenv("GO_ENV")
+	isProduction := env == "production" || env == "prod"
+	force := len(os.Args) > 1 && os.Args[1] == "--force"
+
+	if isProduction && !force {
+		log.Fatal("🛑 DANGER: Attempting to wipe database in PRODUCTION mode without --force flag. Operation aborted.")
+	}
+
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)

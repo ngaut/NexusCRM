@@ -8,6 +8,8 @@ import (
 
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
+	"github.com/nexuscrm/backend/pkg/formula"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -21,13 +23,34 @@ func TestFormulaFields_Integration(t *testing.T) {
 
 	db := dbConn.DB()
 	eventBus := services.NewEventBus()
-	schemaManager := services.NewSchemaManager(db)
 
-	metadataService := services.NewMetadataService(dbConn, schemaManager) // Correct signature
-	permService := services.NewPermissionService(dbConn, metadataService)
-	txManager := services.NewTransactionManager(dbConn)
-	ps := services.NewPersistenceService(dbConn, metadataService, permService, eventBus, txManager)
-	qs := services.NewQueryService(dbConn, metadataService, permService)
+	schemaRepo := persistence.NewSchemaRepository(db)
+	schemaManager := services.NewSchemaManager(schemaRepo)
+
+	metadataRepo := persistence.NewMetadataRepository(dbConn.DB())
+	metadataService := services.NewMetadataService(metadataRepo, schemaManager) // Correct signature
+	userRepo := persistence.NewUserRepository(db)
+	permRepo := persistence.NewPermissionRepository(dbConn.DB())
+	permService := services.NewPermissionService(permRepo, metadataService, userRepo)
+	txManager := persistence.NewTransactionManager(dbConn)
+
+	recordRepo := persistence.NewRecordRepository(db)
+	rollupRepo := persistence.NewRollupRepository(db)
+	rollupSvc := services.NewRollupService(rollupRepo, metadataService, txManager)
+	outboxRepo := persistence.NewOutboxRepository(db)
+	outboxSvc := services.NewOutboxService(outboxRepo, eventBus, txManager)
+	// Need formula engine for validation service. Assuming it's available or can be null?
+	// The test tests formula fields! So we definitely need a working validation service with formula engine.
+	// Import "github.com/nexuscrm/backend/pkg/formula"
+	// But imports are at top. I need to add import.
+	// Assume I can add import in separate replacement.
+	// Here I use formula.NewEngine()
+	validationSvc := services.NewValidationService(formula.NewEngine())
+
+	ps := services.NewPersistenceService(recordRepo, rollupSvc, metadataService, permService, eventBus, validationSvc, txManager, outboxSvc)
+
+	queryRepo := persistence.NewQueryRepository(db)
+	qs := services.NewQueryService(queryRepo, metadataService, permService)
 
 	// Context
 	ctx := context.Background()
@@ -271,8 +294,10 @@ func TestFormulaValidation(t *testing.T) {
 	}
 
 	db := dbConn.DB()
-	schemaManager := services.NewSchemaManager(db)
-	metadataService := services.NewMetadataService(dbConn, schemaManager)
+	schemaRepo := persistence.NewSchemaRepository(db)
+	sm := services.NewSchemaManager(schemaRepo)
+	repo := persistence.NewMetadataRepository(db)
+	metadataService := services.NewMetadataService(repo, sm)
 
 	// Create a test object
 	ts := time.Now().UnixNano()

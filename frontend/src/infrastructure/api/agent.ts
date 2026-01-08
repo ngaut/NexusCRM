@@ -73,16 +73,16 @@ export interface CompactResponse {
 
 export const agentApi = {
     chat: async (request: ChatRequest): Promise<ChatResponse> => {
-        return await apiClient.post<ChatResponse>(API_ENDPOINTS.AGENT.CHAT, request);
+        return await apiClient.post<{ data: ChatResponse }>(API_ENDPOINTS.AGENT.CHAT, request).then(res => res.data);
     },
 
     getContext: async (includeContent: boolean = false): Promise<ContextState> => {
         const query = includeContent ? '?include_content=true' : '';
-        return await apiClient.get<ContextState>(API_ENDPOINTS.AGENT.CONTEXT(query));
+        return await apiClient.get<{ data: ContextState }>(API_ENDPOINTS.AGENT.CONTEXT(query)).then(res => res.data);
     },
 
     compact: async (request: CompactRequest): Promise<CompactResponse> => {
-        return await apiClient.post<CompactResponse>(API_ENDPOINTS.AGENT.COMPACT, request);
+        return await apiClient.post<{ data: CompactResponse }>(API_ENDPOINTS.AGENT.COMPACT, request).then(res => res.data);
     },
 
     // Streaming chat using EventSource pattern
@@ -163,15 +163,15 @@ export const agentApi = {
     // Conversation persistence
     getConversation: async (id?: string): Promise<ConversationResponse> => {
         const query = id ? `?id=${id}` : '';
-        return await apiClient.get<ConversationResponse>(`${API_ENDPOINTS.AGENT.CONVERSATION}${query}`);
+        return await apiClient.get<{ data: ConversationResponse }>(`${API_ENDPOINTS.AGENT.CONVERSATION}${query}`).then(res => res.data);
     },
 
     saveConversation: async (messages: ChatMessage[], conversationId?: string, title?: string): Promise<{ id: string; status: string }> => {
-        return await apiClient.post<{ id: string; status: string }>(API_ENDPOINTS.AGENT.CONVERSATION, {
+        return await apiClient.post<{ data: { id: string; status: string } }>(API_ENDPOINTS.AGENT.CONVERSATION, {
             messages,
             conversation_id: conversationId,
             title,
-        });
+        }).then(res => res.data);
     },
 
     clearConversation: async (): Promise<void> => {
@@ -180,7 +180,7 @@ export const agentApi = {
 
     // Multiple conversations
     listConversations: async (): Promise<{ conversations: ConversationSummary[] }> => {
-        return await apiClient.get<{ conversations: ConversationSummary[] }>(API_ENDPOINTS.AGENT.CONVERSATIONS);
+        return await apiClient.get<{ data: { conversations: ConversationSummary[] } }>(API_ENDPOINTS.AGENT.CONVERSATIONS).then(res => res.data);
     },
 
     deleteConversation: async (id: string): Promise<void> => {

@@ -59,20 +59,23 @@ export interface ExecuteFlowResponse {
 
 export const flowsApi = {
     async getAll(): Promise<Flow[]> {
-        const response = await apiClient.get<{ flows: Flow[] }>(API_ENDPOINTS.METADATA.FLOWS);
-        return response.flows || [];
+        const response = await apiClient.get<{ data: Flow[] }>(API_ENDPOINTS.METADATA.FLOWS);
+        return response.data;
     },
 
     async getById(flowId: string): Promise<Flow> {
-        return apiClient.get(API_ENDPOINTS.METADATA.FLOW(flowId));
+        const response = await apiClient.get<{ data: Flow }>(API_ENDPOINTS.METADATA.FLOW(flowId));
+        return response.data;
     },
 
     async create(flow: Omit<Flow, 'id' | 'lastModified'>): Promise<Flow> {
-        return apiClient.post(API_ENDPOINTS.METADATA.FLOWS, flow);
+        const response = await apiClient.post<{ data: Flow }>(API_ENDPOINTS.METADATA.FLOWS, flow);
+        return response.data;
     },
 
     async update(flowId: string, updates: Partial<Flow>): Promise<Flow> {
-        return apiClient.patch(API_ENDPOINTS.METADATA.FLOW(flowId), updates);
+        const response = await apiClient.patch<{ data: Flow }>(API_ENDPOINTS.METADATA.FLOW(flowId), updates);
+        return response.data;
     },
 
     async delete(flowId: string): Promise<void> {
@@ -81,7 +84,8 @@ export const flowsApi = {
 
     async toggleStatus(flowId: string, currentStatus: string): Promise<Flow> {
         const newStatus = currentStatus === FLOW_STATUS.ACTIVE ? FLOW_STATUS.DRAFT : FLOW_STATUS.ACTIVE;
-        return apiClient.patch(API_ENDPOINTS.METADATA.FLOW(flowId), { status: newStatus });
+        const response = await apiClient.patch<{ data: Flow }>(API_ENDPOINTS.METADATA.FLOW(flowId), { status: newStatus });
+        return response.data;
     },
 
     /**
@@ -90,10 +94,11 @@ export const flowsApi = {
      * @param request - Execution context including record_id and field values
      */
     async execute(flowId: string, request: ExecuteFlowRequest = {}): Promise<ExecuteFlowResponse> {
-        return apiClient.post<ExecuteFlowResponse>(
+        const response = await apiClient.post<{ data: ExecuteFlowResponse }>(
             API_ENDPOINTS.FLOWS.EXECUTE(flowId),
             request
         );
+        return response.data;
     },
 };
 

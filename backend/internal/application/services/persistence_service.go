@@ -9,54 +9,48 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/domain/events"
-	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/formula"
-	"github.com/nexuscrm/backend/pkg/query"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
 
-// PersistenceService handles CRUD operations with validation and events
+// PersistenceService manages strict CRUD operations and data integrity
 type PersistenceService struct {
-	db          *database.TiDBConnection
+	repo        *persistence.RecordRepository
 	metadata    *MetadataService
 	permissions *PermissionService
 	eventBus    *EventBus
 	formula     *formula.Engine
 	validator   *ValidationService
-	txManager   *TransactionManager
+	txManager   *persistence.TransactionManager
 	rollup      *RollupService
 	outbox      *OutboxService
 }
 
 // NewPersistenceService creates a new PersistenceService
 func NewPersistenceService(
-	db *database.TiDBConnection,
+	repo *persistence.RecordRepository,
+	rollup *RollupService,
 	metadata *MetadataService,
 	permissions *PermissionService,
 	eventBus *EventBus,
-	txManager *TransactionManager,
+	validator *ValidationService,
+	txManager *persistence.TransactionManager,
+	outbox *OutboxService,
 ) *PersistenceService {
-	// Initialize RollupService
-	rollup := NewRollupService(db.DB(), metadata, txManager)
-
 	return &PersistenceService{
-		db:          db,
+		repo:        repo,
+		rollup:      rollup,
 		metadata:    metadata,
 		permissions: permissions,
 		eventBus:    eventBus,
-		formula:     formula.NewEngine(),
-		validator:   NewValidationService(formula.NewEngine()),
+		validator:   validator,
 		txManager:   txManager,
-		rollup:      rollup,
+		formula:     formula.NewEngine(),
+		outbox:      outbox,
 	}
-}
-
-// SetOutbox sets the OutboxService for transactional event storage.
-// This is called after construction to avoid circular dependencies.
-func (ps *PersistenceService) SetOutbox(outbox *OutboxService) {
-	ps.outbox = outbox
 }
 
 // ==================== CRUD Operations ====================
@@ -78,7 +72,7 @@ func (ps *PersistenceService) publishRecordEvent(ctx context.Context, eventType 
 
 // prepareOperation checks permissions and retrieves schema
 func (ps *PersistenceService) prepareOperation(ctx context.Context, objectName string, operation string, user *models.UserSession) (*models.ObjectMetadata, error) {
-	if err := ps.permissions.CheckPermissionOrErrorWithUser(objectName, operation, user); err != nil {
+	if err := ps.permissions.CheckPermissionOrErrorWithUser(ctx, objectName, operation, user); err != nil {
 		return nil, err
 	}
 	return ps.metadata.GetSchemaOrError(ctx, objectName)
@@ -134,26 +128,20 @@ func (ps *PersistenceService) validatePolymorphicLookups(ctx context.Context, da
 
 // checkRecordExists checks if a record exists by ID (bypassing permissions for validation)
 func (ps *PersistenceService) checkRecordExists(ctx context.Context, objectName string, id string) (bool, error) {
-	queryP := query.From(objectName).
-		Select([]string{constants.FieldID}).
-		Where(constants.FieldID+" = ?", id).
-		Limit(1).
-		Build()
+	// Attempt to extract transaction, though usually this is called within one or it handles nil fine
+	tx := ps.txManager.ExtractTx(ctx)
+	// IMPORTANT: table name resolution happens here or inside repo?
+	// Given we are moving to infrastructure, using objectName as table name is standard for now unless we have mapping.
+	// PersistenceService.getTableName() is still useful.
+	tableName := ps.getTableName(objectName)
 
-	rows, err := ps.db.DB().QueryContext(ctx, queryP.SQL, queryP.Params...)
-	if err != nil {
-		return false, err
-	}
-	defer rows.Close()
-
-	return rows.Next(), nil
+	return ps.repo.Exists(ctx, tx, tableName, id)
 }
 
 // Helper to get table name from object API name
 // Helper to get table name from object API name
 func (ps *PersistenceService) getTableName(objectAPIName string) string {
-	// Fallback to APIName for now to fix build.
-	// For custom objects (used in test), APIName is the TableName.
+	// Standard mapping: APIName matches TableName
 	return objectAPIName
 }
 
@@ -198,26 +186,14 @@ func (ps *PersistenceService) Update(
 
 	// Execute Transactional Work
 	err = ps.RunInTransaction(ctx, func(tx *sql.Tx, txCtx context.Context) error {
-		// Load current record with FOR UPDATE lock within transaction
-		q := query.From(objectName).
-			Select([]string{"*"}).
-			Where(fmt.Sprintf("%s = ?", constants.FieldID), id).
-			Limit(1).
-			Build()
-
-		// Inject FOR UPDATE for locking
-		q.SQL += " FOR UPDATE"
-
-		oldRecords, err := ExecuteQuery(txCtx, tx, q)
+		// Load current record with FOR UPDATE lock within transaction via Repository
+		oldRecord, err = ps.repo.GetLock(txCtx, tx, objectName, id)
 		if err != nil {
 			return fmt.Errorf("failed to lock record: %w", err)
 		}
-
-		if len(oldRecords) == 0 {
+		if oldRecord == nil {
 			return errors.NewNotFoundError(objectName, id)
 		}
-
-		oldRecord = oldRecords[0]
 
 		// Validate Polymorphic Lookups & Resolve Types
 		resolvedTypes, err := ps.validatePolymorphicLookups(txCtx, updates, schema)
@@ -231,7 +207,7 @@ func (ps *PersistenceService) Update(
 		}
 
 		// Check record-level access
-		if !ps.permissions.CheckRecordAccess(schema, oldRecord, constants.PermEdit, currentUser) {
+		if !ps.permissions.CheckRecordAccess(ctx, schema, oldRecord, constants.PermEdit, currentUser) {
 			return errors.NewPermissionError("update", objectName+"/"+id)
 		}
 
@@ -248,7 +224,7 @@ func (ps *PersistenceService) Update(
 				continue
 			}
 
-			if !ps.permissions.CheckFieldEditabilityWithUser(objectName, key, currentUser) {
+			if !ps.permissions.CheckFieldEditabilityWithUser(ctx, objectName, key, currentUser) {
 				continue
 			}
 
@@ -291,7 +267,7 @@ func (ps *PersistenceService) Update(
 		}
 
 		// Add system fields for update (lastModifiedDate, lastModifiedById)
-		systemFieldsUpdate := ps.generateSystemFields(objectName, effectiveUpdates, currentUser, false)
+		systemFieldsUpdate := ps.generateSystemFields(ctx, objectName, effectiveUpdates, currentUser, false)
 		for k, v := range systemFieldsUpdate {
 			effectiveUpdates[k] = v
 		}
@@ -322,10 +298,9 @@ func (ps *PersistenceService) Update(
 				}
 				auditEntry := auditEntryStruct.ToSObject()
 
-				// Use raw query builder for system table insert to avoid recursion/permission checks
-				// We manually build insert for _System_AuditLog
-				auditQ := query.Insert(constants.TableAuditLog, auditEntry).Build()
-				if _, err := tx.Exec(auditQ.SQL, auditQ.Params...); err != nil {
+				// Use Repo for System Audit Insert
+				// Note: Audit Log table is dynamic/system, we can use same Insert pattern
+				if err := ps.repo.Insert(txCtx, tx, constants.TableAuditLog, auditEntry); err != nil {
 					return fmt.Errorf("failed to write audit log: %w", err)
 				}
 			}
@@ -334,14 +309,8 @@ func (ps *PersistenceService) Update(
 		// Extract physical fields
 		physicalUpdates := ToStorageRecord(schema, effectiveUpdates)
 
-		// Build and execute update within transaction
-		builder := query.Update(objectName).
-			Set(physicalUpdates).
-			Where(fmt.Sprintf("%s = ?", constants.FieldID), id)
-
-		q = builder.Build()
-
-		if _, err := tx.Exec(q.SQL, q.Params...); err != nil {
+		// execute update via Repository
+		if err := ps.repo.Update(txCtx, tx, objectName, id, physicalUpdates); err != nil {
 			return fmt.Errorf("update failed: %w", err)
 		}
 
@@ -422,20 +391,40 @@ func (ps *PersistenceService) generateAutoNumbers(ctx context.Context, tx *sql.T
 	}
 
 	for _, an := range autoNumbers {
-		// 1. Lock and increment current value in DB
-		queryStr := fmt.Sprintf("SELECT current_number FROM %s WHERE id = ? FOR UPDATE", constants.TableAutoNumber)
-		var currentValue int
-		err := tx.QueryRowContext(ctx, queryStr, an.ID).Scan(&currentValue)
+		// 1. Lock and increment current value in DB via Repo
+		// Can't use GetLock for standard SObject because this is _System_AutoNumber
+		// But RecordRepository is generic, so we can use it!
+		// GetLock returns SObject.
+
+		autoNumberRecord, err := ps.repo.GetLock(ctx, tx, constants.TableAutoNumber, an.ID)
 		if err != nil {
 			return fmt.Errorf("failed to lock auto-number %s: %w", an.ID, err)
 		}
 
+		var currentValue int
+		if autoNumberRecord != nil {
+			if val, ok := autoNumberRecord["current_number"]; ok && val != nil {
+				// Handle potential float64 from JSON/DB driver
+				switch v := val.(type) {
+				case int64:
+					currentValue = int(v)
+				case float64:
+					currentValue = int(v)
+				case int:
+					currentValue = v
+				}
+			}
+		}
+
 		newValue := currentValue + 1
 
-		// 2. Update DB
-		updateQuery := fmt.Sprintf("UPDATE %s SET current_number = ?, last_modified_date = NOW() WHERE id = ?", constants.TableAutoNumber)
-		_, err = tx.ExecContext(ctx, updateQuery, newValue, an.ID)
-		if err != nil {
+		// 2. Update DB via Repo
+		anUpdate := models.SObject{
+			"current_number":     newValue,
+			"last_modified_date": time.Now().UTC(),
+		}
+
+		if err := ps.repo.Update(ctx, tx, constants.TableAutoNumber, an.ID, anUpdate); err != nil {
 			return fmt.Errorf("failed to update auto-number %s: %w", an.ID, err)
 		}
 

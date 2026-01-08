@@ -114,13 +114,15 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -358,13 +360,15 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -451,13 +455,15 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -543,13 +549,15 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ]
     },
@@ -634,13 +642,15 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -717,7 +727,8 @@
                 "logicalType": "Lookup",
                 "referenceTo": [
                     "_System_Profile"
-                ]
+                ],
+                "is_system": true
             },
             {
                 "name": "role_id",
@@ -727,13 +738,15 @@
                 "logicalType": "Lookup",
                 "referenceTo": [
                     "_System_Role"
-                ]
+                ],
+                "is_system": true
             },
             {
                 "name": "is_active",
                 "label": "Active",
                 "type": "TINYINT(1)",
-                "default": "1"
+                "default": "1",
+                "is_system": true
             },
             {
                 "name": "is_deleted",
@@ -782,13 +795,15 @@
                 "name": "created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [

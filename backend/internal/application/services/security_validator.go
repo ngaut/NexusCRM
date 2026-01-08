@@ -15,15 +15,26 @@ import (
 	"github.com/pingcap/tidb/pkg/parser/test_driver" // Using test_driver for ValueExpr
 )
 
+// PermissionChecker defines the subset of PermissionService needed by SecurityValidator
+type PermissionChecker interface {
+	CheckObjectPermissionWithUser(ctx context.Context, objectName string, permission string, user *models.UserSession) bool
+	CheckFieldVisibilityWithUser(ctx context.Context, objectName string, fieldName string, user *models.UserSession) bool
+}
+
+// MetadataProvider defines the subset of MetadataService needed by SecurityValidator
+type MetadataProvider interface {
+	GetSchema(ctx context.Context, objectName string) *models.ObjectMetadata
+}
+
 // SecurityValidator handles SQL parsing and security enforcement
 type SecurityValidator struct {
 	parser      *parser.Parser
-	permissions *PermissionService
-	metadata    *MetadataService
+	permissions PermissionChecker
+	metadata    MetadataProvider
 }
 
 // NewSecurityValidator creates a new SecurityValidator
-func NewSecurityValidator(permissions *PermissionService, metadata *MetadataService) *SecurityValidator {
+func NewSecurityValidator(permissions PermissionChecker, metadata MetadataProvider) *SecurityValidator {
 	// Initialize parser purely for parsing logic; context usually not strictly required for basic parse
 	return &SecurityValidator{
 		parser:      parser.New(),
@@ -53,11 +64,23 @@ func (v *SecurityValidator) ValidateAndRewrite(ctx context.Context, sql string, 
 	}
 
 	// 3. Visitor for Validation
+	// Extract primary table name to handle implicit column references
+	var defaultTableName string
+	if selectStmt.From != nil && selectStmt.From.TableRefs != nil && selectStmt.From.TableRefs.Left != nil {
+		if ts, ok := selectStmt.From.TableRefs.Left.(*ast.TableSource); ok {
+			if tn, ok := ts.Source.(*ast.TableName); ok {
+				defaultTableName = tn.Name.O
+			}
+		}
+	}
+
 	visitor := &SecurityVisitor{
-		user:        user,
-		permissions: v.permissions,
-		metadata:    v.metadata,
-		err:         nil,
+		ctx:              ctx,
+		user:             user,
+		permissions:      v.permissions,
+		metadata:         v.metadata,
+		defaultTableName: defaultTableName,
+		err:              nil,
 	}
 
 	stmt.Accept(visitor)
@@ -95,6 +118,11 @@ func (v *SecurityValidator) applyRLS(ctx context.Context, stmt *ast.SelectStmt, 
 
 	if stmt.From == nil || stmt.From.TableRefs == nil || stmt.From.TableRefs.Left == nil {
 		return nil
+	}
+
+	// Check if this is a Join (Right is not nil)
+	if stmt.From.TableRefs.Right != nil {
+		return nil // Complex query (Join), skipping RLS MVP explicitly
 	}
 
 	// Drill to TableSource
@@ -157,10 +185,12 @@ func (v *SecurityValidator) applyRLS(ctx context.Context, stmt *ast.SelectStmt, 
 }
 
 type SecurityVisitor struct {
-	user        *models.UserSession
-	permissions *PermissionService
-	metadata    *MetadataService
-	err         error
+	ctx              context.Context
+	user             *models.UserSession
+	permissions      PermissionChecker
+	metadata         MetadataProvider
+	defaultTableName string
+	err              error
 }
 
 func (v *SecurityVisitor) Enter(in ast.Node) (ast.Node, bool) {
@@ -172,7 +202,7 @@ func (v *SecurityVisitor) Enter(in ast.Node) (ast.Node, bool) {
 	if t, ok := in.(*ast.TableName); ok {
 		objName := t.Name.O
 		if objName != "" {
-			if !v.permissions.CheckObjectPermissionWithUser(objName, constants.PermRead, v.user) {
+			if !v.permissions.CheckObjectPermissionWithUser(v.ctx, objName, constants.PermRead, v.user) {
 				v.err = fmt.Errorf("access denied: cannot read table '%s'", objName)
 				return in, true
 			}
@@ -182,11 +212,15 @@ func (v *SecurityVisitor) Enter(in ast.Node) (ast.Node, bool) {
 	// Validate Column Permissions
 	if c, ok := in.(*ast.ColumnName); ok {
 		tableName := c.Table.O
+		if tableName == "" {
+			tableName = v.defaultTableName
+		}
+
 		colName := c.Name.O
 
 		// If Table is known, check specific field visibility
 		if tableName != "" && colName != "*" {
-			if !v.permissions.CheckFieldVisibilityWithUser(tableName, colName, v.user) {
+			if !v.permissions.CheckFieldVisibilityWithUser(v.ctx, tableName, colName, v.user) {
 				v.err = fmt.Errorf("access denied: cannot read field '%s' on table '%s'", colName, tableName)
 				return in, true
 			}

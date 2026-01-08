@@ -24,6 +24,9 @@ TEST_TEAM_ID=""
 run_suite() {
     section_header "$SUITE_NAME"
     
+    # Ensure cleanup runs on exit
+    trap test_cleanup EXIT
+    
     if ! api_login; then
         echo "Failed to login. Skipping suite."
         return 1

@@ -3,21 +3,20 @@ package services
 import (
 	"context"
 
-	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // UIMetadataService manages UI-related metadata (Apps, Tabs, Layouts, Dashboards)
 type UIMetadataService struct {
-	db       *database.TiDBConnection
-	metadata *MetadataService
+	metadata    *MetadataService
+	permissions *PermissionService
 }
 
 // NewUIMetadataService creates a new UIMetadataService
-func NewUIMetadataService(db *database.TiDBConnection, metadata *MetadataService) *UIMetadataService {
+func NewUIMetadataService(metadata *MetadataService, permissions *PermissionService) *UIMetadataService {
 	return &UIMetadataService{
-		db:       db,
-		metadata: metadata,
+		metadata:    metadata,
+		permissions: permissions,
 	}
 }
 

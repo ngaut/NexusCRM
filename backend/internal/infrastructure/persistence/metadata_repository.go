@@ -777,6 +777,38 @@ func (r *MetadataRepository) GetApp(ctx context.Context, id string) (*models.App
 	return app, nil
 }
 
+// GetAppWithTx queries a single app by ID within a transaction
+func (r *MetadataRepository) GetAppWithTx(ctx context.Context, tx *sql.Tx, id string) (*models.AppConfig, error) {
+	query := fmt.Sprintf("SELECT id, name, label, description, icon, color, navigation_items, created_date, last_modified_date FROM %s WHERE id = ?", constants.TableApp)
+	app, err := r.scanApp(tx.QueryRowContext(ctx, query, id))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return app, nil
+}
+
+// UpdateAppWithTx updates an existing app within a provided transaction
+func (r *MetadataRepository) UpdateAppWithTx(ctx context.Context, tx *sql.Tx, appID string, app *models.AppConfig) error {
+	navItemsJSON, err := r.marshalJSON(app.NavigationItems)
+	if err != nil {
+		return fmt.Errorf("failed to marshal navigation items: %w", err)
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE %s 
+		SET label = ?, description = ?, icon = ?, color = ?, navigation_items = ?, is_default = ?, last_modified_date = ?
+		WHERE id = ?
+	`, constants.TableApp)
+
+	_, err = tx.ExecContext(ctx, query,
+		app.Label, app.Description, app.Icon, app.Color, navItemsJSON, app.IsDefault, time.Now(), appID,
+	)
+	return err
+}
+
 // GetLayouts queries all layouts for an object
 func (r *MetadataRepository) GetLayouts(ctx context.Context, objectAPIName string) ([]*models.PageLayout, error) {
 	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT config, created_date, last_modified_date FROM %s WHERE LOWER(object_api_name) = LOWER(?)", constants.TableLayout), objectAPIName)

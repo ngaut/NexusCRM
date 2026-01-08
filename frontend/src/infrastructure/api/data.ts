@@ -23,53 +23,53 @@ export const dataAPI = {
       sort_direction: request.sortDirection,
       limit: request.limit,
     };
-    const response = await apiClient.post<{ records: T[] }>(
+    const response = await apiClient.post<{ data: T[] }>(
       API_ENDPOINTS.DATA.QUERY,
       payload
     );
-    return response.records;
+    return response.data;
   },
 
   /**
    * Global search across all objects
    */
   async search(term: string): Promise<SearchResult[]> {
-    const response = await apiClient.post<{ results: SearchResult[] }>(
+    const response = await apiClient.post<{ data: SearchResult[] }>(
       API_ENDPOINTS.DATA.SEARCH,
       { term }
     );
-    return response.results;
+    return response.data;
   },
 
   /**
    * Search within a single object
    */
   async searchSingleObject<T = SObject>(objectApiName: string, term: string): Promise<T[]> {
-    const response = await apiClient.get<{ records: T[] }>(
+    const response = await apiClient.get<{ data: T[] }>(
       `${API_ENDPOINTS.DATA.SEARCH_OBJECT(objectApiName)}?term=${encodeURIComponent(term)}`
     );
-    return response.records;
+    return response.data;
   },
 
   /**
    * Get a single record by ID
    */
   async getRecord<T = SObject>(objectApiName: string, id: string): Promise<T> {
-    const response = await apiClient.get<{ record: T }>(
+    const response = await apiClient.get<{ data: T }>(
       API_ENDPOINTS.DATA.RECORD(objectApiName, id)
     );
-    return response.record;
+    return response.data;
   },
 
   /**
    * Create a new record
    */
   async createRecord<T = SObject>(objectApiName: string, data: Partial<T>): Promise<T & { [COMMON_FIELDS.ID]: string }> {
-    const response = await apiClient.post<{ record: T & { [COMMON_FIELDS.ID]: string } }>(
+    const response = await apiClient.post<{ data: T & { [COMMON_FIELDS.ID]: string } }>(
       API_ENDPOINTS.DATA.RECORDS(objectApiName),
       data
     );
-    return response.record;
+    return response.data;
   },
 
   /**
@@ -95,8 +95,8 @@ export const dataAPI = {
    * Get recycle bin items
    */
   async getRecycleBinItems(scope: 'mine' | 'all' = 'mine'): Promise<RecycleBinItem[]> {
-    const response = await apiClient.get<{ items: RecycleBinItem[] }>(`${API_ENDPOINTS.DATA.RECYCLE_BIN}?scope=${scope}`);
-    return response.items;
+    const response = await apiClient.get<{ data: RecycleBinItem[] }>(`${API_ENDPOINTS.DATA.RECYCLE_BIN}?scope=${scope}`);
+    return response.data;
   },
 
   /**
@@ -117,28 +117,28 @@ export const dataAPI = {
    * Run analytics query
    */
   async runAnalytics(query: AnalyticsQuery): Promise<unknown> {
-    const response = await apiClient.post<{ result: unknown }>(API_ENDPOINTS.DATA.ANALYTICS, query);
-    return response.result;
+    const response = await apiClient.post<{ data: unknown }>(API_ENDPOINTS.DATA.ANALYTICS, query);
+    return response.data;
   },
   /**
    * Calculate formula fields for a record
    */
   async calculate(objectApiName: string, record: SObject): Promise<SObject> {
-    const response = await apiClient.post<{ record: SObject }>(
+    const response = await apiClient.post<{ data: SObject }>(
       API_ENDPOINTS.DATA.CALCULATE(objectApiName),
       record
     );
-    return response.record;
+    return response.data;
   },
 
   /**
    * Execute a server-side action
    */
   async executeAction(actionId: string, payload: Record<string, unknown>): Promise<unknown> {
-    const response = await apiClient.post<{ result: unknown }>(
+    const response = await apiClient.post<{ data: unknown }>(
       API_ENDPOINTS.ACTIONS.EXECUTE(actionId),
       payload
     );
-    return response.result;
+    return response.data;
   }
 };

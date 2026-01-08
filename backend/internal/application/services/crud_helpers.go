@@ -1,33 +1,17 @@
 package services
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"log"
 	"strings"
 	"time"
 
-	"github.com/nexuscrm/backend/pkg/query"
 	"github.com/nexuscrm/backend/pkg/utils"
-	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // Scannable is an interface for something that can scan into a destination (sql.Row or sql.Rows)
 type Scannable interface {
 	Scan(dest ...interface{}) error
-}
-
-// Executor allows executing SQL queries (implemented by *sql.DB, *sql.Tx, *database.TiDBConnection)
-type Executor interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-	QueryRow(query string, args ...interface{}) *sql.Row
-	// Context-aware methods
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }
 
 // ==================== ID Generation ====================
@@ -168,59 +152,9 @@ func ToNullInt64(i interface{}) sql.NullInt64 {
 	}
 }
 
-// ScanRows scans SQL rows into a slice of SObject maps
-func ScanRows(rows *sql.Rows) ([]models.SObject, error) {
-	columns, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-
-	results := make([]models.SObject, 0)
-	for rows.Next() {
-		values := make([]interface{}, len(columns))
-		valuePtrs := make([]interface{}, len(columns))
-		for i := range values {
-			valuePtrs[i] = &values[i]
-		}
-
-		if err := rows.Scan(valuePtrs...); err != nil {
-			return nil, err
-		}
-
-		record := make(models.SObject)
-		for i, col := range columns {
-			val := values[i]
-			if b, ok := val.([]byte); ok {
-				record[col] = string(b)
-			} else {
-				record[col] = val
-			}
-		}
-
-		results = append(results, record)
-	}
-
-	return results, nil
-}
+// ScanRows has been moved to pkg/query/scanner.go as ScanRowsToSObjects
 
 // ==================== Execution Helpers ====================
-
-// ExecuteQuery executes a built query and returns SObjects.
-// It handles query execution, scanning, and error wrapping.
-func ExecuteQuery(ctx context.Context, executor Executor, q query.QueryResult) ([]models.SObject, error) {
-	rows, err := executor.QueryContext(ctx, q.SQL, q.Params...)
-	if err != nil {
-		return nil, fmt.Errorf("query execution error: %w", err)
-	}
-	defer rows.Close()
-
-	results, err := ScanRows(rows)
-	if err != nil {
-		return nil, fmt.Errorf("row scan error: %w", err)
-	}
-
-	return results, nil
-}
 
 // UnmarshalJSONField unmarshals a generic JSON field if valid
 func UnmarshalJSONField(ns sql.NullString, target interface{}) {
@@ -248,57 +182,4 @@ func MarshalJSONOrDefault(v interface{}, defaultVal string) (string, error) {
 
 // ==================== Permission Helpers ====================
 
-// GrantInitialObjectPermissions grants default permissions for a new object to all profiles.
-// This is a centralized helper to avoid duplicated permission-granting logic.
-// The profileConstantAdmin parameter should be the constant for system_admin profile ID.
-func GrantInitialObjectPermissions(exec Executor, objectAPIName string, tableProfile string, tableObjectPerms string, profileSystemAdmin string) error {
-	// Get all Profiles
-	query := fmt.Sprintf("SELECT id FROM %s", tableProfile)
-	rows, err := exec.Query(query)
-	if err != nil {
-		return fmt.Errorf("failed to fetch profiles: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var profileID string
-		if err := rows.Scan(&profileID); err != nil {
-			continue
-		}
-
-		// Check if System Admin for elevated permissions
-		isSystemAdmin := profileID == profileSystemAdmin
-
-		// Default permissions: CRUD for everyone, ModifyAll/ViewAll for Admin
-		allowRead := true
-		allowCreate := true
-		allowEdit := true
-		allowDelete := true
-		viewAll := false
-		modifyAll := false
-
-		if isSystemAdmin {
-			viewAll = true
-			modifyAll = true
-		}
-
-		id := GenerateID()
-		insertQuery := fmt.Sprintf(`
-			INSERT INTO %s (id, profile_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-			ON DUPLICATE KEY UPDATE
-				allow_read = VALUES(allow_read),
-				allow_create = VALUES(allow_create),
-				allow_edit = VALUES(allow_edit),
-				allow_delete = VALUES(allow_delete),
-				view_all = VALUES(view_all),
-				modify_all = VALUES(modify_all)
-		`, tableObjectPerms)
-
-		_, err := exec.Exec(insertQuery, id, profileID, objectAPIName, allowRead, allowCreate, allowEdit, allowDelete, viewAll, modifyAll)
-		if err != nil {
-			log.Printf("⚠️ Warning: Failed to grant permission for profile %s: %v", profileID, err)
-		}
-	}
-	return nil
-}
+// ==================== Permission Helpers ====================

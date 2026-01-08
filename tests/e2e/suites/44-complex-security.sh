@@ -39,8 +39,16 @@ ROLE_AST_ID=$(json_extract "$ROLE_AST_RES" "id")
 # Trigger role hierarchy cache refresh by hitting permissions endpoint
 echo "   Manager Role ID: $ROLE_MGR_ID"
 echo "   Assistant Role ID: $ROLE_AST_ID"
-api_get "/api/auth/permissions/me" > /dev/null
-sleep 1
+
+# Poll for role hierarchy update
+echo "   Polling for role hierarchy consistency..."
+for i in {1..10}; do
+    me=$(api_get "/api/auth/permissions/me")
+    if echo "$me" | grep -q "\"role_id\":\""; then
+        break
+    fi
+    sleep 0.5
+done
 
 echo "👤 Creating Users..."
 # Alice (Manager)
@@ -69,8 +77,15 @@ add_field "salary" "amount" "Amount" "Currency" "true"
 # Grant CRUD permissions to standard_user on salary object
 api_post "/api/data/_System_ObjectPerms" "{\"profile_id\": \"standard_user\", \"object_api_name\": \"salary\", \"allow_read\": true, \"allow_create\": true, \"allow_edit\": true, \"allow_delete\": true, \"view_all\": false, \"modify_all\": false}"
 
-# Wait for cache
-sleep 1
+# Wait for cache/schema propagation
+echo "   Waiting for 'salary' object metadata..."
+for i in {1..10}; do
+    meta=$(api_get "/api/metadata/objects/salary")
+    if echo "$meta" | grep -q "\"api_name\":\"salary\""; then
+        break
+    fi
+    sleep 0.5
+done
 
 # --- TEST 1: OWD PRIVATE ENFORCEMENT ---
 echo "🧪 Test 1: OWD Private (Bob cannot see Alice's record)..."
@@ -139,6 +154,16 @@ fi
 echo "   Group ID: $GRP_ID"
 api_post "/api/data/_System_GroupMember" "{\"group_id\": \"$GRP_ID\", \"user_id\": \"$CHARLIE_ID\"}"
 
+# Wait for Group to be ready (Polling)
+echo "   Waiting for Group propagation..."
+for i in {1..10}; do
+    count=$(api_post "/api/data/query" "{\"object_api_name\": \"_System_Group\", \"filters\": [{\"field\": \"id\", \"operator\": \"=\", \"value\": \"$GRP_ID\"}]}" | jq '.records | length')
+    if [[ "$count" -ge 1 ]]; then
+        break
+    fi
+    sleep 0.5
+done
+
 # Create Sharing Rule: Share all Salary records with Accounting Group
 # Using Data API (criteria="true" means match all records)
 api_post "/api/data/_System_SharingRule" "{
@@ -149,8 +174,23 @@ api_post "/api/data/_System_SharingRule" "{
     \"share_with_group_id\": \"$GRP_ID\"
 }"
 
-# Wait for cache/rules to propagate
-sleep 1
+# Wait for sharing rule propagation (Poll until Charlie can see Alice's record)
+echo "   Waiting for Sharing Rule propagation..."
+export TOKEN=$CHARLIE_TOKEN
+rule_active=false
+for i in {1..10}; do
+    test_access=$(api_get "/api/data/salary/$ALICE_REC_ID")
+    name=$(json_extract "$test_access" "name")
+    if [[ "$name" == "Alice Salary" ]]; then
+        rule_active=true
+        break
+    fi
+    sleep 0.5
+done
+
+if [ "$rule_active" = false ]; then
+    echo "⚠️ Warning: Sharing rule propagation timed out (might fail next step)"
+fi
 
 # Now Charlie should see Alice's record
 export TOKEN=$CHARLIE_TOKEN

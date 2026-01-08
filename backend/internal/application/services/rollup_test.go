@@ -8,6 +8,8 @@ import (
 
 	"github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
+	"github.com/nexuscrm/backend/pkg/formula"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/stretchr/testify/assert"
@@ -24,11 +26,27 @@ func TestRollupSummary_Sum(t *testing.T) {
 	db := conn.DB()
 
 	// Initialize Services
+	// Initialize Services
+	// Initialize Services
 	eventBus := NewEventBus()
-	txManager := NewTransactionManager(conn)
-	schemaMgr := NewSchemaManager(conn.DB())
-	metadataSvc := NewMetadataService(conn, schemaMgr)
-	permSvc := NewPermissionService(conn, metadataSvc)
+	txManager := persistence.NewTransactionManager(conn)
+
+	schemaRepo := persistence.NewSchemaRepository(db)
+	schemaMgr := NewSchemaManager(schemaRepo)
+
+	metadataRepo := persistence.NewMetadataRepository(db)
+	metadataSvc := NewMetadataService(metadataRepo, schemaMgr)
+
+	userRepo := persistence.NewUserRepository(db)
+	permRepo := persistence.NewPermissionRepository(db)
+	permSvc := NewPermissionService(permRepo, metadataSvc, userRepo)
+
+	recordRepo := persistence.NewRecordRepository(db)
+	rollupRepo := persistence.NewRollupRepository(db)
+	rollupSvc := NewRollupService(rollupRepo, metadataSvc, txManager)
+	outboxRepo := persistence.NewOutboxRepository(db)
+	outboxSvc := NewOutboxService(outboxRepo, eventBus, txManager)
+	validationSvc := NewValidationService(formula.NewEngine())
 
 	var ps *PersistenceService
 
@@ -127,7 +145,10 @@ func TestRollupSummary_Sum(t *testing.T) {
 			Field:    &f,
 		}
 	}
-	require.NoError(t, schemaMgr.BatchSaveFieldMetadata(parentBatch, nil))
+
+	// Execute in transaction
+	tx, _ := db.Begin()
+	require.NoError(t, schemaMgr.BatchSaveFieldMetadata(parentBatch, tx))
 
 	// Register Fields for Child
 	childFields := []models.FieldMetadata{
@@ -143,12 +164,17 @@ func TestRollupSummary_Sum(t *testing.T) {
 			Field:    &f,
 		}
 	}
-	require.NoError(t, schemaMgr.BatchSaveFieldMetadata(childBatch, nil))
+	require.NoError(t, schemaMgr.BatchSaveFieldMetadata(childBatch, tx))
+	require.NoError(t, tx.Commit())
 
 	// 4. Create Data
 	// refresh metadata service to pick up new schemas
-	metadataSvc = NewMetadataService(conn, schemaMgr)
-	ps = NewPersistenceService(conn, metadataSvc, permSvc, eventBus, txManager)
+	metadataRepo = persistence.NewMetadataRepository(db)
+	metadataSvc = NewMetadataService(metadataRepo, schemaMgr)
+
+	permRepo = persistence.NewPermissionRepository(db)
+	permSvc = NewPermissionService(permRepo, metadataSvc, userRepo)
+	ps = NewPersistenceService(recordRepo, rollupSvc, metadataSvc, permSvc, eventBus, validationSvc, txManager, outboxSvc)
 
 	invoiceData := models.SObject{"total_amount": 0, "name": "Invoice 001"}
 	invoice, err := ps.Insert(ctx, parentName, invoiceData, adminUser)

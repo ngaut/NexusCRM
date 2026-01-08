@@ -1,11 +1,8 @@
 package rest
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
-	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 type NotificationHandler struct {
@@ -20,7 +17,7 @@ func NewNotificationHandler(svcMgr *services.ServiceManager) *NotificationHandle
 func (h *NotificationHandler) GetNotifications(c *gin.Context) {
 	user := GetUserFromContext(c)
 
-	HandleGetEnvelope(c, "notifications", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svcMgr.Notification.GetMyNotifications(c.Request.Context(), user)
 	})
 }
@@ -30,10 +27,8 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 	user := GetUserFromContext(c)
 	id := c.Param("id")
 
-	if err := h.svcMgr.Notification.MarkAsRead(c.Request.Context(), id, user); err != nil {
-		RespondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{constants.ResponseSuccess: true})
+	var req struct{}
+	HandleUpdateEnvelope(c, "", "Notification marked as read", &req, func() error {
+		return h.svcMgr.Notification.MarkAsRead(c.Request.Context(), id, user)
+	})
 }

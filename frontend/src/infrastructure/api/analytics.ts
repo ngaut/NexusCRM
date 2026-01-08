@@ -2,8 +2,7 @@ import { apiClient } from './client';
 import { API_ENDPOINTS } from './endpoints';
 
 export interface AnalyticsResult {
-    success: boolean;
-    results: Record<string, unknown>[];
+    data: Record<string, unknown>[];
 }
 
 export const analyticsAPI = {

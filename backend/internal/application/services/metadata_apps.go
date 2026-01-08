@@ -2,11 +2,11 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
 
-	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
 
@@ -32,6 +32,12 @@ func (ms *MetadataService) GetApp(ctx context.Context, id string) *models.AppCon
 		return nil
 	}
 	return app
+}
+
+func (ms *MetadataService) GetAppWithTx(ctx context.Context, tx *sql.Tx, id string) (*models.AppConfig, error) {
+	// No invalidation lock needed for read in Tx usually, but logic depends on consistency needs.
+	// We delegate to repo.
+	return ms.repo.GetAppWithTx(ctx, tx, id)
 }
 
 // CreateApp creates a new app configuration
@@ -116,59 +122,28 @@ func (ms *MetadataService) UpdateApp(ctx context.Context, appID string, updates 
 	return nil
 }
 
+// UpdateAppTx updates an existing app configuration within a transaction
+func (ms *MetadataService) UpdateAppTx(ctx context.Context, tx *sql.Tx, appID string, updates *models.AppConfig) error {
+	// Note: We don't lock mutex here because caller handles transaction and concurrency usually means specialized flow.
+	// But strictly, we should be careful. Since it's a DB transaction, DB locks apply.
+	// We should update the DB via Repo.
+
+	// Ensure ID doesn't change
+	updates.ID = appID
+	updates.LastModifiedDate = time.Now()
+
+	// Update DB via Repo with Tx
+	if err := ms.repo.UpdateAppWithTx(ctx, tx, appID, updates); err != nil {
+		return fmt.Errorf("failed to update app in tx: %w", err)
+	}
+
+	return nil
+}
+
 // DeleteApp deletes an app configuration
 func (ms *MetadataService) DeleteApp(ctx context.Context, appID string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
 	return ms.repo.DeleteApp(ctx, appID)
-}
-
-// CreateObjectInApp creates a new object and automatically calculates navigation
-func (ms *MetadataService) CreateObjectInApp(ctx context.Context, appID string, schema *models.ObjectMetadata) error {
-	// 1. Set AppID on schema
-	schema.AppID = &appID
-
-	// 2. Create the Schema
-	if err := ms.CreateSchema(ctx, schema); err != nil {
-		return err
-	}
-
-	// 3. Add to App Navigation
-	ms.mu.Lock() // Re-acquire lock for App update (CreateSchema has its own lock)
-	defer ms.mu.Unlock()
-
-	app, err := ms.repo.GetApp(ctx, appID)
-	if err != nil || app == nil {
-		// Just log warning if app not found, main object creation succeeded
-		log.Printf("⚠️ Warning: Created object %s but failed to find app %s to add navigation", schema.APIName, appID)
-		return nil
-	}
-
-	// Create navigation item
-	newItem := models.NavigationItem{
-		ID:            fmt.Sprintf("nav-%s-%s", schema.APIName, GenerateID()[:8]),
-		Type:          "object",
-		ObjectAPIName: schema.APIName,
-		Label:         schema.PluralLabel,
-		Icon:          schema.Icon,
-	}
-
-	// Append to items
-	if app.NavigationItems == nil {
-		app.NavigationItems = []models.NavigationItem{}
-	}
-	app.NavigationItems = append(app.NavigationItems, newItem)
-
-	// Persist App Update via Repo
-	if err := ms.repo.UpdateApp(ctx, appID, app); err != nil {
-		log.Printf("⚠️ Warning: Created object %s but failed to update app navigation: %v", schema.APIName, err)
-	}
-
-	// 4. Auto-grant Permissions using centralized helper
-	if err := GrantInitialObjectPermissions(ms.db, schema.APIName, constants.TableProfile, constants.TableObjectPerms, constants.ProfileSystemAdmin); err != nil {
-		log.Printf("⚠️ Warning: Created object %s but failed to grant permissions: %v", schema.APIName, err)
-	}
-
-	return nil
 }

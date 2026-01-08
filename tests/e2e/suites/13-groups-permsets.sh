@@ -149,8 +149,8 @@ test_assign_permission_set() {
         echo "Test 13.4b: Verify Assignment via Query"
         local query_response=$(api_post "/api/data/query" '{
             "object_api_name": "_system_permissionsetassignment",
-            "filters": [
-                {"field": "assignee_id", "operator": "=", "value": "'$USER_ID'"}
+            "criteria": [
+                {"field": "assignee_id", "op": "=", "val": "'$USER_ID'"}
             ]
         }')
         
@@ -191,8 +191,8 @@ test_group_membership() {
         echo "Test 13.5b: Verify Group Membership via Query"
         local query_response=$(api_post "/api/data/query" '{
             "object_api_name": "_system_groupmember",
-            "filters": [
-                {"field": "group_id", "operator": "=", "value": "'$TEST_GROUP_ID'"}
+            "criteria": [
+                {"field": "group_id", "op": "=", "val": "'$TEST_GROUP_ID'"}
             ]
         }')
         

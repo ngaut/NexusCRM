@@ -82,18 +82,18 @@ export const authAPI = {
    * Verify if current token is valid
    */
   async verify(): Promise<UserSession> {
-    const response = await apiClient.get<{ success: boolean; user: UserSession }>(API_ENDPOINTS.AUTH.ME);
-    return response.user;
+    const response = await apiClient.get<{ data: UserSession }>(API_ENDPOINTS.AUTH.ME);
+    return response.data;
   },
 
   /**
    * Get permissions for the current user
    */
   async getMyPermissions(): Promise<{ objectPermissions: ObjectPermission[], fieldPermissions: FieldPermission[] }> {
-    const response = await apiClient.get<{ objectPermissions: ObjectPermission[], fieldPermissions?: FieldPermission[] }>(API_ENDPOINTS.AUTH.PERMISSIONS);
+    const response = await apiClient.get<{ data: { objectPermissions: ObjectPermission[], fieldPermissions?: FieldPermission[] } }>(API_ENDPOINTS.AUTH.PERMISSIONS);
     return {
-      objectPermissions: response.objectPermissions || [],
-      fieldPermissions: response.fieldPermissions || []
+      objectPermissions: response.data.objectPermissions || [],
+      fieldPermissions: response.data.fieldPermissions || []
     };
   },
 

@@ -62,7 +62,7 @@ export const PermissionEditorModal: React.FC<PermissionEditorModalProps> = ({ en
             setSchemas(schemasResponse.schemas);
 
             // --- Object Permissions Merge ---
-            const existingPerms = permsResponse.permissions || [];
+            const existingPerms = permsResponse.data || [];
             const mergedPerms: ObjectPermission[] = schemasResponse.schemas.map(schema => {
                 const existing = existingPerms.find(p => p.object_api_name === schema.api_name);
                 if (existing) return existing;
@@ -81,7 +81,7 @@ export const PermissionEditorModal: React.FC<PermissionEditorModalProps> = ({ en
             setPermissions(mergedPerms);
 
             // --- Field Permissions Merge ---
-            const existingFieldPerms = fieldPermsResponse.permissions || [];
+            const existingFieldPerms = fieldPermsResponse.data || [];
             const allFieldPerms: FieldPermission[] = [];
 
             schemasResponse.schemas.forEach(schema => {

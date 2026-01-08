@@ -144,7 +144,12 @@ export const UserManager: React.FC = () => {
                                     <tr>
                                         <th className="px-6 py-3 font-semibold text-slate-700">Name</th>
                                         <th className="px-6 py-3 font-semibold text-slate-700">Email</th>
-                                        <th className="px-6 py-3 font-semibold text-slate-700">Role</th>
+                                        <th className="px-6 py-3 font-semibold text-slate-700 flex items-center gap-1">
+                                            Profile
+                                            <span title="Determines user permissions, field-level security, and app access">
+                                                <Shield size={14} className="text-slate-400 cursor-help" />
+                                            </span>
+                                        </th>
                                         <th className="px-6 py-3 font-semibold text-slate-700">Status</th>
                                         <th className="px-6 py-3 font-semibold text-slate-700">Last Login</th>
                                         <th className="px-6 py-3 font-semibold text-slate-700 text-right">Actions</th>

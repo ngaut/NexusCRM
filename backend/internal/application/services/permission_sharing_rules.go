@@ -1,7 +1,7 @@
 package services
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"strings"
 
@@ -39,6 +39,7 @@ func (ps *PermissionService) isUserInRoleOrBelow(userRoleID, targetRoleID *strin
 
 // checkSharingRuleAccess evaluates if a sharing rule grants access to a record
 func (ps *PermissionService) checkSharingRuleAccess(
+	ctx context.Context,
 	record models.SObject,
 	rule *models.SystemSharingRule,
 	user *models.UserSession,
@@ -56,9 +57,8 @@ func (ps *PermissionService) checkSharingRuleAccess(
 
 	// B. Group-based sharing
 	if !matchesIdentity && rule.ShareWithGroupID != nil {
-		query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE group_id = ? AND user_id = ?", constants.TableGroupMember)
-		var count int
-		if err := ps.db.DB().QueryRow(query, *rule.ShareWithGroupID, user.ID).Scan(&count); err == nil && count > 0 {
+		isMember, err := ps.repo.IsUserInGroup(ctx, *rule.ShareWithGroupID, user.ID)
+		if err == nil && isMember {
 			matchesIdentity = true
 		}
 	}

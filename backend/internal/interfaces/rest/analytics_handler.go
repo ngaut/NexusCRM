@@ -1,12 +1,10 @@
 package rest
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/backend/pkg/auth"
+	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -37,21 +35,21 @@ func (h *AnalyticsHandler) ExecuteAdminQuery(c *gin.Context) {
 	// We could re-verify here, but middleware is the pattern.
 
 	if req.SQL == "" {
-		RespondError(c, http.StatusBadRequest, "SQL query cannot be empty")
+		RespondAppError(c, errors.NewValidationError("sql", "SQL query cannot be empty"))
 		return
 	}
 
 	// Retrieve user from context (set by requireAuth middleware)
 	userInterface, exists := c.Get(constants.ContextKeyUser)
 	if !exists {
-		RespondError(c, http.StatusUnauthorized, "User session not found")
+		RespondAppError(c, errors.NewUnauthorizedError("User session not found"))
 		return
 	}
 
 	// Convert pkg/auth.UserSession to domain/models.UserSession
 	authSession, ok := userInterface.(auth.UserSession)
 	if !ok {
-		RespondError(c, http.StatusInternalServerError, "Invalid user session type")
+		RespondAppError(c, errors.NewInternalError("Invalid user session type", nil))
 		return
 	}
 
@@ -63,20 +61,12 @@ func (h *AnalyticsHandler) ExecuteAdminQuery(c *gin.Context) {
 		RoleID:    authSession.RoleId,
 	}
 
-	// Execute raw SQL using QueryService for security/safety
-	results, err := h.svc.QuerySvc.ExecuteRawSQL(
-		c.Request.Context(),
-		req.SQL,
-		req.Params,
-		userSession,
-	)
-	if err != nil {
-		RespondError(c, http.StatusBadRequest, fmt.Sprintf("Query execution failed: %v", err))
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"results": results,
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
+		return h.svc.QuerySvc.ExecuteRawSQL(
+			c.Request.Context(),
+			req.SQL,
+			req.Params,
+			userSession,
+		)
 	})
 }

@@ -56,7 +56,7 @@ func isSensitiveKey(key string) bool {
 // GetActions handles GET /api/metadata/actions/:objectName
 func (h *ActionHandler) GetActions(c *gin.Context) {
 	objectName := c.Param("objectName")
-	HandleGetEnvelope(c, "actions", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		actions := h.svc.Metadata.GetActions(c.Request.Context(), objectName)
 		sanitized := make([]*models.ActionMetadata, len(actions))
 		for i, a := range actions {
@@ -68,7 +68,7 @@ func (h *ActionHandler) GetActions(c *gin.Context) {
 
 // GetAllActions handles GET /api/metadata/actions
 func (h *ActionHandler) GetAllActions(c *gin.Context) {
-	HandleGetEnvelope(c, "actions", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		actions := h.svc.Metadata.GetAllActions(c.Request.Context())
 		sanitized := make([]*models.ActionMetadata, len(actions))
 		for i, a := range actions {
@@ -81,7 +81,7 @@ func (h *ActionHandler) GetAllActions(c *gin.Context) {
 // GetAction handles GET /api/metadata/actions/id/:actionId
 func (h *ActionHandler) GetAction(c *gin.Context) {
 	actionID := c.Param("actionId")
-	HandleGetEnvelope(c, "action", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		action := h.svc.Metadata.GetActionByID(c.Request.Context(), actionID)
 		if action == nil {
 			return nil, appErrors.NewNotFoundError("Action", actionID)
@@ -93,7 +93,7 @@ func (h *ActionHandler) GetAction(c *gin.Context) {
 // CreateAction handles POST /api/metadata/actions
 func (h *ActionHandler) CreateAction(c *gin.Context) {
 	var action models.ActionMetadata
-	HandleCreateEnvelope(c, "action", "Action created successfully", &action, func() error {
+	HandleCreateEnvelope(c, "data", "Action created successfully", &action, func() error {
 		err := h.svc.Metadata.CreateAction(c.Request.Context(), &action)
 		if err == nil {
 			// Sanitize response
@@ -149,17 +149,21 @@ func (h *ActionHandler) ExecuteAction(c *gin.Context) {
 
 	// Validate: must have RecordID OR ContextRecord
 	if req.RecordID == "" && len(req.ContextRecord) == 0 {
-		RespondError(c, http.StatusBadRequest, appErrors.ErrInvalidRequest.Error()+": Must provide recordId or contextRecord")
+		RespondAppError(c, appErrors.NewValidationError("record_id", "Must provide recordId or contextRecord"))
 		return
 	}
 
 	err := h.svc.ActionSvc.ExecuteAction(c.Request.Context(), actionID, req.ContextRecord, user)
 	if err != nil {
 		// Distinguish errors? For now 400 or 500
-		RespondError(c, http.StatusBadRequest, "Action execution failed: "+err.Error())
+		RespondAppError(c, err)
 		return
 	}
 
 	// Return Action Result
-	c.JSON(http.StatusOK, gin.H{constants.FieldMessage: "Action executed successfully"})
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			constants.FieldMessage: "Action executed successfully",
+		},
+	})
 }

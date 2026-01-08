@@ -16,7 +16,7 @@ type ServiceManager struct {
 	db *database.TiDBConnection
 
 	// Core services
-	TxManager       *TransactionManager
+	TxManager       *persistence.TransactionManager
 	EventBus        *EventBus
 	Schema          *SchemaManager // Exposed for internal use
 	Metadata        *MetadataService
@@ -47,39 +47,57 @@ func NewServiceManager(db *database.TiDBConnection) *ServiceManager {
 		db: db,
 	}
 
-	// Initialize services in dependency order
-	sm.TxManager = NewTransactionManager(db)
+	// 1. Infrastructure & Event Bus
+	sm.TxManager = persistence.NewTransactionManager(db)
 	sm.EventBus = NewEventBus()
-	sm.Schema = NewSchemaManager(db.DB())
-	sm.Metadata = NewMetadataService(db, sm.Schema)
-	sm.UIMetadata = NewUIMetadataService(db, sm.Metadata)
-
-	// Logic layer Repositories
-	sm.UserRepo = persistence.NewUserRepository(db.DB())
-	sm.SystemRepo = persistence.NewSystemRepository(db.DB())
-
-	// Validation Service
 	formulaEngine := formula.NewEngine()
 	sm.Validation = NewValidationService(formulaEngine)
-	sm.Metadata.SetValidationService(sm.Validation)
 
-	sm.Permissions = NewPermissionService(db, sm.Metadata)
-	sm.Metadata.SetPermissionService(sm.Permissions)
-	sm.QuerySvc = NewQueryService(db, sm.Metadata, sm.Permissions)
-	sm.Persistence = NewPersistenceService(db, sm.Metadata, sm.Permissions, sm.EventBus, sm.TxManager)
+	// 2. Repositories (Initialize ALL Repositories first)
+	schemaRepo := persistence.NewSchemaRepository(db.DB())
+	sm.UserRepo = persistence.NewUserRepository(db.DB())
+	sm.SystemRepo = persistence.NewSystemRepository(db.DB())
+	sessionRepo := persistence.NewSessionRepository(db.DB())
+	metadataRepo := persistence.NewMetadataRepository(db.DB())
+	permissionRepo := persistence.NewPermissionRepository(db.DB())
+	recordRepo := persistence.NewRecordRepository(db.DB())
+	rollupRepo := persistence.NewRollupRepository(db.DB())
+	outboxRepo := persistence.NewOutboxRepository(db.DB())
+	queryRepo := persistence.NewQueryRepository(db.DB())
+	schedulerRepo := persistence.NewSchedulerRepository(db.DB())
 
-	// Outbox Service for transactional event storage (ACID-compliant event publishing)
-	sm.Outbox = NewOutboxService(db, sm.EventBus, sm.TxManager)
-	sm.Persistence.SetOutbox(sm.Outbox)
+	// 3. Core Domain Managers (Foundation)
+	sm.Schema = NewSchemaManager(schemaRepo)
+	sm.Metadata = NewMetadataService(metadataRepo, sm.Schema)
+	sm.Permissions = NewPermissionService(permissionRepo, sm.Metadata, sm.UserRepo)
 
-	sm.Auth = NewAuthService(db, sm.Persistence, sm.UserRepo)
+	// 4. Higher-Level Orchestration Services
+	sm.UIMetadata = NewUIMetadataService(sm.Metadata, sm.Permissions)
+	sm.QuerySvc = NewQueryService(queryRepo, sm.Metadata, sm.Permissions)
+
+	// 5. Persistence Ecosystem
+	rollupSvc := NewRollupService(rollupRepo, sm.Metadata, sm.TxManager)
+	sm.Outbox = NewOutboxService(outboxRepo, sm.EventBus, sm.TxManager)
+
+	sm.Persistence = NewPersistenceService(
+		recordRepo,
+		rollupSvc,
+		sm.Metadata,
+		sm.Permissions,
+		sm.EventBus,
+		sm.Validation,
+		sm.TxManager,
+		sm.Outbox,
+	)
+
+	// 6. Business Logic Services
 	sm.ActionSvc = NewActionService(sm.Metadata, sm.Persistence, sm.Permissions, sm.TxManager)
 
-	// FlowInstanceService must be created before FlowExecutor (dependency order)
+	// Flow Stack (Order matters: Instance -> Executor)
 	sm.FlowInstanceSvc = NewFlowInstanceService(sm.Persistence, sm.QuerySvc, sm.Metadata)
-
-	// FlowExecutor now takes all dependencies via constructor (no Set* methods)
 	sm.FlowExecutor = NewFlowExecutor(sm.Metadata, sm.ActionSvc, sm.EventBus, sm.FlowInstanceSvc, sm.Persistence)
+	// Register flow handlers
+	sm.FlowExecutor.RegisterFlowHandlers()
 
 	sm.System = NewSystemManager(sm.Persistence, sm.SystemRepo)
 	sm.Feed = NewFeedService(sm.Persistence, sm.QuerySvc)
@@ -88,11 +106,11 @@ func NewServiceManager(db *database.TiDBConnection) *ServiceManager {
 	// Approval Service
 	sm.Approval = NewApprovalService(sm.Persistence, sm.QuerySvc, sm.Permissions, sm.FlowExecutor, sm.FlowInstanceSvc)
 
-	// Register flow handlers for metadata-driven automation
-	sm.FlowExecutor.RegisterFlowHandlers()
+	// Scheduler Service
+	sm.Scheduler = NewSchedulerService(schedulerRepo, sm.Metadata, sm.FlowExecutor)
 
-	// Scheduler Service for scheduled flow execution
-	sm.Scheduler = NewSchedulerService(db.DB(), sm.Metadata, sm.FlowExecutor)
+	// 7. Auth Service (Instantiated last to satisfy dependencies)
+	sm.Auth = NewAuthService(sm.Persistence, sm.UserRepo, sessionRepo, permissionRepo)
 
 	return sm
 }
@@ -124,7 +142,7 @@ func (sm *ServiceManager) GetEffectiveSchema(ctx context.Context, apiName string
 	if schema == nil {
 		return nil
 	}
-	return sm.Permissions.GetEffectiveSchema(schema, user)
+	return sm.Permissions.GetEffectiveSchema(ctx, schema, user)
 }
 
 func (sm *ServiceManager) GetSchemas(ctx context.Context) []*models.ObjectMetadata {

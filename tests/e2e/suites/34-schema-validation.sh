@@ -20,6 +20,16 @@ run_suite() {
         return 1
     fi
     
+    # Define test object variable for cleanup
+    local valid_obj="val_test_${TIMESTAMP}"
+    
+    # Cleanup function
+    cleanup() {
+        echo "Cleaning up..."
+        api_delete "/api/metadata/objects/$valid_obj" > /dev/null 2>&1
+    }
+    trap cleanup EXIT
+    
     test_snake_case_validation
     test_lookup_reference_validation
     test_picklist_options_validation

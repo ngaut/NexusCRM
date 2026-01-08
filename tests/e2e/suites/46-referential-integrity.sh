@@ -40,7 +40,15 @@ ensure_schema "ri_child_restrict" "RI Child Restrict"
 # Add Lookup with Restrict
 add_field "ri_child_restrict" "parent_id" "Parent" "Lookup" "true" "{\"reference_to\": [\"ri_parent\"], \"delete_rule\": \"Restrict\"}"
 
-sleep 2 # Wait for schema cache
+# Wait for schema cache (Polling)
+echo "   Waiting for schema propagation..."
+for i in {1..10}; do
+    meta=$(api_get "/api/metadata/objects/ri_child_restrict")
+    if echo "$meta" | grep -q "\"api_name\":\"parent_id\""; then
+        break
+    fi
+    sleep 0.5
+done
 
 # --- TEST 1: CASCADE DELETE ---
 echo "🧪 Test 1: Verify Cascade Delete..."

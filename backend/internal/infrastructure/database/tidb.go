@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"sync"
 	"time"
@@ -60,7 +61,7 @@ func newConnection() (*TiDBConnection, error) {
 				ServerName: host, // Required for TLS verification
 			}); err != nil {
 				// Just log as we can't return error from sync.Once
-				fmt.Printf("Failed to register TLS config: %v\n", err)
+				log.Printf("Failed to register TLS config: %v\n", err) // Changed fmt.Printf to log.Printf
 			}
 		})
 		tlsParam = "&tls=tidb"

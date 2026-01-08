@@ -44,6 +44,7 @@ export const filesAPI = {
             throw new Error(errorData.error || `Upload failed with status ${response.status}`);
         }
 
-        return response.json();
+        const res = await response.json();
+        return res.data;
     }
 };

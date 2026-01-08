@@ -26,6 +26,7 @@ type RegisterRequest struct {
 	Email     string `json:"email" binding:"required"`
 	Password  string `json:"password" binding:"required"`
 	ProfileId string `json:"profile_id"`
+	RoleId    string `json:"role_id"`
 }
 
 // Register handles POST /api/auth/register
@@ -45,17 +46,18 @@ func (h *UserHandler) Register(c *gin.Context) {
 		Email:     req.Email,
 		Password:  req.Password,
 		ProfileID: req.ProfileId,
+		RoleID:    req.RoleId,
 	})
 
 	if err != nil {
-		RespondError(c, errors.GetHTTPStatus(err), err.Error())
+		RespondAppError(c, err)
 		return
 	}
 
 	// We can manually construct the success response to match envelope style
 	c.JSON(http.StatusCreated, gin.H{
 		constants.FieldMessage: "User created successfully",
-		"user": gin.H{
+		"data": gin.H{
 			constants.FieldID:        user.ID,
 			constants.FieldName:      user.Name,
 			constants.FieldEmail:     user.Email,
@@ -70,6 +72,7 @@ type UpdateUserRequest struct {
 	Email     string `json:"email"`
 	Password  string `json:"password"`
 	ProfileId string `json:"profile_id"`
+	RoleId    string `json:"role_id"`
 	IsActive  *bool  `json:"is_active"`
 }
 
@@ -87,6 +90,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 			Email:     req.Email,
 			Password:  req.Password,
 			ProfileID: req.ProfileId,
+			RoleID:    req.RoleId,
 			IsActive:  req.IsActive,
 		})
 	})
@@ -105,14 +109,14 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 // GetUsers handles GET /api/auth/users
 func (h *UserHandler) GetUsers(c *gin.Context) {
-	HandleGetEnvelope(c, "users", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svcMgr.Auth.GetUsers(c.Request.Context())
 	})
 }
 
 // GetProfiles handles GET /api/auth/profiles
 func (h *UserHandler) GetProfiles(c *gin.Context) {
-	HandleGetEnvelope(c, "profiles", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svcMgr.Auth.GetProfiles(c.Request.Context())
 	})
 }
@@ -120,7 +124,7 @@ func (h *UserHandler) GetProfiles(c *gin.Context) {
 // GetProfilePermissions handles GET /api/auth/profiles/:id/permissions
 func (h *UserHandler) GetProfilePermissions(c *gin.Context) {
 	profileID := c.Param(constants.FieldID)
-	HandleGetEnvelope(c, "permissions", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svcMgr.Permissions.GetObjectPermissions(profileID)
 	})
 }
@@ -163,7 +167,7 @@ func (h *UserHandler) UpdateProfilePermissions(c *gin.Context) {
 // GetProfileFieldPermissions handles GET /api/auth/profiles/:id/permissions/fields
 func (h *UserHandler) GetProfileFieldPermissions(c *gin.Context) {
 	profileID := c.Param(constants.FieldID)
-	HandleGetEnvelope(c, "permissions", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svcMgr.Permissions.GetFieldPermissions(profileID)
 	})
 }
@@ -201,7 +205,7 @@ func (h *UserHandler) UpdateProfileFieldPermissions(c *gin.Context) {
 // GetPermissionSetPermissions handles GET /api/auth/permission-sets/:id/permissions
 func (h *UserHandler) GetPermissionSetPermissions(c *gin.Context) {
 	permSetID := c.Param(constants.FieldID)
-	HandleGetEnvelope(c, "permissions", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svcMgr.Permissions.GetPermissionSetObjectPermissions(permSetID)
 	})
 }
@@ -243,7 +247,7 @@ func (h *UserHandler) UpdatePermissionSetPermissions(c *gin.Context) {
 // GetPermissionSetFieldPermissions handles GET /api/auth/permission-sets/:id/permissions/fields
 func (h *UserHandler) GetPermissionSetFieldPermissions(c *gin.Context) {
 	permSetID := c.Param(constants.FieldID)
-	HandleGetEnvelope(c, "permissions", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svcMgr.Permissions.GetPermissionSetFieldPermissions(permSetID)
 	})
 }
@@ -281,7 +285,7 @@ func (h *UserHandler) UpdatePermissionSetFieldPermissions(c *gin.Context) {
 // GetUserEffectivePermissions handles GET /api/auth/users/:id/permissions/effective
 func (h *UserHandler) GetUserEffectivePermissions(c *gin.Context) {
 	userID := c.Param(constants.FieldID)
-	HandleGetEnvelope(c, "permissions", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svcMgr.Permissions.GetEffectiveObjectPermissions(userID)
 	})
 }
@@ -289,7 +293,7 @@ func (h *UserHandler) GetUserEffectivePermissions(c *gin.Context) {
 // GetUserEffectiveFieldPermissions handles GET /api/auth/users/:id/permissions/fields/effective
 func (h *UserHandler) GetUserEffectiveFieldPermissions(c *gin.Context) {
 	userID := c.Param(constants.FieldID)
-	HandleGetEnvelope(c, "permissions", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svcMgr.Permissions.GetEffectiveFieldPermissions(userID)
 	})
 }
@@ -318,13 +322,13 @@ func (h *UserHandler) CreatePermissionSet(c *gin.Context) {
 
 	id, err := h.svcMgr.Permissions.CreatePermissionSet(req.Name, req.Label, req.Description)
 	if err != nil {
-		RespondError(c, errors.GetHTTPStatus(err), err.Error())
+		RespondAppError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		constants.FieldMessage: "Permission Set created successfully",
-		"permission_set": gin.H{
+		"data": gin.H{
 			constants.FieldID:   id,
 			constants.FieldName: req.Name,
 			"label":             req.Label,

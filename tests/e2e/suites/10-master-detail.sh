@@ -81,9 +81,25 @@ test_create_md_field() {
         return 1
     fi
     
-    # Wait for permissions (simulated)
-    # The refactor ensures this is fast, but cache invalidation might take a ms
-    sleep 1
+    # Wait for Schema Cache Invalidation/Update
+    echo "  Waiting for field '$TEST_FIELD' to appear in metadata..."
+    local max_retries=10
+    local field_found=false
+    
+    for ((i=1; i<=max_retries; i++)); do
+        local meta=$(api_get "/api/metadata/objects/$CHILD_OBJ")
+        if echo "$meta" | grep -q "\"api_name\":\"$TEST_FIELD\""; then
+            field_found=true
+            break
+        fi
+        sleep 0.5
+    done
+    
+    if [ "$field_found" = true ]; then
+        echo "  Field verified in metadata."
+    else
+        echo "  Warning: Field not found in metadata after ${max_retries} retries (Consistency issue?)"
+    fi
 }
 
 test_create_records() {
@@ -116,9 +132,13 @@ test_create_records() {
 
 cleanup_objects() {
     echo "Cleaning up..."
-    api_delete "/api/metadata/objects/$CHILD_OBJ" > /dev/null
-    api_delete "/api/metadata/objects/$PARENT_OBJ" > /dev/null
+    # Suppress errors if object already gone
+    api_delete "/api/metadata/objects/$CHILD_OBJ" > /dev/null 2>&1
+    api_delete "/api/metadata/objects/$PARENT_OBJ" > /dev/null 2>&1
 }
+
+# Ensure cleanup runs on exit
+trap cleanup_objects EXIT
 
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     run_suite

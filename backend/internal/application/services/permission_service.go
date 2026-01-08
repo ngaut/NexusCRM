@@ -3,10 +3,10 @@ package services
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"sync"
 
-	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/formula"
@@ -25,9 +25,9 @@ import (
 //  3. Field-level permissions from _System_FieldPerms
 //  4. Record-level access (ownership, sharing rules) - future enhancement
 type PermissionService struct {
-	db       *database.TiDBConnection
 	metadata *MetadataService
 	repo     *persistence.PermissionRepository
+	userRepo *persistence.UserRepository
 	formula  *formula.Engine
 
 	// Role hierarchy cache: maps role_id -> parent_role_id
@@ -36,11 +36,15 @@ type PermissionService struct {
 }
 
 // NewPermissionService creates a new PermissionService
-func NewPermissionService(db *database.TiDBConnection, metadata *MetadataService) *PermissionService {
+func NewPermissionService(
+	repo *persistence.PermissionRepository,
+	metadata *MetadataService,
+	userRepo *persistence.UserRepository,
+) *PermissionService {
 	ps := &PermissionService{
-		db:                 db,
 		metadata:           metadata,
-		repo:               persistence.NewPermissionRepository(db.DB()),
+		repo:               repo,
+		userRepo:           userRepo,
 		formula:            formula.NewEngine(),
 		roleHierarchyCache: make(map[string]*string),
 	}
@@ -52,13 +56,13 @@ func NewPermissionService(db *database.TiDBConnection, metadata *MetadataService
 // ==================== Object Permission Queries ====================
 
 // loadEffectiveObjectPermission loads permissions considering Profile AND Permission Sets
-func (ps *PermissionService) loadEffectiveObjectPermission(user *models.UserSession, objectAPIName string) (*models.SystemObjectPerms, error) {
-	return ps.repo.LoadEffectiveObjectPermission(context.Background(), user, objectAPIName)
+func (ps *PermissionService) loadEffectiveObjectPermission(ctx context.Context, user *models.UserSession, objectAPIName string) (*models.SystemObjectPerms, error) {
+	return ps.repo.LoadEffectiveObjectPermission(ctx, user, objectAPIName)
 }
 
 // loadEffectiveFieldPermission loads field permissions considering Profile AND Permission Sets
-func (ps *PermissionService) loadEffectiveFieldPermission(user *models.UserSession, objectAPIName, fieldAPIName string) (*models.SystemFieldPerms, error) {
-	return ps.repo.LoadEffectiveFieldPermission(context.Background(), user, objectAPIName, fieldAPIName)
+func (ps *PermissionService) loadEffectiveFieldPermission(ctx context.Context, user *models.UserSession, objectAPIName, fieldAPIName string) (*models.SystemFieldPerms, error) {
+	return ps.repo.LoadEffectiveFieldPermission(ctx, user, objectAPIName, fieldAPIName)
 }
 
 // ==================== Core Permission Checks ====================
@@ -66,7 +70,7 @@ func (ps *PermissionService) loadEffectiveFieldPermission(user *models.UserSessi
 // CheckObjectPermissionWithUser checks if a user has permission for an operation on an object.
 // Operations: "create", "read", "edit", "delete"
 // Returns true if the operation is permitted.
-func (ps *PermissionService) CheckObjectPermissionWithUser(objectAPIName string, operation string, user *models.UserSession) bool {
+func (ps *PermissionService) CheckObjectPermissionWithUser(ctx context.Context, objectAPIName string, operation string, user *models.UserSession) bool {
 	// No user = no access
 	if user == nil {
 		return false
@@ -79,7 +83,7 @@ func (ps *PermissionService) CheckObjectPermissionWithUser(objectAPIName string,
 
 	// Query database for permission
 	// Query database for effective permission (Profile OR Permission Sets)
-	perm, err := ps.loadEffectiveObjectPermission(user, objectAPIName)
+	perm, err := ps.loadEffectiveObjectPermission(ctx, user, objectAPIName)
 	if err != nil {
 		return false
 	}
@@ -105,8 +109,8 @@ func (ps *PermissionService) CheckObjectPermissionWithUser(objectAPIName string,
 }
 
 // CheckPermissionOrErrorWithUser checks permission and returns a specific PermissionError if false
-func (ps *PermissionService) CheckPermissionOrErrorWithUser(objectAPIName string, operation string, user *models.UserSession) error {
-	if !ps.CheckObjectPermissionWithUser(objectAPIName, operation, user) {
+func (ps *PermissionService) CheckPermissionOrErrorWithUser(ctx context.Context, objectAPIName string, operation string, user *models.UserSession) error {
+	if !ps.CheckObjectPermissionWithUser(ctx, objectAPIName, operation, user) {
 		return errors.NewPermissionError(operation, objectAPIName)
 	}
 	return nil
@@ -117,7 +121,7 @@ func (ps *PermissionService) CheckPermissionOrErrorWithUser(objectAPIName string
 // - checkTeamMemberAccess, accessLevelAllowsOperation
 
 // CheckFieldEditabilityWithUser checks if a field can be edited by the current user
-func (ps *PermissionService) CheckFieldEditabilityWithUser(objectAPIName, fieldAPIName string, user *models.UserSession) bool {
+func (ps *PermissionService) CheckFieldEditabilityWithUser(ctx context.Context, objectAPIName, fieldAPIName string, user *models.UserSession) bool {
 	// System fields are never editable
 	if isFieldSystemReadOnlyByName(fieldAPIName) {
 		return false
@@ -134,7 +138,7 @@ func (ps *PermissionService) CheckFieldEditabilityWithUser(objectAPIName, fieldA
 	}
 
 	// Check field-level permission (Effective)
-	perm, err := ps.loadEffectiveFieldPermission(user, objectAPIName, fieldAPIName)
+	perm, err := ps.loadEffectiveFieldPermission(ctx, user, objectAPIName, fieldAPIName)
 	if err != nil {
 		return false
 	}
@@ -144,11 +148,11 @@ func (ps *PermissionService) CheckFieldEditabilityWithUser(objectAPIName, fieldA
 	}
 
 	// Fallback to object permission
-	return ps.CheckObjectPermissionWithUser(objectAPIName, constants.PermEdit, user)
+	return ps.CheckObjectPermissionWithUser(ctx, objectAPIName, constants.PermEdit, user)
 }
 
 // CheckFieldVisibilityWithUser checks if a field is visible to the current user
-func (ps *PermissionService) CheckFieldVisibilityWithUser(objectAPIName, fieldAPIName string, user *models.UserSession) bool {
+func (ps *PermissionService) CheckFieldVisibilityWithUser(ctx context.Context, objectAPIName, fieldAPIName string, user *models.UserSession) bool {
 	if user == nil {
 		return false
 	}
@@ -159,7 +163,7 @@ func (ps *PermissionService) CheckFieldVisibilityWithUser(objectAPIName, fieldAP
 	}
 
 	// Check field-level permission (Effective)
-	perm, err := ps.loadEffectiveFieldPermission(user, objectAPIName, fieldAPIName)
+	perm, err := ps.loadEffectiveFieldPermission(ctx, user, objectAPIName, fieldAPIName)
 	if err != nil {
 		return false
 	}
@@ -170,7 +174,7 @@ func (ps *PermissionService) CheckFieldVisibilityWithUser(objectAPIName, fieldAP
 	}
 
 	// Fallback to object permission
-	return ps.CheckObjectPermissionWithUser(objectAPIName, constants.PermRead, user)
+	return ps.CheckObjectPermissionWithUser(ctx, objectAPIName, constants.PermRead, user)
 }
 
 // RefreshPermissions reloads permissions from the database
@@ -182,7 +186,7 @@ func (ps *PermissionService) RefreshPermissions() error {
 }
 
 // GetEffectiveSchema returns the schema with field-level visibility applied
-func (ps *PermissionService) GetEffectiveSchema(schema *models.ObjectMetadata, user *models.UserSession) *models.ObjectMetadata {
+func (ps *PermissionService) GetEffectiveSchema(ctx context.Context, schema *models.ObjectMetadata, user *models.UserSession) *models.ObjectMetadata {
 	if schema == nil {
 		return nil
 	}
@@ -197,7 +201,7 @@ func (ps *PermissionService) GetEffectiveSchema(schema *models.ObjectMetadata, u
 	}
 
 	for _, field := range schema.Fields {
-		if ps.CheckFieldVisibilityWithUser(schema.APIName, field.APIName, user) {
+		if ps.CheckFieldVisibilityWithUser(ctx, schema.APIName, field.APIName, user) {
 			effectiveSchema.Fields = append(effectiveSchema.Fields, field)
 		}
 	}
@@ -227,9 +231,14 @@ func (ps *PermissionService) GetFieldPermissions(profileID string) ([]models.Sys
 	return ps.repo.ListFieldPermissions(context.Background(), profileID)
 }
 
+// GrantFieldPermissions grants permissions for a field (Public wrapper for update)
+func (ps *PermissionService) GrantFieldPermissions(ctx context.Context, perms models.SystemFieldPerms) error {
+	return ps.UpdateFieldPermission(perms)
+}
+
 // UpdateFieldPermission creates or updates a field permission
-func (ps *PermissionService) UpdateFieldPermission(perm models.SystemFieldPerms) error {
-	return ps.repo.UpsertFieldPermission(context.Background(), perm)
+func (ps *PermissionService) UpdateFieldPermission(perms models.SystemFieldPerms) error {
+	return ps.repo.UpsertFieldPermission(context.Background(), perms)
 }
 
 // isFieldSystemReadOnlyByName checks if a field is a system read-only field based on its name
@@ -261,14 +270,92 @@ func isFieldSystemReadOnly(metadata *MetadataService, objectAPIName string, fiel
 }
 
 // GrantInitialPermissions grants default permissions for a new object to all profiles
-func (ps *PermissionService) GrantInitialPermissions(objectAPIName string) error {
-	return ps.repo.GrantInitialPermissions(context.Background(), objectAPIName)
+func (ps *PermissionService) GrantInitialPermissions(ctx context.Context, objectAPIName string) error {
+	return ps.repo.GrantInitialPermissions(ctx, objectAPIName)
 }
 
 // Role hierarchy functions are in permission_role_hierarchy.go:
 // - refreshRoleHierarchy, getRoleAncestors, isUserAboveInHierarchy, getRecordOwnerRoleID, RefreshRoleHierarchy
 
+// CreateRole creates a new role
+func (ps *PermissionService) CreateRole(ctx context.Context, name, description string, parentRoleID *string) (*models.SystemRole, error) {
+	// Validate parent role if provided
+	if parentRoleID != nil {
+		parent, err := ps.repo.GetRole(ctx, *parentRoleID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to validate parent role: %w", err)
+		}
+		if parent == nil {
+			return nil, errors.NewValidationError("parent_role_id", "parent role does not exist")
+		}
+	}
+
+	id, err := ps.repo.CreateRole(ctx, name, description, parentRoleID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Refresh cache
+	ps.refreshRoleHierarchy()
+
+	return &models.SystemRole{
+		ID:           id,
+		Name:         name,
+		Description:  description,
+		ParentRoleID: parentRoleID,
+	}, nil
+}
+
+// GetRole retrieves a role by ID
+func (ps *PermissionService) GetRole(ctx context.Context, id string) (*models.SystemRole, error) {
+	return ps.repo.GetRole(ctx, id)
+}
+
+// GetAllRoles retrieves all roles
+func (ps *PermissionService) GetAllRoles(ctx context.Context) ([]*models.SystemRole, error) {
+	return ps.repo.GetAllRoles(ctx)
+}
+
+// UpdateRole updates an existing role
+func (ps *PermissionService) UpdateRole(ctx context.Context, id string, name, description string, parentRoleID *string) (*models.SystemRole, error) {
+	// Validate parent role if provided
+	if parentRoleID != nil {
+		// Prevent self-reference
+		if *parentRoleID == id {
+			return nil, errors.NewValidationError("parent_role_id", "cannot be self")
+		}
+
+		parent, err := ps.repo.GetRole(ctx, *parentRoleID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to validate parent role: %w", err)
+		}
+		if parent == nil {
+			return nil, errors.NewValidationError("parent_role_id", "parent role does not exist")
+		}
+	}
+
+	if err := ps.repo.UpdateRole(ctx, id, name, description, parentRoleID); err != nil {
+		return nil, err
+	}
+
+	// Refresh cache
+	ps.refreshRoleHierarchy()
+
+	return ps.GetRole(ctx, id)
+}
+
+// DeleteRole deletes a role
+func (ps *PermissionService) DeleteRole(ctx context.Context, id string) error {
+	if err := ps.repo.DeleteRole(ctx, id); err != nil {
+		return err
+	}
+	// Refresh cache
+	ps.refreshRoleHierarchy()
+	return nil
+}
+
 // Sharing rule functions are in permission_sharing_rules.go:
+
 // - isUserInRoleOrBelow, checkSharingRuleAccess, evaluateSharingCriteria
 
 // Permission Set functions are in permission_perm_sets.go:

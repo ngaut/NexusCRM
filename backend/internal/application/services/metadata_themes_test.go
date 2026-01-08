@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/stretchr/testify/assert"
@@ -38,8 +39,10 @@ func TestMetadataService_Themes_Integration(t *testing.T) {
 		_, _ = db.ExecContext(ctx, "DELETE FROM "+constants.TableTheme+" WHERE name = ?", themeName)
 	}()
 
-	sm := NewSchemaManager(db)
-	ms := NewMetadataService(conn, sm)
+	repo := persistence.NewMetadataRepository(db)
+	schemaRepo := persistence.NewSchemaRepository(db)
+	schemaMgr := NewSchemaManager(schemaRepo)
+	ms := NewMetadataService(repo, schemaMgr)
 
 	// 3. Test CreateTheme (UpsertTheme)
 	colors := map[string]interface{}{

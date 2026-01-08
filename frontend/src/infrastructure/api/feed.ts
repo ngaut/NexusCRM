@@ -18,20 +18,20 @@ export const feedAPI = {
      * Get comments for a record
      */
     async getComments(recordId: string): Promise<SystemComment[]> {
-        const response = await apiClient.get<{ comments: SystemComment[] }>(
+        const response = await apiClient.get<{ data: SystemComment[] }>(
             API_ENDPOINTS.FEED.RECORD(recordId)
         );
-        return response.comments;
+        return response.data;
     },
 
     /**
      * Create a new comment
      */
     async createComment(comment: Partial<SystemComment>): Promise<SystemComment> {
-        const response = await apiClient.post<{ comment: SystemComment }>(
+        const response = await apiClient.post<{ data: SystemComment }>(
             API_ENDPOINTS.FEED.COMMENTS,
             comment
         );
-        return response.comment;
+        return response.data;
     }
 };

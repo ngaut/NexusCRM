@@ -21,6 +21,9 @@ OPPORTUNITY_IDS=()
 run_suite() {
     section_header "$SUITE_NAME"
     
+    # Ensure cleanup on exit
+    trap test_cleanup EXIT
+    
     if ! api_login; then
         echo "Failed to login. Skipping suite."
         return 1
@@ -61,14 +64,40 @@ test_parallel_lead_claims() {
     
     [ ${#LEAD_IDS[@]} -lt 3 ] && { test_failed "Not enough leads"; return 1; }
     
+    # Check if we have background jobs running
+    local pids=()
+    
     # Parallel claims (background processes)
     api_patch "/api/data/lead/${LEAD_IDS[0]}" '{"status": "Working"}' > /dev/null &
+    pids+=($!)
     api_patch "/api/data/lead/${LEAD_IDS[1]}" '{"status": "Working"}' > /dev/null &
+    pids+=($!)
     api_patch "/api/data/lead/${LEAD_IDS[2]}" '{"status": "Working"}' > /dev/null &
-    wait
+    pids+=($!)
     
-    echo "  ✓ Parallel claims completed"
-    test_passed "Parallel claims simulated"
+    # Wait for all background jobs
+    for pid in "${pids[@]}"; do
+        wait $pid
+    done
+    
+    # Verification step: Ensure statuses were actually updated
+    # This prevents false positives if the background jobs failed silently
+    local errors=0
+    for i in 0 1 2; do
+        local res=$(api_get "/api/data/lead/${LEAD_IDS[$i]}")
+        local status=$(json_extract "$res" "status")
+        if [ "$status" != "Working" ]; then
+            echo "  Error: Lead ${LEAD_IDS[$i]} status is '$status', expected 'Working'"
+            errors=$((errors + 1))
+        fi
+    done
+    
+    if [ $errors -eq 0 ]; then
+        echo "  ✓ Parallel claims completed and verified"
+        test_passed "Parallel claims simulated"
+    else
+        test_failed "Parallel claims failed verification" "$errors errors"
+    fi
 }
 
 test_parallel_opportunity_updates() {

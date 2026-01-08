@@ -16,7 +16,7 @@ import (
 
 // GetSchemas handles GET /api/metadata/objects
 func (h *MetadataHandler) GetSchemas(c *gin.Context) {
-	HandleGetEnvelope(c, "schemas", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.GetSchemas(c.Request.Context()), nil
 	})
 }
@@ -26,7 +26,7 @@ func (h *MetadataHandler) GetSchema(c *gin.Context) {
 	user := GetUserFromContext(c)
 	apiName := strings.ToLower(c.Param("apiName"))
 
-	HandleGetEnvelope(c, "schema", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		// Get effective schema (filtered by permissions)
 		schema := h.svc.GetEffectiveSchema(c.Request.Context(), apiName, user)
 		if schema == nil {
@@ -45,7 +45,7 @@ func (h *MetadataHandler) CreateSchema(c *gin.Context) {
 		models.ObjectMetadata
 	}
 
-	HandleCreateEnvelope(c, "schema", "Schema created successfully", &req, func() error {
+	HandleCreateEnvelope(c, "data", "Schema created successfully", &req, func() error {
 		schema := &req.ObjectMetadata
 
 		// Validation inside generic handler action
@@ -53,9 +53,9 @@ func (h *MetadataHandler) CreateSchema(c *gin.Context) {
 			return appErrors.NewValidationError("api_name", "API Name and Label are required")
 		}
 
-		// Use CreateObjectInApp if AppID is present
+		// Use CreateObjectWithApp if AppID is present (delegates to UIMetadataService for orchestration)
 		if schema.AppID != nil && *schema.AppID != "" {
-			if err := h.svc.Metadata.CreateObjectInApp(c.Request.Context(), *schema.AppID, schema); err != nil {
+			if err := h.svc.UIMetadata.CreateObjectWithApp(c.Request.Context(), *schema.AppID, schema); err != nil {
 				return err
 			}
 		} else {
@@ -104,7 +104,7 @@ func (h *MetadataHandler) UpdateSchema(c *gin.Context) {
 
 	apiName := strings.ToLower(c.Param("apiName"))
 	var updates models.ObjectMetadata
-	HandleUpdateEnvelope(c, "schema", "Schema updated successfully", &updates, func() error {
+	HandleUpdateEnvelope(c, "data", "Schema updated successfully", &updates, func() error {
 		return h.svc.Metadata.UpdateSchema(c.Request.Context(), apiName, &updates)
 	})
 }
@@ -151,7 +151,7 @@ func (h *MetadataHandler) CreateField(c *gin.Context) {
 	objectAPIName := strings.ToLower(c.Param("apiName"))
 	var field models.FieldMetadata
 
-	HandleCreateEnvelope(c, "field", "Field created successfully", &field, func() error {
+	HandleCreateEnvelope(c, "data", "Field created successfully", &field, func() error {
 		if field.APIName == "" || field.Label == "" {
 			return appErrors.NewValidationError("api_name", "API Name and Label are required")
 		}
@@ -170,6 +170,24 @@ func (h *MetadataHandler) CreateField(c *gin.Context) {
 
 		if err := h.svc.Metadata.CreateField(c.Request.Context(), objectAPIName, &field); err != nil {
 			return err
+		}
+
+		// Strictly Orchestrate Permissions: Grant default access to Admin/Standard
+		// This should be an async event or explicit service call. Doing explicit call here.
+		profiles := []string{constants.ProfileSystemAdmin, constants.ProfileStandardUser}
+		for _, profileID := range profiles {
+			profileID := profileID // capture loop var
+			// Default: Readable/Editable
+			perm := models.SystemFieldPerms{
+				ProfileID:     &profileID,
+				ObjectAPIName: objectAPIName,
+				FieldAPIName:  field.APIName,
+				Readable:      true,
+				Editable:      true,
+			}
+			if err := h.svc.Permissions.GrantFieldPermissions(c.Request.Context(), perm); err != nil {
+				log.Printf("⚠️ Warning: Failed to grant permission for field %s to %s: %v", field.APIName, profileID, err)
+			}
 		}
 
 		return nil
@@ -209,7 +227,7 @@ func (h *MetadataHandler) CreateValidationRule(c *gin.Context) {
 	// requireSystemAdmin handled by middleware
 
 	var rule models.ValidationRule
-	HandleCreateEnvelope(c, "rule", "Validation rule created successfully", &rule, func() error {
+	HandleCreateEnvelope(c, "data", "Validation rule created successfully", &rule, func() error {
 		return h.svc.Metadata.CreateValidationRule(c.Request.Context(), &rule)
 	})
 }
@@ -239,7 +257,7 @@ func (h *MetadataHandler) DeleteValidationRule(c *gin.Context) {
 // GetValidationRules handles GET /api/metadata/validation-rules
 func (h *MetadataHandler) GetValidationRules(c *gin.Context) {
 	objectAPIName := strings.ToLower(c.Query("objectApiName"))
-	HandleGetEnvelope(c, "rules", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		if objectAPIName == "" {
 			return nil, appErrors.NewValidationError("objectApiName", "is required")
 		}
@@ -250,7 +268,7 @@ func (h *MetadataHandler) GetValidationRules(c *gin.Context) {
 // GetFieldTypes handles GET /api/metadata/fieldtypes
 // Returns all available field types including custom plugin types
 func (h *MetadataHandler) GetFieldTypes(c *gin.Context) {
-	HandleGetEnvelope(c, "fieldTypes", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return GetAllFieldTypes(), nil
 	})
 }

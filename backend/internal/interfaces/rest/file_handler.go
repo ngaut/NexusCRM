@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
+	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/shared/pkg/constants"
 )
 
@@ -24,7 +25,7 @@ func NewFileHandler(svcMgr *services.ServiceManager) *FileHandler {
 func (h *FileHandler) Upload(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{constants.ResponseError: "No file uploaded"})
+		RespondAppError(c, errors.NewValidationError("file", "No file uploaded"))
 		return
 	}
 
@@ -32,7 +33,7 @@ func (h *FileHandler) Upload(c *gin.Context) {
 	uploadDir := "uploads"
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		if err := os.Mkdir(uploadDir, 0755); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{constants.ResponseError: "Failed to create upload directory"})
+			RespondAppError(c, errors.NewInternalError(fmt.Sprintf("Failed to create upload directory: %v", err), err))
 			return
 		}
 	}
@@ -44,15 +45,17 @@ func (h *FileHandler) Upload(c *gin.Context) {
 
 	// Save
 	if err := c.SaveUploadedFile(file, path); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{constants.ResponseError: "Failed to save file"})
+		RespondAppError(c, errors.NewInternalError(fmt.Sprintf("Failed to save file: %v", err), err))
 		return
 	}
 
 	// Return path (relative)
 	c.JSON(http.StatusOK, gin.H{
-		"path":                           path,
-		constants.FieldName:              file.Filename,
-		constants.FieldSysFile_SizeBytes: file.Size,
-		constants.FieldSysFile_MimeType:  file.Header.Get(constants.HeaderContentType),
+		"data": gin.H{
+			"path":                           path,
+			constants.FieldName:              file.Filename,
+			constants.FieldSysFile_SizeBytes: file.Size,
+			constants.FieldSysFile_MimeType:  file.Header.Get(constants.HeaderContentType),
+		},
 	})
 }

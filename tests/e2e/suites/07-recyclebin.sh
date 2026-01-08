@@ -54,7 +54,15 @@ setup_test_object() {
         return 1
     fi
     
-    sleep 1  # Allow caches to refresh
+    # Wait for schema cache (Polling)
+    echo "  Waiting for schema propagation..."
+    for i in {1..10}; do
+        meta=$(api_get "/api/metadata/objects/$TEST_OBJ")
+        if echo "$meta" | grep -q "\"api_name\":\"$TEST_OBJ\""; then
+            break
+        fi
+        sleep 0.5
+    done
 }
 
 test_recycle_bin_lifecycle() {

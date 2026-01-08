@@ -14,6 +14,17 @@ TIMESTAMP=$(date +%s)
 run_suite() {
     section_header "$SUITE_NAME"
     
+    section_header "$SUITE_NAME"
+    
+    # Global Cleanup
+    cleanup() {
+        rm -f /tmp/testfile_*.txt
+        # If we had IDs tracked globally, we'd delete them here.
+        # Ideally, we should refactor tests to export their IDs for cleanup.
+        # For now, file cleanup is the most critical local side-effect.
+    }
+    trap cleanup EXIT
+    
     if ! api_login; then
         echo "Failed to login. Skipping suite."
         return 1

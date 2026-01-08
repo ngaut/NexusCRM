@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"sync"
@@ -10,13 +9,14 @@ import (
 
 	"github.com/robfig/cron/v3"
 
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // SchedulerService manages scheduled flow execution
 type SchedulerService struct {
-	db           *sql.DB
+	repo         *persistence.SchedulerRepository
 	metadata     *MetadataService
 	flowExecutor *FlowExecutor
 	stopChan     chan struct{}
@@ -27,9 +27,9 @@ type SchedulerService struct {
 }
 
 // NewSchedulerService creates a new scheduler service
-func NewSchedulerService(db *sql.DB, metadata *MetadataService, flowExecutor *FlowExecutor) *SchedulerService {
+func NewSchedulerService(repo *persistence.SchedulerRepository, metadata *MetadataService, flowExecutor *FlowExecutor) *SchedulerService {
 	return &SchedulerService{
-		db:           db,
+		repo:         repo,
 		metadata:     metadata,
 		flowExecutor: flowExecutor,
 		stopChan:     make(chan struct{}),
@@ -133,7 +133,7 @@ func (s *SchedulerService) executeScheduledFlow(flow *models.Flow) {
 	log.Printf("⏰ Starting scheduled flow: %s (%s)", flow.Name, flowID)
 
 	// 1. Atomically acquire execution lock
-	acquired, err := s.acquireExecutionLock(flowID)
+	acquired, err := s.repo.AcquireExecutionLock(flowID)
 	if err != nil {
 		log.Printf("⚠️ Failed to acquire lock for flow %s: %v", flowID, err)
 		return
@@ -148,7 +148,7 @@ func (s *SchedulerService) executeScheduledFlow(flow *models.Flow) {
 		if r := recover(); r != nil {
 			log.Printf("🔥 Panic in scheduled flow %s: %v", flow.Name, r)
 		}
-		s.releaseExecutionLock(flowID)
+		_ = s.repo.ReleaseExecutionLock(flowID)
 	}()
 
 	// 3. Create timeout context
@@ -164,10 +164,12 @@ func (s *SchedulerService) executeScheduledFlow(flow *models.Flow) {
 	// 5. Update execution status
 	if execErr != nil {
 		log.Printf("❌ Scheduled flow %s failed after %v: %v", flow.Name, duration, execErr)
-		s.updateFlowRunStatus(flowID, false, execErr.Error())
+		// Logging failure with error message, keeping LastRunAt update
+		_ = s.repo.UpdateFlowRunStatus(flowID)
+		s.logFlowExecution(flowID, false, execErr.Error())
 	} else {
 		log.Printf("✅ Scheduled flow %s completed in %v", flow.Name, duration)
-		s.updateFlowRunStatus(flowID, true, "")
+		_ = s.repo.UpdateFlowRunStatus(flowID)
 	}
 
 	// 6. Calculate and set next run time
@@ -205,49 +207,6 @@ func (s *SchedulerService) executeFlowLogic(ctx context.Context, flow *models.Fl
 	return s.flowExecutor.actionSvc.ExecuteActionDirect(ctx, action, models.SObject{}, systemUser)
 }
 
-// acquireExecutionLock atomically sets is_running = true if not already running
-func (s *SchedulerService) acquireExecutionLock(flowID string) (bool, error) {
-	query := fmt.Sprintf(`
-		UPDATE %s 
-		SET is_running = true 
-		WHERE id = ? AND (is_running = false OR is_running IS NULL)
-	`, constants.TableFlow)
-
-	result, err := s.db.Exec(query, flowID)
-	if err != nil {
-		return false, err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return false, err
-	}
-
-	return rowsAffected > 0, nil
-}
-
-// releaseExecutionLock sets is_running = false
-func (s *SchedulerService) releaseExecutionLock(flowID string) {
-	query := fmt.Sprintf(`UPDATE %s SET is_running = false WHERE id = ?`, constants.TableFlow)
-	if _, err := s.db.Exec(query, flowID); err != nil {
-		log.Printf("⚠️ Failed to release execution lock for flow %s: %v", flowID, err)
-	}
-}
-
-// updateFlowRunStatus updates last_run_at and optionally logs errors
-func (s *SchedulerService) updateFlowRunStatus(flowID string, success bool, errMsg string) {
-	now := time.Now().UTC()
-	query := fmt.Sprintf(`UPDATE %s SET last_run_at = ? WHERE id = ?`, constants.TableFlow)
-	if _, err := s.db.Exec(query, now, flowID); err != nil {
-		log.Printf("⚠️ Failed to update last_run_at for flow %s: %v", flowID, err)
-	}
-
-	// Log execution to _System_Flow_Log if table exists
-	if !success && errMsg != "" {
-		s.logFlowExecution(flowID, false, errMsg)
-	}
-}
-
 // scheduleNextRun calculates and sets the next run time
 func (s *SchedulerService) scheduleNextRun(flow *models.Flow) {
 	if flow.Schedule == nil || *flow.Schedule == "" {
@@ -260,8 +219,7 @@ func (s *SchedulerService) scheduleNextRun(flow *models.Flow) {
 		return
 	}
 
-	query := fmt.Sprintf(`UPDATE %s SET next_run_at = ? WHERE id = ?`, constants.TableFlow)
-	if _, err := s.db.Exec(query, nextRun, flow.ID); err != nil {
+	if err := s.repo.UpdateNextRunAt(flow.ID, nextRun); err != nil {
 		log.Printf("⚠️ Failed to update next_run_at for flow %s: %v", flow.Name, err)
 	}
 }

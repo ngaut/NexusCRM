@@ -485,3 +485,147 @@ func (r *PermissionRepository) GetUserProfileID(ctx context.Context, userID stri
 	}
 	return profileID, nil
 }
+
+// GetAllRoles retrieves all system roles
+func (r *PermissionRepository) GetAllRoles(ctx context.Context) ([]*models.SystemRole, error) {
+	query := fmt.Sprintf("SELECT id, name, description, parent_role_id FROM %s WHERE is_deleted = 0", constants.TableRole)
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query roles: %w", err)
+	}
+	defer rows.Close()
+
+	var roles []*models.SystemRole
+	for rows.Next() {
+		var role models.SystemRole
+		if err := rows.Scan(&role.ID, &role.Name, &role.Description, &role.ParentRoleID); err != nil {
+			continue
+		}
+		roles = append(roles, &role)
+	}
+	return roles, nil
+}
+
+// CreateRole creates a new role
+func (r *PermissionRepository) CreateRole(ctx context.Context, name, description string, parentRoleID *string) (string, error) {
+	id := utils.GenerateID()
+	query := fmt.Sprintf(`
+		INSERT INTO %s (id, name, description, parent_role_id, created_date, last_modified_date, is_deleted)
+		VALUES (?, ?, ?, ?, NOW(), NOW(), 0)
+	`, constants.TableRole)
+
+	_, err := r.db.ExecContext(ctx, query, id, name, description, parentRoleID)
+	if err != nil {
+		return "", fmt.Errorf("failed to create role: %w", err)
+	}
+	return id, nil
+}
+
+// GetRole retrieves a role by ID
+func (r *PermissionRepository) GetRole(ctx context.Context, id string) (*models.SystemRole, error) {
+	query := fmt.Sprintf("SELECT id, name, description, parent_role_id FROM %s WHERE id = ? AND is_deleted = 0", constants.TableRole)
+	var role models.SystemRole
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&role.ID, &role.Name, &role.Description, &role.ParentRoleID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get role: %w", err)
+	}
+	return &role, nil
+}
+
+// UpdateRole updates an existing role
+func (r *PermissionRepository) UpdateRole(ctx context.Context, id, name, description string, parentRoleID *string) error {
+	query := fmt.Sprintf(`
+		UPDATE %s
+		SET name = ?, description = ?, parent_role_id = ?, last_modified_date = NOW()
+		WHERE id = ? AND is_deleted = 0
+	`, constants.TableRole)
+
+	_, err := r.db.ExecContext(ctx, query, name, description, parentRoleID, id)
+	return err
+}
+
+// DeleteRole soft-deletes a role
+func (r *PermissionRepository) DeleteRole(ctx context.Context, id string) error {
+	query := fmt.Sprintf("UPDATE %s SET is_deleted = 1, last_modified_date = NOW() WHERE id = ?", constants.TableRole)
+	_, err := r.db.ExecContext(ctx, query, id)
+	return err
+}
+
+// IsUserInGroup checks if a user is a member of a group
+func (r *PermissionRepository) IsUserInGroup(ctx context.Context, groupID, userID string) (bool, error) {
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE group_id = ? AND user_id = ?", constants.TableGroupMember)
+	var count int
+	err := r.db.QueryRowContext(ctx, query, groupID, userID).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("failed to check group membership: %w", err)
+	}
+	return count > 0, nil
+}
+
+// GetManualShareAccessLevels retrieves access levels granted via manual sharing rules
+func (r *PermissionRepository) GetManualShareAccessLevels(ctx context.Context, objectAPIName, recordID, userID string) ([]string, error) {
+	query := fmt.Sprintf(`
+		SELECT access_level FROM %s 
+		WHERE object_api_name = ? AND record_id = ? AND is_deleted = 0
+		AND (share_with_user_id = ? OR share_with_group_id IN (
+			SELECT group_id FROM %s WHERE user_id = ?
+		))
+	`, constants.TableRecordShare, constants.TableGroupMember)
+
+	rows, err := r.db.QueryContext(ctx, query, objectAPIName, recordID, userID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query manual shares: %w", err)
+	}
+	defer rows.Close()
+
+	var levels []string
+	for rows.Next() {
+		var level string
+		if err := rows.Scan(&level); err != nil {
+			continue
+		}
+		levels = append(levels, level)
+	}
+	return levels, nil
+}
+
+// GetTeamMemberAccessLevel retrieves the access level for a user in a record team
+func (r *PermissionRepository) GetTeamMemberAccessLevel(ctx context.Context, objectAPIName, recordID, userID string) (*string, error) {
+	query := fmt.Sprintf(`
+		SELECT access_level FROM %s 
+		WHERE object_api_name = ? AND record_id = ? AND user_id = ? AND is_deleted = 0
+	`, constants.TableTeamMember)
+
+	var accessLevel string
+	err := r.db.QueryRowContext(ctx, query, objectAPIName, recordID, userID).Scan(&accessLevel)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to query team member access: %w", err)
+	}
+	return &accessLevel, nil
+}
+
+// GetAllProfiles retrieves all system profiles
+func (r *PermissionRepository) GetAllProfiles(ctx context.Context) ([]*models.SystemProfile, error) {
+	query := fmt.Sprintf("SELECT id, name, description, is_active, is_system FROM %s ORDER BY name ASC", constants.TableProfile)
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query profiles: %w", err)
+	}
+	defer rows.Close()
+
+	var profiles []*models.SystemProfile
+	for rows.Next() {
+		var p models.SystemProfile
+		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.IsActive, &p.IsSystem); err != nil {
+			return nil, fmt.Errorf("failed to scan profile: %w", err)
+		}
+		profiles = append(profiles, &p)
+	}
+	return profiles, nil
+}

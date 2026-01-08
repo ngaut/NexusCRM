@@ -19,7 +19,7 @@ func (h *FeedHandler) CreateComment(c *gin.Context) {
 	user := GetUserFromContext(c)
 	var comment models.SystemComment
 
-	HandleCreateEnvelope(c, "comment", "Comment added successfully", &comment, func() error {
+	HandleCreateEnvelope(c, "data", "Comment added successfully", &comment, func() error {
 		created, err := h.svcMgr.Feed.CreateComment(c.Request.Context(), comment, user)
 		if err != nil {
 			return err
@@ -34,7 +34,7 @@ func (h *FeedHandler) GetComments(c *gin.Context) {
 	user := GetUserFromContext(c)
 	recordID := c.Param("recordId")
 
-	HandleGetEnvelope(c, "comments", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svcMgr.Feed.GetComments(c.Request.Context(), recordID, user)
 	})
 }

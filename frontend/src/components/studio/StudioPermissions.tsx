@@ -30,7 +30,7 @@ export const StudioPermissions: React.FC<StudioPermissionsProps> = ({ appObjects
             // 2. Load Permissions for each profile
             const permsMap: Record<string, ObjectPermission[]> = {};
             await Promise.all(loadedProfiles.map(async (p: Profile) => {
-                const { permissions: perms } = await usersAPI.getProfilePermissions(p.id);
+                const { data: perms } = await usersAPI.getProfilePermissions(p.id);
                 permsMap[p.id] = perms;
             }));
 

@@ -6,6 +6,9 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
@@ -139,9 +142,10 @@ func main() {
 	adminHandler := rest.NewAdminHandler(svcMgr)
 	analyticsHandler := rest.NewAnalyticsHandler(svcMgr)
 	fileHandler := rest.NewFileHandler(svcMgr)
-	approvalHandler := rest.NewApprovalHandler(svcMgr)
+	approvalHandler := rest.NewApprovalHandler(svcMgr.Approval)
 	feedHandler := rest.NewFeedHandler(svcMgr)
 	notificationHandler := rest.NewNotificationHandler(svcMgr)
+	roleHandler := rest.NewRoleHandler(svcMgr)
 	// Initialize Agent Handler (MCP-based)
 	// Function to extract and map backend user to MCP user
 	agentUserExtractor := func(c *gin.Context) *mcp_models.UserSession {
@@ -241,6 +245,13 @@ func main() {
 			// Effective Permissions (User)
 			auth.GET("/users/:id/permissions/effective", requireAuth, requireSystemAdmin, userHandler.GetUserEffectivePermissions)
 			auth.GET("/users/:id/permissions/fields/effective", requireAuth, requireSystemAdmin, userHandler.GetUserEffectiveFieldPermissions)
+
+			// Role Management routes
+			auth.POST("/roles", requireAuth, requireSystemAdmin, roleHandler.CreateRole)
+			auth.GET("/roles", requireAuth, roleHandler.GetRoles)
+			auth.GET("/roles/:id", requireAuth, roleHandler.GetRole)
+			auth.PUT("/roles/:id", requireAuth, requireSystemAdmin, roleHandler.UpdateRole)
+			auth.DELETE("/roles/:id", requireAuth, requireSystemAdmin, roleHandler.DeleteRole)
 		}
 
 		// Protected Formula routes
@@ -448,7 +459,41 @@ func main() {
 	log.Printf("💾 Data API:       http://localhost:%s/api/data", port)
 	log.Printf("💚 Health check:   http://localhost:%s/health\n", port)
 
-	if err := router.Run("0.0.0.0:" + port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	// Create HTTP Server
+	srv := &http.Server{
+		Addr:    "0.0.0.0:" + port,
+		Handler: router,
 	}
+
+	// Start server in a goroutine
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server with a timeout of 5 seconds.
+	quit := make(chan os.Signal, 1)
+	// kill (no param) default send syscall.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall.SIGKILL but can't be caught, so don't need to add it
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
+
+	// Stop background workers
+	svcMgr.StopOutboxWorker()
+	log.Println("🛑 Outbox worker stopped")
+	svcMgr.StopScheduler()
+	log.Println("🛑 Scheduler stopped")
+
+	// The context is used to inform the server it has 5 seconds to finish
+	// the request it is currently handling
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server forced to shutdown: ", err)
+	}
+
+	log.Println("Server exiting")
 }

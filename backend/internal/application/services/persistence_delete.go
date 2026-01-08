@@ -10,7 +10,6 @@ import (
 
 	"github.com/nexuscrm/backend/internal/domain/events"
 	"github.com/nexuscrm/backend/pkg/errors"
-	"github.com/nexuscrm/backend/pkg/query"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -28,26 +27,19 @@ func (ps *PersistenceService) Delete(
 	}
 
 	// Load record to check permissions and child relationships
-	q := query.From(objectName).
-		Select([]string{"*"}).
-		Where(fmt.Sprintf("%s = ?", constants.FieldID), id).
-		ExcludeDeleted().
-		Limit(1).
-		Build()
-
-	records, err := ExecuteQuery(ctx, ps.db, q)
+	// Use extract TX or nil
+	tx := ps.txManager.ExtractTx(ctx)
+	record, err := ps.repo.FindOne(ctx, tx, objectName, id)
 	if err != nil {
 		return err
 	}
 
-	if len(records) == 0 {
-		return nil // Already deleted
+	if record == nil {
+		return nil // Already deleted or not found
 	}
 
-	record := records[0]
-
 	// Check record-level access
-	if schema != nil && !ps.permissions.CheckRecordAccess(schema, record, constants.PermDelete, currentUser) {
+	if schema != nil && !ps.permissions.CheckRecordAccess(ctx, schema, record, constants.PermDelete, currentUser) {
 		return errors.NewPermissionError(constants.PermDelete, objectName+"/"+id)
 	}
 
@@ -63,20 +55,14 @@ func (ps *PersistenceService) Delete(
 						deleteRule = *field.DeleteRule
 					}
 
-					checkQ := query.From(childSchema.APIName).
-						Select([]string{constants.FieldID}).
-						Where(fmt.Sprintf("`%s` = ?", field.APIName), id).
-						ExcludeDeleted().
-						Limit(1).
-						Build()
-
-					checkRecords, err := ExecuteQuery(ctx, ps.db, checkQ)
+					tx := ps.txManager.ExtractTx(ctx)
+					exists, err := ps.repo.ExistsByField(ctx, tx, childSchema.APIName, field.APIName, id)
 					if err != nil {
 						log.Printf("Warning: failed to check child records for %s.%s: %v", childSchema.APIName, field.APIName, err)
 						continue
 					}
 
-					if len(checkRecords) > 0 {
+					if exists {
 						if strings.EqualFold(string(deleteRule), string(constants.DeleteRuleRestrict)) {
 							return errors.NewConflictError(objectName, "referenced by", childSchema.PluralLabel)
 						}
@@ -99,12 +85,9 @@ func (ps *PersistenceService) Delete(
 		}
 
 		// Soft delete within transaction
-		updateQ := query.Update(objectName).
-			Set(models.SObject{constants.FieldIsDeleted: 1}).
-			Where(fmt.Sprintf("%s = ?", constants.FieldID), id).
-			Build()
-
-		if _, err := tx.Exec(updateQ.SQL, updateQ.Params...); err != nil {
+		// Soft delete within transaction
+		softDeleteUpdate := models.SObject{constants.FieldIsDeleted: 1}
+		if err := ps.repo.Update(txCtx, tx, objectName, id, softDeleteUpdate); err != nil {
 			return fmt.Errorf("delete failed: %w", err)
 		}
 
@@ -116,7 +99,7 @@ func (ps *PersistenceService) Delete(
 		}
 
 		binID := fmt.Sprintf("%s-%d", id, time.Now().UnixNano())
-		binQ := query.Insert(constants.TableRecycleBin, models.SObject{
+		binRecord := models.SObject{
 			constants.FieldID:               binID,
 			constants.FieldRecordID:         id,
 			constants.FieldObjectAPIName:    objectName,
@@ -125,9 +108,10 @@ func (ps *PersistenceService) Delete(
 			constants.FieldDeletedDate:      NowTimestamp(),
 			constants.FieldCreatedDate:      NowTimestamp(),
 			constants.FieldLastModifiedDate: NowTimestamp(),
-		}).Build()
+		}
 
-		if _, err := tx.Exec(binQ.SQL, binQ.Params...); err != nil {
+		// Use Repo for Recycle Bin Insert
+		if err := ps.repo.Insert(txCtx, tx, constants.TableRecycleBin, binRecord); err != nil {
 			return fmt.Errorf("failed to add to recycle bin: %w", err)
 		}
 
@@ -180,20 +164,11 @@ func (ps *PersistenceService) cascadeDeleteChildren(ctx context.Context, user *m
 				lookupFieldName := field.APIName
 
 				// Find IDs of children (excluding already deleted)
-				childQuery := fmt.Sprintf("SELECT %s FROM %s WHERE `%s` = ? AND %s = false",
-					constants.FieldID, childObjName, lookupFieldName, constants.FieldIsDeleted)
-
-				var rows *sql.Rows
-				var err error
-
+				// Find IDs of children (excluding already deleted) via Repo
 				// ACID: Use existing transaction if available
 				tx := ps.txManager.ExtractTx(ctx)
-				if tx != nil {
-					rows, err = tx.QueryContext(ctx, childQuery, parentID)
-				} else {
-					rows, err = ps.db.DB().QueryContext(ctx, childQuery, parentID)
-				}
 
+				children, err := ps.repo.GetChildren(ctx, tx, childObjName, lookupFieldName, parentID)
 				if err != nil {
 					// Ignore table not found errors (race conditions or init issues)
 					if strings.Contains(err.Error(), "doesn't exist") {
@@ -203,14 +178,11 @@ func (ps *PersistenceService) cascadeDeleteChildren(ctx context.Context, user *m
 				}
 
 				var childIDs []string
-				for rows.Next() {
-					var childID string
-					if err := rows.Scan(&childID); err != nil {
-						return err
+				for _, child := range children {
+					if id, ok := child[constants.FieldID].(string); ok {
+						childIDs = append(childIDs, id)
 					}
-					childIDs = append(childIDs, childID)
 				}
-				rows.Close()
 
 				// Recursively delete children
 				for _, childID := range childIDs {

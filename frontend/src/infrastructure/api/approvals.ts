@@ -55,47 +55,50 @@ export const approvalsAPI = {
      * Submit a record for approval
      */
     async submit(request: SubmitApprovalRequest): Promise<SubmitApprovalResponse> {
-        return apiClient.post<SubmitApprovalResponse>(API_ENDPOINTS.APPROVALS.SUBMIT, request);
+        const response = await apiClient.post<{ data: SubmitApprovalResponse }>(API_ENDPOINTS.APPROVALS.SUBMIT, request);
+        return response.data;
     },
 
     /**
      * Approve a pending work item
      */
     async approve(workItemId: string, comments?: string): Promise<ApprovalActionResponse> {
-        return apiClient.post<ApprovalActionResponse>(
+        const response = await apiClient.post<{ data: ApprovalActionResponse }>(
             API_ENDPOINTS.APPROVALS.APPROVE(workItemId),
             { comments }
         );
+        return response.data;
     },
 
     /**
      * Reject a pending work item
      */
     async reject(workItemId: string, comments?: string): Promise<ApprovalActionResponse> {
-        return apiClient.post<ApprovalActionResponse>(
+        const response = await apiClient.post<{ data: ApprovalActionResponse }>(
             API_ENDPOINTS.APPROVALS.REJECT(workItemId),
             { comments }
         );
+        return response.data;
     },
 
     /**
      * Get pending approvals for current user
      */
     async getPending(): Promise<ApprovalWorkItem[]> {
-        const response = await apiClient.get<{ work_items: ApprovalWorkItem[] }>(
+        const response = await apiClient.get<{ data: ApprovalWorkItem[] }>(
             API_ENDPOINTS.APPROVALS.PENDING
         );
-        return response.work_items || [];
+        return response.data || [];
     },
 
     /**
      * Get approval history for a specific record
      */
     async getHistory(objectApiName: string, recordId: string): Promise<ApprovalWorkItem[]> {
-        const response = await apiClient.get<{ work_items: ApprovalWorkItem[] }>(
+        const response = await apiClient.get<{ data: ApprovalWorkItem[] }>(
             API_ENDPOINTS.APPROVALS.HISTORY(objectApiName, recordId)
         );
-        return response.work_items || [];
+        return response.data || [];
     },
 
     /**
@@ -103,10 +106,10 @@ export const approvalsAPI = {
      */
     async getFlowInstanceProgress(flowInstanceId: string): Promise<FlowInstanceProgress | null> {
         try {
-            const response = await apiClient.get<FlowInstanceProgress>(
+            const response = await apiClient.get<{ data: FlowInstanceProgress }>(
                 API_ENDPOINTS.APPROVALS.FLOW_PROGRESS(flowInstanceId)
             );
-            return response;
+            return response.data;
         } catch {
             return null;
         }
@@ -118,10 +121,10 @@ export const approvalsAPI = {
      */
     async hasProcessForObject(objectApiName: string): Promise<boolean> {
         try {
-            const response = await apiClient.get<{ has_process: boolean; process_name?: string }>(
+            const response = await apiClient.get<{ data: { has_process: boolean; process_name?: string } }>(
                 API_ENDPOINTS.APPROVALS.CHECK(objectApiName)
             );
-            return response.has_process ?? false;
+            return response.data.has_process ?? false;
         } catch {
             return false;
         }

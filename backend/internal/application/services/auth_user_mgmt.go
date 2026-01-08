@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -22,6 +21,7 @@ type CreateUserRequest struct {
 	Email     string
 	Password  string
 	ProfileID string
+	RoleID    string
 }
 
 // CreateUser creates a new user account
@@ -62,6 +62,11 @@ func (s *AuthService) CreateUser(ctx context.Context, req CreateUserRequest) (*m
 	// Split Name
 	firstName, lastName := splitName(req.Name)
 
+	var roleID *string
+	if req.RoleID != "" {
+		roleID = &req.RoleID
+	}
+
 	// 6. Insert User using PersistenceService
 	userStruct := models.SystemUser{
 		ID:          userID,
@@ -71,6 +76,7 @@ func (s *AuthService) CreateUser(ctx context.Context, req CreateUserRequest) (*m
 		FirstName:   firstName,
 		LastName:    lastName,
 		ProfileID:   profileID,
+		RoleID:      roleID,
 		CreatedDate: now,
 		IsActive:    true,
 	}
@@ -84,7 +90,11 @@ func (s *AuthService) CreateUser(ctx context.Context, req CreateUserRequest) (*m
 
 	// Use propagated context
 	// ctx := context.Background()
-	if _, err := s.persistence.Insert(ctx, constants.TableUser, userStruct.ToSObject(), systemContext); err != nil {
+	userData := userStruct.ToSObject()
+	if req.RoleID != "" {
+		userData["role_id"] = req.RoleID
+	}
+	if _, err := s.persistence.Insert(ctx, constants.TableUser, userData, systemContext); err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
@@ -93,6 +103,7 @@ func (s *AuthService) CreateUser(ctx context.Context, req CreateUserRequest) (*m
 		Name:      req.Name,
 		Email:     &req.Email,
 		ProfileID: profileID,
+		RoleID:    roleID,
 	}, nil
 }
 
@@ -102,6 +113,7 @@ type UpdateUserRequest struct {
 	Email     string
 	Password  string
 	ProfileID string
+	RoleID    string
 	IsActive  *bool
 }
 
@@ -116,14 +128,14 @@ func (s *AuthService) UpdateUser(ctx context.Context, userID string, req UpdateU
 		return errors.NewNotFoundError("User", userID)
 	}
 
-	// 2. Build Update Query
-	updates := []string{}
-	args := []interface{}{}
+	// 2. Prepare Updates
+	updates := make(map[string]interface{})
 
 	if req.Name != "" {
 		firstName, lastName := splitName(req.Name)
-		updates = append(updates, fmt.Sprintf("%s = ?, %s = ?, %s = ?", constants.FieldUsername, constants.FieldFirstName, constants.FieldLastName))
-		args = append(args, req.Name, firstName, lastName)
+		updates[constants.FieldUsername] = req.Name
+		updates[constants.FieldFirstName] = firstName
+		updates[constants.FieldLastName] = lastName
 	}
 
 	if req.Email != "" {
@@ -140,13 +152,15 @@ func (s *AuthService) UpdateUser(ctx context.Context, userID string, req UpdateU
 			return errors.NewConflictError(constants.TableUser, constants.FieldEmail, req.Email)
 		}
 
-		updates = append(updates, fmt.Sprintf("%s = ?", constants.FieldEmail))
-		args = append(args, req.Email)
+		updates[constants.FieldEmail] = req.Email
 	}
 
 	if req.ProfileID != "" {
-		updates = append(updates, fmt.Sprintf("%s = ?", constants.FieldProfileID))
-		args = append(args, req.ProfileID)
+		updates[constants.FieldProfileID] = req.ProfileID
+	}
+
+	if req.RoleID != "" {
+		updates[constants.FieldRoleID] = req.RoleID
 	}
 
 	if req.Password != "" {
@@ -157,30 +171,23 @@ func (s *AuthService) UpdateUser(ctx context.Context, userID string, req UpdateU
 		if err != nil {
 			return fmt.Errorf("failed to hash password: %w", err)
 		}
-		updates = append(updates, fmt.Sprintf("%s = ?", constants.FieldPassword))
-		args = append(args, hash)
+		updates[constants.FieldPassword] = string(hash)
 	}
 
 	if req.IsActive != nil {
-		updates = append(updates, fmt.Sprintf("%s = ?", constants.FieldIsActive))
-		args = append(args, *req.IsActive)
+		updates[constants.FieldIsActive] = *req.IsActive
 	}
 
 	if len(updates) == 0 {
 		return nil // No changes
 	}
 
-	updates = append(updates, fmt.Sprintf("%s = ?", constants.FieldLastModifiedDate))
-	args = append(args, time.Now())
-
-	query := fmt.Sprintf("UPDATE %s SET "+strings.Join(updates, ", ")+" WHERE %s = ?", constants.TableUser, constants.FieldID)
-	args = append(args, userID)
-
-	_, err = s.db.ExecContext(ctx, query, args...)
-	if err == nil {
-		log.Printf("📝 User updated: %s", userID)
+	if err := s.userRepo.UpdateUser(ctx, userID, updates); err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
 	}
-	return err
+
+	log.Printf("📝 User updated: %s", userID)
+	return nil
 }
 
 // DeleteUser removes a user from the system
@@ -194,113 +201,63 @@ func (s *AuthService) DeleteUser(ctx context.Context, userID string) error {
 		return errors.NewNotFoundError("User", userID)
 	}
 
-	query := fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableUser, constants.FieldID)
-	_, err = s.db.ExecContext(ctx, query, userID)
-	if err == nil {
-		log.Printf("🗑️ User deleted: %s", userID)
+	if err := s.userRepo.DeleteUser(ctx, userID); err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
 	}
-	return err
+
+	log.Printf("🗑️ User deleted: %s", userID)
+	return nil
 }
 
 // GetUsers retrieves all users in the system
 func (s *AuthService) GetUsers(ctx context.Context) ([]map[string]interface{}, error) {
-	query := fmt.Sprintf(`
-		SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s 
-		FROM %s 
-		ORDER BY %s DESC`,
-		constants.FieldID, constants.FieldUsername, constants.FieldEmail, constants.FieldProfileID, constants.FieldIsActive, constants.FieldCreatedDate, constants.FieldLastLoginDate, constants.FieldFirstName, constants.FieldLastName,
-		constants.TableUser,
-		constants.FieldCreatedDate)
-
-	rows, err := s.db.QueryContext(ctx, query)
+	users, err := s.userRepo.FindAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query users: %w", err)
 	}
-	defer rows.Close()
 
-	var users []map[string]interface{}
-	for rows.Next() {
-		var id, username, email, profileID, firstName, lastName string
-		var isActive bool
-		var createdDateRaw, lastLoginRaw []byte
-
-		if err := rows.Scan(&id, &username, &email, &profileID, &isActive, &createdDateRaw, &lastLoginRaw, &firstName, &lastName); err != nil {
-			continue
-		}
-
-		fullName := strings.TrimSpace(firstName + " " + lastName)
+	var result []map[string]interface{}
+	for _, u := range users {
+		fullName := strings.TrimSpace(u.FirstName + " " + u.LastName)
 		if fullName == "" {
-			fullName = username // Fallback
+			fullName = u.Username // Fallback
 		}
 
-		user := map[string]interface{}{
-			constants.FieldID:            id,
-			constants.FieldUsername:      username,
+		userMap := map[string]interface{}{
+			constants.FieldID:            u.ID,
+			constants.FieldUsername:      u.Username,
 			constants.FieldName:          fullName,
-			constants.FieldEmail:         email,
-			constants.FieldProfileID:     profileID,
-			constants.FieldIsActive:      isActive,
-			constants.FieldLastLoginDate: nil,
+			constants.FieldEmail:         u.Email,
+			constants.FieldProfileID:     u.ProfileID,
+			constants.FieldRoleID:        u.RoleID,
+			constants.FieldIsActive:      u.IsActive,
+			constants.FieldLastLoginDate: u.LastLoginDate,
+			constants.FieldCreatedDate:   u.CreatedDate,
 		}
-
-		// Parse dates manually from bytes (format: 2006-01-02 15:04:05)
-		if len(createdDateRaw) > 0 {
-			if t, err := time.Parse("2006-01-02 15:04:05", string(createdDateRaw)); err == nil {
-				user[constants.FieldCreatedDate] = t
-			} else {
-				// Fallback to RFC3339 just in case
-				if t, err := time.Parse(time.RFC3339, string(createdDateRaw)); err == nil {
-					user[constants.FieldCreatedDate] = t
-				}
-			}
-		}
-		if len(lastLoginRaw) > 0 {
-			if t, err := time.Parse("2006-01-02 15:04:05", string(lastLoginRaw)); err == nil {
-				user[constants.FieldLastLoginDate] = t
-			} else {
-				if t, err := time.Parse(time.RFC3339, string(lastLoginRaw)); err == nil {
-					user[constants.FieldLastLoginDate] = t
-				}
-			}
-		}
-		users = append(users, user)
+		result = append(result, userMap)
 	}
-	return users, nil
+	return result, nil
 }
 
 // GetProfiles retrieves all security profiles
 func (s *AuthService) GetProfiles(ctx context.Context) ([]map[string]interface{}, error) {
-	query := fmt.Sprintf("SELECT %s, %s, %s FROM %s ORDER BY %s ASC",
-		constants.FieldID, constants.FieldName, constants.FieldDescription,
-		constants.TableProfile, constants.FieldName)
-
-	rows, err := s.db.QueryContext(ctx, query)
+	profiles, err := s.permissionRepo.GetAllProfiles(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query profiles: %w", err)
+		return nil, err
 	}
-	defer rows.Close()
 
-	var profiles []map[string]interface{}
-	for rows.Next() {
-		var id, name string
-		var description sql.NullString
-
-		if err := rows.Scan(&id, &name, &description); err != nil {
-			continue
+	var result []map[string]interface{}
+	for _, p := range profiles {
+		profileMap := map[string]interface{}{
+			constants.FieldID:          p.ID,
+			constants.FieldName:        p.Name,
+			constants.FieldDescription: p.Description,
+			constants.FieldIsSystem:    p.IsSystem,
+			constants.FieldIsActive:    p.IsActive,
 		}
-
-		profile := map[string]interface{}{
-			constants.FieldID:          id,
-			constants.FieldName:        name,
-			constants.FieldDescription: "",
-			constants.FieldIsSystem:    true,
-		}
-		if description.Valid {
-			profile[constants.FieldDescription] = description.String
-		}
-		profiles = append(profiles, profile)
+		result = append(result, profileMap)
 	}
-	return profiles, nil
+	return result, nil
 }
 
 // splitName splits a full name into first and last name

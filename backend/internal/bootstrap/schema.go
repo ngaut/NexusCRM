@@ -7,6 +7,7 @@ import (
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -17,7 +18,8 @@ func InitializeSchema(db *database.TiDBConnection) error {
 	log.Println("🔧 Initializing core system schema...")
 
 	// Create SchemaManager for centralized DDL execution
-	schemaMgr := services.NewSchemaManager(db.DB())
+	repo := persistence.NewSchemaRepository(db.DB())
+	schemaMgr := services.NewSchemaManager(repo)
 
 	// Get all system table definitions
 	tableDefs := GetSystemTableDefinitions()
@@ -93,17 +95,29 @@ func InitializeSchema(db *database.TiDBConnection) error {
 		}
 	}
 
-	// Batch insert objects (single statement)
+	// Batch insert objects (single statement) within a Transaction
+	tx, err := db.DB().Begin()
+	if err != nil {
+		log.Printf("   ⚠️  Failed to begin transaction: %v", err)
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
 	log.Printf("   📦 Batch inserting %d objects...", len(allObjects))
-	if err := schemaMgr.BatchSaveObjectMetadata(allObjects, nil); err != nil {
+	if err := schemaMgr.BatchSaveObjectMetadata(allObjects, tx); err != nil {
 		log.Printf("   ⚠️  Batch object insert failed: %v", err)
 		return err
 	}
 
 	// Batch insert fields (batched in groups of 50)
 	log.Printf("   📦 Batch inserting %d fields...", len(allFields))
-	if err := schemaMgr.BatchSaveFieldMetadata(allFields, nil); err != nil {
+	if err := schemaMgr.BatchSaveFieldMetadata(allFields, tx); err != nil {
 		log.Printf("   ⚠️  Batch field insert failed: %v", err)
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Printf("   ⚠️  Failed to commit transaction: %v", err)
 		return err
 	}
 

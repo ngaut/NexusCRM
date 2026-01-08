@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/shared/pkg/models"
@@ -14,7 +13,6 @@ import (
 
 // MetadataService manages CRM metadata
 type MetadataService struct {
-	db        *database.TiDBConnection
 	schemaMgr *SchemaManager
 	repo      *persistence.MetadataRepository
 	mu        sync.RWMutex
@@ -25,22 +23,15 @@ type MetadataService struct {
 	fieldMap  map[string][]models.FieldMetadata // key: ObjectAPIName
 
 	// Dependencies
-	permissionSvc *PermissionService
 	validationSvc *ValidationService
 }
 
 // NewMetadataService creates a new MetadataService
-func NewMetadataService(db *database.TiDBConnection, schemaMgr *SchemaManager) *MetadataService {
+func NewMetadataService(repo *persistence.MetadataRepository, schemaMgr *SchemaManager) *MetadataService {
 	return &MetadataService{
-		db:        db,
 		schemaMgr: schemaMgr,
-		repo:      persistence.NewMetadataRepository(db.DB()),
+		repo:      repo,
 	}
-}
-
-// SetPermissionService sets the permission service dependency (break circular dependency)
-func (ms *MetadataService) SetPermissionService(ps *PermissionService) {
-	ms.permissionSvc = ps
 }
 
 // SetValidationService sets the validation service dependency

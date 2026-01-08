@@ -35,8 +35,17 @@ func NewOutboxRepository(db *sql.DB) *OutboxRepository {
 	return &OutboxRepository{db: db}
 }
 
+// getExecutor returns the provided executor or defaults to internal DB
+func (r *OutboxRepository) getExecutor(exec Executor) Executor {
+	if exec != nil {
+		return exec
+	}
+	return r.db
+}
+
 // Enqueue inserts a new event into the outbox
 func (r *OutboxRepository) Enqueue(ctx context.Context, exec Executor, eventType string, payload interface{}) (string, error) {
+	executor := r.getExecutor(exec)
 	id := utils.GenerateID()
 
 	payloadJSON, err := json.Marshal(payload)
@@ -55,7 +64,7 @@ func (r *OutboxRepository) Enqueue(ctx context.Context, exec Executor, eventType
 	// OutboxService uses "pending".
 	status := constants.OutboxStatusPending
 
-	_, err = exec.ExecContext(ctx, query, id, eventType, payloadJSON, status)
+	_, err = executor.ExecContext(ctx, query, id, eventType, payloadJSON, status)
 	if err != nil {
 		return "", fmt.Errorf("failed to enqueue event: %w", err)
 	}

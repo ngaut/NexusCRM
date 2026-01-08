@@ -11,15 +11,13 @@ import (
 
 // SchemaManager handles all table creation and schema operations
 type SchemaManager struct {
-	db   *sql.DB
 	repo *persistence.SchemaRepository
 }
 
 // NewSchemaManager creates a new schema manager
-func NewSchemaManager(db *sql.DB) *SchemaManager {
+func NewSchemaManager(repo *persistence.SchemaRepository) *SchemaManager {
 	return &SchemaManager{
-		db:   db,
-		repo: persistence.NewSchemaRepository(db),
+		repo: repo,
 	}
 }
 
@@ -81,10 +79,8 @@ type TableRegistryItem = persistence.TableRegistryItem
 type SchemaHealth = persistence.SchemaHealth
 
 // BatchRegisterTables registers multiple tables in _System_Table registry
-func (sm *SchemaManager) BatchRegisterTables(defs []schema.TableDefinition, exec Executor) error {
-	// Cast Executor (services.Executor) to persistence.Executor.
-	// They are structurally identical interfaces, so this works in Go.
-	return sm.repo.BatchRegisterTables(defs, exec)
+func (sm *SchemaManager) BatchRegisterTables(defs []schema.TableDefinition, tx *sql.Tx) error {
+	return sm.repo.BatchRegisterTables(defs, tx)
 }
 
 // AddColumn adds a column to the table and registers it
@@ -118,28 +114,28 @@ func (sm *SchemaManager) GetStandardFieldMetadata() []models.FieldMetadata {
 }
 
 // SaveObjectMetadata upserts object metadata into _System_Object
-func (sm *SchemaManager) SaveObjectMetadata(obj *models.ObjectMetadata, exec Executor) error {
-	return sm.repo.SaveObjectMetadata(obj, exec)
+func (sm *SchemaManager) SaveObjectMetadata(obj *models.ObjectMetadata, tx *sql.Tx) error {
+	return sm.repo.SaveObjectMetadata(obj, tx)
 }
 
 // InsertObjectMetadata inserts object metadata (Strict)
-func (sm *SchemaManager) InsertObjectMetadata(obj *models.ObjectMetadata, exec Executor) error {
-	return sm.repo.InsertObjectMetadata(obj, exec)
+func (sm *SchemaManager) InsertObjectMetadata(obj *models.ObjectMetadata, tx *sql.Tx) error {
+	return sm.repo.InsertObjectMetadata(obj, tx)
 }
 
 // BatchSaveObjectMetadata inserts multiple objects in a single statement
-func (sm *SchemaManager) BatchSaveObjectMetadata(objs []*models.ObjectMetadata, exec Executor) error {
-	return sm.repo.BatchSaveObjectMetadata(objs, exec)
+func (sm *SchemaManager) BatchSaveObjectMetadata(objs []*models.ObjectMetadata, tx *sql.Tx) error {
+	return sm.repo.BatchSaveObjectMetadata(objs, tx)
 }
 
 // SaveFieldMetadataWithIDs upserts field metadata with explicit IDs
-func (sm *SchemaManager) SaveFieldMetadataWithIDs(field *models.FieldMetadata, objectID string, fieldID string, exec Executor) error {
-	return sm.repo.SaveFieldMetadataWithIDs(field, objectID, fieldID, exec)
+func (sm *SchemaManager) SaveFieldMetadataWithIDs(field *models.FieldMetadata, objectID string, fieldID string, tx *sql.Tx) error {
+	return sm.repo.SaveFieldMetadataWithIDs(field, objectID, fieldID, tx)
 }
 
 // BatchSaveFieldMetadata inserts multiple fields in a single statement
-func (sm *SchemaManager) BatchSaveFieldMetadata(fields []FieldWithContext, exec Executor) error {
-	return sm.repo.BatchSaveFieldMetadata(fields, exec)
+func (sm *SchemaManager) BatchSaveFieldMetadata(fields []FieldWithContext, tx *sql.Tx) error {
+	return sm.repo.BatchSaveFieldMetadata(fields, tx)
 }
 
 // PrepareFieldForBatch converts a column definition to FieldWithContext

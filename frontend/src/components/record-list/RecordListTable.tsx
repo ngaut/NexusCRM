@@ -50,10 +50,10 @@ export const RecordListTable: React.FC<RecordListTableProps> = ({
                             {displayFields.map(field => (
                                 <th
                                     key={field.api_name}
-                                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    className="px-4 py-3 text-left text-xs font-semibold text-gray-500 cursor-pointer hover:bg-gray-100"
                                     onClick={() => onSort(field.api_name)}
                                 >
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center justify-start gap-1">
                                         {field.label}
                                         {sortField === field.api_name && (
                                             <span className="text-blue-600">

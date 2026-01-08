@@ -23,7 +23,7 @@ func NewFlowHandler(svc *services.ServiceManager) *FlowHandler {
 
 // GetAllFlows handles GET /api/metadata/flows
 func (h *FlowHandler) GetAllFlows(c *gin.Context) {
-	HandleGetEnvelope(c, "flows", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.Metadata.GetFlows(c.Request.Context()), nil
 	})
 }
@@ -31,7 +31,7 @@ func (h *FlowHandler) GetAllFlows(c *gin.Context) {
 // GetFlow handles GET /api/metadata/flows/:flowId
 func (h *FlowHandler) GetFlow(c *gin.Context) {
 	flowID := c.Param("flowId")
-	HandleGetEnvelope(c, "", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		flow := h.svc.Metadata.GetFlow(c.Request.Context(), flowID)
 		if flow == nil {
 			return nil, errors.NewNotFoundError("Flow", flowID)
@@ -62,7 +62,7 @@ func (h *FlowHandler) UpdateFlow(c *gin.Context) {
 	flowID := c.Param("flowId")
 	var updates models.Flow
 
-	HandleUpdateEnvelope(c, "", "Flow updated successfully", &updates, func() error {
+	HandleUpdateEnvelope(c, "data", "Flow updated successfully", &updates, func() error {
 		if err := h.svc.Metadata.UpdateFlow(c.Request.Context(), flowID, &updates); err != nil {
 			return err
 		}
@@ -107,53 +107,47 @@ func (h *FlowHandler) ExecuteFlow(c *gin.Context) {
 	flowID := c.Param("flowId")
 	user := GetUserFromContext(c)
 
-	var req ExecuteFlowRequest
-	if !BindJSON(c, &req) {
-		return
-	}
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
+		var req ExecuteFlowRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			return nil, errors.NewValidationError("", "Invalid JSON body: "+err.Error())
+		}
 
-	// Validate and get flow
-	flow, err := h.validateFlowForExecution(c.Request.Context(), flowID, user)
-	if err != nil {
-		RespondError(c, err.code, err.message)
-		return
-	}
+		// Validate and get flow
+		flow, err := h.validateFlowForExecution(c.Request.Context(), flowID, user)
+		if err != nil {
+			return nil, err
+		}
 
-	// Execute based on action type
-	result, execErr := h.executeFlowAction(c, flow, &req, user)
-	if execErr != nil {
-		RespondError(c, 500, "Flow execution failed: "+execErr.Error())
-		return
-	}
+		// Execute based on action type
+		result, execErr := h.executeFlowAction(c, flow, &req, user)
+		if execErr != nil {
+			return nil, fmt.Errorf("flow execution failed: %w", execErr)
+		}
 
-	c.JSON(200, ExecuteFlowResponse{
-		Success: true,
-		FlowID:  flowID,
-		Message: "Flow executed successfully",
-		Result:  result,
+		return ExecuteFlowResponse{
+			Success: true,
+			FlowID:  flowID,
+			Message: "Flow executed successfully",
+			Result:  result,
+		}, nil
 	})
 }
 
-// flowError represents a flow execution error with HTTP status code
-type flowError struct {
-	code    int
-	message string
-}
-
 // validateFlowForExecution validates flow exists, is active, and user has permission
-func (h *FlowHandler) validateFlowForExecution(ctx context.Context, flowID string, user *models.UserSession) (*models.Flow, *flowError) {
+func (h *FlowHandler) validateFlowForExecution(ctx context.Context, flowID string, user *models.UserSession) (*models.Flow, error) {
 	flow := h.svc.Metadata.GetFlow(ctx, flowID)
 	if flow == nil {
-		return nil, &flowError{404, "Flow not found: " + flowID}
+		return nil, errors.NewNotFoundError("Flow", flowID)
 	}
 
 	if flow.Status != constants.FlowStatusActive {
-		return nil, &flowError{400, "Flow is not active (status: " + flow.Status + ")"}
+		return nil, errors.NewValidationError("status", "Flow is not active (status: "+flow.Status+")")
 	}
 
 	// Security: Only system admins can execute flows via API
 	if !constants.IsSuperUser(user.ProfileID) {
-		return nil, &flowError{403, "Only system administrators can execute flows via API"}
+		return nil, errors.NewPermissionError("execute", "Flow")
 	}
 
 	return flow, nil
@@ -197,7 +191,7 @@ func (h *FlowHandler) executeCreateRecord(
 
 	// Validate target object exists
 	if h.svc.Metadata.GetSchema(c.Request.Context(), targetObject) == nil {
-		RespondError(c, 400, "Target object does not exist: "+targetObject)
+		RespondAppError(c, errors.NewValidationError("target_object", "Target object does not exist: "+targetObject))
 		return nil, nil
 	}
 
@@ -233,7 +227,7 @@ func (h *FlowHandler) executeUpdateRecord(
 
 	// Validate object exists
 	if h.svc.Metadata.GetSchema(c.Request.Context(), objectName) == nil {
-		RespondError(c, 400, "Object does not exist: "+objectName)
+		RespondAppError(c, errors.NewValidationError("object_api_name", "Object does not exist: "+objectName))
 		return nil, nil
 	}
 

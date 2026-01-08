@@ -53,7 +53,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({ currentAppId, onSelect
             </button>
 
             {isOpen && (
-                <div className="absolute left-0 mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-xl z-50">
+                <div className="absolute left-0 mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-xl z-50">
                     <div className="p-3 border-b border-slate-100">
                         <h3 className="text-sm font-semibold text-slate-700">App Launcher</h3>
                         <p className="text-xs text-slate-500 mt-0.5">Switch between applications</p>
@@ -120,12 +120,12 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({ currentAppId, onSelect
                                                     <Check size={12} className="text-blue-600" />
                                                 </div>
                                             )}
-                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-1.5
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-1.5 shrink-0
                         ${isSelected ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'}`}
                                             >
                                                 <IconComponent size={20} />
                                             </div>
-                                            <span className={`text-xs font-medium text-center line-clamp-2
+                                            <span className={`text-xs font-medium text-center line-clamp-2 break-words w-full leading-tight
                         ${isSelected ? 'text-blue-700' : 'text-slate-700'}`}>
                                                 {app.label}
                                             </span>

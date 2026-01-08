@@ -7,7 +7,7 @@ import (
 
 	"github.com/nexuscrm/backend/internal/domain/events"
 	"github.com/nexuscrm/backend/pkg/errors"
-	"github.com/nexuscrm/backend/pkg/query"
+	"github.com/nexuscrm/backend/pkg/utils"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -16,33 +16,19 @@ import (
 
 // GetRecycleBinItems returns items from the recycle bin
 func (ps *PersistenceService) GetRecycleBinItems(ctx context.Context, currentUser *models.UserSession, scope string) ([]models.SObject, error) {
-	// Query the recycle bin table
-	builder := query.From(constants.TableRecycleBin).
-		Select([]string{"*"})
-
-	// Apply scope filtering
-	if scope == "mine" {
-		// Filter by user's Name (as stored in Delete)
-		// Ideally should use ID, but verified Delete stores Name.
-		builder.Where(constants.FieldDeletedBy+" = ?", currentUser.Name)
-	} else if scope == "all" {
-		// Only admins can see all
-		if !currentUser.IsSuperUser() {
-			return nil, errors.NewPermissionError("view_all_recycle_bin", "recycle_bin")
-		}
-	} else {
-		// Default to mine if invalid scope, or error? Let's default to mine for safety.
-		builder.Where(constants.FieldDeletedBy+" = ?", currentUser.Name)
+	// Permission check for "all" scope
+	if scope == "all" && !currentUser.IsSuperUser() {
+		return nil, errors.NewPermissionError("view_all_recycle_bin", "recycle_bin")
 	}
 
-	binQ := builder.OrderBy(constants.FieldSysRecycleBin_DeletedDate, constants.SortDESC).Build()
-
-	records, err := ExecuteQuery(ctx, ps.db, binQ)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch recycle bin items: %w", err)
+	// Determine which repository method to call based on scope
+	if scope == "all" {
+		// Logic: Admin check already done
+		return ps.repo.FindAllRecycleBinItems(ctx)
 	}
 
-	return records, nil
+	// Default to "mine"
+	return ps.repo.FindRecycleBinItemsByUser(ctx, currentUser.Name)
 }
 
 // Restore undeletes a record from the recycle bin
@@ -58,7 +44,7 @@ func (ps *PersistenceService) Restore(
 	}
 
 	// Check permissions
-	if !ps.permissions.CheckObjectPermissionWithUser(objectName, constants.PermDelete, currentUser) {
+	if !ps.permissions.CheckObjectPermissionWithUser(ctx, objectName, constants.PermDelete, currentUser) {
 		return fmt.Errorf("insufficient permissions to restore %s", objectName)
 	}
 
@@ -69,21 +55,14 @@ func (ps *PersistenceService) Restore(
 
 	// Execute restore within transaction
 	err = ps.txManager.WithRetry(func(tx *sql.Tx) error {
-		restoreQ := query.Update(objectName).
-			Set(models.SObject{constants.FieldIsDeleted: constants.IsDeletedFalse}).
-			Where(constants.FieldID+" = ?", recordId).
-			Build()
-
-		if _, err := tx.Exec(restoreQ.SQL, restoreQ.Params...); err != nil {
+		// 1. Undelete record (IsDeleted = false)
+		updates := models.SObject{constants.FieldIsDeleted: constants.IsDeletedFalse}
+		if err := ps.repo.Update(ctx, tx, objectName, recordId, updates); err != nil {
 			return fmt.Errorf("restore failed: %w", err)
 		}
 
-		// Remove from recycle bin
-		deleteBinQ := query.Delete(constants.TableRecycleBin).
-			Where(constants.FieldRecordID+" = ?", recordId).
-			Build()
-
-		if _, err := tx.Exec(deleteBinQ.SQL, deleteBinQ.Params...); err != nil {
+		// 2. Remove from recycle bin
+		if err := ps.repo.DeleteByField(ctx, tx, constants.TableRecycleBin, constants.FieldRecordID, recordId); err != nil {
 			return fmt.Errorf("failed to remove from recycle bin: %w", err)
 		}
 
@@ -117,7 +96,7 @@ func (ps *PersistenceService) Purge(
 	}
 
 	// Check permissions (purge requires delete permission)
-	if !ps.permissions.CheckObjectPermissionWithUser(objectName, constants.PermDelete, currentUser) {
+	if !ps.permissions.CheckObjectPermissionWithUser(ctx, objectName, constants.PermDelete, currentUser) {
 		return fmt.Errorf("insufficient permissions to purge %s", objectName)
 	}
 
@@ -129,20 +108,12 @@ func (ps *PersistenceService) Purge(
 	// Execute purge within transaction
 	err = ps.txManager.WithRetry(func(tx *sql.Tx) error {
 		// Permanently delete the record
-		purgeQ := query.Delete(objectName).
-			Where(constants.FieldID+" = ?", recordId).
-			Build()
-
-		if _, err := tx.Exec(purgeQ.SQL, purgeQ.Params...); err != nil {
+		if err := ps.repo.PhysicalDelete(ctx, tx, objectName, recordId); err != nil {
 			return fmt.Errorf("purge failed: %w", err)
 		}
 
 		// Remove from recycle bin
-		deleteBinQ := query.Delete(constants.TableRecycleBin).
-			Where(constants.FieldRecordID+" = ?", recordId).
-			Build()
-
-		if _, err := tx.Exec(deleteBinQ.SQL, deleteBinQ.Params...); err != nil {
+		if err := ps.repo.DeleteByField(ctx, tx, constants.TableRecycleBin, constants.FieldRecordID, recordId); err != nil {
 			return fmt.Errorf("failed to remove from recycle bin: %w", err)
 		}
 
@@ -166,22 +137,15 @@ func (ps *PersistenceService) Purge(
 // ==================== Recycle Bin Helpers ====================
 
 func (ps *PersistenceService) getRecycleBinRecord(ctx context.Context, recordId string) (string, error) {
-	binQ := query.From(constants.TableRecycleBin).
-		Select([]string{constants.FieldSysRecycleBin_ObjectAPIName}).
-		Where(constants.FieldRecordID+" = ?", recordId).
-		Limit(1).
-		Build()
-
-	binRecords, err := ExecuteQuery(ctx, ps.db, binQ)
+	binRecord, err := ps.repo.FindRecycleBinEntry(ctx, recordId)
 	if err != nil {
-		return "", fmt.Errorf("failed to scan recycle bin: %w", err)
+		return "", fmt.Errorf("failed to find recycle bin record: %w", err)
 	}
-
-	if len(binRecords) == 0 {
+	if binRecord == nil {
 		return "", fmt.Errorf("record not found in recycle bin")
 	}
 
-	objectName, ok := binRecords[0][constants.FieldSysRecycleBin_ObjectAPIName].(string)
+	objectName, ok := binRecord[constants.FieldSysRecycleBin_ObjectAPIName].(string)
 	if !ok {
 		return "", fmt.Errorf("invalid object_api_name in recycle bin")
 	}
@@ -189,20 +153,26 @@ func (ps *PersistenceService) getRecycleBinRecord(ctx context.Context, recordId 
 }
 
 func (ps *PersistenceService) verifyDeletedRecord(ctx context.Context, objectName, recordId string) error {
-	checkQ := query.From(objectName).
-		Select([]string{constants.FieldID}).
-		Where(constants.FieldID+" = ?", recordId).
-		Where(fmt.Sprintf("%s = %d", constants.FieldIsDeleted, constants.IsDeletedTrue)).
-		Limit(1).
-		Build()
-
-	checkRecords, err := ExecuteQuery(ctx, ps.db, checkQ)
+	record, err := ps.repo.FindAny(ctx, nil, objectName, recordId)
 	if err != nil {
 		return fmt.Errorf("failed to verify record: %w", err)
 	}
 
-	if len(checkRecords) == 0 {
-		return fmt.Errorf("record not found or not deleted")
+	if record == nil {
+		return fmt.Errorf("record not found")
 	}
-	return nil
+
+	// Check IsDeleted flag
+	isDeleted, ok := record[constants.FieldIsDeleted]
+	if !ok {
+		// If no IsDeleted field, it can't be deleted
+		return fmt.Errorf("record does not support deletion status")
+	}
+
+	// Use standardized utility for type coercion
+	if utils.ToBool(isDeleted) {
+		return nil
+	}
+
+	return fmt.Errorf("record is not deleted")
 }

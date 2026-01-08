@@ -38,7 +38,15 @@ add_field "sales_metric" "region" "Region" "Text" "true"
 add_field "sales_metric" "amount" "Amount" "Currency" "true"
 add_picklist "sales_metric" "quarter" "Quarter" "Q1,Q2,Q3,Q4" "true"
 
-sleep 1
+# Wait for Schema Cache (Polling)
+echo "   Waiting for fields..."
+for i in {1..10}; do
+    meta=$(api_get "/api/metadata/objects/sales_metric")
+    if echo "$meta" | grep -q "\"api_name\":\"quarter\""; then
+        break
+    fi
+    sleep 0.5
+done
 
 # Create some test data for aggregation
 echo "📈 Creating test metrics data..."
@@ -48,7 +56,16 @@ api_post "/api/data/sales_metric" "{\"name\": \"Q2 West\", \"region\": \"West\",
 api_post "/api/data/sales_metric" "{\"name\": \"Q2 East\", \"region\": \"East\", \"amount\": 85000, \"quarter\": \"Q2\"}"
 api_post "/api/data/sales_metric" "{\"name\": \"Q3 North\", \"region\": \"North\", \"amount\": 40000, \"quarter\": \"Q3\"}"
 
-sleep 1
+# Wait for data availability
+echo "   Waiting for data indexing..."
+for i in {1..10}; do
+    count_res=$(api_post "/api/data/query" "{\"object_api_name\": \"sales_metric\", \"aggregations\": [{\"function\": \"COUNT\", \"alias\": \"cnt\"}]}")
+    cnt=$(echo "$count_res" | jq -r '.aggregations.cnt // 0')
+    if [[ "$cnt" -eq 5 ]]; then
+        break
+    fi
+    sleep 0.5
+done
 
 # --- TEST 1: CREATE DASHBOARD ---
 echo "🧪 Test 1: Create Dashboard (Empty)..."

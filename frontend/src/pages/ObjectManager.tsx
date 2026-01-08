@@ -148,16 +148,19 @@ export const ObjectManager: React.FC = () => {
                 <table className="w-full text-left text-sm">
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
-                            <th className="px-6 py-3 font-semibold text-slate-700 uppercase tracking-wider text-xs">Label</th>
-                            <th className="px-6 py-3 font-semibold text-slate-700 uppercase tracking-wider text-xs">API Name</th>
-                            <th className="px-6 py-3 font-semibold text-slate-700 uppercase tracking-wider text-xs">Type</th>
-                            <th className="px-6 py-3 font-semibold text-slate-700 uppercase tracking-wider text-xs">Description</th>
-                            <th className="px-6 py-3 font-semibold text-slate-700 uppercase tracking-wider text-xs text-right">Actions</th>
+                            <th className="px-6 py-4 font-semibold text-slate-700 uppercase tracking-wider text-xs">Label</th>
+                            <th className="px-6 py-4 font-semibold text-slate-700 uppercase tracking-wider text-xs">API Name</th>
+                            <th className="px-6 py-4 font-semibold text-slate-700 uppercase tracking-wider text-xs">Type</th>
+                            <th className="px-6 py-4 font-semibold text-slate-700 uppercase tracking-wider text-xs">Description</th>
+                            <th className="px-6 py-4 font-semibold text-slate-700 uppercase tracking-wider text-xs text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {filteredSchemas.map(schema => (
-                            <tr key={schema.api_name} className="hover:bg-slate-50 transition-colors">
+                        {filteredSchemas.map((schema, index) => (
+                            <tr
+                                key={schema.api_name}
+                                className={`transition-colors border-l-4 border-transparent hover:border-blue-500 hover:bg-blue-100/50 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-100/50'}`}
+                            >
                                 <td className="px-6 py-4 font-medium text-slate-900">
                                     <Link to={`/setup/objects/${schema.api_name}`} className="text-blue-600 hover:underline flex items-center gap-2">
                                         <Database size={16} className="text-slate-400" />
@@ -182,7 +185,7 @@ export const ObjectManager: React.FC = () => {
                                 <td className="px-6 py-4 text-right flex justify-end gap-2">
                                     <Link
                                         to={`/setup/objects/${schema.api_name}`}
-                                        className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-50 transition-colors"
+                                        className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-100 transition-colors"
                                         title="Edit"
                                     >
                                         <Edit size={16} />
@@ -217,126 +220,128 @@ export const ObjectManager: React.FC = () => {
             </div>
 
             {/* Create Object Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                        <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
-                            <h2 className="text-xl font-bold text-slate-800">Create Custom Object</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                                <span className="sr-only">Close</span>
-                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
+            {
+                isModalOpen && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                                <h2 className="text-xl font-bold text-slate-800">Create Custom Object</h2>
+                                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                                    <span className="sr-only">Close</span>
+                                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
 
-                        <form onSubmit={handleCreate} className="p-6 space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
+                            <form onSubmit={handleCreate} className="p-6 space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                                            Label <span className="text-red-600">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            value={formData.label}
+                                            onChange={e => {
+                                                const label = e.target.value;
+                                                const newFormData = { ...formData, label };
+                                                // Only auto-fill if config allows and user hasn't manually edited
+                                                if (!apiNameTouched && UI_CONFIG.ENABLE_AUTO_FILL_API_NAME) {
+                                                    // Convert to snake_case API name (consistent with other components)
+                                                    newFormData.api_name = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+                                                }
+                                                setFormData(newFormData);
+                                            }}
+                                            placeholder="e.g. Project"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                                            Plural Label <span className="text-red-600">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            value={formData.plural_label}
+                                            onChange={e => setFormData({ ...formData, plural_label: e.target.value })}
+                                            placeholder="e.g. Projects"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                                        Label <span className="text-red-600">*</span>
+                                        API Name <span className="text-red-600">*</span>
                                     </label>
                                     <input
                                         type="text"
                                         required
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        value={formData.label}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                                        value={formData.api_name}
                                         onChange={e => {
-                                            const label = e.target.value;
-                                            const newFormData = { ...formData, label };
-                                            // Only auto-fill if config allows and user hasn't manually edited
-                                            if (!apiNameTouched && UI_CONFIG.ENABLE_AUTO_FILL_API_NAME) {
-                                                // Convert to snake_case API name (consistent with other components)
-                                                newFormData.api_name = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-                                            }
-                                            setFormData(newFormData);
+                                            setFormData({ ...formData, api_name: e.target.value });
+                                            setApiNameTouched(true);
                                         }}
-                                        placeholder="e.g. Project"
                                     />
+                                    <p className="text-xs text-slate-500 mt-1">Unique identifier used in URLs and API</p>
                                 </div>
+
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                                        Plural Label <span className="text-red-600">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                                    <textarea
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        value={formData.plural_label}
-                                        onChange={e => setFormData({ ...formData, plural_label: e.target.value })}
-                                        placeholder="e.g. Projects"
+                                        rows={3}
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        placeholder="Describe the purpose of this object..."
                                     />
                                 </div>
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    API Name <span className="text-red-600">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-                                    value={formData.api_name}
-                                    onChange={e => {
-                                        setFormData({ ...formData, api_name: e.target.value });
-                                        setApiNameTouched(true);
-                                    }}
-                                />
-                                <p className="text-xs text-slate-500 mt-1">Unique identifier used in URLs and API</p>
-                            </div>
+                                <div>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                            checked={formData.searchable}
+                                            onChange={e => setFormData({ ...formData, searchable: e.target.checked })}
+                                        />
+                                        <span className="text-sm font-medium text-slate-700">Allow Search</span>
+                                    </label>
+                                    <p className="text-xs text-slate-500 mt-1 ml-6">Allow records of this object to be found in Global Search.</p>
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                                <textarea
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    rows={3}
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    placeholder="Describe the purpose of this object..."
-                                />
-                            </div>
-
-                            <div>
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                                        checked={formData.searchable}
-                                        onChange={e => setFormData({ ...formData, searchable: e.target.checked })}
-                                    />
-                                    <span className="text-sm font-medium text-slate-700">Allow Search</span>
-                                </label>
-                                <p className="text-xs text-slate-500 mt-1 ml-6">Allow records of this object to be found in Global Search.</p>
-                            </div>
-
-                            <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="px-4 py-2 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={creating}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
-                                >
-                                    {creating ? (
-                                        <>
-                                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            Creating...
-                                        </>
-                                    ) : (
-                                        'Create Object'
-                                    )}
-                                </button>
-                            </div>
-                        </form>
+                                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="px-4 py-2 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={creating}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {creating ? (
+                                            <>
+                                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                Creating...
+                                            </>
+                                        ) : (
+                                            'Create Object'
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Delete Object Confirmation Modal */}
             <ConfirmationModal
@@ -353,6 +358,6 @@ export const ObjectManager: React.FC = () => {
                 variant="danger"
                 loading={deleting}
             />
-        </div>
+        </div >
     );
 };

@@ -1,11 +1,13 @@
 package services_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -19,9 +21,13 @@ func TestSharingRules_Integration(t *testing.T) {
 	}
 
 	db := dbConn.DB()
-	schemaManager := services.NewSchemaManager(db)
-	metadataService := services.NewMetadataService(dbConn, schemaManager)
-	permService := services.NewPermissionService(dbConn, metadataService)
+	schemaRepo := persistence.NewSchemaRepository(db)
+	schemaManager := services.NewSchemaManager(schemaRepo)
+	metadataRepo := persistence.NewMetadataRepository(dbConn.DB())
+	metadataService := services.NewMetadataService(metadataRepo, schemaManager)
+	userRepo := persistence.NewUserRepository(db)
+	permRepo := persistence.NewPermissionRepository(dbConn.DB())
+	permService := services.NewPermissionService(permRepo, metadataService, userRepo)
 
 	// Create test role for sharing
 	salesRoleID := "test-sharing-sales-role"
@@ -102,47 +108,70 @@ func TestSharingRules_Integration(t *testing.T) {
 	}
 
 	// Test cases
-	t.Run("Sales user can read Tech record via sharing rule", func(t *testing.T) {
-		salesSession := &models.UserSession{
-			ID:        salesUserID,
-			ProfileID: constants.ProfileStandardUser,
-			RoleID:    &salesRoleID,
-		}
-		if !permService.CheckRecordAccess(schema, techRecord, constants.PermRead, salesSession) {
-			t.Error("Sales user should be able to read Tech record via sharing rule")
+
+	salesSession := &models.UserSession{
+		ID:        salesUserID,
+		ProfileID: constants.ProfileStandardUser,
+		RoleID:    &salesRoleID,
+	}
+	marketingSession := &models.UserSession{
+		ID:        marketingUserID,
+		ProfileID: constants.ProfileStandardUser,
+		RoleID:    &marketingRoleID,
+	}
+	adminSession := &models.UserSession{ // Assuming an admin session for owner access
+		ID:        ownerUserID,
+		ProfileID: constants.ProfileSystemAdmin, // Or a profile that grants full access
+		RoleID:    nil,                          // Admins might not have a specific role for hierarchy
+	}
+
+	// Test Case 1: Tech support record (matches criteria)
+	// Sales User -> Should have READ access (via sharing rule)
+	t.Run("Sales User Access to Tech Record", func(t *testing.T) {
+		if !permService.CheckRecordAccess(context.Background(), schema, techRecord, constants.PermRead, salesSession) {
+			t.Errorf("Expected Sales user to have READ access to Tech record via sharing rule")
 		}
 	})
 
-	t.Run("Sales user cannot read Finance record (criteria mismatch)", func(t *testing.T) {
-		salesSession := &models.UserSession{
-			ID:        salesUserID,
-			ProfileID: constants.ProfileStandardUser,
-			RoleID:    &salesRoleID,
-		}
-		if permService.CheckRecordAccess(schema, nonTechRecord, constants.PermRead, salesSession) {
-			t.Error("Sales user should NOT be able to read Finance record (criteria doesn't match)")
+	// Test Case 2: Non-Tech support record (does NOT match criteria)
+	// Sales User -> Should NOT have access (Role Hierarchy doesn't apply as owner is admin, sharing rule criteria fails)
+	t.Run("Sales User Access to Non-Tech Record", func(t *testing.T) {
+		if permService.CheckRecordAccess(context.Background(), schema, nonTechRecord, constants.PermRead, salesSession) {
+			t.Errorf("Expected Sales user to NOT have access to Non-Tech record")
 		}
 	})
 
-	t.Run("Marketing user cannot read Tech record (not in shared role)", func(t *testing.T) {
-		marketingSession := &models.UserSession{
-			ID:        marketingUserID,
-			ProfileID: constants.ProfileStandardUser,
-			RoleID:    &marketingRoleID,
-		}
-		if permService.CheckRecordAccess(schema, techRecord, constants.PermRead, marketingSession) {
-			t.Error("Marketing user should NOT be able to read Tech record (not in Sales role)")
+	// Test Case 3: Tech support record
+	// Marketing User -> Should NOT have READ access (No matching sharing rule)
+	t.Run("Marketing User Access to Tech Record", func(t *testing.T) {
+		if permService.CheckRecordAccess(context.Background(), schema, techRecord, constants.PermRead, marketingSession) {
+			t.Errorf("Expected Marketing user to NOT have READ access to Tech record (No sharing rule applies)")
 		}
 	})
 
-	t.Run("Sales user cannot edit Tech record (rule is Read only)", func(t *testing.T) {
-		salesSession := &models.UserSession{
-			ID:        salesUserID,
-			ProfileID: constants.ProfileStandardUser,
-			RoleID:    &salesRoleID,
+	// Test Case 4: Edit Access
+	// Sales User -> Should NOT have EDIT access (Sharing rule is Read Only)
+	t.Run("Sales User Edit Access", func(t *testing.T) {
+		if permService.CheckRecordAccess(context.Background(), schema, techRecord, constants.PermEdit, salesSession) {
+			t.Errorf("Expected Sales user to NOT have EDIT access (Sharing rule is Read Only)")
 		}
-		if permService.CheckRecordAccess(schema, techRecord, constants.PermEdit, salesSession) {
-			t.Error("Sales user should NOT be able to edit Tech record (Read access only)")
+	})
+
+	// Test Case 5: Owner Access (Admin)
+	// Admin -> Should have EDIT access
+	t.Run("Owner Access", func(t *testing.T) {
+		if !permService.CheckRecordAccess(context.Background(), schema, techRecord, constants.PermEdit, adminSession) {
+			t.Errorf("Expected Owner (Admin) to have EDIT access")
+		}
+	})
+
+	// Test Case 6: Marketing User Access (Verify no access to confirm isolation)
+	t.Run("Marketing User No Access", func(t *testing.T) {
+		if permService.CheckRecordAccess(context.Background(), schema, techRecord, constants.PermEdit, marketingSession) {
+			t.Errorf("Expected Marketing user to NOT have EDIT access")
+		}
+		if permService.CheckRecordAccess(context.Background(), schema, nonTechRecord, constants.PermRead, marketingSession) {
+			t.Errorf("Expected Marketing user to NOT have READ access to Finance record")
 		}
 	})
 
@@ -155,16 +184,11 @@ func TestSharingRules_Integration(t *testing.T) {
 	}
 
 	t.Run("Marketing user can edit any Account record (Edit access, no criteria)", func(t *testing.T) {
-		marketingSession := &models.UserSession{
-			ID:        marketingUserID,
-			ProfileID: constants.ProfileStandardUser,
-			RoleID:    &marketingRoleID,
-		}
 		// Both tech and non-tech records should be editable
-		if !permService.CheckRecordAccess(schema, techRecord, constants.PermEdit, marketingSession) {
+		if !permService.CheckRecordAccess(context.Background(), schema, techRecord, constants.PermEdit, marketingSession) {
 			t.Error("Marketing user should be able to edit Tech record (Edit access)")
 		}
-		if !permService.CheckRecordAccess(schema, nonTechRecord, constants.PermRead, marketingSession) {
+		if !permService.CheckRecordAccess(context.Background(), schema, nonTechRecord, constants.PermRead, marketingSession) {
 			t.Error("Marketing user should be able to read Finance record (Edit grants read too)")
 		}
 	})

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -22,8 +23,10 @@ func SetupIntegrationTest(t *testing.T) (*database.TiDBConnection, *MetadataServ
 	}
 
 	db := conn.DB()
-	sm := NewSchemaManager(db)
-	ms := NewMetadataService(conn, sm)
+	schemaRepo := persistence.NewSchemaRepository(db)
+	sm := NewSchemaManager(schemaRepo)
+	repo := persistence.NewMetadataRepository(db)
+	ms := NewMetadataService(repo, sm)
 
 	return conn, ms
 }

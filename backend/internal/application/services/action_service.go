@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/backend/pkg/formula"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
@@ -22,12 +23,12 @@ type ActionService struct {
 	metadata    *MetadataService
 	persistence *PersistenceService
 	permissions *PermissionService
-	txManager   *TransactionManager
+	txManager   *persistence.TransactionManager
 	formula     *formula.Engine
 }
 
 // NewActionService creates a new ActionService
-func NewActionService(metadata *MetadataService, persistence *PersistenceService, permissions *PermissionService, txManager *TransactionManager) *ActionService {
+func NewActionService(metadata *MetadataService, persistence *PersistenceService, permissions *PermissionService, txManager *persistence.TransactionManager) *ActionService {
 	return &ActionService{
 		metadata:    metadata,
 		persistence: persistence,
@@ -112,7 +113,7 @@ func (as *ActionService) executeCreateRecord(ctx context.Context, action *models
 	// Build record from field mappings
 	record := make(models.SObject)
 	for fieldName, formulaOrValue := range fieldMappings {
-		value, err := as.evaluateRef(formulaOrValue, actionCtx, action.ObjectAPIName)
+		value, err := as.evaluateRef(ctx, formulaOrValue, actionCtx, action.ObjectAPIName)
 		if err != nil {
 			return fmt.Errorf("failed to evaluate field %s: %w", fieldName, err)
 		}
@@ -139,7 +140,7 @@ func (as *ActionService) executeUpdateRecord(ctx context.Context, action *models
 		return err
 	}
 
-	recordIDVal, err := as.getConfigValue(action.Config, constants.ConfigRecordID, actionCtx, action.ObjectAPIName)
+	recordIDVal, err := as.getConfigValue(ctx, action.Config, constants.ConfigRecordID, actionCtx, action.ObjectAPIName)
 	if err != nil {
 		return fmt.Errorf("failed to get record_id: %w", err)
 	}
@@ -153,7 +154,7 @@ func (as *ActionService) executeUpdateRecord(ctx context.Context, action *models
 	// Build updates from field mappings
 	updates := make(models.SObject)
 	for fieldName, formulaOrValue := range fieldMappings {
-		value, err := as.evaluateRef(formulaOrValue, actionCtx, action.ObjectAPIName)
+		value, err := as.evaluateRef(ctx, formulaOrValue, actionCtx, action.ObjectAPIName)
 		if err != nil {
 			return fmt.Errorf("failed to evaluate field %s: %w", fieldName, err)
 		}
@@ -219,24 +220,24 @@ func (as *ActionService) executeSteps(ctx context.Context, steps []interface{}, 
 // executeSendEmail sends an email based on action configuration
 func (as *ActionService) executeSendEmail(ctx context.Context, action *models.ActionMetadata, actionCtx *ActionContext) error {
 	// Extract email configuration
-	toEmail, err := as.getConfigValue(action.Config, constants.ConfigTo, actionCtx, action.ObjectAPIName)
+	toEmail, err := as.getConfigValue(ctx, action.Config, constants.ConfigTo, actionCtx, action.ObjectAPIName)
 	if err != nil {
 		return fmt.Errorf("failed to get 'to' email: %w", err)
 	}
 
-	subject, err := as.getConfigValue(action.Config, constants.ConfigSubject, actionCtx, action.ObjectAPIName)
+	subject, err := as.getConfigValue(ctx, action.Config, constants.ConfigSubject, actionCtx, action.ObjectAPIName)
 	if err != nil {
 		return fmt.Errorf("failed to get email subject: %w", err)
 	}
 
-	body, err := as.getConfigValue(action.Config, constants.ConfigBody, actionCtx, action.ObjectAPIName)
+	body, err := as.getConfigValue(ctx, action.Config, constants.ConfigBody, actionCtx, action.ObjectAPIName)
 	if err != nil {
 		return fmt.Errorf("failed to get email body: %w", err)
 	}
 
 	// Optional fields (used when email integration is implemented)
-	ccEmail, _ := as.getConfigValue(action.Config, constants.ConfigCc, actionCtx, action.ObjectAPIName)
-	bccEmail, _ := as.getConfigValue(action.Config, constants.ConfigBcc, actionCtx, action.ObjectAPIName)
+	ccEmail, _ := as.getConfigValue(ctx, action.Config, constants.ConfigCc, actionCtx, action.ObjectAPIName)
+	bccEmail, _ := as.getConfigValue(ctx, action.Config, constants.ConfigBcc, actionCtx, action.ObjectAPIName)
 	_, _, _ = body, ccEmail, bccEmail // Silence unused warnings - will be used when email is implemented
 
 	// User details for logging
@@ -259,13 +260,13 @@ func (as *ActionService) executeSendEmail(ctx context.Context, action *models.Ac
 // executeCallWebhook calls a webhook based on action configuration
 func (as *ActionService) executeCallWebhook(ctx context.Context, action *models.ActionMetadata, actionCtx *ActionContext) error {
 	// Extract webhook configuration
-	urlValue, err := as.getConfigValue(action.Config, constants.ConfigURL, actionCtx, action.ObjectAPIName)
+	urlValue, err := as.getConfigValue(ctx, action.Config, constants.ConfigURL, actionCtx, action.ObjectAPIName)
 	if err != nil {
 		return fmt.Errorf("failed to get webhook URL: %w", err)
 	}
 	url := fmt.Sprintf("%v", urlValue)
 
-	methodValue, err := as.getConfigValue(action.Config, constants.ConfigMethod, actionCtx, action.ObjectAPIName)
+	methodValue, err := as.getConfigValue(ctx, action.Config, constants.ConfigMethod, actionCtx, action.ObjectAPIName)
 	if err != nil {
 		// Default to POST if not specified
 		methodValue = "POST"
@@ -279,7 +280,7 @@ func (as *ActionService) executeCallWebhook(ctx context.Context, action *models.
 
 	// Build request body from payload config
 	var bodyReader io.Reader
-	if payload, err := as.getConfigValue(action.Config, constants.ConfigPayload, actionCtx, action.ObjectAPIName); err == nil && payload != nil {
+	if payload, err := as.getConfigValue(ctx, action.Config, constants.ConfigPayload, actionCtx, action.ObjectAPIName); err == nil && payload != nil {
 		payloadBytes, err := json.Marshal(payload)
 		if err != nil {
 			return fmt.Errorf("failed to serialize webhook payload: %w", err)
@@ -323,18 +324,18 @@ func (as *ActionService) executeCallWebhook(ctx context.Context, action *models.
 }
 
 // getConfigValue extracts a value from action config and evaluates it if it's a formula
-func (as *ActionService) getConfigValue(config map[string]interface{}, key string, actionCtx *ActionContext, sourceObjectName string) (interface{}, error) {
+func (as *ActionService) getConfigValue(ctx context.Context, config map[string]interface{}, key string, actionCtx *ActionContext, sourceObjectName string) (interface{}, error) {
 	value, exists := config[key]
 	if !exists {
 		return nil, fmt.Errorf("%s not specified in action config", key)
 	}
 
 	// Evaluate if it's a formula
-	return as.evaluateRef(value, actionCtx, sourceObjectName)
+	return as.evaluateRef(ctx, value, actionCtx, sourceObjectName)
 }
 
 // evaluateRef evaluates a value using the metadata-driven Formula Engine
-func (as *ActionService) evaluateRef(value interface{}, actionCtx *ActionContext, sourceObjectName string) (interface{}, error) {
+func (as *ActionService) evaluateRef(ctx context.Context, value interface{}, actionCtx *ActionContext, sourceObjectName string) (interface{}, error) {
 	// If it's a string, check if it's a formula
 	strValue, ok := value.(string)
 	if !ok {
@@ -362,7 +363,7 @@ func (as *ActionService) evaluateRef(value interface{}, actionCtx *ActionContext
 		formulaCtx.IsVisible = func(fieldName string) bool {
 			// Use provided source object name
 			if sourceObjectName != "" {
-				return as.permissions.CheckFieldVisibilityWithUser(sourceObjectName, fieldName, actionCtx.User)
+				return as.permissions.CheckFieldVisibilityWithUser(ctx, sourceObjectName, fieldName, actionCtx.User)
 			}
 			// Fallback: If we can't determine object, we default to hidden for safety
 			return false

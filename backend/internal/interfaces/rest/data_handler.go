@@ -25,14 +25,21 @@ func NewDataHandler(svc *services.ServiceManager) *DataHandler {
 func (h *DataHandler) Query(c *gin.Context) {
 	user := GetUserFromContext(c)
 	var req models.QueryRequest
-	if !BindJSON(c, &req) {
+	// Strict binding to prevent unknown filter keys (e.g. "condition" vs "criteria")
+	if !BindJSONStrict(c, &req) {
 		return
 	}
 
 	// Normalize object API name from JSON body
 	req.ObjectAPIName = strings.ToLower(req.ObjectAPIName)
 
-	HandleGetEnvelope(c, "records", func() (interface{}, error) {
+	// Map generic OrderBy to legacy SortField if present
+	if len(req.OrderBy) > 0 && req.SortField == "" {
+		req.SortField = req.OrderBy[0].Field
+		req.SortDirection = req.OrderBy[0].Direction
+	}
+
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.QuerySvc.Query(
 			c.Request.Context(),
 			req,
@@ -52,7 +59,7 @@ func (h *DataHandler) Search(c *gin.Context) {
 		return
 	}
 
-	HandleGetEnvelope(c, "results", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.QuerySvc.GlobalSearch(c.Request.Context(), req.Term, user)
 	})
 }
@@ -63,7 +70,7 @@ func (h *DataHandler) SearchSingleObject(c *gin.Context) {
 	objectName := strings.ToLower(c.Param("objectApiName"))
 	term := c.Query("term")
 
-	HandleGetEnvelope(c, "records", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		if term == "" {
 			return nil, errors.NewValidationError("term", "Search term is required")
 		}
@@ -75,12 +82,9 @@ func (h *DataHandler) SearchSingleObject(c *gin.Context) {
 func (h *DataHandler) GetRecycleBinItems(c *gin.Context) {
 	user := GetUserFromContext(c)
 	scope := c.Query("scope") // "mine" or "all"
-	items, err := h.svc.Persistence.GetRecycleBinItems(c.Request.Context(), user, scope)
-	if err != nil {
-		RespondError(c, errors.GetHTTPStatus(err), err.Error())
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{constants.ResponseItems: items})
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
+		return h.svc.Persistence.GetRecycleBinItems(c.Request.Context(), user, scope)
+	})
 }
 
 // RestoreFromRecycleBin handles POST /api/data/recyclebin/restore/:id
@@ -88,10 +92,14 @@ func (h *DataHandler) RestoreFromRecycleBin(c *gin.Context) {
 	user := GetUserFromContext(c)
 	id := c.Param("id")
 	if err := h.svc.Persistence.Restore(c.Request.Context(), id, user); err != nil {
-		RespondError(c, http.StatusInternalServerError, fmt.Sprintf("Failed to restore record: %v", err))
+		RespondAppError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{constants.FieldMessage: "Record restored successfully"})
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			constants.FieldMessage: "Record restored successfully",
+		},
+	})
 }
 
 // PurgeFromRecycleBin handles DELETE /api/data/recyclebin/:id
@@ -110,7 +118,7 @@ func (h *DataHandler) GetRecord(c *gin.Context) {
 	objectApiName := strings.ToLower(c.Param("objectApiName"))
 	id := c.Param("id")
 
-	HandleGetEnvelope(c, "record", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		if !utils.IsValidUUID(id) {
 			return nil, errors.NewValidationError(constants.FieldID, "Invalid ID format")
 		}
@@ -138,7 +146,7 @@ func (h *DataHandler) GetRecord(c *gin.Context) {
 		// Secure Read: Check single record access (Ownership/Sharing)
 		schema := h.svc.Metadata.GetSchema(c.Request.Context(), objectApiName)
 		if schema != nil {
-			if !h.svc.Permissions.CheckRecordAccess(schema, record, constants.PermRead, user) {
+			if !h.svc.Permissions.CheckRecordAccess(c.Request.Context(), schema, record, constants.PermRead, user) {
 				// Return PermissionError (403) or NotFound (404) depending on security policy.
 				// For strict security, 404 prevents enumerating IDs.
 				// But we'll use PermissionError for clarity for now, or match persistence service.
@@ -161,7 +169,7 @@ func (h *DataHandler) CreateRecord(c *gin.Context) {
 	data = make(models.SObject)
 
 	// We need to capture the created record to return it
-	HandleCreateEnvelope(c, "record", "Record created successfully", &data, func() error {
+	HandleCreateEnvelope(c, "data", "Record created successfully", &data, func() error {
 		// Data is already bound by HandleCreateEnvelope
 		record, err := h.svc.Persistence.Insert(c.Request.Context(), objectApiName, data, user)
 		if err != nil {
@@ -209,7 +217,7 @@ func (h *DataHandler) RunAnalytics(c *gin.Context) {
 	// Normalize object API name from JSON body
 	query.ObjectAPIName = strings.ToLower(query.ObjectAPIName)
 
-	HandleGetEnvelope(c, "result", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.QuerySvc.RunAnalytics(c.Request.Context(), query, user)
 	})
 }
@@ -224,7 +232,7 @@ func (h *DataHandler) Calculate(c *gin.Context) {
 		return
 	}
 
-	HandleGetEnvelope(c, "record", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.QuerySvc.Calculate(c.Request.Context(), objectApiName, record, user)
 	})
 }

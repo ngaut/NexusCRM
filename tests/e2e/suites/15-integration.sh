@@ -21,11 +21,11 @@ TEST_RECORD_ID=""
 TIMESTAMP=$(date +%s)
 TEST_OBJ="integration_test_$TIMESTAMP"
 
-test_cleanup_object() {
-    echo "Cleaning up test object..."
-    api_delete "/api/metadata/objects/$TEST_OBJ" > /dev/null 2>&1
+test_cleanup_full() {
+    test_cleanup
+    test_cleanup_object
 }
-trap test_cleanup_object EXIT
+trap test_cleanup_full EXIT
 
 run_suite() {
     section_header "$SUITE_NAME"
@@ -74,8 +74,29 @@ setup_test_object() {
     api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "status", "label": "Status", "type": "Text"}' > /dev/null
     echo "  ✓ Fields added to test object"
     
-    sleep 1  # Allow caches to refresh
+    # Wait for Schema Cache (Polling)
+    echo "  Waiting for field 'status'..."
+    for i in {1..10}; do
+        meta=$(api_get "/api/metadata/objects/$TEST_OBJ")
+        if echo "$meta" | grep -q "\"api_name\":\"status\""; then
+            break
+        fi
+        sleep 0.5
+    done
 }
+
+
+test_cleanup_object() {
+    echo "Cleaning up test object..."
+    api_delete "/api/metadata/objects/$TEST_OBJ" > /dev/null 2>&1
+}
+
+test_cleanup_full() {
+    # Suppress errors during cleanup
+    test_cleanup > /dev/null 2>&1
+    test_cleanup_object
+}
+trap test_cleanup_full EXIT
 
 # Step 1: Setup Queues and Groups
 test_setup_queues_and_groups() {
@@ -224,16 +245,28 @@ test_create_record_triggers_assignment() {
     echo "  Created Record: $TEST_RECORD_ID"
     
     # Check if owner_id was updated to queue (flow execution)
-    sleep 1  # Brief pause for async flow execution
-    local record_get=$(api_get "/api/data/$TEST_OBJ/$TEST_RECORD_ID")
-    local record_owner=$(json_extract "$record_get" "owner_id")
+    # Check if owner_id was updated to queue (flow execution)
+    # Poll for async flow execution (max 10s)
+    local max_retries=10
+    local record_owner=""
+    
+    echo "  Waiting for background flow execution..."
+    for ((i=1; i<=max_retries; i++)); do
+        local record_get=$(api_get "/api/data/$TEST_OBJ/$TEST_RECORD_ID")
+        record_owner=$(json_extract "$record_get" "owner_id")
+        
+        if [ "$record_owner" == "$WEST_COAST_QUEUE_ID" ]; then
+            break
+        fi
+        sleep 1
+    done
     
     echo "  Record owner_id: $record_owner"
     
     if [ "$record_owner" == "$WEST_COAST_QUEUE_ID" ]; then
         test_passed "Record auto-assigned to West Coast Queue (Flow executed)"
     else
-        echo "  Note: Record not auto-assigned (Flow may not be configured)"
+        echo "  Note: Record not auto-assigned (Flow may not be configured) after ${max_retries}s"
         echo "  Manually assigning to queue for remaining tests..."
         
         # Manual assignment for testing

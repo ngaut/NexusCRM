@@ -28,10 +28,10 @@ export interface ActionMetadata {
 
 export const actionAPI = {
     getActions: async (objectName: string): Promise<ActionMetadata[]> => {
-        const response = await apiClient.get<{ actions: ActionMetadata[] }>(
+        const response = await apiClient.get<{ data: ActionMetadata[] }>(
             API_ENDPOINTS.METADATA.ACTIONS(objectName)
         );
-        return response.actions;
+        return response.data;
     },
 
     executeAction: async (

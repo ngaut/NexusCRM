@@ -32,7 +32,7 @@ export const ListFilters: React.FC<ListFiltersProps> = ({ objectApiName, fields,
     const activeFilterCount = activeFilterExpr ? 1 : 0;
 
     return (
-        <div className="mb-4 relative">
+        <div className="relative">
             <div className="flex items-center justify-between">
                 <button
                     onClick={() => setIsOpen(!isOpen)}

@@ -200,7 +200,7 @@ export const FormulaEditor: React.FC<FormulaEditorProps> = ({
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         className="w-full h-32 px-3 py-2 font-mono text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-slate-900 text-slate-50"
-                        placeholder="state == 'CA' && amount > 1000"
+                        placeholder="e.g. status == 'Start'"
                     />
                     {parseError && (
                         <div className="mt-2 flex items-center text-amber-600 text-xs gap-1">

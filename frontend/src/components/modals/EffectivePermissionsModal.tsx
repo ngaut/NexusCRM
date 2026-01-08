@@ -44,8 +44,8 @@ export const EffectivePermissionsModal: React.FC<EffectivePermissionsModalProps>
 
             // Map effective permissions
             // Backend returns aggregated rows. Use them directly.
-            setPermissions(permsResponse.permissions || []);
-            setFieldPermissions(fieldPermsResponse.permissions || []);
+            setPermissions(permsResponse.data || []);
+            setFieldPermissions(fieldPermsResponse.data || []);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load effective permissions');
         } finally {

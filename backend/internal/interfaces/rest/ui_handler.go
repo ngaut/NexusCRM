@@ -24,7 +24,7 @@ func NewUIHandler(svc *services.ServiceManager) *UIHandler {
 
 // GetApps handles GET /api/metadata/apps
 func (h *UIHandler) GetApps(c *gin.Context) {
-	HandleGetEnvelope(c, "apps", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.UIMetadata.GetApps(c.Request.Context()), nil
 	})
 }
@@ -35,7 +35,7 @@ func (h *UIHandler) CreateApp(c *gin.Context) {
 
 	var req models.AppConfig
 
-	HandleCreateEnvelope(c, "app", "App created successfully", &req, func() error {
+	HandleCreateEnvelope(c, "data", "App created successfully", &req, func() error {
 		// Set default values
 		if req.NavigationItems == nil {
 			req.NavigationItems = []models.NavigationItem{}
@@ -73,7 +73,7 @@ func (h *UIHandler) DeleteApp(c *gin.Context) {
 
 // GetActiveTheme handles GET /api/metadata/theme
 func (h *UIHandler) GetActiveTheme(c *gin.Context) {
-	HandleGetEnvelope(c, "theme", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.UIMetadata.GetActiveTheme(c.Request.Context())
 	})
 }
@@ -84,7 +84,7 @@ func (h *UIHandler) CreateTheme(c *gin.Context) {
 
 	var req models.Theme
 
-	HandleCreateEnvelope(c, "theme", "Theme created successfully", &req, func() error {
+	HandleCreateEnvelope(c, "data", "Theme created successfully", &req, func() error {
 		return h.svc.UIMetadata.UpsertTheme(c.Request.Context(), &req)
 	})
 }
@@ -106,32 +106,25 @@ func (h *UIHandler) ActivateTheme(c *gin.Context) {
 func (h *UIHandler) GetLayout(c *gin.Context) {
 	user := GetUserFromContext(c)
 	objectName := c.Param("objectName")
-	// Get layout with profile-specific logic
-	var profileID *string
-	if user != nil {
-		profileID = &user.ProfileID
-	}
-	layout := h.svc.UIMetadata.GetLayout(c.Request.Context(), objectName, profileID)
-	if layout == nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			constants.FieldMessage: "Layout for '" + objectName + "' not found",
-		})
-		return
-	}
 
-	// Filter by type if specified
-	// if layoutType != "" && layout.Type != layoutType {
-	// 	// Try to find a layout with matching type
-	// 	// For now, just return the default layout regardless of type
-	// }
-
-	c.JSON(http.StatusOK, gin.H{constants.ResponseLayout: layout})
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
+		// Get layout with profile-specific logic
+		var profileID *string
+		if user != nil {
+			profileID = &user.ProfileID
+		}
+		layout := h.svc.UIMetadata.GetLayout(c.Request.Context(), objectName, profileID)
+		if layout == nil {
+			return nil, appErrors.NewNotFoundError("Layout", objectName)
+		}
+		return layout, nil
+	})
 }
 
 // SaveLayout handles POST /api/metadata/layouts
 func (h *UIHandler) SaveLayout(c *gin.Context) {
 	var layout models.PageLayout
-	HandleCreateEnvelope(c, "layout", "Layout saved successfully", &layout, func() error {
+	HandleCreateEnvelope(c, "data", "Layout saved successfully", &layout, func() error {
 		// Validate required fields
 		if layout.ID == "" {
 			return appErrors.NewValidationError(constants.FieldID, "Layout ID is required")
@@ -164,7 +157,7 @@ func (h *UIHandler) AssignLayoutToProfile(c *gin.Context) {
 	}
 
 	if err := h.svc.UIMetadata.AssignLayoutToProfile(c.Request.Context(), req.ProfileID, req.ObjectAPIName, req.LayoutID); err != nil {
-		RespondError(c, http.StatusInternalServerError, "Failed to assign layout: "+err.Error())
+		RespondAppError(c, err)
 		return
 	}
 
@@ -178,7 +171,7 @@ func (h *UIHandler) AssignLayoutToProfile(c *gin.Context) {
 // GetDashboards handles GET /api/metadata/dashboards
 func (h *UIHandler) GetDashboards(c *gin.Context) {
 	user := GetUserFromContext(c)
-	HandleGetEnvelope(c, "dashboards", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.UIMetadata.GetDashboards(c.Request.Context(), user), nil
 	})
 }
@@ -189,16 +182,16 @@ func (h *UIHandler) GetDashboard(c *gin.Context) {
 	// Custom 404
 	dashboard := h.svc.UIMetadata.GetDashboard(c.Request.Context(), id)
 	if dashboard == nil {
-		RespondError(c, http.StatusNotFound, appErrors.ErrNotFound.Error())
+		RespondAppError(c, appErrors.NewNotFoundError("Dashboard", id))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{constants.ResponseDashboard: dashboard})
+	c.JSON(http.StatusOK, gin.H{"data": dashboard})
 }
 
 // CreateDashboard handles POST /api/metadata/dashboards
 func (h *UIHandler) CreateDashboard(c *gin.Context) {
 	var dashboard models.DashboardConfig
-	HandleCreateEnvelope(c, "dashboard", "Dashboard created successfully", &dashboard, func() error {
+	HandleCreateEnvelope(c, "data", "Dashboard created successfully", &dashboard, func() error {
 		// Strict Simplification: Do not allow widgets during creation.
 		// Agents/Clients must use add_dashboard_widget or update flow.
 		if len(dashboard.Widgets) > 0 {
@@ -212,7 +205,7 @@ func (h *UIHandler) CreateDashboard(c *gin.Context) {
 func (h *UIHandler) UpdateDashboard(c *gin.Context) {
 	id := c.Param("id")
 	var updates models.DashboardConfig
-	HandleUpdateEnvelope(c, "dashboard", "Dashboard updated successfully", &updates, func() error {
+	HandleUpdateEnvelope(c, "data", "Dashboard updated successfully", &updates, func() error {
 		return h.svc.UIMetadata.UpdateDashboard(c.Request.Context(), id, &updates)
 	})
 }
@@ -231,10 +224,10 @@ func (h *UIHandler) DeleteDashboard(c *gin.Context) {
 func (h *UIHandler) GetListViews(c *gin.Context) {
 	objectAPIName := c.Query("objectApiName")
 	if objectAPIName == "" {
-		RespondError(c, http.StatusBadRequest, "objectApiName query parameter is required")
+		RespondAppError(c, appErrors.NewValidationError("objectApiName", "query parameter is required"))
 		return
 	}
-	HandleGetEnvelope(c, "views", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.UIMetadata.GetListViews(c.Request.Context(), objectAPIName), nil
 	})
 }
@@ -242,7 +235,7 @@ func (h *UIHandler) GetListViews(c *gin.Context) {
 // CreateListView handles POST /api/metadata/listviews
 func (h *UIHandler) CreateListView(c *gin.Context) {
 	var view models.ListView
-	HandleCreateEnvelope(c, "view", "List view created successfully", &view, func() error {
+	HandleCreateEnvelope(c, "data", "List view created successfully", &view, func() error {
 		if view.ObjectAPIName == "" {
 			return appErrors.NewValidationError(constants.FieldObjectAPIName, "is required")
 		}
@@ -257,7 +250,7 @@ func (h *UIHandler) CreateListView(c *gin.Context) {
 func (h *UIHandler) UpdateListView(c *gin.Context) {
 	id := c.Param("id")
 	var updates models.ListView
-	HandleUpdateEnvelope(c, "view", "List view updated successfully", &updates, func() error {
+	HandleUpdateEnvelope(c, "data", "List view updated successfully", &updates, func() error {
 		return h.svc.Metadata.UpdateListView(c.Request.Context(), id, &updates)
 	})
 }
@@ -273,7 +266,7 @@ func (h *UIHandler) DeleteListView(c *gin.Context) {
 // GetSetupPages handles GET /api/setup/pages
 func (h *UIHandler) GetSetupPages(c *gin.Context) {
 	log.Printf("Hit GetSetupPages. Filter: %s", c.Query("filter"))
-	HandleGetEnvelope(c, "pages", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		pages, err := h.svc.Metadata.GetSetupPages(c.Request.Context())
 		if err != nil {
 			log.Printf("Error getting setup pages: %v", err)
@@ -291,9 +284,7 @@ func (h *UIHandler) GetSetupPages(c *gin.Context) {
 				if key == "is_enabled" {
 					var filtered []models.SetupPage
 					wantEnabled := val == "true"
-					log.Printf("Debug Filter: key=%s val=%s want=%v total_pages=%d", key, val, wantEnabled, len(pages))
 					for _, p := range pages {
-						log.Printf("  Page %s IsEnabled=%v", p.ID, p.IsEnabled)
 						if p.IsEnabled == wantEnabled {
 							filtered = append(filtered, p)
 						}

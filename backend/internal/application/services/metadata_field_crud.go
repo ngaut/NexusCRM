@@ -176,31 +176,6 @@ func (ms *MetadataService) CreateField(ctx context.Context, objectAPIName string
 		log.Printf("Warning: Failed to add field %s to layout: %v", field.APIName, err)
 	}
 
-	// AUTOMATIC PERMISSION GRANT
-	if ms.permissionSvc != nil {
-		profiles := []string{constants.ProfileSystemAdmin, constants.ProfileStandardUser}
-		for _, profileID := range profiles {
-			fieldPerm := models.SystemFieldPerms{
-				ProfileID:     &profileID,
-				ObjectAPIName: objectAPIName,
-				FieldAPIName:  field.APIName,
-				Readable:      true,
-				Editable:      true,
-			}
-			if err := ms.permissionSvc.UpdateFieldPermission(fieldPerm); err != nil {
-				log.Printf("⚠️ Failed to grant default permission for field %s to profile %s: %v", field.APIName, profileID, err)
-			}
-
-			if field.IsPolymorphic {
-				typeFieldPerm := fieldPerm
-				typeFieldPerm.FieldAPIName = GetPolymorphicTypeColumnName(field.APIName)
-				if err := ms.permissionSvc.UpdateFieldPermission(typeFieldPerm); err != nil {
-					log.Printf("⚠️ Failed to grant permission for polymorphic type field: %v", err)
-				}
-			}
-		}
-	}
-
 	// For AutoNumber fields, register in _System_AutoNumber
 	if field.Type == constants.FieldTypeAutoNumber {
 		format := "{0}"
@@ -287,7 +262,7 @@ func (ms *MetadataService) UpdateField(ctx context.Context, objectAPIName, field
 	fieldID := GenerateFieldID(obj.APIName, fieldAPIName)
 
 	// Delegate to SchemaManager
-	if err := ms.schemaMgr.SaveFieldMetadataWithIDs(existingField, obj.ID, fieldID, ms.db); err != nil {
+	if err := ms.schemaMgr.SaveFieldMetadataWithIDs(existingField, obj.ID, fieldID, nil); err != nil {
 		return fmt.Errorf("failed to update field metadata: %w", err)
 	}
 
@@ -357,7 +332,7 @@ func (ms *MetadataService) BatchSyncSystemFields(ctx context.Context, objectAPIN
 	}
 
 	// Batch insert/update metadata
-	if err := ms.schemaMgr.BatchSaveFieldMetadata(batchFields, ms.db); err != nil {
+	if err := ms.schemaMgr.BatchSaveFieldMetadata(batchFields, nil); err != nil {
 		return fmt.Errorf("failed to batch sync fields for %s: %w", objectAPIName, err)
 	}
 

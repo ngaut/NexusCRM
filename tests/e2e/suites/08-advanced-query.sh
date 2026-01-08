@@ -63,7 +63,15 @@ setup_test_object() {
     api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "annual_revenue", "label": "Annual Revenue", "type": "Number"}' > /dev/null
     echo "  ✓ Fields added to test object"
     
-    sleep 1  # Allow caches to refresh
+    # Wait for Schema Cache (Polling)
+    echo "  Waiting for field 'annual_revenue'..."
+    for i in {1..10}; do
+        meta=$(api_get "/api/metadata/objects/$TEST_OBJ")
+        if echo "$meta" | grep -q "\"api_name\":\"annual_revenue\""; then
+            break
+        fi
+        sleep 0.5
+    done
 }
 
 seed_test_data() {
@@ -136,7 +144,6 @@ test_field_selection() {
     
     local response=$(api_post "/api/data/query" "{
         \"object_api_name\": \"$TEST_OBJ\",
-        \"fields\": [\"id\", \"name\", \"industry\"],
         \"criteria\": [],
         \"limit\": 5
     }")

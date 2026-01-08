@@ -37,9 +37,8 @@ json_extract() {
     local response="$1"
     local field="$2"
     
-    # Try direct field first, then try .record.field (API response wrapper)
-    # Also try .user.field (Auth response wrapper)
-    local result=$(echo "$response" | jq -r ".$field // .record.$field // .user.$field // empty" 2>/dev/null)
+    # Try .data.field (New Standard), then direct field, then legacy wrappers
+    local result=$(echo "$response" | jq -r ".data.$field // .$field // .record.$field // .user.$field // empty" 2>/dev/null)
     echo "$result"
 }
 

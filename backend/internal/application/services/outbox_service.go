@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/nexuscrm/backend/internal/domain/events"
-	"github.com/nexuscrm/backend/internal/infrastructure/database"
 	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 )
 
@@ -24,11 +23,12 @@ const (
 
 // OutboxService handles transactional event storage and async publishing.
 // It implements the Outbox Pattern for guaranteed event delivery.
+// OutboxService handles transactional event storage and async publishing.
+// It implements the Outbox Pattern for guaranteed event delivery.
 type OutboxService struct {
-	db        *database.TiDBConnection
 	repo      *persistence.OutboxRepository
 	eventBus  *EventBus
-	txManager *TransactionManager
+	txManager *persistence.TransactionManager
 
 	// Worker control
 	stopCh   chan struct{}
@@ -37,10 +37,9 @@ type OutboxService struct {
 }
 
 // NewOutboxService creates a new OutboxService
-func NewOutboxService(db *database.TiDBConnection, eventBus *EventBus, txManager *TransactionManager) *OutboxService {
+func NewOutboxService(repo *persistence.OutboxRepository, eventBus *EventBus, txManager *persistence.TransactionManager) *OutboxService {
 	return &OutboxService{
-		db:        db,
-		repo:      persistence.NewOutboxRepository(db.DB()),
+		repo:      repo,
 		eventBus:  eventBus,
 		txManager: txManager,
 		stopCh:    make(chan struct{}),
@@ -77,7 +76,8 @@ func (os *OutboxService) enqueueWithTx(ctx context.Context, tx *sql.Tx, eventTyp
 
 // enqueueDirect inserts event directly without transaction context
 func (os *OutboxService) enqueueDirect(ctx context.Context, eventType events.EventType, payload RecordEventPayload) error {
-	id, err := os.repo.Enqueue(ctx, os.db.DB(), string(eventType), payload)
+	// Repository handles nil executor by using internal DB
+	id, err := os.repo.Enqueue(ctx, nil, string(eventType), payload)
 	if err != nil {
 		return err
 	}
@@ -124,8 +124,7 @@ func (os *OutboxService) StopWorker() {
 // Events are published via EventBus and marked as processed.
 // Each event is processed in its own transaction to ensure atomicity.
 func (os *OutboxService) ProcessOutbox(ctx context.Context) error {
-	// First, get IDs of pending events (non-locking query to minimize contention)
-	// First, get pending events
+	// First, get ids of pending events
 	events, err := os.repo.GetPendingEvents(ctx, 100)
 	if err != nil {
 		return err
@@ -147,66 +146,53 @@ func (os *OutboxService) ProcessOutbox(ctx context.Context) error {
 
 // processEventAtomic claims an event, publishes it, and updates status atomically
 func (os *OutboxService) processEventAtomic(ctx context.Context, id, eventType, payloadJSON string, retryCount int) error {
-	// Start transaction to claim the event
-	tx, err := os.db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer func() { _ = tx.Rollback() }()
-
-	// Try to claim this specific event (skip if already claimed by another worker)
-	// Try to claim this specific event
-	claimedID, err := os.repo.ClaimEvent(ctx, tx, id)
-	if err != nil {
-		return fmt.Errorf("failed to claim event: %w", err)
-	}
-	if claimedID == "" {
-		return nil // Already processed/locked
-	}
-
-	// Parse payload
-	// Parse payload
-	var payload RecordEventPayload
-	if err := json.Unmarshal([]byte(payloadJSON), &payload); err != nil {
-		log.Printf("❌ [Outbox] Event %s failed payload unmarshal: %v", id, err)
-		if markErr := os.repo.UpdateStatus(ctx, tx, id, OutboxStatusFailed, fmt.Sprintf("invalid payload: %v", err)); markErr != nil {
-			return fmt.Errorf("failed to mark event as failed: %w", markErr)
+	return os.txManager.WithTransaction(func(tx *sql.Tx) error {
+		// Try to claim this specific event
+		claimedID, err := os.repo.ClaimEvent(ctx, tx, id)
+		if err != nil {
+			return fmt.Errorf("failed to claim event: %w", err)
 		}
-		return tx.Commit()
-	}
+		if claimedID == "" {
+			return nil // Already processed/locked
+		}
 
-	// Publish via EventBus
-	// Publish via EventBus
-	if err := os.eventBus.Publish(ctx, events.EventType(eventType), payload); err != nil {
-		// Increment retry count
-		newRetryCount := retryCount + 1
-		if newRetryCount >= MaxRetryAttempts {
-			if markErr := os.repo.UpdateStatus(ctx, tx, id, OutboxStatusFailed, fmt.Sprintf("max retries exceeded: %v", err)); markErr != nil {
+		// Parse payload
+		var payload RecordEventPayload
+		if err := json.Unmarshal([]byte(payloadJSON), &payload); err != nil {
+			log.Printf("❌ [Outbox] Event %s failed payload unmarshal: %v", id, err)
+			if markErr := os.repo.UpdateStatus(ctx, tx, id, OutboxStatusFailed, fmt.Sprintf("invalid payload: %v", err)); markErr != nil {
 				return fmt.Errorf("failed to mark event as failed: %w", markErr)
 			}
-			return tx.Commit()
+			return nil // Commit the failure status
 		}
 
-		// Update retry count
-		if updateErr := os.repo.IncrementRetry(ctx, tx, id, newRetryCount, err.Error()); updateErr != nil {
-			return fmt.Errorf("failed to update retry count: %w", updateErr)
+		// Publish via EventBus
+		if err := os.eventBus.Publish(ctx, events.EventType(eventType), payload); err != nil {
+			// Increment retry count
+			newRetryCount := retryCount + 1
+			if newRetryCount >= MaxRetryAttempts {
+				if markErr := os.repo.UpdateStatus(ctx, tx, id, OutboxStatusFailed, fmt.Sprintf("max retries exceeded: %v", err)); markErr != nil {
+					return fmt.Errorf("failed to mark event as failed: %w", markErr)
+				}
+				return nil // Commit failure
+			}
+
+			// Update retry count (and release lock by commit)
+			if updateErr := os.repo.IncrementRetry(ctx, tx, id, newRetryCount, err.Error()); updateErr != nil {
+				return fmt.Errorf("failed to update retry count: %w", updateErr)
+			}
+			log.Printf("⚠️ [Outbox] Event %s failed (Attempt %d/%d). Error: %v", id, newRetryCount, MaxRetryAttempts, err)
+			return nil // Commit increment
 		}
-		log.Printf("⚠️ [Outbox] Event %s failed (Attempt %d/%d). Error: %v", id, newRetryCount, MaxRetryAttempts, err)
-		return tx.Commit()
-	}
 
-	// Mark as processed within the same transaction
-	// Mark as processed within the same transaction
-	if err := os.repo.UpdateStatus(ctx, tx, id, OutboxStatusProcessed, ""); err != nil {
-		return fmt.Errorf("failed to mark as processed: %w", err)
-	}
+		// Mark as processed
+		if err := os.repo.UpdateStatus(ctx, tx, id, OutboxStatusProcessed, ""); err != nil {
+			return fmt.Errorf("failed to mark as processed: %w", err)
+		}
 
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
-	log.Printf("✅ [Outbox] Successfully processed event %s (Type: %s)", id, eventType)
-	return nil
+		log.Printf("✅ [Outbox] Successfully processed event %s (Type: %s)", id, eventType)
+		return nil // Commit success
+	})
 }
 
 // CleanupProcessed removes old processed events from the outbox.

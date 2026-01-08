@@ -80,11 +80,7 @@ export const SqlChartWidget: React.FC<WidgetRendererProps> = ({
             }
 
             const result = await analyticsAPI.executeAdminQuery(finalSql, finalParams);
-            if (result.success) {
-                setData(result.results || []);
-            } else {
-                setError("Query failed");
-            }
+            setData(result.data || []);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Failed to execute query";
             setError(message);

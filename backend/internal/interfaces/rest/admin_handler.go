@@ -17,7 +17,7 @@ func NewAdminHandler(svc *services.ServiceManager) *AdminHandler {
 
 // GetTableRegistry returns all registered tables
 func (h *AdminHandler) GetTableRegistry(c *gin.Context) {
-	HandleGetEnvelope(c, "registry", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		tables, err := h.svc.Schema.GetTableRegistry()
 		if err != nil {
 			return nil, err
@@ -31,7 +31,7 @@ func (h *AdminHandler) GetTableRegistry(c *gin.Context) {
 
 // ValidateSchema runs validation and returns health status
 func (h *AdminHandler) ValidateSchema(c *gin.Context) {
-	HandleGetEnvelope(c, "health", func() (interface{}, error) {
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.Schema.ValidateSchemaRegistry()
 	})
 }

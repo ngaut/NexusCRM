@@ -19,6 +19,8 @@ func RequireAuth(authSvc *services.AuthService) gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				constants.ResponseError: "Unauthorized",
 				constants.FieldMessage:  "No authorization token provided",
+				"code":                  "UNAUTHORIZED",
+				"data":                  nil,
 			})
 			c.Abort()
 			return
@@ -30,6 +32,8 @@ func RequireAuth(authSvc *services.AuthService) gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				constants.ResponseError: "Unauthorized",
 				constants.FieldMessage:  "Invalid authorization header format",
+				"code":                  "UNAUTHORIZED",
+				"data":                  nil,
 			})
 			c.Abort()
 			return
@@ -45,6 +49,8 @@ func RequireAuth(authSvc *services.AuthService) gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				constants.ResponseError: "Unauthorized",
 				constants.FieldMessage:  err.Error(),
+				"code":                  "UNAUTHORIZED",
+				"data":                  nil,
 			})
 			c.Abort()
 			return
@@ -69,6 +75,8 @@ func RequireSystemAdmin() gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				constants.ResponseError: "Unauthorized",
 				constants.FieldMessage:  "User not authenticated",
+				"code":                  "UNAUTHORIZED",
+				"data":                  nil,
 			})
 			c.Abort()
 			return
@@ -79,6 +87,8 @@ func RequireSystemAdmin() gin.HandlerFunc {
 			c.JSON(http.StatusForbidden, gin.H{
 				constants.ResponseError: "Forbidden",
 				constants.FieldMessage:  "Only System Administrators can access this resource",
+				"code":                  "FORBIDDEN",
+				"data":                  nil,
 			})
 			c.Abort()
 			return

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
-import { Loader2, Save, X } from 'lucide-react';
+import { Loader2, Save, X, AlertTriangle } from 'lucide-react';
 import { Button } from './ui/Button';
 import { useErrorToast, useSuccessToast } from './ui/Toast';
 import { formatApiError, getOperationErrorMessage } from '../core/utils/errorHandling';
@@ -59,6 +59,15 @@ export function MetadataRecordForm({
             }
         }
     }, [objectMetadata, isEdit, initialData, reset]);
+
+    const errorRef = React.useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to error summary
+    useEffect(() => {
+        if (Object.keys(errors).length > 0 && errorRef.current) {
+            errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [errors]);
 
     // Sync form with initialData whenever it changes (now handled by parent)
     useEffect(() => {
@@ -339,6 +348,25 @@ export function MetadataRecordForm({
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 relative">
             {/* Loading handled by parent */}
+
+            {/* Global Error Summary */}
+            {Object.keys(errors).length > 0 && (
+                <div
+                    ref={errorRef}
+                    className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3 scroll-mt-24"
+                    role="alert"
+                    tabIndex={-1}
+                >
+                    <AlertTriangle className="text-red-600 shrink-0 mt-0.5" size={20} />
+                    <div>
+                        <h3 className="text-sm font-medium text-red-800">Please correct the errors below</h3>
+                        <p className="text-sm text-red-600 mt-1">
+                            {Object.keys(errors).length} {Object.keys(errors).length === 1 ? 'field requires' : 'fields require'} attention.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {fieldsToRender.map(field => {
                     const fieldKey = field.api_name || `field-${Math.random()}`;

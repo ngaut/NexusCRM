@@ -48,15 +48,10 @@ func InitializePermissions(permSvc *services.PermissionService, metadata *servic
 			seededObjects[profileID] = make(map[string]bool)
 		}
 
-		for i, schema := range schemas {
+		for _, schema := range schemas {
 			// Skip if already seeded from JSON
 			if seededObjects[profileID][schema.APIName] {
 				continue
-			}
-
-			// DEBUG LOG every 10 items
-			if i%10 == 0 {
-				log.Printf("   ...Processing permission for %s/%s (%d/%d)...", profileID, schema.APIName, i+1, len(schemas))
 			}
 
 			// Determine default permissions based on profile and object type

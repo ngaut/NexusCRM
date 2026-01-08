@@ -67,7 +67,23 @@ setup_test_object() {
     api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "annual_revenue", "label": "Annual Revenue", "type": "Number"}' > /dev/null
     echo "  ✓ Fields added to test object"
     
-    sleep 1  # Allow caches to refresh
+    # Wait for Schema Cache (polling)
+    echo "  Waiting for field 'industry' to appear in metadata..."
+    local max_retries=10
+    local field_found=false
+    
+    for ((i=1; i<=max_retries; i++)); do
+        local meta=$(api_get "/api/metadata/objects/$TEST_OBJ")
+        if echo "$meta" | grep -q "\"api_name\":\"industry\""; then
+            field_found=true
+            break
+        fi
+        sleep 0.5
+    done
+    
+    if [ "$field_found" != true ]; then
+        echo "  Warning: Field not found in metadata after update"
+    fi
 }
 
 # Test 4.1: Create Record

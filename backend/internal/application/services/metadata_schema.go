@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	domainSchema "github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
@@ -154,7 +153,7 @@ func (ms *MetadataService) UpdateSchema(ctx context.Context, apiName string, upd
 	}
 
 	// Use helper to persist changes
-	if err := ms.schemaMgr.SaveObjectMetadata(obj, ms.db); err != nil {
+	if err := ms.schemaMgr.SaveObjectMetadata(obj, nil); err != nil {
 		return fmt.Errorf("failed to update object: %w", err)
 	}
 
@@ -218,110 +217,5 @@ func (ms *MetadataService) EnsureDefaultListView(objectAPIName string) error {
 		return fmt.Errorf("failed to insert default list view: %w", err)
 	}
 	log.Printf("✅ Auto-created default list view for %s", objectAPIName)
-	return nil
-}
-
-// BatchCreateSchemas performs massive batch creation of multiple schemas using the "Super Batch" strategy
-// 1. Parallel DDL for all tables
-// 2. Single batch insert for _System_Table
-// 3. Single batch insert for _System_Object
-// 4. Single batch insert for _System_Field
-// 5. Batch insert for default layouts
-func (ms *MetadataService) BatchCreateSchemas(schemas []models.ObjectMetadata) error {
-	ms.mu.Lock()
-	defer ms.mu.Unlock()
-
-	log.Printf("🚀 Starting Super Batch creation for %d objects...", len(schemas))
-
-	// 1. Prepare Data
-	tableDefs := make([]domainSchema.TableDefinition, 0, len(schemas))
-	allObjects := make([]*models.ObjectMetadata, 0, len(schemas))
-	allFields := make([]FieldWithContext, 0)
-	layouts := make([]models.PageLayout, 0, len(schemas))
-
-	for i := range schemas {
-		schema := &schemas[i] // Pointer to original
-
-		// Prepare Table Definition (Validation, Enrichment, Mapping)
-		def, batchFields, err := ms.PrepareTableDefinition(schema)
-		if err != nil {
-			return err
-		}
-
-		tableDefs = append(tableDefs, def)
-		allObjects = append(allObjects, schema) // pointer, schema was modified by PrepareTableDefinition (e.g. ID)
-		allFields = append(allFields, batchFields...)
-
-		// Prepare Default Layout
-		layout := ms.GenerateDefaultLayout(schema)
-		layouts = append(layouts, layout)
-	}
-
-	// 2. Execute Batch Operations
-	// A. Physical Tables & Registry (Parallel DDL + Batch Table Insert)
-	if err := ms.schemaMgr.BatchCreatePhysicalTables(context.Background(), tableDefs); err != nil {
-		return fmt.Errorf("batch physical table creation failed: %w", err)
-	}
-
-	// B. Batch Object Metadata
-	log.Printf("📦 Batch inserting %d objects in _System_Object...", len(allObjects))
-	if err := ms.schemaMgr.BatchSaveObjectMetadata(allObjects, ms.db); err != nil {
-		return fmt.Errorf("batch object metadata save failed: %w", err)
-	}
-
-	// C. Batch Field Metadata
-	log.Printf("📦 Batch inserting %d fields in _System_Field...", len(allFields))
-	if err := ms.schemaMgr.BatchSaveFieldMetadata(allFields, ms.db); err != nil {
-		return fmt.Errorf("batch field metadata save failed: %w", err)
-	}
-
-	// D. Batch Layouts
-	log.Printf("📦 Batch inserting %d layouts in _System_Layout...", len(layouts))
-	if len(layouts) > 0 {
-		ctx := context.Background()
-		// Convert []models.PageLayout to []*models.PageLayout for BatchUpsertLayouts
-		layoutPointers := make([]*models.PageLayout, len(layouts))
-		for i := range layouts {
-			layoutPointers[i] = &layouts[i]
-		}
-		if err := ms.repo.BatchUpsertLayouts(ctx, layoutPointers); err != nil {
-			log.Printf("⚠️ Failed to batch insert layouts: %v", err)
-		}
-	}
-
-	// E. Batch Default Permissions (for custom objects)
-	if ms.permissionSvc != nil {
-		profiles := []string{constants.ProfileSystemAdmin, constants.ProfileStandardUser}
-		for _, schema := range schemas {
-			if !schema.IsCustom {
-				continue
-			}
-			for _, field := range schema.Fields {
-				for _, profileID := range profiles {
-					fieldPerm := models.SystemFieldPerms{
-						ProfileID:     &profileID,
-						ObjectAPIName: schema.APIName,
-						FieldAPIName:  field.APIName,
-						Readable:      true,
-						Editable:      true,
-					}
-					if err := ms.permissionSvc.UpdateFieldPermission(fieldPerm); err != nil {
-						log.Printf("⚠️ Failed to grant permission for field %s: %v", field.APIName, err)
-					}
-
-					// Also grant to the type column if polymorphic
-					if field.IsPolymorphic {
-						typeFieldPerm := fieldPerm
-						typeFieldPerm.FieldAPIName = GetPolymorphicTypeColumnName(field.APIName)
-						if err := ms.permissionSvc.UpdateFieldPermission(typeFieldPerm); err != nil {
-							log.Printf("⚠️ Failed to grant permission for polymorphic type field: %v", err)
-						}
-					}
-				}
-			}
-		}
-	}
-
-	ms.invalidateCacheLocked()
 	return nil
 }

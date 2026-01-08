@@ -7,21 +7,22 @@ import (
 	"log"
 	"strings"
 
-	"github.com/nexuscrm/shared/pkg/constants"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/shared/pkg/models"
 )
 
 // RollupService handles rollup summary field calculations
+// RollupService handles rollup summary field calculations
 type RollupService struct {
-	db        *sql.DB
+	repo      *persistence.RollupRepository
 	metadata  *MetadataService
-	txManager *TransactionManager
+	txManager *persistence.TransactionManager
 }
 
 // NewRollupService creates a new RollupService
-func NewRollupService(db *sql.DB, metadata *MetadataService, txManager *TransactionManager) *RollupService {
+func NewRollupService(repo *persistence.RollupRepository, metadata *MetadataService, txManager *persistence.TransactionManager) *RollupService {
 	return &RollupService{
-		db:        db,
+		repo:      repo,
 		metadata:  metadata,
 		txManager: txManager,
 	}
@@ -42,23 +43,11 @@ func (rs *RollupService) ProcessRollups(ctx context.Context, tx *sql.Tx, childOb
 			return fmt.Errorf("failed to calculate rollup %s.%s: %w", item.ParentObjName, item.RollupField.APIName, err)
 		}
 
-		// Direct Update of Parent
-		// Using raw SQL to avoid circular dependency with PersistenceService.Update
-		// This skips validation logic on the parent, which is usually acceptable for system-calculated rollups.
+		// Direct Update of Parent via Repository
 		log.Printf("🔄 Updating Rollup %s.%s on %s = %v", item.ParentObjName, item.RollupField.APIName, item.ParentID, newVal)
 
-		// Using backticks to quote identifiers (prevents issues with reserved words)
-		updateQuery := fmt.Sprintf("UPDATE `%s` SET `%s` = ? WHERE `id` = ?", item.ParentObjName, item.RollupField.APIName)
-
-		var execErr error
-		if tx != nil {
-			_, execErr = tx.ExecContext(ctx, updateQuery, newVal, item.ParentID)
-		} else {
-			_, execErr = rs.db.ExecContext(ctx, updateQuery, newVal, item.ParentID)
-		}
-
-		if execErr != nil {
-			return fmt.Errorf("failed to update parent rollup %s: %w", item.ParentID, execErr)
+		if err := rs.repo.UpdateParentRollup(ctx, tx, item.ParentObjName, item.ParentID, item.RollupField.APIName, newVal); err != nil {
+			return fmt.Errorf("failed to update parent rollup %s: %w", item.ParentID, err)
 		}
 	}
 	return nil
@@ -124,95 +113,31 @@ func (rs *RollupService) FindAffectedRollups(ctx context.Context, childObjName s
 func (rs *RollupService) CalculateRollup(ctx context.Context, rollup AffectedRollup, tx *sql.Tx) (interface{}, error) {
 	config := rollup.RollupField.RollupConfig
 
-	// Default value for no rows
-	var result interface{} = 0
-	if rollup.RollupField.Type == constants.FieldTypeDate || rollup.RollupField.Type == constants.FieldTypeDateTime {
-		result = nil
-	}
+	// Default value for no rows is handled by Repo unless date/time special case
+	// But actually Repo returns 0 or null.
+	// We might need to handle empty result logic here or in Repo.
+	// Repo handles SUM/AVG -> 0, MIN/MAX -> null.
+	// For date fields, 0 is invalid, so let's defer to Repo's return.
 
-	// 1. Build Aggregation Query
-	// SELECT FUNC(field) FROM child WHERE rel_field = ? AND is_deleted = false
-
-	funcMap := map[string]string{
-		"COUNT": "COUNT",
-		"SUM":   "SUM",
-		"MIN":   "MIN",
-		"MAX":   "MAX",
-		"AVG":   "AVG",
-	}
-
-	aggFunc, ok := funcMap[strings.ToUpper(config.CalcType)]
-	if !ok {
-		return nil, fmt.Errorf("unsupported rollup type: %s", config.CalcType)
-	}
-
-	aggExpression := "*"
-	if config.CalcType != "COUNT" {
-		aggExpression = fmt.Sprintf("`%s`", config.SummaryField)
-	}
-	// For SUM/AVG/MIN/MAX, if field is null, we should ignore? SQL does this naturally.
-
-	// Using backticks to quote all identifiers
-	baseQuery := fmt.Sprintf("SELECT %s(%s) FROM `%s` WHERE `%s` = ? AND `%s` = false",
-		aggFunc, aggExpression, config.SummaryObject, config.RelationshipField, constants.FieldIsDeleted)
-
-	// Add optional filter with validation
-	// SECURITY NOTE: The filter is a SQL WHERE clause fragment stored in metadata.
-	// It is set by admins during field configuration, not runtime user input.
-	// We validate to prevent SQL injection even from misconfigured admin input.
+	// Validate Filter Logic
 	if config.Filter != nil && *config.Filter != "" {
 		filter := *config.Filter
 		// Validate filter contains only safe SQL expression characters
-		// Allow: alphanumerics, spaces, comparison operators, logical operators, quotes, parentheses
 		if !isValidSQLFilter(filter) {
 			return nil, fmt.Errorf("invalid filter expression: contains potentially unsafe characters")
 		}
-		baseQuery += " AND (" + filter + ")"
 	}
 
-	// 2. Execute Query
-	var row *sql.Row
-	if tx != nil {
-		row = tx.QueryRowContext(ctx, baseQuery, rollup.ParentID)
-	} else {
-		row = rs.db.QueryRowContext(ctx, baseQuery, rollup.ParentID)
-	}
-
-	var scanDest interface{}
-	// For SUM/AVG on empty set, SQL returns NULL. We need to handle that.
-	var nullFloat sql.NullFloat64
-	var nullString sql.NullString // For MIN/MAX on dates/text
-
-	// Decide scan destination based on expected return type
-	switch config.CalcType {
-	case "COUNT":
-		// Count always returns a number, 0 if empty usually
-		if err := row.Scan(&scanDest); err != nil {
-			return nil, err
-		}
-		return scanDest, nil
-	case "SUM", "AVG":
-		// Return float/decimal
-		if err := row.Scan(&nullFloat); err != nil {
-			return nil, err
-		}
-		if nullFloat.Valid {
-			return nullFloat.Float64, nil
-		}
-		return 0, nil // Default for Sum/Avg is 0
-	case "MIN", "MAX":
-		// Could be number, date, or text
-		// Let's try scanning as string first for MAX/MIN or interface
-		if err := row.Scan(&nullString); err != nil {
-			return nil, err
-		}
-		if nullString.Valid {
-			return nullString.String, nil
-		}
-		return nil, nil // Default for Min/Max is null
-	}
-
-	return result, nil
+	return rs.repo.CalculateRollup(
+		ctx,
+		tx,
+		config.CalcType,
+		config.SummaryObject,
+		config.SummaryField,
+		config.RelationshipField,
+		rollup.ParentID,
+		config.Filter,
+	)
 }
 
 // isValidSQLFilter validates that a SQL filter expression contains only safe characters.

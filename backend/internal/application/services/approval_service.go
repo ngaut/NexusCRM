@@ -59,7 +59,7 @@ func (s *ApprovalService) Submit(ctx context.Context, req SubmitRequest, user *m
 	}
 
 	// Security check: verify user has read access to the record
-	if !s.permissions.CheckObjectPermissionWithUser(req.ObjectAPIName, constants.PermRead, user) {
+	if !s.permissions.CheckObjectPermissionWithUser(ctx, req.ObjectAPIName, constants.PermRead, user) {
 		return nil, errors.New("you don't have permission to submit this record for approval")
 	}
 
@@ -92,7 +92,10 @@ func (s *ApprovalService) Submit(ctx context.Context, req SubmitRequest, user *m
 		constants.FieldSysApprovalWorkItem_Comments:      req.Comments,
 	}
 
-	return s.persistence.Insert(ctx, constants.TableApprovalWorkItem, workItem, user)
+	// Run as System to bypass creating permission on system table
+	// We track the actual submitter in SubmittedByID field
+	systemUser := s.getSystemUser()
+	return s.persistence.Insert(ctx, constants.TableApprovalWorkItem, workItem, systemUser)
 }
 
 // Approve approves a pending work item
@@ -137,6 +140,15 @@ func (s *ApprovalService) GetFlowProgress(ctx context.Context, instanceID string
 }
 
 // Private helpers
+func (s *ApprovalService) getSystemUser() *models.UserSession {
+	email := "system@nexuscrm.com"
+	return &models.UserSession{
+		ID:            "system",
+		Name:          "System",
+		Email:         &email,
+		IsSystemAdmin: true,
+	}
+}
 
 func (s *ApprovalService) processAction(ctx context.Context, workItemID, newStatus, comments string, user *models.UserSession) error {
 	// Execute in transaction to ensure atomicity of update and flow resumption
@@ -168,8 +180,9 @@ func (s *ApprovalService) processAction(ctx context.Context, workItemID, newStat
 			constants.FieldSysApprovalWorkItem_Comments:     comments,
 		}
 
-		// Update using txCtx which carries the transaction
-		if err := s.persistence.Update(txCtx, constants.TableApprovalWorkItem, workItemID, updates, user); err != nil {
+		// Run as System to bypass permission check on system table
+		systemUser := s.getSystemUser()
+		if err := s.persistence.Update(txCtx, constants.TableApprovalWorkItem, workItemID, updates, systemUser); err != nil {
 			return fmt.Errorf("failed to update approval: %w", err)
 		}
 

@@ -60,6 +60,16 @@ func NewAgentHandler(userExtractor func(c *gin.Context) *models.UserSession, con
 	}
 }
 
+// RespondError sends a standardized JSON error response
+func RespondError(c *gin.Context, code int, message string) {
+	c.JSON(code, gin.H{
+		"error":   message,
+		"message": message,
+		"code":    http.StatusText(code), // Simple fallback since we don't have pkg/errors here easily
+		"data":    nil,
+	})
+}
+
 // extractUserAndToken extracts and validates user session and auth token from request
 func (h *AgentHandler) extractUserAndToken(c *gin.Context) (*models.UserSession, string, error) {
 	user := h.userExtractor(c)
@@ -116,14 +126,14 @@ func generateConversationTitle(messages []interface{}) string {
 func (h *AgentHandler) ChatStream(c *gin.Context) {
 	var req agent.ChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		RespondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	// Extract User using provided extractor
 	user := h.userExtractor(c)
 	if user == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		RespondError(c, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 	req.User = user
@@ -169,7 +179,7 @@ func (h *AgentHandler) ChatStream(c *gin.Context) {
 func (h *AgentHandler) GetContext(c *gin.Context) {
 	token, err := h.getAuthToken(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		RespondError(c, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -198,9 +208,11 @@ func (h *AgentHandler) GetContext(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"items":         responseItems,
-		"total_tokens":  totalTokens,
-		"system_prompt": h.agentSvc.GetBaseSystemPrompt(),
+		"data": gin.H{
+			"items":         responseItems,
+			"total_tokens":  totalTokens,
+			"system_prompt": h.agentSvc.GetBaseSystemPrompt(),
+		},
 	})
 }
 
@@ -208,13 +220,13 @@ func (h *AgentHandler) GetContext(c *gin.Context) {
 func (h *AgentHandler) CompactContext(c *gin.Context) {
 	var req compactor.CompactRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		RespondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	// Validate request
 	if len(req.Messages) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "messages required"})
+		RespondError(c, http.StatusBadRequest, "messages required")
 		return
 	}
 
@@ -224,18 +236,22 @@ func (h *AgentHandler) CompactContext(c *gin.Context) {
 	if err != nil {
 		// Still return the response (with original messages) but include error
 		c.JSON(http.StatusOK, gin.H{
-			"messages":      resp.Messages,
-			"tokens_before": resp.TokensBefore,
-			"tokens_after":  resp.TokensAfter,
-			"warning":       err.Error(),
+			"data": gin.H{
+				"messages":      resp.Messages,
+				"tokens_before": resp.TokensBefore,
+				"tokens_after":  resp.TokensAfter,
+				"warning":       err.Error(),
+			},
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"messages":      resp.Messages,
-		"tokens_before": resp.TokensBefore,
-		"tokens_after":  resp.TokensAfter,
+		"data": gin.H{
+			"messages":      resp.Messages,
+			"tokens_before": resp.TokensBefore,
+			"tokens_after":  resp.TokensAfter,
+		},
 	})
 }
 
@@ -245,7 +261,7 @@ func (h *AgentHandler) CompactContext(c *gin.Context) {
 func (h *AgentHandler) GetConversation(c *gin.Context) {
 	user, token, err := h.extractUserAndToken(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		RespondError(c, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -256,12 +272,12 @@ func (h *AgentHandler) GetConversation(c *gin.Context) {
 		// Load specific conversation by ID
 		record, err = h.nexusClient.GetRecord(c.Request.Context(), ObjectAIConversation, convID, token)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "conversation not found"})
+			RespondError(c, http.StatusNotFound, "conversation not found")
 			return
 		}
 		// Verify ownership
 		if !verifyOwnership(record, user.ID) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "not your conversation"})
+			RespondError(c, http.StatusForbidden, "not your conversation")
 			return
 		}
 	} else {
@@ -273,9 +289,12 @@ func (h *AgentHandler) GetConversation(c *gin.Context) {
 		}
 		records, err := h.nexusClient.Query(c.Request.Context(), queryReq, token)
 		if err != nil || len(records) == 0 {
+			// Return null conversation instead of 404 to avoid frontend console errors
 			c.JSON(http.StatusOK, gin.H{
-				"conversation": nil,
-				"messages":     []interface{}{},
+				"data": gin.H{
+					"conversation": nil,
+					"messages":     []interface{}{},
+				},
 			})
 			return
 		}
@@ -296,11 +315,13 @@ func (h *AgentHandler) GetConversation(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"conversation": gin.H{
-			"id":    record[constants.FieldID],
-			"title": record["title"],
+		"data": gin.H{
+			"conversation": gin.H{
+				"id":    record[constants.FieldID],
+				"title": record["title"],
+			},
+			"messages": messages,
 		},
-		"messages": messages,
 	})
 }
 
@@ -310,7 +331,7 @@ func (h *AgentHandler) GetConversation(c *gin.Context) {
 func (h *AgentHandler) SaveConversation(c *gin.Context) {
 	user, token, err := h.extractUserAndToken(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		RespondError(c, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -320,7 +341,7 @@ func (h *AgentHandler) SaveConversation(c *gin.Context) {
 		Title          string        `json:"title"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		RespondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -331,11 +352,11 @@ func (h *AgentHandler) SaveConversation(c *gin.Context) {
 		// Verify ownership first
 		record, err := h.nexusClient.GetRecord(c.Request.Context(), ObjectAIConversation, req.ConversationID, token)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "conversation not found"})
+			RespondError(c, http.StatusNotFound, "conversation not found")
 			return
 		}
 		if !verifyOwnership(record, user.ID) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "not your conversation"})
+			RespondError(c, http.StatusForbidden, "not your conversation")
 			return
 		}
 
@@ -347,10 +368,10 @@ func (h *AgentHandler) SaveConversation(c *gin.Context) {
 		}
 		err = h.nexusClient.UpdateRecord(c.Request.Context(), ObjectAIConversation, req.ConversationID, updateData, token)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			RespondError(c, http.StatusInternalServerError, err.Error())
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"id": req.ConversationID, "status": "updated"})
+		c.JSON(http.StatusOK, gin.H{"data": gin.H{"id": req.ConversationID, "status": "updated"}})
 	} else {
 		// Create new conversation
 		// First, deactivate any currently active conversations
@@ -382,10 +403,10 @@ func (h *AgentHandler) SaveConversation(c *gin.Context) {
 		}
 		id, err := h.nexusClient.CreateRecord(c.Request.Context(), ObjectAIConversation, createData, token)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			RespondError(c, http.StatusInternalServerError, err.Error())
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"id": id, "status": "created"})
+		c.JSON(http.StatusOK, gin.H{"data": gin.H{"id": id, "status": "created"}})
 	}
 }
 
@@ -393,7 +414,7 @@ func (h *AgentHandler) SaveConversation(c *gin.Context) {
 func (h *AgentHandler) ClearConversation(c *gin.Context) {
 	user, token, err := h.extractUserAndToken(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		RespondError(c, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -408,7 +429,7 @@ func (h *AgentHandler) ClearConversation(c *gin.Context) {
 	if len(records) > 0 {
 		convID, ok := records[0][constants.FieldID].(string)
 		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid conversation id"})
+			RespondError(c, http.StatusInternalServerError, "invalid conversation id")
 			return
 		}
 		// Clear messages instead of delete (keeps history record)
@@ -418,14 +439,14 @@ func (h *AgentHandler) ClearConversation(c *gin.Context) {
 		h.nexusClient.UpdateRecord(c.Request.Context(), ObjectAIConversation, convID, updateData, token)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "cleared"})
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"status": "cleared"}})
 }
 
 // ListConversations returns all conversations for the current user
 func (h *AgentHandler) ListConversations(c *gin.Context) {
 	user, token, err := h.extractUserAndToken(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		RespondError(c, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -439,7 +460,7 @@ func (h *AgentHandler) ListConversations(c *gin.Context) {
 
 	records, err := h.nexusClient.Query(c.Request.Context(), queryReq, token)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"conversations": []interface{}{}})
+		c.JSON(http.StatusOK, gin.H{"data": gin.H{"conversations": []interface{}{}}})
 		return
 	}
 
@@ -456,40 +477,40 @@ func (h *AgentHandler) ListConversations(c *gin.Context) {
 		conversations = append(conversations, conv)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"conversations": conversations})
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"conversations": conversations}})
 }
 
 // DeleteConversation deletes a specific conversation
 func (h *AgentHandler) DeleteConversation(c *gin.Context) {
 	user, token, err := h.extractUserAndToken(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		RespondError(c, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	convID := c.Param("id")
 	if convID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "conversation id required"})
+		RespondError(c, http.StatusBadRequest, "conversation id required")
 		return
 	}
 
 	// Verify ownership before delete
 	record, err := h.nexusClient.GetRecord(c.Request.Context(), ObjectAIConversation, convID, token)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "conversation not found"})
+		RespondError(c, http.StatusNotFound, "conversation not found")
 		return
 	}
 	if !verifyOwnership(record, user.ID) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "not your conversation"})
+		RespondError(c, http.StatusForbidden, "not your conversation")
 		return
 	}
 
 	// Delete the conversation
 	err = h.nexusClient.DeleteRecord(c.Request.Context(), ObjectAIConversation, convID, token)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"status": "deleted"}})
 }

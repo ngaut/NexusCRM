@@ -8,6 +8,7 @@ import (
 
 	"github.com/nexuscrm/backend/internal/domain/schema"
 	"github.com/nexuscrm/backend/internal/infrastructure/database"
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/stretchr/testify/assert"
@@ -24,18 +25,21 @@ func TestSchemaManager_Integration_ACID(t *testing.T) {
 	// We use the singleton getter which uses env vars (TIDB_HOST etc.)
 	conn, err := database.GetInstance()
 	if err != nil {
-		t.Logf("Skipping integration test: failed to connect to DB: %v", err)
-		t.SkipNow()
+		t.Skip("Skipping integration test: failed to connect to DB: " + err.Error())
 	}
 	db := conn.DB()
 
-	sm := NewSchemaManager(db)
+	repo := persistence.NewSchemaRepository(db)
+	sm := NewSchemaManager(repo)
 	tableName := fmt.Sprintf("test_acid_obj_%d", time.Now().UnixNano())
 
 	// Helper to cleanup
 	cleanup := func() {
 		// We use DropTable which also cleans metadata
-		_ = sm.DropTable(tableName)
+
+		if err := sm.DropTable(tableName); err != nil {
+			t.Logf("Failed to cleanup table %s: %v", tableName, err)
+		}
 	}
 	defer cleanup()
 

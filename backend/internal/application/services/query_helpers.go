@@ -8,7 +8,6 @@ import (
 
 	pkgErrors "github.com/nexuscrm/backend/pkg/errors"
 	"github.com/nexuscrm/backend/pkg/formula"
-	"github.com/nexuscrm/backend/pkg/query"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -140,19 +139,8 @@ func (qs *QueryService) hydrateLookupNames(ctx context.Context, rows []models.SO
 			ids = append(ids, id)
 		}
 
-		// Build IN query
-		placeholders := make([]string, len(ids))
-		params := make([]interface{}, len(ids))
-		for i, id := range ids {
-			placeholders[i] = "?"
-			params[i] = id
-		}
-
-		sql := fmt.Sprintf("SELECT `id`, `%s` FROM `%s` WHERE `id` IN (%s)",
-			nameField, refObject, strings.Join(placeholders, ","))
-
-		q := query.QueryResult{SQL: sql, Params: params}
-		results, err := ExecuteQuery(ctx, qs.db, q)
+		// Delegate to Repository
+		results, err := qs.repo.GetLookupNames(ctx, refObject, ids, nameField)
 		if err != nil {
 			log.Printf("⚠️ Failed to hydrate lookup names for %s: %v", refObject, err)
 			continue

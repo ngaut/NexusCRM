@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nexuscrm/backend/internal/infrastructure/persistence"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/stretchr/testify/assert"
@@ -13,13 +14,18 @@ import (
 
 func TestMetadataService_Objects_ThemeColor_Integration(t *testing.T) {
 	// 1. Setup
-	conn, ms := SetupIntegrationTest(t)
+	conn, _ := SetupIntegrationTest(t)
 	db := conn.DB()
-	sm := NewSchemaManager(db)
+
+	// Services
+	repo := persistence.NewMetadataRepository(db)
+	schemaRepo := persistence.NewSchemaRepository(db)
+	schemaMgr := NewSchemaManager(schemaRepo)
+	ms := NewMetadataService(repo, schemaMgr)
 
 	apiName := fmt.Sprintf("color_test_%d", time.Now().UnixNano())
 	cleanup := func() {
-		_ = sm.DropTable(apiName) // Drops metadata too
+		_ = schemaMgr.DropTable(apiName) // Drops metadata too
 	}
 	defer cleanup()
 

@@ -63,7 +63,15 @@ setup_test_object() {
     api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "is_read", "label": "Is Read", "type": "Checkbox"}' > /dev/null
     echo "  ✓ Fields added to test object"
     
-    sleep 1  # Allow caches to refresh
+    # Wait for Schema Cache (Polling)
+    echo "  Waiting for field 'status'..."
+    for i in {1..10}; do
+        meta=$(api_get "/api/metadata/objects/$TEST_OBJ")
+        if echo "$meta" | grep -q "\"api_name\":\"status\""; then
+            break
+        fi
+        sleep 0.5
+    done
 }
 
 seed_test_data() {

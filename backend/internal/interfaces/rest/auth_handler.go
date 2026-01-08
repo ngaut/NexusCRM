@@ -46,15 +46,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Validate email format
+	// Validate email format
 	if !auth.IsValidEmail(req.Email) {
-		RespondError(c, http.StatusBadRequest, "Invalid email format")
+		RespondAppError(c, errors.NewValidationError("email", "Invalid email format"))
 		return
 	}
 
 	// Delegate to AuthService
 	result, err := h.svcMgr.Auth.Login(c.Request.Context(), req.Email, req.Password, c.ClientIP(), c.Request.UserAgent())
 	if err != nil {
-		RespondError(c, errors.GetHTTPStatus(err), err.Error())
+		RespondAppError(c, err)
 		return
 	}
 
@@ -86,7 +87,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	// Get token from context (set by auth middleware)
 	tokenString, exists := c.Get(constants.ContextKeyToken)
 	if !exists {
-		RespondError(c, http.StatusUnauthorized, "No token provided")
+		RespondAppError(c, errors.NewUnauthorizedError("No token provided"))
 		return
 	}
 
@@ -100,23 +101,20 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 	// Get user from context (set by auth middleware)
 	userInterface, exists := c.Get(constants.ContextKeyUser)
 	if !exists {
-		RespondError(c, http.StatusUnauthorized, "User not found")
+		RespondAppError(c, errors.NewUnauthorizedError("User not found"))
 		return
 	}
 
 	user := userInterface.(auth.UserSession)
 
-	// Use HandleGetEnvelope? It expects action to return (interface{}, error)
-	// Here we already have the data locally.
-	// But to be consistent with envelope format { "user": ... }
-	c.JSON(http.StatusOK, gin.H{
-		"user": gin.H{
+	HandleGetEnvelope(c, "data", func() (interface{}, error) {
+		return gin.H{
 			constants.FieldID:        user.ID,
 			constants.FieldName:      user.Name,
 			constants.FieldEmail:     user.Email,
 			constants.FieldProfileID: user.ProfileId,
 			constants.FieldRoleID:    user.RoleId,
-		},
+		}, nil
 	})
 }
 
@@ -145,7 +143,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 func (h *AuthHandler) GetMyPermissions(c *gin.Context) {
 	userInterface, exists := c.Get(constants.ContextKeyUser)
 	if !exists {
-		RespondError(c, http.StatusUnauthorized, "User not found")
+		RespondAppError(c, errors.NewUnauthorizedError("User not found"))
 		return
 	}
 	user := userInterface.(auth.UserSession)
@@ -157,19 +155,21 @@ func (h *AuthHandler) GetMyPermissions(c *gin.Context) {
 
 	perms, err := h.svcMgr.Permissions.GetEffectiveObjectPermissions(user.ID)
 	if err != nil {
-		RespondError(c, http.StatusInternalServerError, err.Error())
+		RespondAppError(c, err)
 		return
 	}
 
 	fieldPerms, err := h.svcMgr.Permissions.GetEffectiveFieldPermissions(user.ID)
 	if err != nil {
-		RespondError(c, http.StatusInternalServerError, err.Error())
+		RespondAppError(c, err)
 		return
 	}
 
-	// Return flat JSON response (not using HandleGetEnvelope which wraps in a key)
+	// Return wrapped JSON response
 	c.JSON(http.StatusOK, gin.H{
-		"objectPermissions": perms,
-		"fieldPermissions":  fieldPerms,
+		"data": gin.H{
+			"objectPermissions": perms,
+			"fieldPermissions":  fieldPerms,
+		},
 	})
 }

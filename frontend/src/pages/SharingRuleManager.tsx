@@ -318,6 +318,7 @@ export const SharingRuleManager: React.FC = () => {
                                         <option key={role.id} value={role.id}>{role.name}</option>
                                     ))}
                                 </select>
+                                <p className="text-xs text-slate-500 mt-1">Users in this role will be granted access to records matching the criteria.</p>
                             </div>
                             <FormulaEditor
                                 value={formData.criteria}

@@ -1,11 +1,8 @@
 package services
 
 import (
-	"database/sql"
-	"fmt"
+	"context"
 	"log"
-
-	"github.com/nexuscrm/shared/pkg/constants"
 )
 
 // ==================== Role Hierarchy ====================
@@ -15,27 +12,15 @@ func (ps *PermissionService) refreshRoleHierarchy() {
 	ps.roleHierarchyMu.Lock()
 	defer ps.roleHierarchyMu.Unlock()
 
-	query := fmt.Sprintf("SELECT id, parent_role_id FROM %s WHERE is_deleted = 0", constants.TableRole)
-	rows, err := ps.db.DB().Query(query)
+	roles, err := ps.repo.GetAllRoles(context.Background())
 	if err != nil {
 		log.Printf("Warning: Failed to load role hierarchy: %v", err)
 		return
 	}
-	defer rows.Close()
 
 	ps.roleHierarchyCache = make(map[string]*string)
-	for rows.Next() {
-		var id string
-		var parentID sql.NullString
-		if err := rows.Scan(&id, &parentID); err != nil {
-			log.Printf("Warning: Failed to scan role: %v", err)
-			continue
-		}
-		if parentID.Valid {
-			ps.roleHierarchyCache[id] = &parentID.String
-		} else {
-			ps.roleHierarchyCache[id] = nil
-		}
+	for _, role := range roles {
+		ps.roleHierarchyCache[role.ID] = role.ParentRoleID
 	}
 }
 
@@ -93,17 +78,12 @@ func (ps *PermissionService) isUserAboveInHierarchy(userRoleID, targetRoleID *st
 }
 
 // getRecordOwnerRoleID retrieves the role_id of the record owner
-func (ps *PermissionService) getRecordOwnerRoleID(ownerID string) *string {
-	query := fmt.Sprintf("SELECT role_id FROM %s WHERE id = ?", constants.TableUser)
-	var roleID sql.NullString
-	err := ps.db.DB().QueryRow(query, ownerID).Scan(&roleID)
+func (ps *PermissionService) getRecordOwnerRoleID(ctx context.Context, ownerID string) *string {
+	roleID, err := ps.userRepo.GetUserRoleID(ctx, ownerID)
 	if err != nil {
 		return nil
 	}
-	if roleID.Valid {
-		return &roleID.String
-	}
-	return nil
+	return roleID
 }
 
 // RefreshRoleHierarchy reloads the role hierarchy cache

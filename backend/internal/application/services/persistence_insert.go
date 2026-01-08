@@ -10,7 +10,6 @@ import (
 
 	"github.com/nexuscrm/backend/internal/domain/events"
 	"github.com/nexuscrm/backend/pkg/auth"
-	"github.com/nexuscrm/backend/pkg/query"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -30,7 +29,7 @@ func (ps *PersistenceService) Insert(
 	}
 
 	// Apply defaults
-	data = ps.applyDefaults(data, schema, currentUser)
+	data = ps.applyDefaults(ctx, data, schema, currentUser)
 
 	// Validate Polymorphic Lookups (Database Check) & Resolve Types
 	resolvedTypes, err := ps.validatePolymorphicLookups(ctx, data, schema)
@@ -55,7 +54,7 @@ func (ps *PersistenceService) Insert(
 	}
 
 	// Generate system fields dynamically from metadata
-	systemFields := ps.generateSystemFields(objectName, data, currentUser, true)
+	systemFields := ps.generateSystemFields(ctx, objectName, data, currentUser, true)
 
 	// Merge data with system fields
 	for k, v := range systemFields {
@@ -92,17 +91,14 @@ func (ps *PersistenceService) Insert(
 		// Extract physical fields only
 		physicalData := ToStorageRecord(schema, data)
 
-		// Build and execute insert within transaction
-		builder := query.Insert(objectName, physicalData)
-		q := builder.Build()
-
-		if _, err := tx.Exec(q.SQL, q.Params...); err != nil {
+		// execute insert via Repository
+		if err := ps.repo.Insert(txCtx, tx, objectName, physicalData); err != nil {
 			return fmt.Errorf("insert failed: %w", err)
 		}
 
 		// Process Mentions for Comments
 		if objectName == constants.TableComment {
-			if err := ps.processMentions(tx, data, currentUser); err != nil {
+			if err := ps.processMentions(txCtx, tx, data, currentUser); err != nil {
 				// Log error but generally don't fail the insert
 				log.Printf("Failed to process mentions: %v", err)
 			}
@@ -138,7 +134,7 @@ func (ps *PersistenceService) Insert(
 }
 
 // processMentions parses the comment body for mentions and creates notifications
-func (ps *PersistenceService) processMentions(tx *sql.Tx, data models.SObject, sender *models.UserSession) error {
+func (ps *PersistenceService) processMentions(ctx context.Context, tx *sql.Tx, data models.SObject, sender *models.UserSession) error {
 	body, ok := data[constants.FieldSysComment_Body].(string)
 	if !ok {
 		return nil
@@ -177,8 +173,8 @@ func (ps *PersistenceService) processMentions(tx *sql.Tx, data models.SObject, s
 		}
 		notif := notifStruct.ToSObject()
 
-		q := query.Insert(constants.TableNotification, notif).Build()
-		if _, err := tx.Exec(q.SQL, q.Params...); err != nil {
+		// Use Repo
+		if err := ps.repo.Insert(ctx, tx, constants.TableNotification, notif); err != nil {
 			log.Printf("Failed to create notification for %s: %v", userID, err)
 		}
 

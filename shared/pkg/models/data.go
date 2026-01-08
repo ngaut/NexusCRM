@@ -68,6 +68,12 @@ type QueryCriterion struct {
 	Val   interface{} `json:"val"`
 }
 
+// SortCriterion represents a sorting condition
+type SortCriterion struct {
+	Field     string `json:"field"`
+	Direction string `json:"direction"`
+}
+
 // QueryRequest represents a generic query request
 type QueryRequest struct {
 	ObjectAPIName string           `json:"object_api_name" binding:"required"`
@@ -76,6 +82,8 @@ type QueryRequest struct {
 	SortField     string           `json:"sort_field,omitempty"`
 	SortDirection string           `json:"sort_direction,omitempty"`
 	Limit         int              `json:"limit,omitempty"`
+	Offset        int              `json:"offset,omitempty"`
+	OrderBy       []SortCriterion  `json:"order_by,omitempty"`
 }
 
 // SearchRequest represents a search request

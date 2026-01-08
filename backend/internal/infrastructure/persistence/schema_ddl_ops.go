@@ -80,7 +80,7 @@ func (r *SchemaRepository) CreatePhysicalTable(ctx context.Context, def schema.T
 		log.Printf("⚠️ Failed to disable FK checks: %v", err)
 	}
 
-	log.Printf("📝 Executing DDL for %s", def.TableName)
+	log.Printf("📝 Executing DDL for %s: \n%s", def.TableName, ddl.String())
 	if _, err := conn.ExecContext(ctx, ddl.String()); err != nil {
 		log.Printf("❌ Failed to create table %s: %v", def.TableName, err)
 		return fmt.Errorf("failed to create table %s: %w", def.TableName, err)
