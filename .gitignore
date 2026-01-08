@@ -32,6 +32,12 @@ backend/bin/
 *.exe
 /server
 backend/cmd/*/server
+# Common Go Binaries
+backend/backend
+backend/main
+*.test
+__debug_bin*
+
 backend/vendor/
 coverage/
 *.out
