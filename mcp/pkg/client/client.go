@@ -80,7 +80,7 @@ func (c *NexusClient) ListObjects(ctx context.Context, authToken string) ([]mode
 		return nil, err
 	}
 
-	if objs, ok := respMap["schemas"]; ok {
+	if objs, ok := respMap["data"]; ok {
 		return objs, nil
 	}
 	return nil, fmt.Errorf("invalid response format for list objects")
@@ -93,7 +93,7 @@ func (c *NexusClient) DescribeObject(ctx context.Context, objectName string, aut
 	if err := c.doRequest(ctx, "GET", fmt.Sprintf("/api/metadata/objects/%s", objectName), nil, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if obj, ok := respMap["schema"]; ok {
+	if obj, ok := respMap["data"]; ok {
 		return obj, nil
 	}
 	return nil, fmt.Errorf("invalid response format for describe object")
@@ -106,7 +106,7 @@ func (c *NexusClient) Query(ctx context.Context, req models.QueryRequest, authTo
 		return nil, err
 	}
 
-	if records, ok := respMap["records"]; ok {
+	if records, ok := respMap["data"]; ok {
 		return records, nil
 	}
 	return nil, fmt.Errorf("invalid response format for query")
@@ -154,7 +154,7 @@ func (c *NexusClient) GetRecord(ctx context.Context, objectName, id string, auth
 	if err := c.doRequest(ctx, "GET", fmt.Sprintf("/api/data/%s/%s", objectName, id), nil, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if record, ok := respMap["record"]; ok {
+	if record, ok := respMap["data"]; ok {
 		return record, nil
 	}
 	return nil, fmt.Errorf("record not found")
@@ -177,7 +177,7 @@ func (c *NexusClient) GetDashboards(ctx context.Context, authToken string) ([]mo
 	if err := c.doRequest(ctx, "GET", "/api/metadata/dashboards", nil, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if dashboards, ok := respMap["dashboards"]; ok {
+	if dashboards, ok := respMap["data"]; ok {
 		return dashboards, nil
 	}
 	return nil, fmt.Errorf("invalid response format for dashboards")
@@ -190,7 +190,7 @@ func (c *NexusClient) GetDashboard(ctx context.Context, id string, authToken str
 	if err := c.doRequest(ctx, "GET", fmt.Sprintf("/api/metadata/dashboards/%s", id), nil, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if dashboard, ok := respMap["dashboard"]; ok {
+	if dashboard, ok := respMap["data"]; ok {
 		return dashboard, nil
 	}
 	// Fallback check if it returns unwrapped? Handler returns { dashboard: ... }
@@ -304,7 +304,7 @@ func (c *NexusClient) Search(ctx context.Context, term string, authToken string)
 	if err := c.doRequest(ctx, "POST", "/api/data/search", req, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if results, ok := respMap["results"]; ok {
+	if results, ok := respMap["data"]; ok {
 		return results, nil
 	}
 	return nil, fmt.Errorf("invalid response format for search")
@@ -317,7 +317,7 @@ func (c *NexusClient) Calculate(ctx context.Context, objectName string, data map
 	if err := c.doRequest(ctx, "POST", fmt.Sprintf("/api/data/%s/calculate", objectName), data, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if record, ok := respMap["record"]; ok {
+	if record, ok := respMap["data"]; ok {
 		return record, nil
 	}
 	return nil, fmt.Errorf("invalid response format for calculate")
@@ -331,7 +331,7 @@ func (c *NexusClient) GetValidationRules(ctx context.Context, objectName string,
 	if err := c.doRequest(ctx, "GET", path, nil, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if rules, ok := respMap["rules"]; ok {
+	if rules, ok := respMap["data"]; ok {
 		return rules, nil
 	}
 	return nil, fmt.Errorf("invalid response format for validation rules")
@@ -344,7 +344,7 @@ func (c *NexusClient) ListThemes(ctx context.Context, authToken string) (interfa
 	if err := c.doRequest(ctx, "GET", "/api/metadata/theme", nil, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if theme, ok := respMap["theme"]; ok {
+	if theme, ok := respMap["data"]; ok {
 		return theme, nil
 	}
 	return nil, fmt.Errorf("invalid response format for theme")
@@ -364,7 +364,7 @@ func (c *NexusClient) SearchObject(ctx context.Context, objectName, term string,
 	if err := c.doRequest(ctx, "GET", path, nil, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if records, ok := respMap["records"]; ok {
+	if records, ok := respMap["data"]; ok {
 		return records, nil
 	}
 	return nil, fmt.Errorf("invalid response format for object search")
@@ -377,7 +377,7 @@ func (c *NexusClient) RunAnalytics(ctx context.Context, query models.AnalyticsQu
 	if err := c.doRequest(ctx, "POST", "/api/data/analytics", query, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if result, ok := respMap["result"]; ok {
+	if result, ok := respMap["data"]; ok {
 		return result, nil
 	}
 	return nil, fmt.Errorf("invalid response format for analytics")
@@ -390,7 +390,7 @@ func (c *NexusClient) ListApps(ctx context.Context, authToken string) ([]models.
 	if err := c.doRequest(ctx, "GET", "/api/metadata/apps", nil, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if apps, ok := respMap["apps"]; ok {
+	if apps, ok := respMap["data"]; ok {
 		return apps, nil
 	}
 	return nil, fmt.Errorf("invalid response format for list apps")
@@ -416,7 +416,7 @@ func (c *NexusClient) GetRecycleBinItems(ctx context.Context, scope string, auth
 	if err := c.doRequest(ctx, "GET", path, nil, &respMap, authToken); err != nil {
 		return nil, err
 	}
-	if items, ok := respMap["items"]; ok {
+	if items, ok := respMap["data"]; ok {
 		return items, nil
 	}
 	return nil, fmt.Errorf("invalid response format for recycle bin")

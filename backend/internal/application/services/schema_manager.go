@@ -80,6 +80,9 @@ type SchemaHealth = persistence.SchemaHealth
 
 // BatchRegisterTables registers multiple tables in _System_Table registry
 func (sm *SchemaManager) BatchRegisterTables(defs []schema.TableDefinition, tx *sql.Tx) error {
+	if tx == nil {
+		return sm.repo.BatchRegisterTables(defs, nil)
+	}
 	return sm.repo.BatchRegisterTables(defs, tx)
 }
 
@@ -115,26 +118,41 @@ func (sm *SchemaManager) GetStandardFieldMetadata() []models.FieldMetadata {
 
 // SaveObjectMetadata upserts object metadata into _System_Object
 func (sm *SchemaManager) SaveObjectMetadata(obj *models.ObjectMetadata, tx *sql.Tx) error {
+	if tx == nil {
+		return sm.repo.SaveObjectMetadata(obj, nil)
+	}
 	return sm.repo.SaveObjectMetadata(obj, tx)
 }
 
 // InsertObjectMetadata inserts object metadata (Strict)
 func (sm *SchemaManager) InsertObjectMetadata(obj *models.ObjectMetadata, tx *sql.Tx) error {
+	if tx == nil {
+		return sm.repo.InsertObjectMetadata(obj, nil)
+	}
 	return sm.repo.InsertObjectMetadata(obj, tx)
 }
 
 // BatchSaveObjectMetadata inserts multiple objects in a single statement
 func (sm *SchemaManager) BatchSaveObjectMetadata(objs []*models.ObjectMetadata, tx *sql.Tx) error {
+	if tx == nil {
+		return sm.repo.BatchSaveObjectMetadata(objs, nil)
+	}
 	return sm.repo.BatchSaveObjectMetadata(objs, tx)
 }
 
 // SaveFieldMetadataWithIDs upserts field metadata with explicit IDs
 func (sm *SchemaManager) SaveFieldMetadataWithIDs(field *models.FieldMetadata, objectID string, fieldID string, tx *sql.Tx) error {
+	if tx == nil {
+		return sm.repo.SaveFieldMetadataWithIDs(field, objectID, fieldID, nil)
+	}
 	return sm.repo.SaveFieldMetadataWithIDs(field, objectID, fieldID, tx)
 }
 
 // BatchSaveFieldMetadata inserts multiple fields in a single statement
 func (sm *SchemaManager) BatchSaveFieldMetadata(fields []FieldWithContext, tx *sql.Tx) error {
+	if tx == nil {
+		return sm.repo.BatchSaveFieldMetadata(fields, nil)
+	}
 	return sm.repo.BatchSaveFieldMetadata(fields, tx)
 }
 
