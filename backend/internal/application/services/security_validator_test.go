@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/nexuscrm/backend/internal/application/services"
@@ -55,8 +56,8 @@ func TestSecurityValidator_ValidateAndRewrite(t *testing.T) {
 	accountSchema := &models.ObjectMetadata{
 		APIName: "Account",
 		Fields: []models.FieldMetadata{
-			{APIName: "name", Type: constants.FieldTypeText},
-			{APIName: "owner_id", Type: constants.FieldTypeLookup},
+			{APIName: constants.FieldName, Type: constants.FieldTypeText},
+			{APIName: constants.FieldOwnerID, Type: constants.FieldTypeLookup},
 			{APIName: "industry", Type: constants.FieldTypePicklist},
 		},
 	}
@@ -81,7 +82,7 @@ func TestSecurityValidator_ValidateAndRewrite(t *testing.T) {
 
 		validator := services.NewSecurityValidator(mockPerms, mockMeta)
 
-		sql := "SELECT name FROM Account"
+		sql := fmt.Sprintf("SELECT %s FROM Account", constants.FieldName)
 		_, _, err := validator.ValidateAndRewrite(context.Background(), sql, nil, stdUser)
 
 		assert.Error(t, err)
@@ -101,7 +102,7 @@ func TestSecurityValidator_ValidateAndRewrite(t *testing.T) {
 
 		validator := services.NewSecurityValidator(mockPerms, mockMeta)
 
-		sql := "SELECT name, salary FROM Employee"
+		sql := fmt.Sprintf("SELECT %s, salary FROM Employee", constants.FieldName)
 		_, _, err := validator.ValidateAndRewrite(context.Background(), sql, nil, stdUser)
 
 		assert.Error(t, err)
@@ -121,13 +122,13 @@ func TestSecurityValidator_ValidateAndRewrite(t *testing.T) {
 
 		validator := services.NewSecurityValidator(mockPerms, mockMeta)
 
-		sql := "SELECT name FROM Account WHERE industry = 'Tech'"
+		sql := fmt.Sprintf("SELECT %s FROM Account WHERE industry = 'Tech'", constants.FieldName)
 		rewritten, _, err := validator.ValidateAndRewrite(context.Background(), sql, nil, stdUser)
 
 		assert.NoError(t, err)
 		// rewritten SQL should contain owner_id check
 		// Note: The AST restoration puts backticks usually
-		assert.Contains(t, rewritten, "owner_id")
+		assert.Contains(t, rewritten, "__sys_gen_owner_id")
 		assert.Contains(t, rewritten, "user-123")
 		// TiDB parser output format check: `owner_id` or just owner_id?
 		// We can check stricter logic if needed.
@@ -147,7 +148,7 @@ func TestSecurityValidator_ValidateAndRewrite(t *testing.T) {
 
 		validator := services.NewSecurityValidator(mockPerms, mockMeta)
 
-		sql := "SELECT name FROM Account"
+		sql := fmt.Sprintf("SELECT %s FROM Account", constants.FieldName)
 		rewritten, _, err := validator.ValidateAndRewrite(context.Background(), sql, nil, adminUser)
 
 		assert.NoError(t, err)

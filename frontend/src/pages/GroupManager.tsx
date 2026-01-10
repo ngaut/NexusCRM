@@ -7,6 +7,7 @@ import { useErrorToast, useSuccessToast } from '../components/ui/Toast';
 import { formatApiError } from '../core/utils/errorHandling';
 import { RecordListSkeleton } from '../components/ui/LoadingSkeleton';
 import { EmptyState } from '../components/ui/EmptyState';
+import { COMMON_FIELDS } from '../core/constants';
 import type { Group, GroupMember, User } from '../types';
 
 // Sub-components
@@ -58,7 +59,7 @@ export const GroupManager: React.FC = () => {
 
             // Map member user IDs to user objects
             const memberUserIds = membersRecords.map((m: GroupMember) => m.user_id);
-            setMemberUsers(allUsers.filter((u: User) => memberUserIds.includes(u.id)));
+            setMemberUsers(allUsers.filter((u: User) => memberUserIds.includes(u[COMMON_FIELDS.ID] as string)));
         } catch (err) {
             errorToast(`Failed to load group members: ${formatApiError(err).message}`);
         }
@@ -78,7 +79,7 @@ export const GroupManager: React.FC = () => {
     const handleUpdate = async (formData: GroupFormData) => {
         if (!editingGroup) return;
         try {
-            await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_GROUP, editingGroup.id, formData as unknown as Record<string, unknown>);
+            await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_GROUP, editingGroup[COMMON_FIELDS.ID] as string, formData as unknown as Record<string, unknown>);
             successToast('Group updated successfully');
             setEditingGroup(null);
             loadGroups();
@@ -90,7 +91,7 @@ export const GroupManager: React.FC = () => {
     const handleDelete = async () => {
         if (!deletingGroup) return;
         try {
-            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_GROUP, deletingGroup.id);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_GROUP, deletingGroup[COMMON_FIELDS.ID] as string);
             successToast('Group deleted successfully');
             setDeletingGroup(null);
             loadGroups();
@@ -103,11 +104,11 @@ export const GroupManager: React.FC = () => {
         if (!managingMembersFor) return;
         try {
             await dataAPI.createRecord(SYSTEM_TABLE_NAMES.SYSTEM_GROUPMEMBER, {
-                group_id: managingMembersFor.id,
+                group_id: managingMembersFor[COMMON_FIELDS.ID] as string,
                 user_id: userId
             });
             successToast('Member added');
-            loadMembers(managingMembersFor.id);
+            loadMembers(managingMembersFor[COMMON_FIELDS.ID] as string);
         } catch {
             errorToast('Failed to add member');
         }
@@ -118,7 +119,7 @@ export const GroupManager: React.FC = () => {
             await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_GROUPMEMBER, memberId);
             successToast('Member removed');
             if (managingMembersFor) {
-                loadMembers(managingMembersFor.id);
+                loadMembers(managingMembersFor[COMMON_FIELDS.ID] as string);
             }
         } catch {
             errorToast('Failed to remove member');
@@ -127,7 +128,7 @@ export const GroupManager: React.FC = () => {
 
     const openMembersModal = (group: Group) => {
         setManagingMembersFor(group);
-        loadMembers(group.id);
+        loadMembers(group[COMMON_FIELDS.ID] as string);
     };
 
     const filteredGroups = groups.filter(g =>
@@ -193,7 +194,7 @@ export const GroupManager: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredGroups.map(group => (
-                                <tr key={group.id} className="hover:bg-slate-50">
+                                <tr key={group[COMMON_FIELDS.ID] as string} className="hover:bg-slate-50">
                                     <td className="px-6 py-4 font-medium text-slate-900">{group.name}</td>
                                     <td className="px-6 py-4 text-slate-600">{group.label}</td>
                                     <td className="px-6 py-4">

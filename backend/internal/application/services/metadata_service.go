@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -17,10 +18,18 @@ type MetadataService struct {
 	repo      *persistence.MetadataRepository
 	mu        sync.RWMutex
 
-	// Cache
+	// Cache - Schemas
 	schemas   []*models.ObjectMetadata
 	schemaMap map[string]*models.ObjectMetadata
-	fieldMap  map[string][]models.FieldMetadata // key: ObjectAPIName
+	fieldMap  map[string][]models.FieldMetadata // key: ObjectAPIName (lowercase)
+
+	// Cache - Flows
+	flows   []*models.Flow
+	flowMap map[string]*models.Flow // key: flow ID
+
+	// Cache - Per-Object Metadata
+	validationRulesMap map[string][]*models.ValidationRule // key: objectAPIName (lowercase)
+	autoNumbersMap     map[string][]*models.AutoNumber     // key: objectAPIName (lowercase)
 
 	// Dependencies
 	validationSvc *ValidationService
@@ -49,32 +58,87 @@ func (ms *MetadataService) RefreshCache() error {
 // refreshCacheLocked reloads metadata assuming the write lock is already held
 func (ms *MetadataService) refreshCacheLocked() error {
 	log.Println("🔄 Refreshing metadata cache...")
+	ctx := context.Background()
 
 	// 1. Load all schemas
-	schemas, err := ms.repo.GetAllSchemas(context.Background())
+	// Critical: If this fails, we cannot proceed
+	schemas, err := ms.repo.GetAllSchemas(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load schemas: %w", err)
 	}
 
-	// 2. Build maps
+	// 2. Build schema maps
 	schemaMap := make(map[string]*models.ObjectMetadata)
 	fieldMap := make(map[string][]models.FieldMetadata)
 
 	for _, schema := range schemas {
-		// Normalize key
 		key := strings.ToLower(schema.APIName)
 		schemaMap[key] = schema
-
-		// Map fields
 		fieldMap[key] = schema.Fields
 	}
 
+	// 3. Load all flows
+	// Critical: If this fails, returning empty flows would silently disable all automation.
+	// We must fail the refresh instead.
+	flows, err := ms.repo.GetAllFlows(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load flows: %w", err)
+	}
+
+	flowMap := make(map[string]*models.Flow)
+	for _, flow := range flows {
+		flowMap[flow.ID] = flow
+	}
+
+	// 4. Load validation rules and auto-numbers per object
+	// Non-Critical: If these fail for specific objects, we can log and continue (partial degrade),
+	// or strict fail. Given strict review, let's prefer partial degrade only for specific objects,
+	// but generally try to load everything.
+	validationRulesMap := make(map[string][]*models.ValidationRule)
+	autoNumbersMap := make(map[string][]*models.AutoNumber)
+
+	for _, schema := range schemas {
+		key := strings.ToLower(schema.APIName)
+
+		// Validation Rules (skip system tables)
+		if !isSystemTableForCaching(schema.APIName) {
+			rules, err := ms.repo.GetValidationRules(ctx, schema.APIName)
+			if err != nil {
+				// Log but don't fail entire cache?
+				// If we fail here, one bad table breaks entire system.
+				// Better to log error and treat as empty rules for that table.
+				log.Printf("⚠️ Failed to load validation rules for %s: %v", schema.APIName, err)
+			} else {
+				validationRulesMap[key] = rules
+			}
+		}
+
+		// Auto-Numbers
+		ans, err := ms.repo.GetAutoNumbers(ctx, schema.APIName)
+		if err != nil {
+			log.Printf("⚠️ Failed to load auto-numbers for %s: %v", schema.APIName, err)
+		} else {
+			autoNumbersMap[key] = ans
+		}
+	}
+
+	// 5. ATOMIC SWAP
+	// Only update state after all critical data is loaded successfully
 	ms.schemas = schemas
 	ms.schemaMap = schemaMap
 	ms.fieldMap = fieldMap
+	ms.flows = flows
+	ms.flowMap = flowMap
+	ms.validationRulesMap = validationRulesMap
+	ms.autoNumbersMap = autoNumbersMap
 
-	log.Printf("✅ Metadata cache refreshed: %d objects loaded", len(schemas))
+	log.Printf("✅ Metadata cache refreshed: %d objects, %d flows loaded", len(schemas), len(flows))
 	return nil
+}
+
+// isSystemTableForCaching checks if a table is a system table (for caching optimization)
+func isSystemTableForCaching(apiName string) bool {
+	return strings.HasPrefix(apiName, "_System_")
 }
 
 // ensureCacheInitialized ensures that metadata is loaded (Double-Checked Locking)
@@ -135,6 +199,10 @@ func (ms *MetadataService) invalidateCacheLocked() {
 	ms.schemas = nil
 	ms.schemaMap = nil
 	ms.fieldMap = nil
+	ms.flows = nil
+	ms.flowMap = nil
+	ms.validationRulesMap = nil
+	ms.autoNumbersMap = nil
 	log.Println("🗑️ Metadata cache invalidated")
 }
 

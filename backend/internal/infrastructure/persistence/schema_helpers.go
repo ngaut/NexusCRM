@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
@@ -104,7 +105,7 @@ func (r *SchemaRepository) prepareFieldDBValues(field *models.FieldMetadata) ([]
 		required = 1
 	}
 	unique := 0
-	if field.Unique {
+	if field.IsUnique {
 		unique = 1
 	}
 	isMasterDetail := 0
@@ -126,62 +127,80 @@ func (r *SchemaRepository) prepareFieldDBValues(field *models.FieldMetadata) ([]
 }
 
 func (r *SchemaRepository) getObjectInsertQuery() string {
-	return fmt.Sprintf(`INSERT INTO %s (
-		id, api_name, label, plural_label, icon, description, 
-		is_custom, sharing_model, app_id, list_fields, path_field, theme_color, table_type,
-		created_date, last_modified_date
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-	ON DUPLICATE KEY UPDATE
-		label = VALUES(label),
-		plural_label = VALUES(plural_label),
-		icon = VALUES(icon),
-		description = VALUES(description),
-		sharing_model = VALUES(sharing_model),
-		app_id = VALUES(app_id),
-		list_fields = VALUES(list_fields),
-		path_field = VALUES(path_field),
-		theme_color = VALUES(theme_color),
-		table_type = VALUES(table_type),
-		last_modified_date = NOW()
-	`, constants.TableObject)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysObject_APIName, constants.FieldSysObject_Label, constants.FieldSysObject_PluralLabel,
+		constants.FieldSysObject_Icon, constants.FieldSysObject_Description, constants.FieldSysObject_IsCustom,
+		constants.FieldSysObject_SharingModel, constants.FieldSysObject_AppID, constants.FieldSysObject_ListFields,
+		constants.FieldSysObject_PathField, constants.FieldSysObject_ThemeColor, constants.FieldSysObject_TableType,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+
+	updates := strings.Join([]string{
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObject_Label, constants.FieldSysObject_Label),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObject_PluralLabel, constants.FieldSysObject_PluralLabel),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObject_Icon, constants.FieldSysObject_Icon),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObject_Description, constants.FieldSysObject_Description),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObject_SharingModel, constants.FieldSysObject_SharingModel),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObject_AppID, constants.FieldSysObject_AppID),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObject_ListFields, constants.FieldSysObject_ListFields),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObject_PathField, constants.FieldSysObject_PathField),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObject_ThemeColor, constants.FieldSysObject_ThemeColor),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObject_TableType, constants.FieldSysObject_TableType),
+		fmt.Sprintf("%s = NOW()", constants.FieldLastModifiedDate),
+	}, ", ")
+
+	return fmt.Sprintf(`%s %s (%s) %s (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, %s, %s)
+	%s %s`, KeywordInsertInto, constants.TableObject, cols, KeywordValues, FuncNow, FuncNow,
+		KeywordOnDuplicate, updates)
 }
 
 func (r *SchemaRepository) getObjectStrictInsertQuery() string {
-	return fmt.Sprintf(`INSERT INTO %s (
-		id, api_name, label, plural_label, icon, description, 
-		is_custom, sharing_model, app_id, list_fields, path_field, theme_color, table_type,
-		created_date, last_modified_date
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`, constants.TableObject)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysObject_APIName, constants.FieldSysObject_Label, constants.FieldSysObject_PluralLabel,
+		constants.FieldSysObject_Icon, constants.FieldSysObject_Description, constants.FieldSysObject_IsCustom,
+		constants.FieldSysObject_SharingModel, constants.FieldSysObject_AppID, constants.FieldSysObject_ListFields,
+		constants.FieldSysObject_PathField, constants.FieldSysObject_ThemeColor, constants.FieldSysObject_TableType,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	return fmt.Sprintf(`%s %s (%s) %s (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, %s, %s)`,
+		KeywordInsertInto, constants.TableObject, cols, KeywordValues, FuncNow, FuncNow)
 }
 
 func (r *SchemaRepository) getFieldInsertQuery() string {
-	return fmt.Sprintf(`INSERT INTO %s (
-		id, object_id, api_name, label, type, required, `+"`unique`"+`,
-		default_value, help_text, is_system, is_name_field, options,
-		min_length, max_length, reference_to, formula, return_type, rollup_config,
-		is_master_detail, is_polymorphic, delete_rule, relationship_name,
-		created_date, last_modified_date
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-	ON DUPLICATE KEY UPDATE
-		label = VALUES(label),
-		type = VALUES(type),
-		required = VALUES(required),
-		`+"`unique`"+` = VALUES(`+"`unique`"+`),
-		default_value = VALUES(default_value),
-		help_text = VALUES(help_text),
-		is_system = VALUES(is_system),
-		is_name_field = VALUES(is_name_field),
-		options = VALUES(options),
-		min_length = VALUES(min_length),
-		max_length = VALUES(max_length),
-		reference_to = VALUES(reference_to),
-		formula = VALUES(formula),
-		return_type = VALUES(return_type),
-		rollup_config = VALUES(rollup_config),
-		is_master_detail = VALUES(is_master_detail),
-		is_polymorphic = VALUES(is_polymorphic),
-		delete_rule = VALUES(delete_rule),
-		relationship_name = VALUES(relationship_name),
-		last_modified_date = NOW()
-	`, constants.TableField)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldObjectID, constants.FieldAPIName, constants.FieldSysField_Label, constants.FieldType,
+		constants.FieldSysField_Required, constants.FieldSysField_IsUnique, constants.FieldSysField_DefaultValue, constants.FieldSysField_HelpText,
+		constants.FieldSysField_IsSystem, constants.FieldSysField_IsNameField, constants.FieldSysField_Options,
+		constants.FieldSysField_MinLength, constants.FieldSysField_MaxLength, constants.FieldReferenceTo,
+		constants.FieldSysField_Formula, constants.FieldSysField_ReturnType, constants.FieldSysField_RollupConfig,
+		constants.FieldSysField_IsMasterDetail, constants.FieldSysField_IsPolymorphic, constants.FieldSysField_DeleteRule,
+		constants.FieldSysField_RelationshipName, constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+
+	updates := strings.Join([]string{
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_Label, constants.FieldSysField_Label),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldType, constants.FieldType),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_Required, constants.FieldSysField_Required),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_IsUnique, constants.FieldSysField_IsUnique),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_DefaultValue, constants.FieldSysField_DefaultValue),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_HelpText, constants.FieldSysField_HelpText),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_IsSystem, constants.FieldSysField_IsSystem),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_IsNameField, constants.FieldSysField_IsNameField),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_Options, constants.FieldSysField_Options),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_MinLength, constants.FieldSysField_MinLength),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_MaxLength, constants.FieldSysField_MaxLength),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldReferenceTo, constants.FieldReferenceTo),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_Formula, constants.FieldSysField_Formula),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_ReturnType, constants.FieldSysField_ReturnType),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_RollupConfig, constants.FieldSysField_RollupConfig),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_IsMasterDetail, constants.FieldSysField_IsMasterDetail),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_IsPolymorphic, constants.FieldSysField_IsPolymorphic),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_DeleteRule, constants.FieldSysField_DeleteRule),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysField_RelationshipName, constants.FieldSysField_RelationshipName),
+		fmt.Sprintf("%s = NOW()", constants.FieldLastModifiedDate),
+	}, ", ")
+
+	return fmt.Sprintf(`%s %s (%s) %s (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, %s, %s)
+	%s %s`, KeywordInsertInto, constants.TableField, cols, KeywordValues, FuncNow, FuncNow,
+		KeywordOnDuplicate, updates)
 }

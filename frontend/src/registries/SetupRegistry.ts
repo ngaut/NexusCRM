@@ -59,8 +59,10 @@ class SetupRegistryClass extends RegistryBase<SetupPageDefinition> {
 
             rows.forEach((row) => {
                 const componentName = String(row.component_name || row.componentName);
+                // Fix: Backend returns __sys_gen_id, not id
+                const id = String(row.id || row.__sys_gen_id || row.ID);
                 const page: SetupPageDefinition = {
-                    id: String(row.id),
+                    id: id,
                     label: String(row.label),
                     icon: String(row.icon),
                     component_name: componentName,

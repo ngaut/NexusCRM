@@ -85,7 +85,7 @@ test_create_record() {
     
     # Get current user ID for lookup
     local me=$(api_get "/api/auth/me")
-    local user_id=$(json_extract "$me" "id")
+    local user_id=$(json_extract "$me" "__sys_gen_id")
     if [ -z "$user_id" ]; then user_id=$(json_extract "$me" "user_id"); fi
     
     local payload='{
@@ -96,7 +96,7 @@ test_create_record() {
     }'
     
     local res=$(api_post "/api/data/$API_NAME" "$payload")
-    local id=$(json_extract "$res" "id")
+    local id=$(json_extract "$res" "__sys_gen_id")
     
     if [ -n "$id" ]; then
         echo "  ✓ Created Record ID: $id"

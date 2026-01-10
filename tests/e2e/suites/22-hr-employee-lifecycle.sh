@@ -208,11 +208,11 @@ test_query_by_department() {
     echo ""
     echo "Test 22.6: Query Employees by Department"
     
-    local frontend_team=$(api_post "/api/data/query" '{"object_api_name": "hr_employee", "filters": [{"field": "department_id", "operator": "=", "value": "'${DEPT_IDS[1]}'"}]}')
-    echo "  Frontend team: $(echo "$frontend_team" | jq '.records | length' 2>/dev/null || echo 0)"
+    local frontend_team=$(api_post "/api/data/query" '{"object_api_name": "hr_employee", "filter_expr": "department_id == '"'"'${DEPT_IDS[1]}'"'"'"}')
+    echo "  Frontend team: $(echo "$frontend_team" | jq '.data | length' 2>/dev/null || echo 0)"
     
-    local active=$(api_post "/api/data/query" '{"object_api_name": "hr_employee", "filters": [{"field": "employment_status", "operator": "=", "value": "Active"}]}')
-    echo "  Active employees: $(echo "$active" | jq '.records | length' 2>/dev/null || echo 0)"
+    local active=$(api_post "/api/data/query" '{"object_api_name": "hr_employee", "filter_expr": "employment_status == '"'"'Active'"'"'"}')
+    echo "  Active employees: $(echo "$active" | jq '.data | length' 2>/dev/null || echo 0)"
     
     test_passed "Department queries completed"
 }
@@ -226,8 +226,8 @@ test_headcount_report() {
     echo "  === Headcount Report ==="
     
     for i in 1 2 3; do
-        local team=$(api_post "/api/data/query" '{"object_api_name": "hr_employee", "filters": [{"field": "department_id", "operator": "=", "value": "'${DEPT_IDS[$i]}'"}]}')
-        local count=$(echo "$team" | jq '.records | length' 2>/dev/null || echo 0)
+        local team=$(api_post "/api/data/query" '{"object_api_name": "hr_employee", "filter_expr": "department_id == '"'"'${DEPT_IDS[$i]}'"'"'"}')
+        local count=$(echo "$team" | jq '.data | length' 2>/dev/null || echo 0)
         echo "  ${names[$i]}: $count"
         total=$((total + count))
     done

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/nexuscrm/backend/internal/domain/events"
 	"github.com/nexuscrm/shared/pkg/constants"
@@ -106,34 +107,41 @@ func (ms *MetadataService) GetSupportedEvents() []string {
 }
 
 func (ms *MetadataService) GetFlows(ctx context.Context) []*models.Flow {
-	ms.mu.RLock()
-	defer ms.mu.RUnlock()
-	flows, err := ms.repo.GetAllFlows(ctx)
-	if err != nil {
-		log.Printf("Failed to get flows: %v", err)
+	if err := ms.ensureCacheInitialized(); err != nil {
+		log.Printf("⚠️ Failed to initialize cache in GetFlows: %v", err)
 		return []*models.Flow{}
 	}
-	return flows
+	ms.mu.RLock()
+	defer ms.mu.RUnlock()
+	if ms.flows == nil {
+		return []*models.Flow{}
+	}
+	return ms.flows
 }
 
 // GetScheduledFlows returns all flows with trigger_type = "schedule"
 func (ms *MetadataService) GetScheduledFlows(ctx context.Context) []models.Flow {
-	ms.mu.RLock()
-	defer ms.mu.RUnlock()
-
-	flows, err := ms.repo.GetScheduledFlows(ctx)
-	if err != nil {
-		log.Printf("Failed to query scheduled flows: %v", err)
+	// Use cache instead of hitting DB directly
+	if err := ms.ensureCacheInitialized(); err != nil {
+		log.Printf("⚠️ Failed to initialize cache in GetScheduledFlows: %v", err)
 		return []models.Flow{}
 	}
 
-	// Convert []*models.Flow to []models.Flow
-	res := make([]models.Flow, len(flows))
-	for i, f := range flows {
-		res[i] = *f
+	ms.mu.RLock()
+	defer ms.mu.RUnlock()
+
+	if ms.flows == nil {
+		return []models.Flow{}
 	}
 
-	return res
+	// Filter for scheduled flows from cache
+	var scheduled []models.Flow
+	for _, flow := range ms.flows {
+		if flow.TriggerType == constants.TriggerTypeSchedule {
+			scheduled = append(scheduled, *flow)
+		}
+	}
+	return scheduled
 }
 
 func (ms *MetadataService) GetValidationRules(ctx context.Context, objectAPIName string) []*models.ValidationRule {
@@ -142,11 +150,18 @@ func (ms *MetadataService) GetValidationRules(ctx context.Context, objectAPIName
 		return []*models.ValidationRule{}
 	}
 
+	if err := ms.ensureCacheInitialized(); err != nil {
+		log.Printf("⚠️ Failed to initialize cache in GetValidationRules: %v", err)
+		return []*models.ValidationRule{}
+	}
+
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	rules, err := ms.repo.GetValidationRules(ctx, objectAPIName)
-	if err != nil {
-		log.Printf("Failed to get validation rules: %v", err)
+	if ms.validationRulesMap == nil {
+		return []*models.ValidationRule{}
+	}
+	rules := ms.validationRulesMap[strings.ToLower(objectAPIName)]
+	if rules == nil {
 		return []*models.ValidationRule{}
 	}
 	return rules
@@ -257,10 +272,18 @@ func (ms *MetadataService) GetRecordTypes(ctx context.Context, objectAPIName str
 }
 
 func (ms *MetadataService) GetAutoNumbers(ctx context.Context, objectAPIName string) []*models.AutoNumber {
+	if err := ms.ensureCacheInitialized(); err != nil {
+		log.Printf("⚠️ Failed to initialize cache in GetAutoNumbers: %v", err)
+		return []*models.AutoNumber{}
+	}
+
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	ans, err := ms.repo.GetAutoNumbers(ctx, objectAPIName)
-	if err != nil {
+	if ms.autoNumbersMap == nil {
+		return []*models.AutoNumber{}
+	}
+	ans := ms.autoNumbersMap[strings.ToLower(objectAPIName)]
+	if ans == nil {
 		return []*models.AutoNumber{}
 	}
 	return ans

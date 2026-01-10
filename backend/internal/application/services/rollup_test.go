@@ -124,11 +124,11 @@ func TestRollupSummary_Sum(t *testing.T) {
 	}
 
 	var parentObjID string
-	err = db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE api_name = ?", constants.TableObject), parentName).Scan(&parentObjID)
+	err = db.QueryRow(fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableObject, constants.FieldSysObject_APIName), parentName).Scan(&parentObjID)
 	require.NoError(t, err)
 
 	var childObjID string
-	err = db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE api_name = ?", constants.TableObject), childName).Scan(&childObjID)
+	err = db.QueryRow(fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableObject, constants.FieldSysObject_APIName), childName).Scan(&childObjID)
 	require.NoError(t, err)
 
 	parentFields := []models.FieldMetadata{
@@ -189,7 +189,7 @@ func TestRollupSummary_Sum(t *testing.T) {
 
 		var val float64
 		// We query total_amount
-		err := db.QueryRow(fmt.Sprintf("SELECT total_amount FROM %s WHERE id = ?", parentName), invoiceID).Scan(&val)
+		err := db.QueryRow(fmt.Sprintf("SELECT total_amount FROM %s WHERE %s = ?", parentName, constants.FieldID), invoiceID).Scan(&val)
 		require.NoError(t, err)
 		assert.Equal(t, expected, val)
 	}
@@ -232,7 +232,7 @@ func TestRollupSummary_Sum(t *testing.T) {
 
 	checkInvoice2 := func(expected float64) {
 		var val float64
-		err := db.QueryRow(fmt.Sprintf("SELECT total_amount FROM %s WHERE id = ?", parentName), invoice2ID).Scan(&val)
+		err := db.QueryRow(fmt.Sprintf("SELECT total_amount FROM %s WHERE %s = ?", parentName, constants.FieldID), invoice2ID).Scan(&val)
 		require.NoError(t, err)
 		assert.Equal(t, expected, val)
 	}

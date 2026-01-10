@@ -197,14 +197,24 @@ func (r *SystemRepository) BatchUpsertProfiles(ctx context.Context, profiles []m
 	args := []interface{}{}
 
 	for _, p := range profiles {
-		values = append(values, "(?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+		// (id, name, desc, active, system, created_date, last_modified)
+		values = append(values, fmt.Sprintf("(?, ?, ?, ?, ?, %s, %s)", FuncCurrentTimestamp, FuncCurrentTimestamp))
 		args = append(args, p.ID, p.Name, p.Description, p.IsActive, p.IsSystem)
 	}
 
 	query := fmt.Sprintf(
-		"INSERT INTO %s (id, name, description, is_active, is_system, created_date, last_modified_date) VALUES %s ON DUPLICATE KEY UPDATE description=VALUES(description), is_active=VALUES(is_active), is_system=VALUES(is_system), last_modified_date=CURRENT_TIMESTAMP",
-		constants.TableProfile,
-		strings.Join(values, ","),
+		"%s %s (%s, %s, %s, %s, %s, %s, %s) %s %s %s %s=VALUES(%s), %s=VALUES(%s), %s=VALUES(%s), %s=VALUES(%s), %s=%s",
+		KeywordInsertInto, constants.TableProfile,
+		constants.FieldID, constants.FieldSysProfile_Name, constants.FieldSysProfile_Description,
+		constants.FieldSysProfile_IsActive, constants.FieldSysProfile_IsSystem,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+		KeywordValues, strings.Join(values, ","),
+		KeywordOnDuplicate,
+		constants.FieldID, constants.FieldID, // Updates ID
+		constants.FieldSysProfile_Description, constants.FieldSysProfile_Description,
+		constants.FieldSysProfile_IsActive, constants.FieldSysProfile_IsActive,
+		constants.FieldSysProfile_IsSystem, constants.FieldSysProfile_IsSystem,
+		constants.FieldLastModifiedDate, FuncCurrentTimestamp,
 	)
 
 	if _, err := r.db.ExecContext(ctx, query, args...); err != nil {
@@ -223,19 +233,34 @@ func (r *SystemRepository) BatchUpsertUsers(ctx context.Context, users []models.
 	args := []interface{}{}
 
 	for _, u := range users {
-		values = append(values, "(?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+		values = append(values, fmt.Sprintf("(?, ?, ?, ?, ?, ?, ?, ?, %s, %s)", FuncCurrentTimestamp, FuncCurrentTimestamp))
 		// ID, Username, Email, Password, FirstName, LastName, ProfileID, IsActive
 		args = append(args, u.ID, u.Email, u.Email, u.Password, u.FirstName, u.LastName, u.ProfileID, true)
 	}
 
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysUser_Username, constants.FieldSysUser_Email,
+		constants.FieldSysUser_Password, constants.FieldSysUser_FirstName, constants.FieldSysUser_LastName,
+		constants.FieldSysUser_ProfileID, constants.FieldSysUser_IsActive,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+
 	query := fmt.Sprintf(
-		`INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, is_active, created_date, last_modified_date) 
-		VALUES %s 
-		ON DUPLICATE KEY UPDATE 
-		username=VALUES(username), password=VALUES(password), first_name=VALUES(first_name), 
-		last_name=VALUES(last_name), profile_id=VALUES(profile_id), is_active=VALUES(is_active), last_modified_date=CURRENT_TIMESTAMP`,
-		constants.TableUser,
-		strings.Join(values, ","),
+		`%s %s (%s) 
+		%s %s 
+		%s 
+		%s=VALUES(%s), %s=VALUES(%s), %s=VALUES(%s), 
+		%s=VALUES(%s), %s=VALUES(%s), %s=VALUES(%s), %s=%s`,
+		KeywordInsertInto, constants.TableUser, cols,
+		KeywordValues, strings.Join(values, ","),
+		KeywordOnDuplicate,
+		constants.FieldSysUser_Username, constants.FieldSysUser_Username,
+		constants.FieldSysUser_Password, constants.FieldSysUser_Password,
+		constants.FieldSysUser_FirstName, constants.FieldSysUser_FirstName,
+		constants.FieldSysUser_LastName, constants.FieldSysUser_LastName,
+		constants.FieldSysUser_ProfileID, constants.FieldSysUser_ProfileID,
+		constants.FieldSysUser_IsActive, constants.FieldSysUser_IsActive,
+		constants.FieldLastModifiedDate, FuncCurrentTimestamp,
 	)
 
 	if _, err := r.db.ExecContext(ctx, query, args...); err != nil {

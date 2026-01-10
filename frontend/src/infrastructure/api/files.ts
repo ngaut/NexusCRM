@@ -40,8 +40,8 @@ export const filesAPI = {
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
-            throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+            const errorData = await response.json().catch(() => ({ message: 'Upload failed' }));
+            throw new Error(errorData.message || `Upload failed with status ${response.status}`);
         }
 
         const res = await response.json();

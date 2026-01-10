@@ -420,8 +420,8 @@ func (ps *PersistenceService) generateAutoNumbers(ctx context.Context, tx *sql.T
 
 		// 2. Update DB via Repo
 		anUpdate := models.SObject{
-			"current_number":     newValue,
-			"last_modified_date": time.Now().UTC(),
+			constants.FieldSysAutoNumber_CurrentNumber: newValue,
+			constants.FieldLastModifiedDate:            time.Now().UTC(),
 		}
 
 		if err := ps.repo.Update(ctx, tx, constants.TableAutoNumber, an.ID, anUpdate); err != nil {

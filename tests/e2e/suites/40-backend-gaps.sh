@@ -51,7 +51,7 @@ test_file_upload_and_serve() {
         -F "file=@/tmp/testfile_$TIMESTAMP.txt" \
         "$BASE_URL/api/files/upload")
         
-    local path=$(echo "$res" | jq -r '.path')
+    local path=$(echo "$res" | jq -r '.data.path')
     
     if [[ "$path" == "uploads/"* ]]; then
         echo "  ✓ Upload successful: $path"
@@ -82,7 +82,7 @@ test_activity_feed_lifecycle() {
     
     # Create a dummy record (Lead) to attach comment to
     local lead_res=$(api_post "/api/data/lead" '{"name": "Comment Target '$TIMESTAMP'", "company": "Test Co", "status": "New", "email": "test'$TIMESTAMP'@example.com"}')
-    local record_id=$(echo "$lead_res" | jq -r '.record.id')
+    local record_id=$(echo "$lead_res" | jq -r '.record.__sys_gen_id')
     
     if [ -z "$record_id" ] || [ "$record_id" == "null" ]; then
         echo "  Create Lead Response: $lead_res"
@@ -98,7 +98,7 @@ test_activity_feed_lifecycle() {
     }'
     
     local comment_res=$(api_post "/api/feed/comments" "$comment_payload")
-    local comment_id=$(echo "$comment_res" | jq -r '.comment.id')
+    local comment_id=$(echo "$comment_res" | jq -r '.comment.__sys_gen_id')
     
     if [ -n "$comment_id" ] && [ "$comment_id" != "null" ]; then
         echo "  ✓ Comment created: $comment_id"

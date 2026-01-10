@@ -14,9 +14,11 @@ import (
 )
 
 // TiDBConnection represents a TiDB database connection
+// Note: sql.DB is already thread-safe and manages its own connection pool.
+// We do NOT wrap it with additional mutexes as that causes deadlocks under
+// high concurrency (writers waiting for connections block readers).
 type TiDBConnection struct {
 	db *sql.DB
-	mu sync.RWMutex
 }
 
 var (
@@ -61,7 +63,7 @@ func newConnection() (*TiDBConnection, error) {
 				ServerName: host, // Required for TLS verification
 			}); err != nil {
 				// Just log as we can't return error from sync.Once
-				log.Printf("Failed to register TLS config: %v\n", err) // Changed fmt.Printf to log.Printf
+				log.Printf("Failed to register TLS config: %v\n", err)
 			}
 		})
 		tlsParam = "&tls=tidb"
@@ -77,8 +79,11 @@ func newConnection() (*TiDBConnection, error) {
 	}
 
 	// Configure connection pool
+	// IMPORTANT: MaxIdleConns must equal MaxOpenConns to prevent port exhaustion.
+	// If MaxIdleConns < MaxOpenConns, connections are closed/reopened frequently,
+	// which exhausts ephemeral ports under high concurrency.
 	db.SetMaxOpenConns(100)
-	db.SetMaxIdleConns(10)
+	db.SetMaxIdleConns(100) // Match MaxOpenConns to keep connections alive
 
 	// Connection lifecycle settings for auto-reconnection
 	// MaxLifetime ensures connections are recycled before they become stale
@@ -95,66 +100,43 @@ func newConnection() (*TiDBConnection, error) {
 }
 
 // Query executes a SELECT query and returns rows
+// sql.DB handles connection pooling and concurrency internally
 func (c *TiDBConnection) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	return c.db.Query(query, args...)
 }
 
 // QueryContext executes a SELECT query with context
 func (c *TiDBConnection) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	return c.db.QueryContext(ctx, query, args...)
 }
 
 // QueryRow executes a SELECT query that returns at most one row
 func (c *TiDBConnection) QueryRow(query string, args ...interface{}) *sql.Row {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	return c.db.QueryRow(query, args...)
 }
 
 // QueryRowContext executes a SELECT query with context that returns at most one row
 func (c *TiDBConnection) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	return c.db.QueryRowContext(ctx, query, args...)
 }
 
 // Exec executes an INSERT, UPDATE, or DELETE query
 func (c *TiDBConnection) Exec(query string, args ...interface{}) (sql.Result, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	return c.db.Exec(query, args...)
 }
 
 // ExecContext executes an INSERT, UPDATE, or DELETE query with context
 func (c *TiDBConnection) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	return c.db.ExecContext(ctx, query, args...)
 }
 
 // Begin starts a new transaction
 func (c *TiDBConnection) Begin() (*sql.Tx, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	return c.db.Begin()
 }
 
 // BeginTx starts a new transaction with context
 func (c *TiDBConnection) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	return c.db.BeginTx(ctx, opts)
 }
 
@@ -166,8 +148,5 @@ func (c *TiDBConnection) DB() *sql.DB {
 
 // Close closes the database connection
 func (c *TiDBConnection) Close() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	return c.db.Close()
 }

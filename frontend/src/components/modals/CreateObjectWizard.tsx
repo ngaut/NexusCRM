@@ -85,7 +85,7 @@ export function CreateObjectWizard({ isOpen, onClose, onSuccess }: CreateObjectW
 
             const result = await dataAPI.createRecord(SYSTEM_TABLE_NAMES.SYSTEM_OBJECT, objectData as unknown as Record<string, unknown>);
             showSuccess(`Object "${label}" created successfully`);
-            onSuccess?.(result.id);
+            onSuccess?.(result.id as string);
             onClose();
             resetForm();
         } catch (err) {

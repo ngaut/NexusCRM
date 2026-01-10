@@ -104,7 +104,7 @@ test_lead_creation() {
     
     local payload='{
         "name": "Sales Lifecycle Lead '$TIMESTAMP'",
-        "company": "Acme Corp",
+        "company": "Acme Corp '$TIMESTAMP'",
         "email": "lead'$TIMESTAMP'@acme.com",
         "status": "New",
         "source": "Web",
@@ -327,38 +327,23 @@ test_closed_lost() {
 }
 
 # Cleanup test data
+# Cleanup test data
 test_cleanup() {
     echo ""
     echo "Test 16.7: Cleanup Test Data"
     
-    # Delete Opportunity first (references Account)
-    if [ -n "$TEST_OPPORTUNITY_ID" ]; then
-        api_delete "/api/data/opportunity/$TEST_OPPORTUNITY_ID" > /dev/null
-        echo "  ✓ Opportunity deleted"
-    fi
-    
-    # Delete Contact (references Account)
-    if [ -n "$TEST_CONTACT_ID" ]; then
-        api_delete "/api/data/contact/$TEST_CONTACT_ID" > /dev/null
-        echo "  ✓ Contact deleted"
-    fi
-    
-    # Delete Account
-    if [ -n "$TEST_ACCOUNT_ID" ]; then
-        api_delete "/api/data/account/$TEST_ACCOUNT_ID" > /dev/null
-        echo "  ✓ Account deleted"
-    fi
-    
-    # Delete Lead
-    if [ -n "$TEST_LEAD_ID" ]; then
-        api_delete "/api/data/lead/$TEST_LEAD_ID" > /dev/null
-        echo "  ✓ Lead deleted"
-    fi
+    # Use robust prefix-based cleanup via Query (Data API has no list endpoint)
+    delete_via_query_by_prefix "opportunity" "name" "Opp from Lead " "Opportunities (Opp from Lead...)"
+    delete_via_query_by_prefix "opportunity" "name" "Lost Opp " "Opportunities (Lost Opp...)"
+    delete_via_query_by_prefix "contact" "name" "Convert Sales Lifecycle Lead " "Converted Contacts"
+    delete_via_query_by_prefix "account" "name" "Acme Corp " "Accounts (Acme Corp...)"
+    delete_via_query_by_prefix "lead" "name" "Sales Lifecycle Lead " "Leads"
     
     test_passed "Cleanup completed"
 }
 
 # Run if executed directly
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    trap test_cleanup EXIT
     run_suite
 fi

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,7 +43,7 @@ func TestMetadataService_Apps_IsDefault(t *testing.T) {
 
 		// Verify DB
 		var isDefault bool
-		err = db.QueryRow("SELECT is_default FROM _System_App WHERE id = ?", appID).Scan(&isDefault)
+		err = db.QueryRow(fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldSysApp_IsDefault, constants.TableApp, constants.FieldID), appID).Scan(&isDefault)
 		require.NoError(t, err)
 		assert.True(t, isDefault, "IsDefault should be true")
 	})
@@ -69,7 +70,7 @@ func TestMetadataService_Apps_IsDefault(t *testing.T) {
 
 		// Verify DB
 		var isDefault bool
-		err = db.QueryRow("SELECT is_default FROM _System_App WHERE id = ?", appID).Scan(&isDefault)
+		err = db.QueryRow(fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldSysApp_IsDefault, constants.TableApp, constants.FieldID), appID).Scan(&isDefault)
 		require.NoError(t, err)
 		assert.True(t, isDefault, "IsDefault should update to true")
 	})

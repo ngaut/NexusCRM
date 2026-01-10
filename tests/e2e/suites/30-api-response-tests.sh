@@ -145,16 +145,16 @@ test_query_response_format() {
     
     local res=$(api_post "/api/data/query" '{"object_api_name": "account", "limit": 5}')
     
-    local has_records=$(echo "$res" | jq -e '.records' 2>/dev/null)
-    local is_array=$(echo "$res" | jq -e '.records | type == "array"' 2>/dev/null)
-    local count=$(echo "$res" | jq '.records | length' 2>/dev/null)
+    local has_records=$(echo "$res" | jq -e '.data' 2>/dev/null)
+    local is_array=$(echo "$res" | jq -e '.data | type == "array"' 2>/dev/null)
+    local count=$(echo "$res" | jq '.data | length' 2>/dev/null)
     
     if [ "$is_array" == "true" ]; then
         echo "  ✓ Response contains records array"
         echo "  ✓ Records count: $count"
         
         # Check record structure
-        local first_id=$(echo "$res" | jq -r '.records[0].id // empty' 2>/dev/null)
+        local first_id=$(echo "$res" | jq -r '.data[0].id // empty' 2>/dev/null)
         [ -n "$first_id" ] && echo "  ✓ Records contain id field"
         
         test_passed "Query response format"
@@ -174,7 +174,7 @@ test_error_response_format() {
     # Request non-existent record
     local res=$(api_get "/api/data/account/00000000-0000-0000-0000-000000000000")
     
-    local has_error=$(echo "$res" | jq -e '.error' 2>/dev/null)
+    local has_error=$(echo "$res" | jq -e '.message' 2>/dev/null)
     local has_msg=$(echo "$res" | jq -e '.message' 2>/dev/null)
     
     if [ -n "$has_error" ] || [ -n "$has_msg" ]; then
@@ -217,12 +217,12 @@ test_pagination_response() {
     
     local res=$(api_post "/api/data/query" '{"object_api_name": "account", "limit": 2, "offset": 0}')
     
-    local count=$(echo "$res" | jq '.records | length' 2>/dev/null || echo "0")
+    local count=$(echo "$res" | jq '.data | length' 2>/dev/null || echo "0")
     echo "  Page 1: $count records"
     
     # Get page 2
     local res2=$(api_post "/api/data/query" '{"object_api_name": "account", "limit": 2, "offset": 2}')
-    local count2=$(echo "$res2" | jq '.records | length' 2>/dev/null || echo "0")
+    local count2=$(echo "$res2" | jq '.data | length' 2>/dev/null || echo "0")
     echo "  Page 2: $count2 records"
     
     test_passed "Pagination response"

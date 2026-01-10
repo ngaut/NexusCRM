@@ -157,10 +157,10 @@ func (r *QueryRepository) RunAnalytics(ctx context.Context, tableName string, q 
 	}
 
 	switch q.Operation {
-	case "count":
+	case OpCount:
 		builder.AddSelectRaw("COUNT(*) as val")
 
-	case "group_by":
+	case OpGroupBy:
 		agg := "COUNT(*)"
 		if q.Field != nil {
 			agg = fmt.Sprintf("SUM(`%s`)", *q.Field)
@@ -189,7 +189,7 @@ func (r *QueryRepository) RunAnalytics(ctx context.Context, tableName string, q 
 		return nil, err
 	}
 
-	if q.Operation == "group_by" {
+	if q.Operation == OpGroupBy {
 		return results, nil
 	}
 

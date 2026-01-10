@@ -124,7 +124,7 @@ const FlowsPage: React.FC = () => {
             setLoadingApprovals(true);
             const records = await dataAPI.query<ApprovalProcess>({
                 objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_APPROVALPROCESS,
-                sortField: 'created_date',
+                sortField: COMMON_FIELDS.CREATED_DATE,
                 sortDirection: 'DESC'
             });
             setProcesses(records);

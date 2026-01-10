@@ -43,10 +43,9 @@ func RespondAppError(c *gin.Context, err error) {
 	}
 
 	c.JSON(code, gin.H{
-		constants.ResponseError: message, // Legacy
-		"message":               message, // Standard
-		"code":                  errorCode,
-		"data":                  nil,
+		"message": message,
+		"code":    errorCode,
+		"data":    nil,
 	})
 }
 
@@ -86,7 +85,8 @@ func HandleGetEnvelope(c *gin.Context, key string, action func() (interface{}, e
 }
 
 // HandleCreateEnvelope executes a create action and returns the object wrapped + message
-// Response: { constants.FieldMessage: successMsg, [key]: obj } (key omitted if empty)
+// Response: { constants.FieldMessage: successMsg, "data": obj }
+// If key is empty, defaults to "data" for consistent API response format.
 func HandleCreateEnvelope(c *gin.Context, key string, successMsg string, obj interface{}, action func() error) {
 	if !BindJSON(c, obj) {
 		return
@@ -95,15 +95,19 @@ func HandleCreateEnvelope(c *gin.Context, key string, successMsg string, obj int
 		RespondAppError(c, err)
 		return
 	}
-	response := gin.H{constants.FieldMessage: successMsg}
-	if key != "" {
-		response[key] = obj
+	// Default to "data" for consistent response format
+	if key == "" {
+		key = "data"
 	}
-	c.JSON(http.StatusCreated, response)
+	c.JSON(http.StatusCreated, gin.H{
+		constants.FieldMessage: successMsg,
+		key:                    obj,
+	})
 }
 
 // HandleUpdateEnvelope executes an update action and returns the object wrapped + message
-// Response: { constants.FieldMessage: successMsg, [key]: obj } (key omitted if empty)
+// Response: { constants.FieldMessage: successMsg, "data": obj }
+// If key is empty, defaults to "data" for consistent API response format.
 func HandleUpdateEnvelope(c *gin.Context, key string, successMsg string, obj interface{}, action func() error) {
 	if !BindJSON(c, obj) {
 		return
@@ -112,11 +116,14 @@ func HandleUpdateEnvelope(c *gin.Context, key string, successMsg string, obj int
 		RespondAppError(c, err)
 		return
 	}
-	response := gin.H{constants.FieldMessage: successMsg}
-	if key != "" {
-		response[key] = obj
+	// Default to "data" for consistent response format
+	if key == "" {
+		key = "data"
 	}
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, gin.H{
+		constants.FieldMessage: successMsg,
+		key:                    obj,
+	})
 }
 
 // HandleDeleteEnvelope executes a delete action and returns a success message

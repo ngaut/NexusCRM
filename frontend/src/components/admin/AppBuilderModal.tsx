@@ -104,8 +104,8 @@ export const AppBuilderModal: React.FC<AppBuilderModalProps> = ({ app, onSave, o
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'An error occurred';
             if (err && typeof err === 'object' && 'response' in err) {
-                const apiError = err as { response?: { data?: { error?: string } } };
-                setError(apiError.response?.data?.error || msg);
+                const apiError = err as { response?: { data?: { message?: string } } };
+                setError(apiError.response?.data?.message || msg);
             } else {
                 setError(msg);
             }

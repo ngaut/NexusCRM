@@ -6,7 +6,7 @@ import { metadataAPI } from '../../infrastructure/api/metadata';
 import type { ObjectMetadata, FieldMetadata, ObjectPermission, FieldPermission } from '../../types';
 
 interface EffectivePermissionsModalProps {
-    user: { id: string; name: string };
+    user: { id?: string; name: string };
     onClose: () => void;
 }
 

@@ -8,7 +8,8 @@ import { SYSTEM_TABLE_NAMES } from '../../generated-schema';
 import { useSchemas } from '../../core/hooks/useMetadata';
 import { actionAPI, ActionMetadata } from '../../infrastructure/api/actions';
 import { FLOW_STATUS, FlowStatus } from '../../core/constants/FlowConstants';
-import { FlowStepEditor, FlowStep } from '../flows/FlowStepEditor';
+import { FlowStepEditor } from '../flows/FlowStepEditor';
+import { FlowStep } from '../../infrastructure/api/flows';
 
 // Sub-components
 import { FlowGeneralInfo } from '../flows/builder/FlowGeneralInfo';
@@ -141,9 +142,9 @@ const FlowBuilderModal: React.FC<FlowBuilderModalProps> = ({
             const msg = err instanceof Error ? err.message : 'Failed to save flow';
             // Try to extract more specific API error if possible, but keep it type safe
             if (typeof err === 'object' && err !== null && 'response' in err) {
-                const response = (err as { response: { data?: { error?: string; message?: string } } }).response;
-                if (response?.data?.error) setError(response.data.error);
-                else if (response?.data?.message) setError(response.data.message);
+                const response = (err as { response: { data?: { message?: string; error?: string } } }).response;
+                if (response?.data?.message) setError(response.data.message);
+                else if (response?.data?.error) setError(response.data.error);
                 else setError(msg);
             } else {
                 setError(msg);

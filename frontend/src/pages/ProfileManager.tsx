@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, AlertCircle, Edit, Trash2, X, Save, Shield } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, X, Save, Shield } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
 import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { COMMON_FIELDS } from '../core/constants';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { RecordListSkeleton } from '../components/ui/LoadingSkeleton';
 import { EmptyState } from '../components/ui/EmptyState';
-
-interface Profile {
-    id: string;
-    name: string;
-    description?: string;
-    is_system?: boolean;
-    created_date?: string;
-    last_modified_date?: string;
-}
+import type { Profile } from '../types';
 
 const ProfileManager: React.FC = () => {
     const [profiles, setProfiles] = useState<Profile[]>([]);

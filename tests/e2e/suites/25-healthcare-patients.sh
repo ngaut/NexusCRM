@@ -224,11 +224,11 @@ test_patient_history() {
     
     local patient_id="${PATIENT_IDS[0]}"
     
-    local appointments=$(api_post "/api/data/query" '{"object_api_name": "hc_appointment", "filters": [{"field": "patient_id", "operator": "=", "value": "'$patient_id'"}]}')
-    echo "  Patient appointments: $(echo "$appointments" | jq '.records | length' 2>/dev/null || echo 0)"
+    local appointments=$(api_post "/api/data/query" '{"object_api_name": "hc_appointment", "filter_expr": "patient_id == '"'"'$patient_id'"'"'"}')
+    echo "  Patient appointments: $(echo "$appointments" | jq '.data | length' 2>/dev/null || echo 0)"
     
-    local visits=$(api_post "/api/data/query" '{"object_api_name": "hc_visit", "filters": [{"field": "patient_id", "operator": "=", "value": "'$patient_id'"}]}')
-    echo "  Patient visits: $(echo "$visits" | jq '.records | length' 2>/dev/null || echo 0)"
+    local visits=$(api_post "/api/data/query" '{"object_api_name": "hc_visit", "filter_expr": "patient_id == '"'"'$patient_id'"'"'"}')
+    echo "  Patient visits: $(echo "$visits" | jq '.data | length' 2>/dev/null || echo 0)"
     
     test_passed "Patient history retrieved"
 }
@@ -237,12 +237,12 @@ test_appointment_search() {
     echo ""
     echo "Test 25.6: Appointment Search"
     
-    local scheduled=$(api_post "/api/data/query" '{"object_api_name": "hc_appointment", "filters": [{"field": "status", "operator": "=", "value": "Scheduled"}]}')
-    echo "  Scheduled appointments: $(echo "$scheduled" | jq '.records | length' 2>/dev/null || echo 0)"
+    local scheduled=$(api_post "/api/data/query" '{"object_api_name": "hc_appointment", "filter_expr": "status == '"'"'Scheduled'"'"'"}')
+    echo "  Scheduled appointments: $(echo "$scheduled" | jq '.data | length' 2>/dev/null || echo 0)"
     
     if [ ${#PROVIDER_IDS[@]} -ge 1 ]; then
-        local provider_apts=$(api_post "/api/data/query" '{"object_api_name": "hc_appointment", "filters": [{"field": "provider_id", "operator": "=", "value": "'${PROVIDER_IDS[0]}'"}]}')
-        echo "  Dr. Chen's appointments: $(echo "$provider_apts" | jq '.records | length' 2>/dev/null || echo 0)"
+        local provider_apts=$(api_post "/api/data/query" '{"object_api_name": "hc_appointment", "filter_expr": "provider_id == '"'"'${PROVIDER_IDS[0]}'"'"'"}')
+        echo "  Dr. Chen's appointments: $(echo "$provider_apts" | jq '.data | length' 2>/dev/null || echo 0)"
     fi
     
     test_passed "Appointment search completed"

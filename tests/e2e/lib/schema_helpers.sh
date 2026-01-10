@@ -27,7 +27,7 @@ ensure_schema() {
     local check=$(api_get "/api/metadata/objects/$api_name")
     
     # API returns {"schema": {...}} for existing schemas
-    if echo "$check" | jq -e '.schema.api_name' &>/dev/null; then
+    if echo "$check" | jq -e '.schema.api_name // .data.schema.api_name' &>/dev/null; then
         echo "  ✓ $label schema already exists"
         return 0
     fi
@@ -40,7 +40,7 @@ ensure_schema() {
     
     local res=$(api_post "/api/metadata/objects" "$payload")
     
-    if echo "$res" | jq -e '.api_name // .schema.api_name' &>/dev/null; then
+    if echo "$res" | jq -e '.api_name // .schema.api_name // .data.api_name' &>/dev/null; then
         echo "  ✓ $label schema created"
         return 0
     else
@@ -98,15 +98,18 @@ add_field() {
     
     local res=$(api_post "/api/metadata/objects/$schema/fields" "$json")
     
-    if echo "$res" | jq -e '.api_name // .field.api_name' &>/dev/null; then
+    if echo "$res" | jq -e '.api_name // .field.api_name // .data.api_name' &>/dev/null; then
         return 0
     else
         local err=$(echo "$res" | jq -r '.error // empty')
         if [ -z "$err" ]; then err="$res"; fi
         # Don't warn about already exists
-        if [[ "$err" != *"already exists"* ]]; then
-            echo "  Warning: Failed to add field $api_name: $err"
+        if [[ "$err" == *"already exists"* ]]; then
+             echo "  ✓ Field $api_name already exists"
+             return 0
         fi
+
+        echo "  Warning: Failed to add field $api_name: $err"
         return 1
     fi
 }
@@ -153,8 +156,10 @@ ensure_app() {
     local description="${6:-$label Management}"
     
     local apps=$(api_get "/api/metadata/apps")
+    echo "DEBUG APPS RESPONSE: $apps" >&2
+
     
-    if echo "$apps" | jq -e ".apps[]? | select(.id == \"$app_id\")" &>/dev/null; then
+    if echo "$apps" | jq -e '(.apps // (.data | if type=="array" then . elif type=="object" and .apps then .apps else empty end))[]? | select(.id == "'"$app_id"'")' &>/dev/null; then
         echo "  ✓ $label App already exists"
         return 0
     fi
@@ -170,7 +175,7 @@ ensure_app() {
     
     local res=$(api_post "/api/metadata/apps" "$payload")
     
-    if echo "$res" | jq -e '.id // .app.id' &>/dev/null; then
+    if echo "$res" | jq -e '.id // .app.id // .data.id' &>/dev/null; then
         echo "  ✓ $label App created"
         return 0
     else

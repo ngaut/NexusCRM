@@ -132,7 +132,13 @@ func (r *SchemaRepository) CreateTableWithStrictMetadata(ctx context.Context, de
 	// 3. Register Fields (Batch is OK here as fields belong to new object)
 	batchFields := make([]FieldWithContext, 0, len(def.Columns))
 	for _, col := range def.Columns {
-		batchFields = append(batchFields, r.PrepareFieldForBatch(def.TableName, col))
+		fc := r.PrepareFieldForBatch(def.TableName, col)
+		// CRITICAL: PrepareFieldForBatch generates a new random Object ID now that we use UUIDs.
+		// We must override it with the actual Object ID we just registered to ensure linkage.
+		if objectMeta != nil && objectMeta.ID != "" {
+			fc.ObjectID = objectMeta.ID
+		}
+		batchFields = append(batchFields, fc)
 	}
 
 	if err = r.BatchSaveFieldMetadata(batchFields, tx); err != nil {
@@ -243,16 +249,23 @@ func (r *SchemaRepository) BatchRegisterTables(defs []schema.TableDefinition, ex
 			def.Category,
 			def.Description,
 			def.IsManaged,
-			def.SchemaVersion, // Use version from definition
-			"bootstrap",       // Created by
+			def.SchemaVersion,  // Use version from definition
+			CreatedByBootstrap, // Created by
 		)
 	}
 
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysTable_TableName, constants.FieldSysTable_TableType,
+		constants.FieldSysTable_Category, constants.FieldSysTable_Description, constants.FieldSysTable_IsManaged,
+		constants.FieldSysTable_SchemaVersion, constants.FieldSysTable_CreatedBy,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, table_name, table_type, category, description, is_managed, schema_version, created_by, created_date, last_modified_date)
+		INSERT INTO %s (%s)
 		VALUES %s
-		ON DUPLICATE KEY UPDATE last_modified_date = NOW()
-	`, constants.TableTable, strings.Join(valuePlaceholders, ", "))
+		ON DUPLICATE KEY UPDATE %s = NOW()
+	`, constants.TableTable, cols, strings.Join(valuePlaceholders, ", "), constants.FieldLastModifiedDate)
 
 	_, err := exec.Exec(query, args...)
 	return err
@@ -268,7 +281,7 @@ func (r *SchemaRepository) DropTable(tableName string) error {
 	}
 
 	// Unregister from _System_Table
-	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE table_name = ?", constants.TableTable), tableName); err != nil {
+	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableTable, constants.FieldSysTable_TableName), tableName); err != nil {
 		log.Printf("⚠️  Warning: Failed to unregister table %s: %v", tableName, err)
 	}
 
@@ -277,28 +290,29 @@ func (r *SchemaRepository) DropTable(tableName string) error {
 	// but we explicitly delete fields first to ensure clean removal.
 
 	// Delete fields for this object
-	fieldDeleteQuery := fmt.Sprintf("DELETE FROM %s WHERE object_id IN (SELECT id FROM %s WHERE api_name = ?)", constants.TableField, constants.TableObject)
+	fieldDeleteQuery := fmt.Sprintf("DELETE FROM %s WHERE %s IN (SELECT %s FROM %s WHERE %s = ?)",
+		constants.TableField, constants.FieldObjectID, constants.FieldID, constants.TableObject, constants.FieldObjectAPIName)
 	if _, err := r.db.Exec(fieldDeleteQuery, tableName); err != nil {
 		log.Printf("⚠️  Warning: Failed to delete fields for object %s: %v", tableName, err)
 	}
 
 	// Delete object
-	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE api_name = ?", constants.TableObject), tableName); err != nil {
+	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableObject, constants.FieldSysObject_APIName), tableName); err != nil {
 		log.Printf("⚠️  Warning: Failed to delete object metadata %s: %v", tableName, err)
 	}
 
 	// Delete AutoNumber metadata
-	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE object_api_name = ?", constants.TableAutoNumber), tableName); err != nil {
+	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableAutoNumber, constants.FieldSysAutoNumber_ObjectAPIName), tableName); err != nil {
 		log.Printf("⚠️  Warning: Failed to delete auto-number metadata for %s: %v", tableName, err)
 	}
 
 	// Delete Object Permissions
-	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE object_api_name = ?", constants.TableObjectPerms), tableName); err != nil {
+	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableObjectPerms, constants.FieldSysObjectPerms_ObjectAPIName), tableName); err != nil {
 		log.Printf("⚠️  Warning: Failed to delete object permissions for %s: %v", tableName, err)
 	}
 
 	// Delete Field Permissions
-	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE object_api_name = ?", constants.TableFieldPerms), tableName); err != nil {
+	if _, err := r.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableFieldPerms, constants.FieldSysFieldPerms_ObjectAPIName), tableName); err != nil {
 		log.Printf("⚠️  Warning: Failed to delete field permissions for %s: %v", tableName, err)
 	}
 
@@ -312,11 +326,14 @@ func (r *SchemaRepository) DropTable(tableName string) error {
 func (r *SchemaRepository) ValidateSchema(tableName string) error {
 	// Get expected columns from _System_Field metadata
 	expectedQuery := fmt.Sprintf(`
-		SELECT f.api_name, f.type 
+		SELECT f.%s, f.%s 
 		FROM %s f 
-		JOIN %s o ON f.object_id = o.id 
-		WHERE o.api_name = ?
-	`, constants.TableField, constants.TableObject)
+		JOIN %s o ON f.%s = o.%s 
+		WHERE o.%s = ?
+	`, constants.FieldAPIName, constants.FieldType,
+		constants.TableField,
+		constants.TableObject, constants.FieldObjectID, constants.FieldID,
+		constants.FieldObjectAPIName)
 
 	expectedRows, err := r.db.Query(expectedQuery, tableName)
 	if err != nil {
@@ -376,8 +393,8 @@ func (r *SchemaRepository) ValidateSchema(tableName string) error {
 
 // ValidateFieldDefinition validates the field schema against core assertions
 func (r *SchemaRepository) ValidateFieldDefinition(field schema.ColumnDefinition) error {
-	// 1. Naming Convention: snake_case
-	validName := regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+	// 1. Naming Convention: snake_case (allow leading underscores for system fields)
+	validName := regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
 	if !validName.MatchString(field.Name) {
 		return fmt.Errorf("field name '%s' must be snake_case (lowercase, alphanumeric, underscores)", field.Name)
 	}
@@ -469,9 +486,9 @@ func (r *SchemaRepository) ValidateSchemaRegistry() (*SchemaHealth, error) {
 		}
 	}
 
-	status := "healthy"
+	status := StatusHealthy
 	if len(missing) > 0 {
-		status = "unhealthy"
+		status = StatusUnhealthy
 	}
 
 	return &SchemaHealth{
@@ -479,6 +496,6 @@ func (r *SchemaRepository) ValidateSchemaRegistry() (*SchemaHealth, error) {
 		ExpectedCount:  len(expected),
 		ActualCount:    len(actual),
 		MissingTables:  missing,
-		RegistryHealth: "operational",
+		RegistryHealth: StatusOperational,
 	}, nil
 }

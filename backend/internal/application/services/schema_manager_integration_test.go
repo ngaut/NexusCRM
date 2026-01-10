@@ -86,7 +86,7 @@ func TestSchemaManager_Integration_ACID(t *testing.T) {
 	// 5. Verify Metadata (_System_Object)
 	var objID string
 	var isCustom bool
-	checkObjQuery := fmt.Sprintf("SELECT id, is_custom FROM %s WHERE api_name = ?", constants.TableObject)
+	checkObjQuery := fmt.Sprintf("SELECT %s, %s FROM %s WHERE %s = ?", constants.FieldID, constants.FieldSysObject_IsCustom, constants.TableObject, constants.FieldSysObject_APIName)
 	err = db.QueryRowContext(ctx, checkObjQuery, tableName).Scan(&objID, &isCustom)
 	assert.NoError(t, err, "Object metadata must exist")
 	assert.NotEmpty(t, objID)
@@ -96,7 +96,7 @@ func TestSchemaManager_Integration_ACID(t *testing.T) {
 	// Check 'name' field
 	var fieldID string
 	var fieldType string
-	checkFieldQuery := fmt.Sprintf("SELECT id, type FROM %s WHERE object_id = ? AND api_name = ?", constants.TableField)
+	checkFieldQuery := fmt.Sprintf("SELECT %s, %s FROM %s WHERE %s = ? AND %s = ?", constants.FieldID, constants.FieldSysField_Type, constants.TableField, constants.FieldObjectID, constants.FieldSysField_APIName)
 
 	err = db.QueryRowContext(ctx, checkFieldQuery, objID, "name").Scan(&fieldID, &fieldType)
 	assert.NoError(t, err, "Field 'name' metadata must exist")

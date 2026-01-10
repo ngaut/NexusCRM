@@ -67,7 +67,7 @@ func assertFieldColumnMapping(db *sql.DB, result *AssertionResult) {
 
 	for _, obj := range objects {
 		// Get expected columns from Field metadata
-		fieldRows, err := db.Query("SELECT api_name FROM "+constants.TableField+" WHERE object_id = ? AND (is_deleted = false OR is_deleted IS NULL)", obj.ID)
+		fieldRows, err := db.Query("SELECT api_name FROM "+constants.TableField+" WHERE object_id = ? AND (`+constants.FieldIsDeleted+` = false OR `+constants.FieldIsDeleted+` IS NULL)", obj.ID)
 		if err != nil {
 			continue
 		}
@@ -141,7 +141,7 @@ func assertRelationshipIntegrity(db *sql.DB, result *AssertionResult) {
 		SELECT o.api_name, f.api_name, f.reference_to, f.type
 		FROM ` + constants.TableField + ` f
 		JOIN ` + constants.TableObject + ` o ON f.object_id = o.id
-		WHERE f.type IN ('Lookup', 'MasterDetail') AND (f.is_deleted = false OR f.is_deleted IS NULL)
+		WHERE f.type IN ('Lookup', 'MasterDetail') AND (f.`+constants.FieldIsDeleted+` = false OR f.`+constants.FieldIsDeleted+` IS NULL)
 	`)
 	if err != nil {
 		log.Printf("   ⚠️  Could not query fields: %v", err)
@@ -190,7 +190,7 @@ func assertConstraintConsistency(db *sql.DB, result *AssertionResult) {
 		SELECT o.api_name, f.api_name
 		FROM ` + constants.TableField + ` f
 		JOIN ` + constants.TableObject + ` o ON f.object_id = o.id
-		WHERE f.` + "`unique`" + ` = true AND (f.is_deleted = false OR f.is_deleted IS NULL)
+		WHERE f.` + "`unique`" + ` = true AND (f.`+constants.FieldIsDeleted+` = false OR f.`+constants.FieldIsDeleted+` IS NULL)
 	`)
 	if err != nil {
 		log.Printf("   ⚠️  Could not query unique fields: %v", err)
@@ -241,7 +241,7 @@ func assertNamingConventions(db *sql.DB, result *AssertionResult) {
 	validName := regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 
 	// Check Objects
-	rows, err := db.Query("SELECT api_name FROM " + constants.TableObject + " WHERE is_custom = true AND (is_deleted = false OR is_deleted IS NULL)")
+	rows, err := db.Query("SELECT api_name FROM " + constants.TableObject + " WHERE is_custom = true AND (`+constants.FieldIsDeleted+` = false OR `+constants.FieldIsDeleted+` IS NULL)")
 	if err == nil {
 		for rows.Next() {
 			var name string
@@ -265,7 +265,7 @@ func assertNamingConventions(db *sql.DB, result *AssertionResult) {
 		SELECT o.api_name, f.api_name 
 		FROM ` + constants.TableField + ` f
 		JOIN ` + constants.TableObject + ` o ON f.object_id = o.id
-		WHERE f.is_custom = true AND (f.is_deleted = false OR f.is_deleted IS NULL)
+		WHERE f.is_custom = true AND (f.`+constants.FieldIsDeleted+` = false OR f.`+constants.FieldIsDeleted+` IS NULL)
 	`)
 	if err == nil {
 		for fRows.Next() {
@@ -296,7 +296,7 @@ func assertFormulaValidity(db *sql.DB, result *AssertionResult) {
 		SELECT o.api_name, f.api_name, f.formula_expression
 		FROM ` + constants.TableField + ` f
 		JOIN ` + constants.TableObject + ` o ON f.object_id = o.id
-		WHERE f.formula_expression IS NOT NULL AND f.formula_expression != '' AND (f.is_deleted = false OR f.is_deleted IS NULL)
+		WHERE f.formula_expression IS NOT NULL AND f.formula_expression != '' AND (f.`+constants.FieldIsDeleted+` = false OR f.`+constants.FieldIsDeleted+` IS NULL)
 	`)
 	if err != nil {
 		return

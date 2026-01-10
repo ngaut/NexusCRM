@@ -54,7 +54,7 @@ api_login() {
     
     if echo "$response" | grep -q '"success":true' && echo "$response" | grep -q '"token"'; then
         export TOKEN=$(echo "$response" | grep -o '"token":"[^"]*' | sed 's/"token":"//')
-        export USER_ID=$(echo "$response" | grep -o '"id":"[^"]*' | head -1 | sed 's/"id":"//')
+        export USER_ID=$(echo "$response" | grep -o '"__sys_gen_id":"[^"]*' | head -1 | sed 's/"__sys_gen_id":"//')
         return 0
     else
         echo "Login failed: $response" >&2

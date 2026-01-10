@@ -90,7 +90,7 @@ test_create_group() {
     local response=$(api_post "/api/data/_system_group" "$payload")
     
     if echo "$response" | grep -q '"id"'; then
-        TEST_GROUP_ID=$(echo "$response" | grep -o '"id":"[^"]*' | head -1 | sed 's/"id":"//')
+        TEST_GROUP_ID=$(echo "$response" | grep -o '"__sys_gen_id":"[^"]*' | head -1 | sed 's/"__sys_gen_id":"//')
         test_passed "Group created successfully"
         echo -e "  ${BLUE}Group ID:${NC} $TEST_GROUP_ID"
     else
@@ -114,7 +114,7 @@ test_create_permission_set() {
     local response=$(api_post "/api/data/_system_permissionset" "$payload")
     
     if echo "$response" | grep -q '"id"'; then
-        TEST_PERMSET_ID=$(echo "$response" | grep -o '"id":"[^"]*' | head -1 | sed 's/"id":"//')
+        TEST_PERMSET_ID=$(echo "$response" | grep -o '"__sys_gen_id":"[^"]*' | head -1 | sed 's/"__sys_gen_id":"//')
         test_passed "Permission Set created successfully"
         echo -e "  ${BLUE}Permission Set ID:${NC} $TEST_PERMSET_ID"
     else
@@ -140,7 +140,7 @@ test_assign_permission_set() {
     local response=$(api_post "/api/data/_system_permissionsetassignment" "$payload")
     
     if echo "$response" | grep -q '"id"'; then
-        local assignment_id=$(echo "$response" | grep -o '"id":"[^"]*' | head -1 | sed 's/"id":"//')
+        local assignment_id=$(echo "$response" | grep -o '"__sys_gen_id":"[^"]*' | head -1 | sed 's/"__sys_gen_id":"//')
         test_passed "Permission Set assigned to user"
         echo -e "  ${BLUE}Assignment ID:${NC} $assignment_id"
         
@@ -182,7 +182,7 @@ test_group_membership() {
     local response=$(api_post "/api/data/_system_groupmember" "$payload")
     
     if echo "$response" | grep -q '"id"'; then
-        local member_id=$(echo "$response" | grep -o '"id":"[^"]*' | head -1 | sed 's/"id":"//')
+        local member_id=$(echo "$response" | grep -o '"__sys_gen_id":"[^"]*' | head -1 | sed 's/"__sys_gen_id":"//')
         test_passed "User added to Group"
         echo -e "  ${BLUE}Membership ID:${NC} $member_id"
         

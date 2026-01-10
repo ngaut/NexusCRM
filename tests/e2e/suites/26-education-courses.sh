@@ -244,12 +244,12 @@ test_query_transcripts() {
         test_failed "No students to query"; return 1
     fi
     
-    local enrollments=$(api_post "/api/data/query" '{"object_api_name": "edu_enrollment", "filters": [{"field": "student_id", "operator": "=", "value": "'${STUDENT_IDS[0]}'"}]}')
-    echo "  Alice's enrollments: $(echo "$enrollments" | jq '.records | length' 2>/dev/null || echo 0)"
+    local enrollments=$(api_post "/api/data/query" '{"object_api_name": "edu_enrollment", "filter_expr": "student_id == '"'"'${STUDENT_IDS[0]}'"'"'"}')
+    echo "  Alice's enrollments: $(echo "$enrollments" | jq '.data | length' 2>/dev/null || echo 0)"
     
     if [ ${#COURSE_IDS[@]} -ge 1 ]; then
-        local course_enrollments=$(api_post "/api/data/query" '{"object_api_name": "edu_enrollment", "filters": [{"field": "course_id", "operator": "=", "value": "'${COURSE_IDS[0]}'"}]}')
-        echo "  CS101 enrollments: $(echo "$course_enrollments" | jq '.records | length' 2>/dev/null || echo 0)"
+        local course_enrollments=$(api_post "/api/data/query" '{"object_api_name": "edu_enrollment", "filter_expr": "course_id == '"'"'${COURSE_IDS[0]}'"'"'"}')
+        echo "  CS101 enrollments: $(echo "$course_enrollments" | jq '.data | length' 2>/dev/null || echo 0)"
     fi
     
     test_passed "Transcript queries completed"

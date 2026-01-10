@@ -32,17 +32,25 @@ func TestRecordRepository_Integration(t *testing.T) {
 	// We mimic a standard object layout
 	t.Logf("Creating test table: %s", tableName)
 	_, err = db.Exec(fmt.Sprintf(`
-		CREATE TABLE %s (
-			id VARCHAR(36) PRIMARY KEY,
-			name VARCHAR(255),
-			label VARCHAR(255),
-			type VARCHAR(50),
-			email VARCHAR(255),
-			is_deleted TINYINT DEFAULT 0,
-			created_date DATETIME,
-			last_modified_date DATETIME
+		%s %s (
+			%s %s %s,
+			%s %s,
+			%s %s,
+			%s %s,
+			%s %s,
+			%s %s %s 0,
+			%s %s,
+			%s %s
 		)
-	`, tableName))
+	`, KeywordCreateTable, tableName,
+		constants.FieldID, SQLTypeVarchar36, KeywordPrimaryKey,
+		constants.FieldSysGroup_Name, SQLTypeVarchar255,
+		constants.FieldSysGroup_Label, SQLTypeVarchar255,
+		constants.FieldSysGroup_Type, SQLTypeVarchar50,
+		constants.FieldSysGroup_Email, SQLTypeVarchar255,
+		constants.FieldIsDeleted, SQLTypeTinyInt, KeywordDefault,
+		constants.FieldCreatedDate, SQLTypeDateTime,
+		constants.FieldLastModifiedDate, SQLTypeDateTime))
 	require.NoError(t, err, "Failed to create test table")
 
 	recordID := fmt.Sprintf("test_rec_%d", time.Now().UnixNano())
@@ -50,7 +58,7 @@ func TestRecordRepository_Integration(t *testing.T) {
 	cleanup := func() {
 		// Clean up table
 		t.Logf("Dropping test table: %s", tableName)
-		_, _ = db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", tableName))
+		_, _ = db.Exec(fmt.Sprintf("%s %s %s", KeywordDropTable, KeywordIfExists, tableName))
 	}
 	defer cleanup()
 
@@ -58,13 +66,13 @@ func TestRecordRepository_Integration(t *testing.T) {
 
 	// 1. Insert
 	newRecord := models.SObject{
-		constants.FieldID:    recordID,
-		"name":               "Test Group",
-		"label":              "Test Label",
-		"type":               "Queue",
-		"email":              "test@example.com",
-		"created_date":       time.Now(),
-		"last_modified_date": time.Now(),
+		constants.FieldID:               recordID,
+		constants.FieldSysGroup_Name:    "Test Group",
+		constants.FieldSysGroup_Label:   "Test Label",
+		constants.FieldSysGroup_Type:    "Queue",
+		constants.FieldSysGroup_Email:   "test@example.com",
+		constants.FieldCreatedDate:      time.Now(),
+		constants.FieldLastModifiedDate: time.Now(),
 	}
 
 	err = repo.Insert(ctx, nil, tableName, newRecord)
@@ -79,18 +87,18 @@ func TestRecordRepository_Integration(t *testing.T) {
 	rec, err := repo.FindOne(ctx, nil, tableName, recordID)
 	assert.NoError(t, err)
 	assert.NotNil(t, rec)
-	assert.Equal(t, "Test Group", rec["name"])
+	assert.Equal(t, "Test Group", rec[constants.FieldSysGroup_Name])
 
 	// 4. Update
 	updates := models.SObject{
-		"name": "Updated Group",
+		constants.FieldSysGroup_Name: "Updated Group",
 	}
 	err = repo.Update(ctx, nil, tableName, recordID, updates)
 	assert.NoError(t, err)
 
 	recUpdated, err := repo.FindOne(ctx, nil, tableName, recordID)
 	assert.NoError(t, err)
-	assert.Equal(t, "Updated Group", recUpdated["name"])
+	assert.Equal(t, "Updated Group", recUpdated[constants.FieldSysGroup_Name])
 
 	// 5. Delete
 	err = repo.Delete(ctx, nil, tableName, recordID)

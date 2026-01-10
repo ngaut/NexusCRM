@@ -90,7 +90,7 @@ test_snake_case_validation() {
         "type": "Text"
     }')
     
-    if echo "$res3" | grep -qiE "must be snake_case|validation failed|failed to add column|error"; then
+    if echo "$res3" | grep -qiE "must be snake_case|validation failed|failed to add column"; then
         echo "  ✓ CamelCase Field Request Rejected"
         test_passed "Snake Case Validation Enforced"
     else
@@ -114,7 +114,7 @@ test_lookup_reference_validation() {
         "type": "Lookup"
     }')
     
-    if echo "$res" | grep -qiE "reference_to is required|validation failed|error"; then
+    if echo "$res" | grep -qiE "reference_to is required|validation failed"; then
         echo "  ✓ Missing Reference Rejected"
         test_passed "Lookup Reference Validation Enforced"
     else
@@ -138,7 +138,7 @@ test_picklist_options_validation() {
         "type": "Picklist"
     }')
     
-    if echo "$res" | grep -qiE "options are required|validation failed|error"; then
+    if echo "$res" | grep -qiE "options are required|validation failed"; then
         echo "  ✓ Missing Options Rejected"
         test_passed "Picklist Options Validation Enforced"
     else
@@ -163,7 +163,7 @@ test_formula_return_type_validation() {
         "formula": "2+2"
     }')
     
-    if echo "$res" | grep -qiE "return_type is required|validation failed|error"; then
+    if echo "$res" | grep -qiE "return_type is required|validation failed"; then
         echo "  ✓ Missing Return Type Rejected"
         test_passed "Formula Return Type Validation Enforced"
     else

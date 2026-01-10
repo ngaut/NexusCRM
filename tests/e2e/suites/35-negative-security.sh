@@ -28,9 +28,8 @@ run_suite() {
 
     # Fetch Profile ID
     echo "Fetching Standard User Profile..."
-    # Try internal name 'standard_user'
-    local profile_res=$(api_post "/api/data/query" '{"object_api_name": "_System_Profile", "filters": [{"field": "name", "operator": "=", "value": "standard_user"}]}')
-    PROFILE_STANDARD_USER=$(json_extract "$profile_res" "records[0].id")
+    # The profile ID is 'standard_user' (same as the internal name in system_data.json)
+    PROFILE_STANDARD_USER="standard_user"
     
     if [ -z "$PROFILE_STANDARD_USER" ]; then
          # Fallback to Label search if needed, but standard_user should exist
@@ -132,7 +131,7 @@ test_modify_permissions() {
         "name": "Hacker Perm"
     }')
     
-    if echo "$res" | grep -qiE "Forbidden|Unauthorized|Access Denied|403|permission denied|error"; then
+    if echo "$res" | grep -qiE "Forbidden|Unauthorized|Access Denied|403"; then
         echo "  ✓ Modify Permissions Denied (403)"
         test_passed "Permission Modification Protection"
     else

@@ -208,11 +208,11 @@ test_query_by_status() {
     echo ""
     echo "Test 21.8: Query Issues by Status"
     
-    local done_issues=$(api_post "/api/data/query" '{"object_api_name": "jira_issue", "filters": [{"field": "status", "operator": "=", "value": "Done"}]}')
-    echo "  Done issues: $(echo "$done_issues" | jq '.records | length' 2>/dev/null || echo 0)"
+    local done_issues=$(api_post "/api/data/query" '{"object_api_name": "jira_issue", "filter_expr": "status == '"'"'Done'"'"'"}')
+    echo "  Done issues: $(echo "$done_issues" | jq '.data | length' 2>/dev/null || echo 0)"
     
-    local todo_issues=$(api_post "/api/data/query" '{"object_api_name": "jira_issue", "filters": [{"field": "status", "operator": "=", "value": "To Do"}]}')
-    echo "  To Do issues: $(echo "$todo_issues" | jq '.records | length' 2>/dev/null || echo 0)"
+    local todo_issues=$(api_post "/api/data/query" '{"object_api_name": "jira_issue", "filter_expr": "status == '"'"'To Do'"'"'"}')
+    echo "  To Do issues: $(echo "$todo_issues" | jq '.data | length' 2>/dev/null || echo 0)"
     
     test_passed "Issue queries completed"
 }

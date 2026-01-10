@@ -167,7 +167,7 @@ export const UserManager: React.FC = () => {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
-                                                    {profiles.find(p => p.id === user.profile_id)?.name || user.profile_id}
+                                                    {profiles.find(p => p[COMMON_FIELDS.ID] === user.profile_id)?.name || user.profile_id}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
@@ -269,7 +269,7 @@ export const UserManager: React.FC = () => {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex gap-2 justify-end items-center">
-                                                    {profile.id === 'system_admin' ? (
+                                                    {profile[COMMON_FIELDS.ID] === 'system_admin' ? (
                                                         <span className="text-sm text-slate-400 italic">
                                                             Full access (not editable)
                                                         </span>
@@ -293,7 +293,7 @@ export const UserManager: React.FC = () => {
             </div>
             {editingPermissions && (
                 <PermissionEditorModal
-                    entity={{ id: editingPermissions.id, name: editingPermissions.name, type: 'profile' }}
+                    entity={{ id: editingPermissions[COMMON_FIELDS.ID] as string, name: editingPermissions.name, type: 'profile' }}
                     onClose={() => setEditingPermissions(null)}
                     onSave={() => {
                         setEditingPermissions(null);

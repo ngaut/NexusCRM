@@ -24,12 +24,19 @@ func NewPermissionRepository(db *sql.DB) *PermissionRepository {
 
 // LoadObjectPermission queries the database for a specific object permission
 func (r *PermissionRepository) LoadObjectPermission(ctx context.Context, profileID, objectAPIName string) (*models.SystemObjectPerms, error) {
+	cols := strings.Join([]string{
+		constants.FieldProfileID, constants.FieldObjectAPIName,
+		constants.FieldSysObjectPerms_AllowRead, constants.FieldSysObjectPerms_AllowCreate,
+		constants.FieldSysObjectPerms_AllowEdit, constants.FieldSysObjectPerms_AllowDelete,
+		constants.FieldSysObjectPerms_ViewAll, constants.FieldSysObjectPerms_ModifyAll,
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		SELECT profile_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all
+		SELECT %s
 		FROM %s
-		WHERE profile_id = ? AND object_api_name = ?
+		WHERE %s = ? AND %s = ?
 		LIMIT 1
-	`, constants.TableObjectPerms)
+	`, cols, constants.TableObjectPerms, constants.FieldProfileID, constants.FieldObjectAPIName)
 
 	var p models.SystemObjectPerms
 	err := r.db.QueryRowContext(ctx, query, profileID, strings.ToLower(objectAPIName)).Scan(
@@ -50,12 +57,17 @@ func (r *PermissionRepository) LoadObjectPermission(ctx context.Context, profile
 
 // LoadFieldPermission queries the database for a specific field permission
 func (r *PermissionRepository) LoadFieldPermission(ctx context.Context, profileID, objectAPIName, fieldAPIName string) (*models.SystemFieldPerms, error) {
+	cols := strings.Join([]string{
+		constants.FieldProfileID, constants.FieldObjectAPIName, constants.FieldSysFieldPerms_FieldAPIName,
+		constants.FieldSysFieldPerms_Readable, constants.FieldSysFieldPerms_Editable,
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		SELECT profile_id, object_api_name, field_api_name, readable, editable
+		SELECT %s
 		FROM %s
-		WHERE profile_id = ? AND object_api_name = ? AND field_api_name = ?
+		WHERE %s = ? AND %s = ? AND %s = ?
 		LIMIT 1
-	`, constants.TableFieldPerms)
+	`, cols, constants.TableFieldPerms, constants.FieldProfileID, constants.FieldObjectAPIName, constants.FieldSysFieldPerms_FieldAPIName)
 
 	var p models.SystemFieldPerms
 	err := r.db.QueryRowContext(ctx, query, profileID, strings.ToLower(objectAPIName), strings.ToLower(fieldAPIName)).Scan(
@@ -75,17 +87,28 @@ func (r *PermissionRepository) LoadFieldPermission(ctx context.Context, profileI
 
 // LoadEffectiveObjectPermission loads permissions considering Profile AND Permission Sets
 func (r *PermissionRepository) LoadEffectiveObjectPermission(ctx context.Context, user *models.UserSession, objectAPIName string) (*models.SystemObjectPerms, error) {
+	aggCols := strings.Join([]string{
+		fmt.Sprintf("MAX(%s)", constants.FieldSysObjectPerms_AllowRead),
+		fmt.Sprintf("MAX(%s)", constants.FieldSysObjectPerms_AllowCreate),
+		fmt.Sprintf("MAX(%s)", constants.FieldSysObjectPerms_AllowEdit),
+		fmt.Sprintf("MAX(%s)", constants.FieldSysObjectPerms_AllowDelete),
+		fmt.Sprintf("MAX(%s)", constants.FieldSysObjectPerms_ViewAll),
+		fmt.Sprintf("MAX(%s)", constants.FieldSysObjectPerms_ModifyAll),
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		SELECT 
-			MAX(allow_read), MAX(allow_create), MAX(allow_edit), MAX(allow_delete), MAX(view_all), MAX(modify_all)
+		SELECT %s
 		FROM %s
-		WHERE object_api_name = ?
+		WHERE %s = ?
 		AND (
-			profile_id = ? 
+			%s = ? 
 			OR 
-			permission_set_id IN (SELECT permission_set_id FROM %s WHERE assignee_id = ?)
+			%s IN (SELECT %s FROM %s WHERE %s = ?)
 		)
-	`, constants.TableObjectPerms, constants.TablePermissionSetAssignment)
+	`, aggCols, constants.TableObjectPerms, constants.FieldObjectAPIName,
+		constants.FieldProfileID,
+		constants.FieldPermissionSetID, constants.FieldPermissionSetID, constants.TablePermissionSetAssignment,
+		constants.FieldSysPermissionSetAssignment_AssigneeID)
 
 	var p models.SystemObjectPerms
 	p.ObjectAPIName = objectAPIName
@@ -115,16 +138,24 @@ func (r *PermissionRepository) LoadEffectiveObjectPermission(ctx context.Context
 
 // LoadEffectiveFieldPermission loads field permissions considering Profile AND Permission Sets
 func (r *PermissionRepository) LoadEffectiveFieldPermission(ctx context.Context, user *models.UserSession, objectAPIName, fieldAPIName string) (*models.SystemFieldPerms, error) {
+	aggCols := strings.Join([]string{
+		fmt.Sprintf("MAX(%s)", constants.FieldSysFieldPerms_Readable),
+		fmt.Sprintf("MAX(%s)", constants.FieldSysFieldPerms_Editable),
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		SELECT MAX(readable), MAX(editable)
+		SELECT %s
 		FROM %s
-		WHERE object_api_name = ? AND field_api_name = ?
+		WHERE %s = ? AND %s = ?
 		AND (
-			profile_id = ? 
+			%s = ? 
 			OR 
-			permission_set_id IN (SELECT permission_set_id FROM %s WHERE assignee_id = ?)
+			%s IN (SELECT %s FROM %s WHERE %s = ?)
 		)
-	`, constants.TableFieldPerms, constants.TablePermissionSetAssignment)
+	`, aggCols, constants.TableFieldPerms, constants.FieldObjectAPIName, constants.FieldSysFieldPerms_FieldAPIName,
+		constants.FieldProfileID,
+		constants.FieldPermissionSetID, constants.FieldPermissionSetID, constants.TablePermissionSetAssignment,
+		constants.FieldSysPermissionSetAssignment_AssigneeID)
 
 	var readable, editable sql.NullBool
 	err := r.db.QueryRowContext(ctx, query, strings.ToLower(objectAPIName), strings.ToLower(fieldAPIName), user.ProfileID, user.ID).Scan(&readable, &editable)
@@ -146,11 +177,18 @@ func (r *PermissionRepository) LoadEffectiveFieldPermission(ctx context.Context,
 
 // ListObjectPermissions retrieves all object permissions for a profile
 func (r *PermissionRepository) ListObjectPermissions(ctx context.Context, profileID string) ([]models.SystemObjectPerms, error) {
+	cols := strings.Join([]string{
+		constants.FieldProfileID, constants.FieldObjectAPIName,
+		constants.FieldSysObjectPerms_AllowRead, constants.FieldSysObjectPerms_AllowCreate,
+		constants.FieldSysObjectPerms_AllowEdit, constants.FieldSysObjectPerms_AllowDelete,
+		constants.FieldSysObjectPerms_ViewAll, constants.FieldSysObjectPerms_ModifyAll,
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		SELECT profile_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all
+		SELECT %s
 		FROM %s
-		WHERE profile_id = ?
-	`, constants.TableObjectPerms)
+		WHERE %s = ?
+	`, cols, constants.TableObjectPerms, constants.FieldProfileID)
 
 	rows, err := r.db.QueryContext(ctx, query, profileID)
 	if err != nil {
@@ -172,11 +210,16 @@ func (r *PermissionRepository) ListObjectPermissions(ctx context.Context, profil
 
 // ListFieldPermissions retrieves all field permissions for a profile
 func (r *PermissionRepository) ListFieldPermissions(ctx context.Context, profileID string) ([]models.SystemFieldPerms, error) {
+	cols := strings.Join([]string{
+		constants.FieldProfileID, constants.FieldObjectAPIName, constants.FieldSysFieldPerms_FieldAPIName,
+		constants.FieldSysFieldPerms_Readable, constants.FieldSysFieldPerms_Editable,
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		SELECT profile_id, object_api_name, field_api_name, readable, editable
+		SELECT %s
 		FROM %s
-		WHERE profile_id = ?
-	`, constants.TableFieldPerms)
+		WHERE %s = ?
+	`, cols, constants.TableFieldPerms, constants.FieldProfileID)
 
 	rows, err := r.db.QueryContext(ctx, query, profileID)
 	if err != nil {
@@ -208,18 +251,30 @@ func (r *PermissionRepository) UpsertObjectPermissionTx(ctx context.Context, tx 
 
 func (r *PermissionRepository) upsertObjectPermission(ctx context.Context, exec Executor, perm models.SystemObjectPerms) error {
 	id := utils.GenerateID()
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldProfileID, constants.FieldPermissionSetID,
+		constants.FieldObjectAPIName,
+		constants.FieldSysObjectPerms_AllowRead, constants.FieldSysObjectPerms_AllowCreate,
+		constants.FieldSysObjectPerms_AllowEdit, constants.FieldSysObjectPerms_AllowDelete,
+		constants.FieldSysObjectPerms_ViewAll, constants.FieldSysObjectPerms_ModifyAll,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+
+	updates := strings.Join([]string{
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_AllowRead, constants.FieldSysObjectPerms_AllowRead),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_AllowCreate, constants.FieldSysObjectPerms_AllowCreate),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_AllowEdit, constants.FieldSysObjectPerms_AllowEdit),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_AllowDelete, constants.FieldSysObjectPerms_AllowDelete),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_ViewAll, constants.FieldSysObjectPerms_ViewAll),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_ModifyAll, constants.FieldSysObjectPerms_ModifyAll),
+		fmt.Sprintf("%s = NOW()", constants.FieldLastModifiedDate),
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, profile_id, permission_set_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all, created_date, last_modified_date)
+		INSERT INTO %s (%s)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-		ON DUPLICATE KEY UPDATE
-			allow_read = VALUES(allow_read),
-			allow_create = VALUES(allow_create),
-			allow_edit = VALUES(allow_edit),
-			allow_delete = VALUES(allow_delete),
-			view_all = VALUES(view_all),
-			modify_all = VALUES(modify_all),
-			last_modified_date = NOW()
-	`, constants.TableObjectPerms)
+		ON DUPLICATE KEY UPDATE %s
+		`, constants.TableObjectPerms, cols, updates)
 
 	_, err := exec.ExecContext(ctx, query, id, perm.ProfileID, perm.PermissionSetID, perm.ObjectAPIName, perm.AllowRead, perm.AllowCreate, perm.AllowEdit, perm.AllowDelete, perm.ViewAll, perm.ModifyAll)
 	return err
@@ -237,14 +292,24 @@ func (r *PermissionRepository) UpsertFieldPermissionTx(ctx context.Context, tx *
 
 func (r *PermissionRepository) upsertFieldPermission(ctx context.Context, exec Executor, perm models.SystemFieldPerms) error {
 	id := utils.GenerateID()
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldProfileID, constants.FieldPermissionSetID,
+		constants.FieldObjectAPIName, constants.FieldSysFieldPerms_FieldAPIName,
+		constants.FieldSysFieldPerms_Readable, constants.FieldSysFieldPerms_Editable,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+
+	updates := strings.Join([]string{
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysFieldPerms_Readable, constants.FieldSysFieldPerms_Readable),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysFieldPerms_Editable, constants.FieldSysFieldPerms_Editable),
+		fmt.Sprintf("%s = NOW()", constants.FieldLastModifiedDate),
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, profile_id, permission_set_id, object_api_name, field_api_name, readable, editable, created_date, last_modified_date)
+		INSERT INTO %s (%s)
 		VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-		ON DUPLICATE KEY UPDATE
-			readable = VALUES(readable),
-			editable = VALUES(editable),
-			last_modified_date = NOW()
-	`, constants.TableFieldPerms)
+		ON DUPLICATE KEY UPDATE %s
+	`, constants.TableFieldPerms, cols, updates)
 
 	_, err := exec.ExecContext(ctx, query, id, perm.ProfileID, perm.PermissionSetID, perm.ObjectAPIName, perm.FieldAPIName, perm.Readable, perm.Editable)
 	return err
@@ -283,18 +348,29 @@ func (r *PermissionRepository) GrantInitialPermissions(ctx context.Context, obje
 		}
 
 		id := utils.GenerateID()
+		cols := strings.Join([]string{
+			constants.FieldID, constants.FieldProfileID, constants.FieldObjectAPIName,
+			constants.FieldSysObjectPerms_AllowRead, constants.FieldSysObjectPerms_AllowCreate,
+			constants.FieldSysObjectPerms_AllowEdit, constants.FieldSysObjectPerms_AllowDelete,
+			constants.FieldSysObjectPerms_ViewAll, constants.FieldSysObjectPerms_ModifyAll,
+			constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+		}, ", ")
+
+		updates := strings.Join([]string{
+			fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_AllowRead, constants.FieldSysObjectPerms_AllowRead),
+			fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_AllowCreate, constants.FieldSysObjectPerms_AllowCreate),
+			fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_AllowEdit, constants.FieldSysObjectPerms_AllowEdit),
+			fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_AllowDelete, constants.FieldSysObjectPerms_AllowDelete),
+			fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_ViewAll, constants.FieldSysObjectPerms_ViewAll),
+			fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysObjectPerms_ModifyAll, constants.FieldSysObjectPerms_ModifyAll),
+			fmt.Sprintf("%s = NOW()", constants.FieldLastModifiedDate),
+		}, ", ")
+
 		insertQuery := fmt.Sprintf(`
-			INSERT INTO %s (id, profile_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all, created_date, last_modified_date)
+			INSERT INTO %s (%s)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-			ON DUPLICATE KEY UPDATE
-				allow_read = VALUES(allow_read),
-				allow_create = VALUES(allow_create),
-				allow_edit = VALUES(allow_edit),
-				allow_delete = VALUES(allow_delete),
-				view_all = VALUES(view_all),
-				modify_all = VALUES(modify_all),
-				last_modified_date = NOW()
-		`, constants.TableObjectPerms)
+			ON DUPLICATE KEY UPDATE %s
+		`, constants.TableObjectPerms, cols, updates)
 
 		if _, err := r.db.ExecContext(ctx, insertQuery, id, profileID, objectAPIName, allowRead, allowCreate, allowEdit, allowDelete, viewAll, modifyAll); err != nil {
 			log.Printf("⚠️ Warning: Failed to grant permission for profile %s: %v", profileID, err)
@@ -307,11 +383,18 @@ func (r *PermissionRepository) GrantInitialPermissions(ctx context.Context, obje
 
 // ListPermissionSetObjectPermissions retrieves all object permissions for a permission set
 func (r *PermissionRepository) ListPermissionSetObjectPermissions(ctx context.Context, permissionSetID string) ([]models.SystemObjectPerms, error) {
+	cols := strings.Join([]string{
+		constants.FieldPermissionSetID, constants.FieldObjectAPIName,
+		constants.FieldSysObjectPerms_AllowRead, constants.FieldSysObjectPerms_AllowCreate,
+		constants.FieldSysObjectPerms_AllowEdit, constants.FieldSysObjectPerms_AllowDelete,
+		constants.FieldSysObjectPerms_ViewAll, constants.FieldSysObjectPerms_ModifyAll,
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		SELECT permission_set_id, object_api_name, allow_read, allow_create, allow_edit, allow_delete, view_all, modify_all
+		SELECT %s
 		FROM %s
-		WHERE permission_set_id = ?
-	`, constants.TableObjectPerms)
+		WHERE %s = ?
+	`, cols, constants.TableObjectPerms, constants.FieldPermissionSetID)
 
 	rows, err := r.db.QueryContext(ctx, query, permissionSetID)
 	if err != nil {
@@ -332,11 +415,17 @@ func (r *PermissionRepository) ListPermissionSetObjectPermissions(ctx context.Co
 
 // ListPermissionSetFieldPermissions retrieves all field permissions for a permission set
 func (r *PermissionRepository) ListPermissionSetFieldPermissions(ctx context.Context, permissionSetID string) ([]models.SystemFieldPerms, error) {
+	cols := strings.Join([]string{
+		constants.FieldPermissionSetID, constants.FieldObjectAPIName,
+		constants.FieldSysFieldPerms_FieldAPIName, constants.FieldSysFieldPerms_Readable,
+		constants.FieldSysFieldPerms_Editable,
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		SELECT permission_set_id, object_api_name, field_api_name, readable, editable
+		SELECT %s
 		FROM %s
-		WHERE permission_set_id = ?
-	`, constants.TableFieldPerms)
+		WHERE %s = ?
+	`, cols, constants.TableFieldPerms, constants.FieldPermissionSetID)
 
 	rows, err := r.db.QueryContext(ctx, query, permissionSetID)
 	if err != nil {
@@ -359,15 +448,19 @@ func (r *PermissionRepository) ListPermissionSetFieldPermissions(ctx context.Con
 func (r *PermissionRepository) ListEffectiveObjectPermissionsForUser(ctx context.Context, userID, profileID string) ([]models.SystemObjectPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT 
-			object_api_name,
-			MAX(allow_read), MAX(allow_create), MAX(allow_edit), MAX(allow_delete), MAX(view_all), MAX(modify_all)
+			%s,
+			MAX(%s), MAX(%s), MAX(%s), MAX(%s), MAX(%s), MAX(%s)
 		FROM %s
 		WHERE 
-			profile_id = ? 
+			%s = ? 
 			OR 
-			permission_set_id IN (SELECT permission_set_id FROM %s WHERE assignee_id = ?)
-		GROUP BY object_api_name
-	`, constants.TableObjectPerms, constants.TablePermissionSetAssignment)
+			%s IN (SELECT %s FROM %s WHERE %s = ?)
+		GROUP BY %s
+	`, constants.FieldObjectAPIName,
+		constants.FieldSysObjectPerms_AllowRead, constants.FieldSysObjectPerms_AllowCreate,
+		constants.FieldSysObjectPerms_AllowEdit, constants.FieldSysObjectPerms_AllowDelete,
+		constants.FieldSysObjectPerms_ViewAll, constants.FieldSysObjectPerms_ModifyAll,
+		constants.TableObjectPerms, constants.FieldProfileID, constants.FieldPermissionSetID, constants.FieldPermissionSetID, constants.TablePermissionSetAssignment, constants.FieldSysPermissionSetAssignment_AssigneeID, constants.FieldObjectAPIName)
 
 	rows, err := r.db.QueryContext(ctx, query, profileID, userID)
 	if err != nil {
@@ -397,15 +490,17 @@ func (r *PermissionRepository) ListEffectiveObjectPermissionsForUser(ctx context
 func (r *PermissionRepository) ListEffectiveFieldPermissionsForUser(ctx context.Context, userID, profileID string) ([]models.SystemFieldPerms, error) {
 	query := fmt.Sprintf(`
 		SELECT 
-			object_api_name, field_api_name,
-			MAX(readable), MAX(editable)
+			%s, %s,
+			MAX(%s), MAX(%s)
 		FROM %s
 		WHERE 
-			profile_id = ? 
+			%s = ? 
 			OR 
-			permission_set_id IN (SELECT permission_set_id FROM %s WHERE assignee_id = ?)
-		GROUP BY object_api_name, field_api_name
-	`, constants.TableFieldPerms, constants.TablePermissionSetAssignment)
+			%s IN (SELECT %s FROM %s WHERE %s = ?)
+		GROUP BY %s, %s
+	`, constants.FieldObjectAPIName, constants.FieldSysFieldPerms_FieldAPIName,
+		constants.FieldSysFieldPerms_Readable, constants.FieldSysFieldPerms_Editable,
+		constants.TableFieldPerms, constants.FieldProfileID, constants.FieldPermissionSetID, constants.FieldPermissionSetID, constants.TablePermissionSetAssignment, constants.FieldSysPermissionSetAssignment_AssigneeID, constants.FieldObjectAPIName, constants.FieldSysFieldPerms_FieldAPIName)
 
 	rows, err := r.db.QueryContext(ctx, query, profileID, userID)
 	if err != nil {
@@ -430,10 +525,16 @@ func (r *PermissionRepository) ListEffectiveFieldPermissionsForUser(ctx context.
 // CreatePermissionSet creates a new permission set
 func (r *PermissionRepository) CreatePermissionSet(ctx context.Context, name, label, description string) (string, error) {
 	id := utils.GenerateID()
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysPermissionSet_Name, constants.FieldSysPermissionSet_Label,
+		constants.FieldSysPermissionSet_Description, constants.FieldSysPermissionSet_IsActive,
+		constants.FieldCreatedDate,
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, name, label, description, is_active, created_date)
+		INSERT INTO %s (%s)
 		VALUES (?, ?, ?, ?, true, NOW())
-	`, constants.TablePermissionSet)
+	`, constants.TablePermissionSet, cols)
 
 	_, err := r.db.ExecContext(ctx, query, id, name, label, description)
 	if err != nil {
@@ -444,11 +545,18 @@ func (r *PermissionRepository) CreatePermissionSet(ctx context.Context, name, la
 
 // UpdatePermissionSet updates a permission set
 func (r *PermissionRepository) UpdatePermissionSet(ctx context.Context, id, name, label, description string, isActive bool) error {
+	updates := strings.Join([]string{
+		fmt.Sprintf("%s = ?", constants.FieldSysPermissionSet_Name),
+		fmt.Sprintf("%s = ?", constants.FieldSysPermissionSet_Label),
+		fmt.Sprintf("%s = ?", constants.FieldSysPermissionSet_Description),
+		fmt.Sprintf("%s = ?", constants.FieldSysPermissionSet_IsActive),
+	}, ", ")
+
 	query := fmt.Sprintf(`
 		UPDATE %s
-		SET name = ?, label = ?, description = ?, is_active = ?
-		WHERE id = ?
-	`, constants.TablePermissionSet)
+		SET %s
+		WHERE %s = ?
+	`, constants.TablePermissionSet, updates, constants.FieldID)
 
 	_, err := r.db.ExecContext(ctx, query, name, label, description, isActive, id)
 	return err
@@ -457,27 +565,27 @@ func (r *PermissionRepository) UpdatePermissionSet(ctx context.Context, id, name
 // DeletePermissionSet deletes a permission set
 func (r *PermissionRepository) DeletePermissionSet(ctx context.Context, id string) error {
 	// First delete assignments
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE permission_set_id = ?", constants.TablePermissionSetAssignment), id)
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TablePermissionSetAssignment, constants.FieldPermissionSetID), id)
 	if err != nil {
 		return err
 	}
 	// Delete permissions
-	_, err = r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE permission_set_id = ?", constants.TableObjectPerms), id)
+	_, err = r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableObjectPerms, constants.FieldPermissionSetID), id)
 	if err != nil {
 		return err
 	}
-	_, err = r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE permission_set_id = ?", constants.TableFieldPerms), id)
+	_, err = r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableFieldPerms, constants.FieldPermissionSetID), id)
 	if err != nil {
 		return err
 	}
 	// Delete the set itself
-	_, err = r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TablePermissionSet), id)
+	_, err = r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TablePermissionSet, constants.FieldID), id)
 	return err
 }
 
 // GetUserProfileID fetches the profile ID for a given user
 func (r *PermissionRepository) GetUserProfileID(ctx context.Context, userID string) (string, error) {
-	query := fmt.Sprintf("SELECT profile_id FROM %s WHERE id = ?", constants.TableUser)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldProfileID, constants.TableUser, constants.FieldID)
 	var profileID string
 	err := r.db.QueryRowContext(ctx, query, userID).Scan(&profileID)
 	if err != nil {
@@ -488,7 +596,11 @@ func (r *PermissionRepository) GetUserProfileID(ctx context.Context, userID stri
 
 // GetAllRoles retrieves all system roles
 func (r *PermissionRepository) GetAllRoles(ctx context.Context) ([]*models.SystemRole, error) {
-	query := fmt.Sprintf("SELECT id, name, description, parent_role_id FROM %s WHERE is_deleted = 0", constants.TableRole)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysRole_Name,
+		constants.FieldSysRole_Description, constants.FieldSysRole_ParentRoleID,
+	}, ", ")
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = 0", cols, constants.TableRole, constants.FieldIsDeleted)
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query roles: %w", err)
@@ -509,10 +621,15 @@ func (r *PermissionRepository) GetAllRoles(ctx context.Context) ([]*models.Syste
 // CreateRole creates a new role
 func (r *PermissionRepository) CreateRole(ctx context.Context, name, description string, parentRoleID *string) (string, error) {
 	id := utils.GenerateID()
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysRole_Name, constants.FieldSysRole_Description,
+		constants.FieldSysRole_ParentRoleID, constants.FieldCreatedDate,
+		constants.FieldLastModifiedDate, constants.FieldIsDeleted,
+	}, ", ")
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, name, description, parent_role_id, created_date, last_modified_date, is_deleted)
+		INSERT INTO %s (%s)
 		VALUES (?, ?, ?, ?, NOW(), NOW(), 0)
-	`, constants.TableRole)
+	`, constants.TableRole, cols)
 
 	_, err := r.db.ExecContext(ctx, query, id, name, description, parentRoleID)
 	if err != nil {
@@ -523,7 +640,11 @@ func (r *PermissionRepository) CreateRole(ctx context.Context, name, description
 
 // GetRole retrieves a role by ID
 func (r *PermissionRepository) GetRole(ctx context.Context, id string) (*models.SystemRole, error) {
-	query := fmt.Sprintf("SELECT id, name, description, parent_role_id FROM %s WHERE id = ? AND is_deleted = 0", constants.TableRole)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysRole_Name,
+		constants.FieldSysRole_Description, constants.FieldSysRole_ParentRoleID,
+	}, ", ")
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ? AND %s = 0", cols, constants.TableRole, constants.FieldID, constants.FieldIsDeleted)
 	var role models.SystemRole
 	err := r.db.QueryRowContext(ctx, query, id).Scan(&role.ID, &role.Name, &role.Description, &role.ParentRoleID)
 	if err != nil {
@@ -537,11 +658,17 @@ func (r *PermissionRepository) GetRole(ctx context.Context, id string) (*models.
 
 // UpdateRole updates an existing role
 func (r *PermissionRepository) UpdateRole(ctx context.Context, id, name, description string, parentRoleID *string) error {
+	updates := strings.Join([]string{
+		fmt.Sprintf("%s = ?", constants.FieldSysRole_Name),
+		fmt.Sprintf("%s = ?", constants.FieldSysRole_Description),
+		fmt.Sprintf("%s = ?", constants.FieldSysRole_ParentRoleID),
+		fmt.Sprintf("%s = NOW()", constants.FieldLastModifiedDate),
+	}, ", ")
 	query := fmt.Sprintf(`
 		UPDATE %s
-		SET name = ?, description = ?, parent_role_id = ?, last_modified_date = NOW()
-		WHERE id = ? AND is_deleted = 0
-	`, constants.TableRole)
+		SET %s
+		WHERE %s = ? AND %s = 0
+	`, constants.TableRole, updates, constants.FieldID, constants.FieldIsDeleted)
 
 	_, err := r.db.ExecContext(ctx, query, name, description, parentRoleID, id)
 	return err
@@ -549,14 +676,14 @@ func (r *PermissionRepository) UpdateRole(ctx context.Context, id, name, descrip
 
 // DeleteRole soft-deletes a role
 func (r *PermissionRepository) DeleteRole(ctx context.Context, id string) error {
-	query := fmt.Sprintf("UPDATE %s SET is_deleted = 1, last_modified_date = NOW() WHERE id = ?", constants.TableRole)
+	query := fmt.Sprintf("UPDATE %s SET %s = 1, %s = NOW() WHERE %s = ?", constants.TableRole, constants.FieldIsDeleted, constants.FieldLastModifiedDate, constants.FieldID)
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
 }
 
 // IsUserInGroup checks if a user is a member of a group
 func (r *PermissionRepository) IsUserInGroup(ctx context.Context, groupID, userID string) (bool, error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE group_id = ? AND user_id = ?", constants.TableGroupMember)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ? AND %s = ?", constants.TableGroupMember, constants.FieldSysGroupMember_GroupID, constants.FieldSysGroupMember_UserID)
 	var count int
 	err := r.db.QueryRowContext(ctx, query, groupID, userID).Scan(&count)
 	if err != nil {
@@ -568,12 +695,15 @@ func (r *PermissionRepository) IsUserInGroup(ctx context.Context, groupID, userI
 // GetManualShareAccessLevels retrieves access levels granted via manual sharing rules
 func (r *PermissionRepository) GetManualShareAccessLevels(ctx context.Context, objectAPIName, recordID, userID string) ([]string, error) {
 	query := fmt.Sprintf(`
-		SELECT access_level FROM %s 
-		WHERE object_api_name = ? AND record_id = ? AND is_deleted = 0
-		AND (share_with_user_id = ? OR share_with_group_id IN (
-			SELECT group_id FROM %s WHERE user_id = ?
+		SELECT %s FROM %s 
+		WHERE %s = ? AND %s = ? AND %s = 0
+		AND (%s = ? OR %s IN (
+			SELECT %s FROM %s WHERE %s = ?
 		))
-	`, constants.TableRecordShare, constants.TableGroupMember)
+	`, constants.FieldSysRecordShare_AccessLevel, constants.TableRecordShare,
+		constants.FieldObjectAPIName, constants.FieldRecordID, constants.FieldIsDeleted,
+		constants.FieldSysRecordShare_ShareWithUserID, constants.FieldSysRecordShare_ShareWithGroupID,
+		constants.FieldSysGroupMember_GroupID, constants.TableGroupMember, constants.FieldSysGroupMember_UserID)
 
 	rows, err := r.db.QueryContext(ctx, query, objectAPIName, recordID, userID, userID)
 	if err != nil {
@@ -595,9 +725,10 @@ func (r *PermissionRepository) GetManualShareAccessLevels(ctx context.Context, o
 // GetTeamMemberAccessLevel retrieves the access level for a user in a record team
 func (r *PermissionRepository) GetTeamMemberAccessLevel(ctx context.Context, objectAPIName, recordID, userID string) (*string, error) {
 	query := fmt.Sprintf(`
-		SELECT access_level FROM %s 
-		WHERE object_api_name = ? AND record_id = ? AND user_id = ? AND is_deleted = 0
-	`, constants.TableTeamMember)
+		SELECT %s FROM %s 
+		WHERE %s = ? AND %s = ? AND %s = ? AND %s = 0
+	`, constants.FieldSysTeamMember_AccessLevel, constants.TableTeamMember,
+		constants.FieldObjectAPIName, constants.FieldRecordID, constants.FieldUserID, constants.FieldIsDeleted)
 
 	var accessLevel string
 	err := r.db.QueryRowContext(ctx, query, objectAPIName, recordID, userID).Scan(&accessLevel)
@@ -612,7 +743,11 @@ func (r *PermissionRepository) GetTeamMemberAccessLevel(ctx context.Context, obj
 
 // GetAllProfiles retrieves all system profiles
 func (r *PermissionRepository) GetAllProfiles(ctx context.Context) ([]*models.SystemProfile, error) {
-	query := fmt.Sprintf("SELECT id, name, description, is_active, is_system FROM %s ORDER BY name ASC", constants.TableProfile)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysProfile_Name, constants.FieldSysProfile_Description,
+		constants.FieldSysProfile_IsActive, constants.FieldSysProfile_IsSystem,
+	}, ", ")
+	query := fmt.Sprintf("SELECT %s FROM %s ORDER BY %s ASC", cols, constants.TableProfile, constants.FieldSysProfile_Name)
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query profiles: %w", err)

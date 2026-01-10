@@ -31,8 +31,9 @@ run_suite() {
     # 1. Create Object 'car'
     echo "🚗 Creating Car object..."
     # Ensure clean state from previous failed runs
-    delete_schema "car" > /dev/null 2>&1 || true
+    delete_schema "car" || true
     ensure_schema "car" "Car" "Cars"
+
 
     # 2. Add Price (Currency)
     echo "💰 Adding Price field..."
@@ -61,7 +62,8 @@ run_suite() {
     # 6. Create first Car record
     echo "📝 Creating first Car record..."
     REC1=$(api_post "/api/data/car" "{\"name\": \"Model S\", \"price\": 79990.0, \"tax_rate\": 0.08}")
-    REC1_ID=$(json_extract "$REC1" "id")
+    echo "DEBUG REC1: $REC1"
+    REC1_ID=$(json_extract "$REC1" "__sys_gen_id")
     REC1_AUTO=$(json_extract "$REC1" "auto_id")
 
     echo "✅ First Car AutoID: $REC1_AUTO"
@@ -91,16 +93,17 @@ run_suite() {
     # Check if price is within 79990 (it might be string in JSON, or float)
     if [[ "$VAL_PRICE" == "79990"* ]]; then
         echo "✅ Price verified"
+
     else
         echo "❌ Price mismatch: $VAL_PRICE"
-        # Try perl if direct match fails due to trailing zeros
-        perl -e "exit ($VAL_PRICE == 79990 ? 0 : 1)" || (echo "❌ Price mismatch (perl check)"; return 1)
+        # Try awk if direct match fails due to trailing zeros
+        awk -v a="$VAL_PRICE" -v b="79990" 'BEGIN { exit (a == b ? 0 : 1) }' || (echo "❌ Price mismatch (awk check)"; return 1)
     fi
 
     if [[ "$VAL_TAX" == "0.08"* ]]; then
         echo "✅ Tax verified"
     else
-         perl -e "exit ($VAL_TAX == 0.08 ? 0 : 1)" || (echo "❌ Tax mismatch"; return 1)
+         awk -v a="$VAL_TAX" -v b="0.08" 'BEGIN { exit (a == b ? 0 : 1) }' || (echo "❌ Tax mismatch"; return 1)
     fi
 
     echo "✅ Suite 43 Passed!"

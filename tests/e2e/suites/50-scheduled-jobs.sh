@@ -83,7 +83,7 @@ test_list_scheduled_jobs() {
     local query_res=$(api_post "/api/data/query" "$query_payload")
     
     if echo "$query_res" | grep -q '"records"'; then
-        local count=$(echo "$query_res" | jq '.records | length' 2>/dev/null || echo "0")
+        local count=$(echo "$query_res" | jq '.data | length' 2>/dev/null || echo "0")
         echo "  Found $count scheduled jobs"
         
         # Verify our job is in the list
@@ -215,15 +215,14 @@ test_cleanup() {
     echo ""
     echo "Test 50.7: Cleanup Test Data"
     
-    if [ -n "$SCHEDULED_JOB_ID" ]; then
-        api_delete "/api/metadata/flows/$SCHEDULED_JOB_ID" > /dev/null 2>&1
-        echo "  ✓ Scheduled job deleted"
-    fi
+    # Robust cleanup
+    delete_items_by_prefix "/api/metadata/flows" "name" "E2E Scheduled Job " "Scheduled Job Flows"
     
     test_passed "Cleanup completed"
 }
 
 # Run if executed directly
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    trap test_cleanup EXIT
     run_suite
 fi

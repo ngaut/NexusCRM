@@ -223,11 +223,11 @@ test_property_search() {
     echo ""
     echo "Test 24.5: Property Search"
     
-    local available=$(api_post "/api/data/query" '{"object_api_name": "re_property", "filters": [{"field": "status", "operator": "=", "value": "Available"}]}')
-    echo "  Available properties: $(echo "$available" | jq '.records | length' 2>/dev/null || echo 0)"
+    local available=$(api_post "/api/data/query" '{"object_api_name": "re_property", "filter_expr": "status == '"'"'Available'"'"'"}')
+    echo "  Available properties: $(echo "$available" | jq '.data | length' 2>/dev/null || echo 0)"
     
-    local two_bed=$(api_post "/api/data/query" '{"object_api_name": "re_property", "filters": [{"field": "bedrooms", "operator": ">=", "value": 2}]}')
-    echo "  2+ bedroom properties: $(echo "$two_bed" | jq '.records | length' 2>/dev/null || echo 0)"
+    local two_bed=$(api_post "/api/data/query" '{"object_api_name": "re_property", "filter_expr": "bedrooms >= 2"}')
+    echo "  2+ bedroom properties: $(echo "$two_bed" | jq '.data | length' 2>/dev/null || echo 0)"
     
     test_passed "Property search completed"
 }
@@ -260,10 +260,10 @@ test_occupancy_report() {
     echo "Test 24.7: Generate Occupancy Report"
     
     local all_props=$(api_post "/api/data/query" '{"object_api_name": "re_property"}')
-    local total=$(echo "$all_props" | jq '.records | length' 2>/dev/null || echo "0")
+    local total=$(echo "$all_props" | jq '.data | length' 2>/dev/null || echo "0")
     
-    local occupied=$(api_post "/api/data/query" '{"object_api_name": "re_property", "filters": [{"field": "status", "operator": "=", "value": "Occupied"}]}')
-    local occ_count=$(echo "$occupied" | jq '.records | length' 2>/dev/null || echo "0")
+    local occupied=$(api_post "/api/data/query" '{"object_api_name": "re_property", "filter_expr": "status == '"'"'Occupied'"'"'"}')
+    local occ_count=$(echo "$occupied" | jq '.data | length' 2>/dev/null || echo "0")
     
     echo "  === Occupancy Report ==="
     echo "  Total: $total | Occupied: $occ_count | Available: $((total - occ_count))"

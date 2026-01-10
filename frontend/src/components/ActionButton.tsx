@@ -10,6 +10,7 @@ import { ConfirmationModal } from './modals/ConfirmationModal';
 import { actionHandlerRegistry } from '../core/actions/ActionHandlerRegistry';
 import { clientDBAdapter } from '../core/api/ClientDBAdapter';
 import { ROUTES } from '../core/constants/Routes';
+import { COMMON_FIELDS } from '../core/constants';
 
 interface ActionButtonProps {
     action: ActionConfig;
@@ -120,7 +121,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
                     name: `${record.name || 'Record'} (Clone)`
                 });
                 success('Cloned', 'Record cloned successfully');
-                navigate(ROUTES.OBJECT.DETAIL(objectApiName, newRecord.id as string));
+                navigate(ROUTES.OBJECT.DETAIL(objectApiName, newRecord[COMMON_FIELDS.ID] as string));
                 break;
 
             case 'Edit':

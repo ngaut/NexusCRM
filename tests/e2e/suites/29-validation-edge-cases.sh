@@ -314,12 +314,18 @@ test_numeric_boundaries() {
         echo "  ✓ Large number accepted"
         
         # Test negative
-        api_patch "/api/data/opportunity/$id" '{"amount": -1000}' > /dev/null
-        echo "  ✓ Negative number handled"
+        if api_patch "/api/data/opportunity/$id" '{"amount": -1000}' | grep -qE '"id"|"success"'; then
+            echo "  ✓ Negative number handled"
+        else
+            test_failed "Negative number update failed"
+        fi
         
         # Test zero
-        api_patch "/api/data/opportunity/$id" '{"amount": 0}' > /dev/null
-        echo "  ✓ Zero value handled"
+        if api_patch "/api/data/opportunity/$id" '{"amount": 0}' | grep -qE '"id"|"success"'; then
+            echo "  ✓ Zero value handled"
+        else
+            test_failed "Zero value update failed"
+        fi
         
         test_passed "Numeric boundaries"
     else
@@ -343,8 +349,11 @@ test_date_formats() {
         echo "  ✓ ISO date (2025-12-31) accepted"
         
         # Test datetime
-        api_patch "/api/data/opportunity/$id" '{"close_date": "2025-12-31T23:59:59Z"}' > /dev/null
-        echo "  ✓ ISO datetime accepted"
+        if api_patch "/api/data/opportunity/$id" '{"close_date": "2025-12-31T23:59:59Z"}' | grep -qE '"id"|"success"'; then
+            echo "  ✓ ISO datetime accepted"
+        else
+            test_failed "ISO datetime update failed"
+        fi
         
         test_passed "Date format handling"
     else

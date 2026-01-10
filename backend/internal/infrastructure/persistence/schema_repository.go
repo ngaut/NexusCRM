@@ -35,7 +35,7 @@ type Executor interface {
 func (r *SchemaRepository) IsSystemColumn(name string) bool {
 	// Common system columns
 	switch name {
-	case "id", "created_date", "last_modified_date", "created_by_id", "last_modified_by_id", "owner_id", "is_deleted":
+	case constants.FieldID, constants.FieldCreatedDate, constants.FieldLastModifiedDate, constants.FieldCreatedByID, constants.FieldLastModifiedByID, constants.FieldOwnerID, constants.FieldIsDeleted:
 		return true
 	}
 	return false
@@ -44,28 +44,28 @@ func (r *SchemaRepository) IsSystemColumn(name string) bool {
 // mapSQLTypeToLogical converts SQL types to system logical types
 func (r *SchemaRepository) mapSQLTypeToLogical(sqlType string) string {
 	sqlType = strings.ToUpper(sqlType)
-	if strings.HasPrefix(sqlType, "VARCHAR") || strings.HasPrefix(sqlType, "TEXT") || strings.HasPrefix(sqlType, "CHAR") {
-		return "Text"
+	if strings.HasPrefix(sqlType, SQLTypeVarchar) || strings.HasPrefix(sqlType, SQLTypeText) || strings.HasPrefix(sqlType, SQLTypeChar) {
+		return string(constants.FieldTypeText)
 	}
-	if strings.HasPrefix(sqlType, "BOOL") || strings.HasPrefix(sqlType, "TINYINT(1)") {
-		return "Checkbox"
+	if strings.HasPrefix(sqlType, SQLTypeBool) || strings.HasPrefix(sqlType, SQLTypeTinyInt1) {
+		return string(constants.FieldTypeBoolean)
 	}
-	if strings.HasPrefix(sqlType, "INT") || strings.HasPrefix(sqlType, "BIGINT") || strings.HasPrefix(sqlType, "TINYINT") {
-		return "Number"
+	if strings.HasPrefix(sqlType, SQLTypeInt) || strings.HasPrefix(sqlType, SQLTypeBigInt) || strings.HasPrefix(sqlType, SQLTypeTinyInt) {
+		return string(constants.FieldTypeNumber)
 	}
-	if strings.HasPrefix(sqlType, "DECIMAL") || strings.HasPrefix(sqlType, "FLOAT") || strings.HasPrefix(sqlType, "DOUBLE") {
-		return "Number"
+	if strings.HasPrefix(sqlType, SQLTypeDecimal) || strings.HasPrefix(sqlType, SQLTypeFloat) || strings.HasPrefix(sqlType, SQLTypeDouble) {
+		return string(constants.FieldTypeNumber)
 	}
-	if strings.HasPrefix(sqlType, "DATETIME") || strings.HasPrefix(sqlType, "TIMESTAMP") {
-		return "DateTime"
+	if strings.HasPrefix(sqlType, SQLTypeDateTime) || strings.HasPrefix(sqlType, SQLTypeTimestamp) {
+		return string(constants.FieldTypeDateTime)
 	}
-	if strings.HasPrefix(sqlType, "DATE") {
-		return "Date"
+	if strings.HasPrefix(sqlType, SQLTypeDate) {
+		return string(constants.FieldTypeDate)
 	}
-	if strings.HasPrefix(sqlType, "JSON") {
-		return "JSON" // Special handling
+	if strings.HasPrefix(sqlType, SQLTypeJSON) {
+		return string(constants.FieldTypeJSON) // Special handling
 	}
-	return "Text" // Default fallback
+	return string(constants.FieldTypeText) // Default fallback
 }
 
 // MapFieldTypeToSQL converts logical field types to SQL column types
@@ -75,63 +75,63 @@ func (r *SchemaRepository) MapFieldTypeToSQL(fieldType string) string {
 	// 1. Check Logical Types (using shared constants)
 	switch constants.SchemaFieldType(fieldType) {
 	case constants.FieldTypeText:
-		return "VARCHAR(255)"
+		return SQLTypeVarchar255
 	case constants.FieldTypeTextArea:
-		return "TEXT"
+		return SQLTypeText
 	case constants.FieldTypeLongTextArea:
-		return "LONGTEXT"
+		return SQLTypeLongText
 	case constants.FieldTypeRichText:
-		return "LONGTEXT"
+		return SQLTypeLongText
 	case constants.FieldTypeNumber:
-		return "DECIMAL(18,6)"
+		return SQLTypeDecimal18_6
 	case constants.FieldTypeCurrency:
-		return "DECIMAL(18,2)"
+		return SQLTypeDecimal18_2
 	case constants.FieldTypePercent:
-		return "DECIMAL(5,2)"
+		return SQLTypeDecimal5_2
 	case constants.FieldTypeBoolean:
-		return "BOOLEAN"
+		return SQLTypeBoolean
 	case constants.FieldTypeDate:
-		return "DATE"
+		return SQLTypeDate
 	case constants.FieldTypeDateTime:
-		return "DATETIME"
+		return SQLTypeDateTime
 	case constants.FieldTypeEmail:
-		return "VARCHAR(255)"
+		return SQLTypeVarchar255
 	case constants.FieldTypePhone:
-		return "VARCHAR(50)"
+		return SQLTypeVarchar50
 	case constants.FieldTypeURL:
-		return "VARCHAR(255)"
+		return SQLTypeVarchar255
 	case constants.FieldTypePicklist:
-		return "VARCHAR(255)"
+		return SQLTypeVarchar255
 	case constants.FieldTypeMultiPicklist:
-		return "JSON" // Stored as JSON array
+		return SQLTypeJSON // Stored as JSON array
 	case constants.FieldTypeLookup, constants.FieldTypeMasterDetail:
-		return "VARCHAR(36)" // UUID
+		return SQLTypeVarchar36 // UUID
 	case constants.FieldTypeAutoNumber:
-		return "VARCHAR(255)" // Usually string based format
+		return SQLTypeVarchar255 // Usually string based format
 	case constants.FieldTypeFormula:
-		return "VARCHAR(255)" // Depends on return type, handled by buildColumnDDL
+		return SQLTypeVarchar255 // Depends on return type, handled by buildColumnDDL
 	case constants.FieldTypePassword, constants.FieldTypeEncryptedString:
-		return "VARCHAR(255)"
+		return SQLTypeVarchar255
 	case constants.FieldTypeJSON:
-		return "JSON"
+		return SQLTypeJSON
 	}
 
 	// 2. Check Raw SQL Types (Passthrough for System Tables)
 	// We allow specific raw types that match what we use in system_tables.json
 	upper := strings.ToUpper(fieldType)
 	switch upper {
-	case "INT", "INTEGER", "TINYINT", "TINYINT(1)", "BIGINT", "SMALLINT":
+	case SQLTypeInt, SQLTypeInteger, SQLTypeTinyInt, SQLTypeTinyInt1, SQLTypeBigInt, SQLTypeSmallInt:
 		return fieldType // Keep original casing/precision if needed, usually uppercase
-	case "DATETIME", "TIMESTAMP", "DATE":
+	case SQLTypeDateTime, SQLTypeTimestamp, SQLTypeDate:
 		return upper
-	case "TEXT", "MEDIUMTEXT", "LONGTEXT", "JSON":
+	case SQLTypeText, "MEDIUMTEXT", "LONGTEXT", SQLTypeJSON:
 		return upper
-	case "BOOLEAN", "BOOL":
-		return "BOOLEAN"
+	case SQLTypeBoolean, SQLTypeBool:
+		return SQLTypeBoolean
 	case "VARCHAR(255)", "VARCHAR(36)", "VARCHAR(50)", "CHAR(36)":
 		return fieldType
 	}
 
 	// Default fallback
-	return "VARCHAR(255)"
+	return SQLTypeVarchar255
 }

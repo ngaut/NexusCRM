@@ -7,6 +7,7 @@ import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 import { useErrorToast, useSuccessToast } from '../components/ui/Toast';
 import { FormulaEditor } from '../components/formula/FormulaEditor';
 import { formatApiError } from '../core/utils/errorHandling';
+import { COMMON_FIELDS } from '../core/constants';
 import { FieldMetadata, SharingRule, ObjectMetadata, Role } from '../types';
 
 export const SharingRuleManager: React.FC = () => {
@@ -92,7 +93,7 @@ export const SharingRuleManager: React.FC = () => {
     const handleUpdate = async () => {
         if (!editingRule) return;
         try {
-            await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_SHARINGRULE, editingRule.id, formData);
+            await dataAPI.updateRecord(SYSTEM_TABLE_NAMES.SYSTEM_SHARINGRULE, editingRule[COMMON_FIELDS.ID] as string, formData);
             successToast('Sharing rule updated successfully');
             setEditingRule(null);
             resetForm();
@@ -105,7 +106,7 @@ export const SharingRuleManager: React.FC = () => {
     const handleDelete = async () => {
         if (!deletingRule) return;
         try {
-            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_SHARINGRULE, deletingRule.id);
+            await dataAPI.deleteRecord(SYSTEM_TABLE_NAMES.SYSTEM_SHARINGRULE, deletingRule[COMMON_FIELDS.ID] as string);
             successToast('Sharing rule deleted successfully');
             setDeletingRule(null);
             loadData();
@@ -129,14 +130,14 @@ export const SharingRuleManager: React.FC = () => {
             name: rule.name,
             object_api_name: rule.object_api_name,
             criteria: rule.criteria || '',
-            access_level: rule.access_level,
+            access_level: rule.access_level as 'Read' | 'Edit',
             share_with_role_id: rule.share_with_role_id
         });
         setEditingRule(rule);
     };
 
     const getRoleName = (roleId: string) => {
-        const role = roles.find(r => r.id === roleId);
+        const role = roles.find(r => r[COMMON_FIELDS.ID] === roleId);
         return role?.name || roleId;
     };
 
@@ -206,7 +207,7 @@ export const SharingRuleManager: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredRules.map(rule => (
-                                <tr key={rule.id} className="hover:bg-slate-50">
+                                <tr key={rule[COMMON_FIELDS.ID] as string} className="hover:bg-slate-50">
                                     <td className="px-6 py-4 font-medium text-slate-900">{rule.name}</td>
                                     <td className="px-6 py-4 text-slate-600">{getObjectLabel(rule.object_api_name)}</td>
                                     <td className="px-6 py-4">
@@ -315,7 +316,7 @@ export const SharingRuleManager: React.FC = () => {
                                 >
                                     <option value="">Select Role</option>
                                     {roles.map(role => (
-                                        <option key={role.id} value={role.id}>{role.name}</option>
+                                        <option key={role[COMMON_FIELDS.ID] as string} value={role[COMMON_FIELDS.ID] as string}>{role.name}</option>
                                     ))}
                                 </select>
                                 <p className="text-xs text-slate-500 mt-1">Users in this role will be granted access to records matching the criteria.</p>

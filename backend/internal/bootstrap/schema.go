@@ -91,7 +91,9 @@ func InitializeSchema(db *database.TiDBConnection) error {
 
 		// Collect fields for this table
 		for _, col := range def.Columns {
-			allFields = append(allFields, schemaMgr.PrepareFieldForBatch(def.TableName, col))
+			fc := schemaMgr.PrepareFieldForBatch(def.TableName, col)
+			fc.ObjectID = objectID // Enforce linkage to the actual object ID we generated above
+			allFields = append(allFields, fc)
 		}
 	}
 

@@ -101,6 +101,11 @@ func (sm *SchemaManager) DropColumn(tableName string, colName string) error {
 	return sm.repo.DropColumn(tableName, colName)
 }
 
+// ModifyColumn modifies a column's type (for schema auto-correction during import)
+func (sm *SchemaManager) ModifyColumn(tableName, colName string, col schema.ColumnDefinition) error {
+	return sm.repo.ModifyColumn(tableName, colName, col)
+}
+
 // IsSystemColumn returns true for columns that are automatically populated
 func (sm *SchemaManager) IsSystemColumn(name string) bool {
 	return sm.repo.IsSystemColumn(name)

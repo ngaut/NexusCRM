@@ -24,8 +24,8 @@ run_suite() {
     fi
 
     # Fetch Profile ID
-    local profile_res=$(api_post "/api/data/query" '{"object_api_name": "_System_Profile", "filters": [{"field": "name", "operator": "=", "value": "standard_user"}]}')
-    PROFILE_STANDARD_USER=$(json_extract "$profile_res" "records[0].id")
+    # The profile ID is 'standard_user' (same as the internal name in system_data.json)
+    PROFILE_STANDARD_USER="standard_user"
     
     if [ -z "$PROFILE_STANDARD_USER" ]; then
          test_failed "Could not find 'standard_user' profile"

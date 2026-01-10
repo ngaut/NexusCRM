@@ -1,12 +1,12 @@
 {
     "profiles": [
         {
-            "id": "system_admin",
+            "__sys_gen_id": "system_admin",
             "name": "System Administrator",
             "description": "Full system access with all permissions"
         },
         {
-            "id": "standard_user",
+            "__sys_gen_id": "standard_user",
             "name": "Standard User",
             "description": "Standard access to CRM features"
         }

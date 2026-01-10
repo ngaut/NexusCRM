@@ -45,7 +45,8 @@ export const AppStudio: React.FC = () => {
     const [availableObjects, setAvailableObjects] = useState<ObjectMetadata[]>([]);
 
     // Editor state - what's currently being edited in the right panel
-    const [editor, setEditor] = useState<EditorState>({ mode: null });
+    // For new apps, open settings first so user can fill in required App ID
+    const [editor, setEditor] = useState<EditorState>({ mode: isNewApp ? 'settings' : null });
 
     // Load app data
     useEffect(() => {
@@ -118,7 +119,7 @@ export const AppStudio: React.FC = () => {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             // Extract API error message from response if available
             const apiError = typeof error === 'object' && error !== null && 'response' in error
-                ? ((error as { response?: { data?: { error?: string } } }).response?.data?.error)
+                ? ((error as { response?: { data?: { message?: string } } }).response?.data?.message)
                 : undefined;
             errorToast(apiError || errorMessage);
         } finally {

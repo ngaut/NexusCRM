@@ -5,6 +5,7 @@ import { FLOW_STATUS, FlowStatus } from '../../core/constants/FlowConstants';
 
 export interface FlowStep {
     [COMMON_FIELDS.ID]: string;
+    id?: string; // Alias for [COMMON_FIELDS.ID] which computes to __sys_gen_id
     [COMMON_FIELDS.FLOW_ID]?: string;
     [COMMON_FIELDS.STEP_ORDER]: number;
     [COMMON_FIELDS.STEP_NAME]: string;
@@ -18,6 +19,7 @@ export interface FlowStep {
 
 export interface Flow {
     [COMMON_FIELDS.ID]: string;
+    id?: string; // Alias for [COMMON_FIELDS.ID] which computes to __sys_gen_id
     [COMMON_FIELDS.NAME]: string;
     [COMMON_FIELDS.STATUS]: FlowStatus;
     [COMMON_FIELDS.TRIGGER_OBJECT]: string;

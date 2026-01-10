@@ -14,6 +14,12 @@ import (
 	"github.com/nexuscrm/shared/pkg/models"
 )
 
+const (
+	// Local constants for fields not yet in shared constants
+	fieldRecordTypeIsDefault         = "is_default"
+	fieldRecordTypeBusinessProcessID = "business_process_id"
+)
+
 type MetadataRepository struct {
 	db *sql.DB
 }
@@ -47,7 +53,7 @@ var fieldColumns = []string{
 	constants.FieldLabel,
 	"`" + constants.FieldType + "`",
 	constants.FieldRequired,
-	"`" + constants.FieldUnique + "`",
+	constants.FieldSysField_IsUnique,
 	constants.FieldIsSystem,
 	constants.FieldSysField_IsNameField,
 	"`" + constants.FieldSysField_Options + "`",
@@ -128,7 +134,7 @@ var sharingRuleColumns = []string{
 
 // GetSchemaByAPIName queries a single schema by API name
 func (r *MetadataRepository) GetSchemaByAPIName(ctx context.Context, apiName string) (*models.ObjectMetadata, error) {
-	objectQuery := fmt.Sprintf("SELECT %s FROM %s WHERE api_name = ?", strings.Join(objectColumns, ", "), constants.TableObject)
+	objectQuery := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", strings.Join(objectColumns, ", "), constants.TableObject, constants.FieldAPIName)
 	row := r.db.QueryRowContext(ctx, objectQuery, apiName)
 
 	obj, err := r.scanObject(row)
@@ -192,7 +198,7 @@ func (r *MetadataRepository) GetAllSchemas(ctx context.Context) ([]*models.Objec
 
 // GetFieldsForObject queries fields for a specific object ID
 func (r *MetadataRepository) GetFieldsForObject(ctx context.Context, objectID string) ([]models.FieldMetadata, error) {
-	fieldQuery := fmt.Sprintf("SELECT %s FROM %s WHERE object_id = ?", strings.Join(fieldColumns, ", "), constants.TableField)
+	fieldQuery := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", strings.Join(fieldColumns, ", "), constants.TableField, constants.FieldObjectID)
 	rows, err := r.db.QueryContext(ctx, fieldQuery, objectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query fields: %w", err)
@@ -213,13 +219,28 @@ func (r *MetadataRepository) GetFieldsForObject(ctx context.Context, objectID st
 
 // GetRecordTypes queries record types for an object
 func (r *MetadataRepository) GetRecordTypes(ctx context.Context, objectAPIName string) ([]*models.RecordType, error) {
-	query := fmt.Sprintf(`
-		SELECT id, object_api_name, name, label, description, is_active, is_default,
-		       business_process_id, created_date, last_modified_date
-		FROM %s
-		WHERE object_api_name = ?
-	`, constants.TableRecordType)
-	rows, err := r.db.QueryContext(ctx, query, objectAPIName)
+	// 1. Resolve Object ID
+	var objectID string
+	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableObject, constants.FieldSysObject_APIName), objectAPIName).Scan(&objectID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return []*models.RecordType{}, nil
+		}
+		return nil, fmt.Errorf("failed to resolve object id: %w", err)
+	}
+
+	// 2. Query Record Types by Object ID
+	// Note: _System_RecordType has columns: id, object_id, name, description, is_active, is_master
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldObjectID, constants.FieldSysRecordType_Name,
+		constants.FieldSysRecordType_Description, constants.FieldSysRecordType_IsActive,
+		"is_master", // Missing constant for is_master
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", cols, constants.TableRecordType, constants.FieldObjectID)
+
+	rows, err := r.db.QueryContext(ctx, query, objectID)
 	if err != nil {
 		return nil, err
 	}
@@ -228,17 +249,22 @@ func (r *MetadataRepository) GetRecordTypes(ctx context.Context, objectAPIName s
 	types := make([]*models.RecordType, 0)
 	for rows.Next() {
 		var rt models.RecordType
-		var description, businessProcessID sql.NullString
-		var isActive, isDefault sql.NullBool
+		var description sql.NullString
+		var isActive, isMaster sql.NullBool
+		var objID string
 
+		// Scan matching the selected columns
 		if err := rows.Scan(
-			&rt.ID, &rt.ObjectAPIName, &rt.Name, &rt.Label,
-			&description, &isActive, &isDefault, &businessProcessID,
+			&rt.ID, &objID, &rt.Name,
+			&description, &isActive, &isMaster,
 			&rt.CreatedDate, &rt.LastModifiedDate,
 		); err != nil {
 			log.Printf("Warning: Failed to scan record type: %v", err)
 			continue
 		}
+
+		rt.ObjectAPIName = objectAPIName // Set from argument
+		rt.Label = rt.Name               // Set Label to Name as table has no separate Label
 
 		desc := ""
 		if description.Valid {
@@ -246,12 +272,10 @@ func (r *MetadataRepository) GetRecordTypes(ctx context.Context, objectAPIName s
 		}
 		rt.Description = &desc
 
-		if businessProcessID.Valid {
-			bp := businessProcessID.String
-			rt.BusinessProcessID = &bp
-		}
+		// BusinessProcessID does not exist in schema, leaving nil
+
 		rt.IsActive = isActive.Bool
-		rt.IsDefault = isDefault.Bool
+		// rt.IsMaster = isMaster.Bool // If struct has IsMaster
 
 		types = append(types, &rt)
 	}
@@ -260,12 +284,16 @@ func (r *MetadataRepository) GetRecordTypes(ctx context.Context, objectAPIName s
 
 // GetAutoNumbers queries auto numbers for an object
 func (r *MetadataRepository) GetAutoNumbers(ctx context.Context, objectAPIName string) ([]*models.AutoNumber, error) {
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldObjectAPIName, constants.FieldSysAutoNumber_FieldAPIName,
+		constants.FieldSysAutoNumber_DisplayFormat, constants.FieldSysAutoNumber_StartingNumber,
+		constants.FieldSysAutoNumber_CurrentNumber, constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
 	query := fmt.Sprintf(`
-		SELECT id, object_api_name, field_api_name, display_format, starting_number,
-		       current_number, created_date, last_modified_date
+		SELECT %s
 		FROM %s
-		WHERE object_api_name = ?
-	`, constants.TableAutoNumber)
+		WHERE %s = ?
+	`, cols, constants.TableAutoNumber, constants.FieldObjectAPIName)
 	rows, err := r.db.QueryContext(ctx, query, objectAPIName)
 	if err != nil {
 		return nil, err
@@ -289,13 +317,18 @@ func (r *MetadataRepository) GetAutoNumbers(ctx context.Context, objectAPIName s
 
 // GetRelationships queries relationships for a child object
 func (r *MetadataRepository) GetRelationships(ctx context.Context, childObjectAPIName string) ([]*models.Relationship, error) {
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysRelationship_ChildObjectAPIName, constants.FieldSysRelationship_ParentObjectAPIName,
+		constants.FieldSysRelationship_FieldAPIName, constants.FieldSysRelationship_RelationshipName,
+		constants.FieldSysRelationship_RelationshipType, constants.FieldSysRelationship_CascadeDelete,
+		constants.FieldSysRelationship_RestrictedDelete, constants.FieldSysRelationship_RelatedListLabel,
+		constants.FieldSysRelationship_RelatedListFields, constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
 	query := fmt.Sprintf(`
-		SELECT id, child_object_api_name, parent_object_api_name, field_api_name,
-		       relationship_name, relationship_type, cascade_delete, restricted_delete,
-		       related_list_label, related_list_fields, created_date, last_modified_date
+		SELECT %s
 		FROM %s
-		WHERE child_object_api_name = ?
-	`, constants.TableRelationship)
+		WHERE %s = ?
+	`, cols, constants.TableRelationship, constants.FieldSysRelationship_ChildObjectAPIName)
 	rows, err := r.db.QueryContext(ctx, query, childObjectAPIName)
 	if err != nil {
 		return nil, err
@@ -337,13 +370,39 @@ func (r *MetadataRepository) GetRelationships(ctx context.Context, childObjectAP
 
 // GetFieldDependencies queries field dependencies for an object
 func (r *MetadataRepository) GetFieldDependencies(ctx context.Context, objectAPIName string) ([]*models.FieldDependency, error) {
+	// 1. Resolve Object ID
+	var objectID string
+	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableObject, constants.FieldSysObject_APIName), objectAPIName).Scan(&objectID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return []*models.FieldDependency{}, nil
+		}
+		return nil, fmt.Errorf("failed to resolve object id: %w", err)
+	}
+
+	// 2. Query Field Dependencies via JOIN with _System_Field to filter by Object
+	// Schema: id, controlling_field_id, dependent_field_id, controlling_value, dependent_values
+	cols := strings.Join([]string{
+		"d." + constants.FieldID,
+		"d." + constants.FieldSysFieldDependency_ControllingFieldID,
+		"d." + constants.FieldSysFieldDependency_DependentFieldID,
+		"d." + constants.FieldSysFieldDependency_ControllingValue,
+		"d." + constants.FieldSysFieldDependency_DependentValues,
+		"d." + constants.FieldCreatedDate,
+		"d." + constants.FieldLastModifiedDate,
+	}, ", ")
+
+	// We join on dependent_field_id as dependencies are usually part of the dependent field's definition
 	query := fmt.Sprintf(`
-		SELECT id, object_api_name, controlling_field, dependent_field, controlling_value,
-		       action, is_active, created_date, last_modified_date
-		FROM %s
-		WHERE object_api_name = ?
-	`, constants.TableFieldDependency)
-	rows, err := r.db.QueryContext(ctx, query, objectAPIName)
+		SELECT %s
+		FROM %s d
+		JOIN %s f ON d.%s = f.%s
+		WHERE f.%s = ?
+	`, cols, constants.TableFieldDependency,
+		constants.TableField, constants.FieldSysFieldDependency_DependentFieldID, constants.FieldID, // d.dependent_field_id = f.id
+		constants.FieldObjectID)
+
+	rows, err := r.db.QueryContext(ctx, query, objectID)
 	if err != nil {
 		return nil, err
 	}
@@ -352,24 +411,28 @@ func (r *MetadataRepository) GetFieldDependencies(ctx context.Context, objectAPI
 	deps := make([]*models.FieldDependency, 0)
 	for rows.Next() {
 		var dep models.FieldDependency
-		var controllingValue, action sql.NullString
-		var isActive sql.NullBool
+		var controllingValue, dependentValues sql.NullString
 
 		if err := rows.Scan(
-			&dep.ID, &dep.ObjectAPIName, &dep.ControllingField, &dep.DependentField,
-			&controllingValue, &action, &isActive, &dep.CreatedDate, &dep.LastModifiedDate,
+			&dep.ID, &dep.ControllingField, &dep.DependentField,
+			&controllingValue, &dependentValues,
+			&dep.CreatedDate, &dep.LastModifiedDate,
 		); err != nil {
 			log.Printf("Warning: Failed to scan field dependency: %v", err)
 			continue
 		}
 
+		dep.ObjectAPIName = objectAPIName // Manual set
+
 		if controllingValue.Valid {
 			dep.ControllingValue = controllingValue.String
 		}
-		if action.Valid {
-			dep.Action = action.String
+
+		if dependentValues.Valid && dependentValues.String != "" {
+			if err := json.Unmarshal([]byte(dependentValues.String), &dep.DependentValues); err != nil {
+				log.Printf("Warning: Failed to unmarshal dependent values for %s: %v", dep.ID, err)
+			}
 		}
-		dep.IsActive = isActive.Bool
 
 		deps = append(deps, &dep)
 	}
@@ -382,7 +445,7 @@ func (r *MetadataRepository) GetFieldDependencies(ctx context.Context, objectAPI
 
 // GetActions queries actions for an object
 func (r *MetadataRepository) GetActions(ctx context.Context, objectAPIName string) ([]*models.ActionMetadata, error) {
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE LOWER(object_api_name) = LOWER(?)", strings.Join(actionColumns, ", "), constants.TableAction)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE LOWER(%s) = LOWER(?)", strings.Join(actionColumns, ", "), constants.TableAction, constants.FieldSysAction_ObjectAPIName)
 	rows, err := r.db.QueryContext(ctx, query, objectAPIName)
 	if err != nil {
 		return nil, err
@@ -402,7 +465,7 @@ func (r *MetadataRepository) GetActions(ctx context.Context, objectAPIName strin
 
 // GetAction queries a single action by ID
 func (r *MetadataRepository) GetAction(ctx context.Context, id string) (*models.ActionMetadata, error) {
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE id = ?", strings.Join(actionColumns, ", "), constants.TableAction)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", strings.Join(actionColumns, ", "), constants.TableAction, constants.FieldSysAction_ID)
 	action, err := r.scanAction(r.db.QueryRowContext(ctx, query, id))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -436,7 +499,7 @@ func (r *MetadataRepository) GetAllActions(ctx context.Context) ([]*models.Actio
 
 // CreateValidationRule creates a new validation rule
 func (r *MetadataRepository) CreateValidationRule(ctx context.Context, rule *models.ValidationRule) error {
-	query := fmt.Sprintf("INSERT INTO %s (id, object_api_name, name, active, `condition`, error_message) VALUES (?, ?, ?, ?, ?, ?)", constants.TableValidation)
+	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s, %s, `condition`, %s) VALUES (?, ?, ?, ?, ?, ?)", constants.TableValidation, constants.FieldID, constants.FieldSysValidation_ObjectAPIName, constants.FieldSysValidation_Name, constants.FieldSysValidation_Active, constants.FieldSysValidation_ErrorMessage)
 	_, err := r.db.ExecContext(ctx, query, rule.ID, rule.ObjectAPIName, rule.Name, rule.Active, rule.Condition, rule.ErrorMessage)
 	return err
 }
@@ -444,14 +507,14 @@ func (r *MetadataRepository) CreateValidationRule(ctx context.Context, rule *mod
 // UpdateValidationRule updates a validation rule
 func (r *MetadataRepository) UpdateValidationRule(ctx context.Context, id string, updates *models.ValidationRule) error {
 	// Update the validation rule
-	query := fmt.Sprintf("UPDATE %s SET name = ?, active = ?, `condition` = ?, error_message = ? WHERE id = ?", constants.TableValidation)
+	query := fmt.Sprintf("UPDATE %s SET %s = ?, %s = ?, `condition` = ?, %s = ? WHERE %s = ?", constants.TableValidation, constants.FieldSysValidation_Name, constants.FieldSysValidation_Active, constants.FieldSysValidation_ErrorMessage, constants.FieldID)
 	_, err := r.db.ExecContext(ctx, query, updates.Name, updates.Active, updates.Condition, updates.ErrorMessage, id)
 	return err
 }
 
 // GetValidationRule returns a single validation rule by ID
 func (r *MetadataRepository) GetValidationRule(ctx context.Context, id string) (*models.ValidationRule, error) {
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE id = ?", strings.Join(validationRuleColumns, ", "), constants.TableValidation)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", strings.Join(validationRuleColumns, ", "), constants.TableValidation, constants.FieldID)
 	row := r.db.QueryRowContext(ctx, query, id)
 	rule, err := r.scanValidationRule(row)
 	if err != nil {
@@ -465,13 +528,13 @@ func (r *MetadataRepository) GetValidationRule(ctx context.Context, id string) (
 
 // DeleteValidationRule deletes a validation rule
 func (r *MetadataRepository) DeleteValidationRule(ctx context.Context, id string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableValidation), id)
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableValidation, constants.FieldID), id)
 	return err
 }
 
 // GetValidationRules queries validation rules for an object
 func (r *MetadataRepository) GetValidationRules(ctx context.Context, objectAPIName string) ([]*models.ValidationRule, error) {
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE LOWER(object_api_name) = LOWER(?)", strings.Join(validationRuleColumns, ", "), constants.TableValidation)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE LOWER(%s) = LOWER(?)", strings.Join(validationRuleColumns, ", "), constants.TableValidation, constants.FieldSysValidation_ObjectAPIName)
 	rows, err := r.db.QueryContext(ctx, query, objectAPIName)
 	if err != nil {
 		return nil, err
@@ -491,7 +554,7 @@ func (r *MetadataRepository) GetValidationRules(ctx context.Context, objectAPINa
 
 // GetAllFlows queries all flows
 func (r *MetadataRepository) GetAllFlows(ctx context.Context) ([]*models.Flow, error) {
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE is_deleted = false OR is_deleted IS NULL", strings.Join(flowColumns, ", "), constants.TableFlow)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = false OR %s IS NULL", strings.Join(flowColumns, ", "), constants.TableFlow, constants.FieldIsDeleted, constants.FieldIsDeleted)
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -512,7 +575,7 @@ func (r *MetadataRepository) GetAllFlows(ctx context.Context) ([]*models.Flow, e
 
 // GetFlow queries a single flow
 func (r *MetadataRepository) GetFlow(ctx context.Context, id string) (*models.Flow, error) {
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE id = ?", strings.Join(flowColumns, ", "), constants.TableFlow)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", strings.Join(flowColumns, ", "), constants.TableFlow, constants.FieldSysFlow_ID)
 	flow, err := r.scanFlow(r.db.QueryRowContext(ctx, query, id))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -525,7 +588,7 @@ func (r *MetadataRepository) GetFlow(ctx context.Context, id string) (*models.Fl
 
 // GetSharingRules queries sharing rules for an object
 func (r *MetadataRepository) GetSharingRules(ctx context.Context, objectAPIName string) ([]*models.SystemSharingRule, error) {
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE LOWER(object_api_name) = LOWER(?)", strings.Join(sharingRuleColumns, ", "), constants.TableSharingRule)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE LOWER(%s) = LOWER(?)", strings.Join(sharingRuleColumns, ", "), constants.TableSharingRule, constants.FieldSysSharingRule_ObjectAPIName)
 	rows, err := r.db.QueryContext(ctx, query, objectAPIName)
 	if err != nil {
 		return nil, err
@@ -594,7 +657,12 @@ func (r *MetadataRepository) CreateAction(ctx context.Context, action *models.Ac
 		targetObject.Valid = true
 	}
 
-	query := fmt.Sprintf("INSERT INTO %s (id, object_api_name, name, label, type, icon, target_object, config) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", constants.TableAction)
+	cols := strings.Join([]string{
+		constants.FieldSysAction_ID, constants.FieldSysAction_ObjectAPIName, constants.FieldSysAction_Name,
+		constants.FieldSysAction_Label, constants.FieldSysAction_Type, constants.FieldSysAction_Icon,
+		constants.FieldSysAction_TargetObject, constants.FieldSysAction_Config,
+	}, ", ")
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", constants.TableAction, cols)
 	_, err = r.db.ExecContext(ctx, query, action.ID, action.ObjectAPIName, action.Name, action.Label,
 		action.Type, action.Icon, targetObject, configJSON)
 	return err
@@ -613,7 +681,16 @@ func (r *MetadataRepository) UpdateAction(ctx context.Context, actionID string, 
 		targetObject.Valid = true
 	}
 
-	query := fmt.Sprintf(`UPDATE %s SET object_api_name=?, name=?, label=?, type=?, icon=?, target_object=?, config=? WHERE id=?`, constants.TableAction)
+	updatesCols := strings.Join([]string{
+		fmt.Sprintf("%s=?", constants.FieldSysAction_ObjectAPIName),
+		fmt.Sprintf("%s=?", constants.FieldSysAction_Name),
+		fmt.Sprintf("%s=?", constants.FieldSysAction_Label),
+		fmt.Sprintf("%s=?", constants.FieldSysAction_Type),
+		fmt.Sprintf("%s=?", constants.FieldSysAction_Icon),
+		fmt.Sprintf("%s=?", constants.FieldSysAction_TargetObject),
+		fmt.Sprintf("%s=?", constants.FieldSysAction_Config),
+	}, ", ")
+	query := fmt.Sprintf(`UPDATE %s SET %s WHERE %s=?`, constants.TableAction, updatesCols, constants.FieldSysAction_ID)
 	_, err = r.db.ExecContext(ctx, query, updates.ObjectAPIName, updates.Name, updates.Label,
 		updates.Type, updates.Icon, targetObject, configJSON, actionID)
 	return err
@@ -621,14 +698,14 @@ func (r *MetadataRepository) UpdateAction(ctx context.Context, actionID string, 
 
 // DeleteAction deletes an action
 func (r *MetadataRepository) DeleteAction(ctx context.Context, actionID string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableAction), actionID)
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableAction, constants.FieldSysAction_ID), actionID)
 	return err
 }
 
 // CheckActionExists checks for duplicate (object_api_name, name)
 func (r *MetadataRepository) CheckActionExists(ctx context.Context, objectAPIName, name string) (bool, error) {
 	var count int
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE object_api_name = ? AND name = ?", constants.TableAction)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ? AND %s = ?", constants.TableAction, constants.FieldSysAction_ObjectAPIName, constants.FieldSysAction_Name)
 	if err := r.db.QueryRowContext(ctx, query, objectAPIName, name).Scan(&count); err != nil {
 		return false, err
 	}
@@ -642,11 +719,15 @@ func (r *MetadataRepository) CreateFlow(ctx context.Context, flow *models.Flow) 
 		return fmt.Errorf("failed to serialize action config: %w", err)
 	}
 
-	query := fmt.Sprintf(`INSERT INTO %s (
-		id, name, trigger_object, trigger_type, trigger_condition, action_type, action_config, 
-		status, flow_type, schedule, schedule_timezone, last_run_at, next_run_at, is_running, 
-		created_date, last_modified_date
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, constants.TableFlow)
+	cols := strings.Join([]string{
+		constants.FieldSysFlow_ID, constants.FieldSysFlow_Name, constants.FieldSysFlow_TriggerObject,
+		constants.FieldSysFlow_TriggerType, constants.FieldSysFlow_TriggerCondition, constants.FieldSysFlow_ActionType,
+		constants.FieldSysFlow_ActionConfig, constants.FieldSysFlow_Status, constants.FieldSysFlow_FlowType,
+		constants.FieldSysFlow_Schedule, constants.FieldSysFlow_ScheduleTimezone, constants.FieldSysFlow_LastRunAt,
+		constants.FieldSysFlow_NextRunAt, constants.FieldSysFlow_IsRunning, constants.FieldSysFlow_CreatedDate,
+		constants.FieldSysFlow_LastModifiedDate,
+	}, ", ")
+	query := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, constants.TableFlow, cols)
 
 	now := time.Now()
 	_, err = r.db.ExecContext(ctx, query,
@@ -666,12 +747,23 @@ func (r *MetadataRepository) UpdateFlow(ctx context.Context, flowID string, flow
 		return fmt.Errorf("failed to serialize action config: %w", err)
 	}
 
-	query := fmt.Sprintf(`UPDATE %s SET 
-		name=?, trigger_object=?, trigger_type=?, trigger_condition=?, 
-		action_type=?, action_config=?, status=?, flow_type=?, 
-		schedule=?, schedule_timezone=?, last_run_at=?, next_run_at=?, is_running=?,
-		last_modified_date=? 
-		WHERE id=?`, constants.TableFlow)
+	updatesCols := strings.Join([]string{
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_Name),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_TriggerObject),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_TriggerType),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_TriggerCondition),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_ActionType),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_ActionConfig),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_Status),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_FlowType),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_Schedule),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_ScheduleTimezone),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_LastRunAt),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_NextRunAt),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_IsRunning),
+		fmt.Sprintf("%s=?", constants.FieldSysFlow_LastModifiedDate),
+	}, ", ")
+	query := fmt.Sprintf(`UPDATE %s SET %s WHERE %s=?`, constants.TableFlow, updatesCols, constants.FieldSysFlow_ID)
 
 	_, err = r.db.ExecContext(ctx, query,
 		flow.Name, flow.TriggerObject, flow.TriggerType, flow.TriggerCondition,
@@ -685,15 +777,19 @@ func (r *MetadataRepository) UpdateFlow(ctx context.Context, flowID string, flow
 
 // DeleteFlow deletes a flow
 func (r *MetadataRepository) DeleteFlow(ctx context.Context, flowID string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableFlow), flowID)
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableFlow, constants.FieldSysFlow_ID), flowID)
 	return err
 }
 
 // SaveFlowSteps saves flow steps
 func (r *MetadataRepository) SaveFlowSteps(ctx context.Context, flowID string, steps []models.FlowStep) error {
-	query := fmt.Sprintf(`INSERT INTO %s (id, flow_id, step_name, step_type, step_order, 
-		action_type, action_config, entry_condition, on_success_step, on_failure_step)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, constants.TableFlowStep)
+	cols := strings.Join([]string{
+		constants.FieldSysFlowStep_ID, constants.FieldSysFlowStep_FlowID, constants.FieldStepName,
+		constants.FieldStepType, constants.FieldStepOrder, constants.FieldSysFlowStep_ActionType,
+		constants.FieldSysFlowStep_ActionConfig, constants.FieldSysFlowStep_EntryCondition,
+		constants.FieldSysFlowStep_OnSuccessStep, constants.FieldSysFlowStep_OnFailureStep,
+	}, ", ")
+	query := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, constants.TableFlowStep, cols)
 
 	for _, step := range steps {
 		// ID generation should ideally be done by caller or here if needed. Caller usually does validation/id gen.
@@ -715,13 +811,17 @@ func (r *MetadataRepository) SaveFlowSteps(ctx context.Context, flowID string, s
 
 // DeleteFlowSteps deletes all steps for a flow
 func (r *MetadataRepository) DeleteFlowSteps(ctx context.Context, flowID string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE flow_id = ?", constants.TableFlowStep), flowID)
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableFlowStep, constants.FieldSysFlowStep_FlowID), flowID)
 	return err
 }
 
 // GetFlowsByObject checks if any flow exists for an object
 func (r *MetadataRepository) GetFlowsByObject(ctx context.Context, objectName string) ([]*models.Flow, error) {
-	query := fmt.Sprintf("SELECT id, trigger_object, trigger_type, status FROM %s WHERE trigger_object = ?", constants.TableFlow)
+	cols := strings.Join([]string{
+		constants.FieldSysFlow_ID, constants.FieldSysFlow_TriggerObject,
+		constants.FieldSysFlow_TriggerType, constants.FieldSysFlow_Status,
+	}, ", ")
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", cols, constants.TableFlow, constants.FieldSysFlow_TriggerObject)
 	rows, err := r.db.QueryContext(ctx, query, objectName)
 	if err != nil {
 		return nil, err
@@ -745,7 +845,12 @@ func (r *MetadataRepository) GetFlowsByObject(ctx context.Context, objectName st
 
 // GetAllApps queries all apps
 func (r *MetadataRepository) GetAllApps(ctx context.Context) ([]*models.AppConfig, error) {
-	query := fmt.Sprintf("SELECT id, name, label, description, icon, color, navigation_items, created_date, last_modified_date FROM %s", constants.TableApp)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysApp_Name, constants.FieldSysApp_Label,
+		constants.FieldSysApp_Description, constants.FieldSysApp_Icon, constants.FieldSysApp_Color,
+		constants.FieldSysApp_NavigationItems, constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	query := fmt.Sprintf("SELECT %s FROM %s", cols, constants.TableApp)
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -766,7 +871,12 @@ func (r *MetadataRepository) GetAllApps(ctx context.Context) ([]*models.AppConfi
 
 // GetApp queries a single app by ID
 func (r *MetadataRepository) GetApp(ctx context.Context, id string) (*models.AppConfig, error) {
-	query := fmt.Sprintf("SELECT id, name, label, description, icon, color, navigation_items, created_date, last_modified_date FROM %s WHERE id = ?", constants.TableApp)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysApp_Name, constants.FieldSysApp_Label,
+		constants.FieldSysApp_Description, constants.FieldSysApp_Icon, constants.FieldSysApp_Color,
+		constants.FieldSysApp_NavigationItems, constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", cols, constants.TableApp, constants.FieldID)
 	app, err := r.scanApp(r.db.QueryRowContext(ctx, query, id))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -779,7 +889,12 @@ func (r *MetadataRepository) GetApp(ctx context.Context, id string) (*models.App
 
 // GetAppWithTx queries a single app by ID within a transaction
 func (r *MetadataRepository) GetAppWithTx(ctx context.Context, tx *sql.Tx, id string) (*models.AppConfig, error) {
-	query := fmt.Sprintf("SELECT id, name, label, description, icon, color, navigation_items, created_date, last_modified_date FROM %s WHERE id = ?", constants.TableApp)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysApp_Name, constants.FieldSysApp_Label,
+		constants.FieldSysApp_Description, constants.FieldSysApp_Icon, constants.FieldSysApp_Color,
+		constants.FieldSysApp_NavigationItems, constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", cols, constants.TableApp, constants.FieldID)
 	app, err := r.scanApp(tx.QueryRowContext(ctx, query, id))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -797,11 +912,21 @@ func (r *MetadataRepository) UpdateAppWithTx(ctx context.Context, tx *sql.Tx, ap
 		return fmt.Errorf("failed to marshal navigation items: %w", err)
 	}
 
+	updates := strings.Join([]string{
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_Label),
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_Description),
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_Icon),
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_Color),
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_NavigationItems),
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_IsDefault),
+		fmt.Sprintf("%s = ?", constants.FieldLastModifiedDate),
+	}, ", ")
+
 	query := fmt.Sprintf(`
 		UPDATE %s 
-		SET label = ?, description = ?, icon = ?, color = ?, navigation_items = ?, is_default = ?, last_modified_date = ?
-		WHERE id = ?
-	`, constants.TableApp)
+		SET %s
+		WHERE %s = ?
+	`, constants.TableApp, updates, constants.FieldID)
 
 	_, err = tx.ExecContext(ctx, query,
 		app.Label, app.Description, app.Icon, app.Color, navItemsJSON, app.IsDefault, time.Now(), appID,
@@ -811,7 +936,11 @@ func (r *MetadataRepository) UpdateAppWithTx(ctx context.Context, tx *sql.Tx, ap
 
 // GetLayouts queries all layouts for an object
 func (r *MetadataRepository) GetLayouts(ctx context.Context, objectAPIName string) ([]*models.PageLayout, error) {
-	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT config, created_date, last_modified_date FROM %s WHERE LOWER(object_api_name) = LOWER(?)", constants.TableLayout), objectAPIName)
+	cols := strings.Join([]string{
+		constants.FieldSysLayout_Config, constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE LOWER(%s) = LOWER(?)", cols, constants.TableLayout, constants.FieldObjectAPIName)
+	rows, err := r.db.QueryContext(ctx, query, objectAPIName)
 	if err != nil {
 		return nil, err
 	}
@@ -831,7 +960,10 @@ func (r *MetadataRepository) GetLayouts(ctx context.Context, objectAPIName strin
 
 // GetLayout queries a single layout by ID
 func (r *MetadataRepository) GetLayout(ctx context.Context, layoutID string) (*models.PageLayout, error) {
-	layout, err := r.scanLayout(r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT config, created_date, last_modified_date FROM %s WHERE id = ?", constants.TableLayout), layoutID))
+	cols := strings.Join([]string{
+		constants.FieldSysLayout_Config, constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	layout, err := r.scanLayout(r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", cols, constants.TableLayout, constants.FieldID), layoutID))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -844,7 +976,9 @@ func (r *MetadataRepository) GetLayout(ctx context.Context, layoutID string) (*m
 // GetLayoutIDForProfile returns the layout ID assigned to a profile for an object
 func (r *MetadataRepository) GetLayoutIDForProfile(ctx context.Context, profileID, objectAPIName string) (string, error) {
 	var layoutID string
-	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT layout_id FROM %s WHERE profile_id = ? AND LOWER(object_api_name) = LOWER(?)", constants.TableProfileLayout), profileID, objectAPIName).Scan(&layoutID)
+	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE %s = ? AND LOWER(%s) = LOWER(?)",
+		constants.FieldSysProfileLayout_LayoutID, constants.TableProfileLayout,
+		constants.FieldProfileID, constants.FieldObjectAPIName), profileID, objectAPIName).Scan(&layoutID)
 	if err == sql.ErrNoRows {
 		return "", nil // Not assigned
 	}
@@ -862,13 +996,13 @@ func (r *MetadataRepository) SaveLayout(ctx context.Context, layout *models.Page
 	}
 
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, object_api_name, config, created_date, last_modified_date) 
+		INSERT INTO %s (%s, %s, %s, %s, %s) 
 		VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 		ON DUPLICATE KEY UPDATE 
-			object_api_name = VALUES(object_api_name),
-			config = VALUES(config),
-			last_modified_date = CURRENT_TIMESTAMP
-	`, constants.TableLayout)
+			%s = VALUES(%s),
+			%s = VALUES(%s),
+			%s = CURRENT_TIMESTAMP
+	`, constants.TableLayout, constants.FieldID, constants.FieldObjectAPIName, constants.FieldSysLayout_Config, constants.FieldCreatedDate, constants.FieldLastModifiedDate, constants.FieldObjectAPIName, constants.FieldObjectAPIName, constants.FieldSysLayout_Config, constants.FieldSysLayout_Config, constants.FieldLastModifiedDate)
 
 	_, err = r.db.ExecContext(ctx, query, layout.ID, layout.ObjectAPIName, configJSON)
 	return err
@@ -876,17 +1010,25 @@ func (r *MetadataRepository) SaveLayout(ctx context.Context, layout *models.Page
 
 // DeleteLayout deletes a layout
 func (r *MetadataRepository) DeleteLayout(ctx context.Context, layoutID string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableLayout), layoutID)
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableLayout, constants.FieldID), layoutID)
 	return err
 }
 
 // AssignLayoutToProfile assigns a layout to a profile
 func (r *MetadataRepository) AssignLayoutToProfile(ctx context.Context, profileID, objectAPIName, layoutID string) error {
+	cols := strings.Join([]string{
+		constants.FieldProfileID, constants.FieldObjectAPIName, constants.FieldSysProfileLayout_LayoutID,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	updates := strings.Join([]string{
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysProfileLayout_LayoutID, constants.FieldSysProfileLayout_LayoutID),
+		fmt.Sprintf("%s = NOW()", constants.FieldLastModifiedDate),
+	}, ", ")
 	query := fmt.Sprintf(`
-		INSERT INTO %s (profile_id, object_api_name, layout_id, created_date, last_modified_date) 
+		INSERT INTO %s (%s) 
 		VALUES (?, ?, ?, NOW(), NOW())
-		ON DUPLICATE KEY UPDATE layout_id = VALUES(layout_id), last_modified_date = NOW()
-	`, constants.TableProfileLayout)
+		ON DUPLICATE KEY UPDATE %s
+	`, constants.TableProfileLayout, cols, updates)
 
 	_, err := r.db.ExecContext(ctx, query, profileID, objectAPIName, layoutID)
 	return err
@@ -899,9 +1041,13 @@ func (r *MetadataRepository) CreateApp(ctx context.Context, app *models.AppConfi
 		return fmt.Errorf("failed to marshal navigation items: %w", err)
 	}
 
-	query := fmt.Sprintf(`INSERT INTO %s (
-		id, name, label, description, icon, color, is_default, navigation_items, created_date, last_modified_date
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, constants.TableApp)
+	cols := strings.Join([]string{
+		constants.FieldSysApp_ID, constants.FieldSysApp_Name, constants.FieldSysApp_Label,
+		constants.FieldSysApp_Description, constants.FieldSysApp_Icon, constants.FieldSysApp_Color,
+		constants.FieldSysApp_IsDefault, constants.FieldSysApp_NavigationItems,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	query := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, constants.TableApp, cols)
 
 	_, err = r.db.ExecContext(ctx, query, app.ID, app.ID, app.Label, app.Description, app.Icon, app.Color, app.IsDefault, navItemsJSON, app.CreatedDate, app.LastModifiedDate)
 	return err
@@ -915,14 +1061,23 @@ func (r *MetadataRepository) UpdateApp(ctx context.Context, appID string, update
 		return fmt.Errorf("failed to marshal navigation items: %w", err)
 	}
 
-	query := fmt.Sprintf("UPDATE %s SET label = ?, description = ?, icon = ?, color = ?, is_default = ?, navigation_items = ?, last_modified_date = ? WHERE id = ?", constants.TableApp)
+	updateFields := strings.Join([]string{
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_Label),
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_Description),
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_Icon),
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_Color),
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_IsDefault),
+		fmt.Sprintf("%s = ?", constants.FieldSysApp_NavigationItems),
+		fmt.Sprintf("%s = ?", constants.FieldLastModifiedDate),
+	}, ", ")
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s = ?", constants.TableApp, updateFields, constants.FieldID)
 	_, err = r.db.ExecContext(ctx, query, updates.Label, updates.Description, updates.Icon, updates.Color, updates.IsDefault, navItemsJSON, updates.LastModifiedDate, appID)
 	return err
 }
 
 // DeleteApp deletes an app
 func (r *MetadataRepository) DeleteApp(ctx context.Context, appID string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableApp), appID)
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableApp, constants.FieldID), appID)
 	return err
 }
 
@@ -939,7 +1094,7 @@ func (r *MetadataRepository) CreateDashboard(ctx context.Context, dashboard *mod
 		desc = *dashboard.Description
 	}
 
-	query := fmt.Sprintf("INSERT INTO %s (id, name, description, layout, widgets) VALUES (?, ?, ?, ?, ?)", constants.TableDashboard)
+	query := fmt.Sprintf("INSERT INTO %s (%s, %s, %s, %s, %s) VALUES (?, ?, ?, ?, ?)", constants.TableDashboard, constants.FieldID, constants.FieldSysDashboard_Name, constants.FieldSysDashboard_Description, constants.FieldSysDashboard_Layout, constants.FieldSysDashboard_Widgets)
 	_, err = r.db.ExecContext(ctx, query, dashboard.ID, dashboard.Label, desc, dashboard.Layout, widgetsJSON)
 	return err
 }
@@ -956,20 +1111,20 @@ func (r *MetadataRepository) UpdateDashboard(ctx context.Context, id string, das
 		desc = *dashboard.Description
 	}
 
-	query := fmt.Sprintf("UPDATE %s SET name = ?, description = ?, layout = ?, widgets = ? WHERE id = ?", constants.TableDashboard)
+	query := fmt.Sprintf("UPDATE %s SET %s = ?, %s = ?, %s = ?, %s = ? WHERE %s = ?", constants.TableDashboard, constants.FieldSysDashboard_Name, constants.FieldSysDashboard_Description, constants.FieldSysDashboard_Layout, constants.FieldSysDashboard_Widgets, constants.FieldID)
 	_, err = r.db.ExecContext(ctx, query, dashboard.Label, desc, dashboard.Layout, widgetsJSON, id)
 	return err
 }
 
 // DeleteDashboard deletes a dashboard
 func (r *MetadataRepository) DeleteDashboard(ctx context.Context, id string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableDashboard), id)
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableDashboard, constants.FieldID), id)
 	return err
 }
 
 // GetAllDashboards queries all dashboards
 func (r *MetadataRepository) GetAllDashboards(ctx context.Context) ([]*models.DashboardConfig, error) {
-	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT id, name, description, layout, widgets FROM %s", constants.TableDashboard))
+	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s, %s, %s, %s, %s FROM %s", constants.FieldID, constants.FieldSysDashboard_Name, constants.FieldSysDashboard_Description, constants.FieldSysDashboard_Layout, constants.FieldSysDashboard_Widgets, constants.TableDashboard))
 	if err != nil {
 		return nil, err
 	}
@@ -990,7 +1145,7 @@ func (r *MetadataRepository) GetAllDashboards(ctx context.Context) ([]*models.Da
 // GetDashboard queries a single dashboard
 func (r *MetadataRepository) GetDashboard(ctx context.Context, id string) (*models.DashboardConfig, error) {
 	db, err := r.scanDashboard(r.db.QueryRowContext(ctx,
-		fmt.Sprintf("SELECT id, name, description, layout, widgets FROM %s WHERE id = ?", constants.TableDashboard),
+		fmt.Sprintf("SELECT %s, %s, %s, %s, %s FROM %s WHERE %s = ?", constants.FieldID, constants.FieldSysDashboard_Name, constants.FieldSysDashboard_Description, constants.FieldSysDashboard_Layout, constants.FieldSysDashboard_Widgets, constants.TableDashboard, constants.FieldID),
 		id,
 	))
 	if err != nil {
@@ -1004,7 +1159,7 @@ func (r *MetadataRepository) GetDashboard(ctx context.Context, id string) (*mode
 
 // GetListViews queries list views for an object
 func (r *MetadataRepository) GetListViews(ctx context.Context, objectAPIName string) ([]*models.ListView, error) {
-	query := fmt.Sprintf("SELECT id, object_api_name, label, filter_expr, fields FROM %s WHERE LOWER(object_api_name) = LOWER(?)", constants.TableListView)
+	query := fmt.Sprintf("SELECT %s, %s, %s, %s, %s FROM %s WHERE LOWER(%s) = LOWER(?)", constants.FieldID, constants.FieldObjectAPIName, constants.FieldSysListView_Label, constants.FieldSysListView_FilterExpr, constants.FieldSysListView_Fields, constants.TableListView, constants.FieldObjectAPIName)
 	rows, err := r.db.QueryContext(ctx, query, objectAPIName)
 	if err != nil {
 		return nil, err
@@ -1028,8 +1183,8 @@ func (r *MetadataRepository) GetScheduledFlows(ctx context.Context) ([]*models.F
 	query := fmt.Sprintf(`
 		SELECT %s
 		FROM %s 
-		WHERE trigger_type = ? AND (is_deleted = false OR is_deleted IS NULL)
-	`, strings.Join(flowColumns, ", "), constants.TableFlow)
+		WHERE %s = ? AND (%s = false OR %s IS NULL)
+	`, strings.Join(flowColumns, ", "), constants.TableFlow, constants.FieldSysFlow_TriggerType, constants.FieldIsDeleted, constants.FieldIsDeleted)
 	// Note: The service logic used a bigger SELECT with description, schedule, etc.
 	// But `scanFlow` only scans standard fields.
 	// I should update `scanFlow` or use custom scan if schema differs.
@@ -1074,8 +1229,12 @@ func (r *MetadataRepository) CreateListView(ctx context.Context, view *models.Li
 		return fmt.Errorf("failed to marshal fields: %w", err)
 	}
 
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldObjectAPIName, constants.FieldSysListView_Label,
+		constants.FieldSysListView_FilterExpr, constants.FieldSysListView_Fields,
+	}, ", ")
 	_, err = r.db.ExecContext(ctx,
-		fmt.Sprintf("INSERT INTO %s (id, object_api_name, label, filter_expr, fields) VALUES (?, ?, ?, ?, ?)", constants.TableListView),
+		fmt.Sprintf("INSERT INTO %s (%s) VALUES (?, ?, ?, ?, ?)", constants.TableListView, cols),
 		view.ID, view.ObjectAPIName, view.Label, view.FilterExpr, fieldsJSON,
 	)
 	return err
@@ -1088,8 +1247,14 @@ func (r *MetadataRepository) UpdateListView(ctx context.Context, id string, upda
 		return fmt.Errorf("failed to marshal fields: %w", err)
 	}
 
+	updateFields := strings.Join([]string{
+		fmt.Sprintf("%s = ?", constants.FieldSysListView_Label),
+		fmt.Sprintf("%s = ?", constants.FieldSysListView_FilterExpr),
+		fmt.Sprintf("%s = ?", constants.FieldSysListView_Fields),
+	}, ", ")
+
 	result, err := r.db.ExecContext(ctx,
-		fmt.Sprintf("UPDATE %s SET label = ?, filter_expr = ?, fields = ? WHERE id = ?", constants.TableListView),
+		fmt.Sprintf("UPDATE %s SET %s WHERE %s = ?", constants.TableListView, updateFields, constants.FieldID),
 		updates.Label, updates.FilterExpr, fieldsJSON, id,
 	)
 	if err != nil {
@@ -1104,7 +1269,7 @@ func (r *MetadataRepository) UpdateListView(ctx context.Context, id string, upda
 
 // DeleteListView deletes a list view
 func (r *MetadataRepository) DeleteListView(ctx context.Context, id string) error {
-	result, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableListView), id)
+	result, err := r.db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableListView, constants.FieldID), id)
 	if err != nil {
 		return err
 	}
@@ -1118,7 +1283,7 @@ func (r *MetadataRepository) DeleteListView(ctx context.Context, id string) erro
 // CountListViews counts list views for an object
 func (r *MetadataRepository) CountListViews(ctx context.Context, objectAPIName string) (int, error) {
 	var count int
-	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE object_api_name = ?", constants.TableListView), objectAPIName).Scan(&count)
+	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ?", constants.TableListView, constants.FieldObjectAPIName), objectAPIName).Scan(&count)
 	return count, err
 }
 
@@ -1129,9 +1294,18 @@ func (r *MetadataRepository) UpsertLayout(ctx context.Context, layout *models.Pa
 		return fmt.Errorf("failed to marshal layout: %w", err)
 	}
 
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldObjectAPIName, constants.FieldSysLayout_Config,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	updates := strings.Join([]string{
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldObjectAPIName, constants.FieldObjectAPIName),
+		fmt.Sprintf("%s = VALUES(%s)", constants.FieldSysLayout_Config, constants.FieldSysLayout_Config),
+		fmt.Sprintf("%s = NOW()", constants.FieldLastModifiedDate),
+	}, ", ")
 	// Used for EnsureDefaultLayout and CreateSchema
 	_, err = r.db.ExecContext(ctx,
-		fmt.Sprintf("INSERT INTO %s (id, object_api_name, config, created_date, last_modified_date) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableLayout),
+		fmt.Sprintf("INSERT INTO %s (%s) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE %s", constants.TableLayout, cols, updates),
 		layout.ID, layout.ObjectAPIName, configJSON,
 	)
 	return err
@@ -1151,11 +1325,15 @@ func (r *MetadataRepository) BatchUpsertLayouts(ctx context.Context, layouts []*
 func (r *MetadataRepository) GetChildRelationships(ctx context.Context, parentObjectAPIName string) ([]*models.ObjectMetadata, error) {
 	// Query fields that reference this object
 	query := fmt.Sprintf(`
-		SELECT o.api_name 
+		SELECT o.%s 
 		FROM %s f
-		JOIN %s o ON f.object_id = o.id
-		WHERE (f.reference_to = ? OR f.reference_to LIKE ?) AND f.type = 'Lookup'
-	`, constants.TableField, constants.TableObject)
+		JOIN %s o ON f.%s = o.%s
+		WHERE (f.%s = ? OR f.%s LIKE ?) AND f.%s = 'Lookup'
+	`,
+		constants.FieldAPIName,
+		constants.TableField,
+		constants.TableObject, constants.FieldObjectID, constants.FieldID,
+		constants.FieldReferenceTo, constants.FieldReferenceTo, constants.FieldType)
 
 	likePattern := fmt.Sprintf("%%%s%%", parentObjectAPIName)
 	rows, err := r.db.QueryContext(ctx, query, parentObjectAPIName, likePattern)
@@ -1186,19 +1364,21 @@ func (r *MetadataRepository) GetChildRelationships(ctx context.Context, parentOb
 func (r *MetadataRepository) UpsertUIComponent(ctx context.Context, component *models.UIComponent) error {
 	// Check if exists by Name
 	var existingID string
-	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT id FROM %s WHERE name = ?", constants.TableUIComponent), component.Name).Scan(&existingID)
+	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableUIComponent, constants.FieldSysUIComponent_Name), component.Name).Scan(&existingID)
 
 	if err == nil {
 		// Found, update it
 		component.ID = existingID
+		updates := strings.Join([]string{
+			fmt.Sprintf("%s = ?", constants.FieldSysUIComponent_Description),
+			fmt.Sprintf("%s = ?", constants.FieldSysUIComponent_Type),
+			fmt.Sprintf("%s = ?", constants.FieldSysUIComponent_IsEmbeddable),
+			fmt.Sprintf("%s = ?", constants.FieldSysUIComponent_ComponentPath),
+			fmt.Sprintf("%s = CURRENT_TIMESTAMP", constants.FieldLastModifiedDate),
+		}, ", ")
 		query := fmt.Sprintf(`
-			UPDATE %s SET 
-				description = ?, 
-				type = ?,
-				is_embeddable = ?,
-				component_path = ?,
-				last_modified_date = CURRENT_TIMESTAMP
-			WHERE id = ?`, constants.TableUIComponent)
+			UPDATE %s SET %s
+			WHERE %s = ?`, constants.TableUIComponent, updates, constants.FieldID)
 
 		_, err = r.db.ExecContext(ctx, query, component.Description, component.Type, component.IsEmbeddable, component.ComponentPath, component.ID)
 		return err
@@ -1213,9 +1393,14 @@ func (r *MetadataRepository) UpsertUIComponent(ctx context.Context, component *m
 		component.ID = utils.GenerateID()
 	}
 
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysUIComponent_Name, constants.FieldSysUIComponent_Type,
+		constants.FieldSysUIComponent_IsEmbeddable, constants.FieldSysUIComponent_Description,
+		constants.FieldSysUIComponent_ComponentPath, constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, name, type, is_embeddable, description, component_path, created_date, last_modified_date)
-		VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, constants.TableUIComponent)
+		INSERT INTO %s (%s)
+		VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, constants.TableUIComponent, cols)
 
 	_, err = r.db.ExecContext(ctx, query, component.ID, component.Name, component.Type, component.IsEmbeddable, component.Description, component.ComponentPath)
 	return err
@@ -1224,21 +1409,23 @@ func (r *MetadataRepository) UpsertUIComponent(ctx context.Context, component *m
 // UpsertSetupPage inserts or updates a setup page definition
 func (r *MetadataRepository) UpsertSetupPage(ctx context.Context, page *models.SetupPage) error {
 	var existingID string
-	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT id FROM %s WHERE id = ?", constants.TableSetupPage), page.ID).Scan(&existingID)
+	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableSetupPage, constants.FieldID), page.ID).Scan(&existingID)
 
 	if err == nil {
+		updates := strings.Join([]string{
+			fmt.Sprintf("%s = ?", constants.FieldSysSetupPage_Label),
+			fmt.Sprintf("%s = ?", constants.FieldSysSetupPage_Icon),
+			fmt.Sprintf("%s = ?", constants.FieldSysSetupPage_ComponentName),
+			fmt.Sprintf("%s = ?", constants.FieldSysSetupPage_Category),
+			fmt.Sprintf("%s = ?", constants.FieldSysSetupPage_PageOrder),
+			fmt.Sprintf("%s = ?", constants.FieldSysSetupPage_PermissionRequired),
+			fmt.Sprintf("%s = ?", constants.FieldSysSetupPage_IsEnabled),
+			fmt.Sprintf("%s = ?", constants.FieldSysSetupPage_Description),
+			fmt.Sprintf("%s = CURRENT_TIMESTAMP", constants.FieldLastModifiedDate),
+		}, ", ")
 		query := fmt.Sprintf(`
-			UPDATE %s SET 
-				label = ?, 
-				icon = ?,
-				component_name = ?,
-				category = ?,
-				page_order = ?,
-				permission_required = ?,
-				is_enabled = ?,
-				description = ?,
-				last_modified_date = CURRENT_TIMESTAMP
-			WHERE id = ?`, constants.TableSetupPage)
+			UPDATE %s SET %s
+			WHERE %s = ?`, constants.TableSetupPage, updates, constants.FieldID)
 
 		_, err = r.db.ExecContext(ctx, query, page.Label, page.Icon, page.ComponentName, page.Category, page.PageOrder, page.PermissionRequired, page.IsEnabled, page.Description, page.ID)
 		return err
@@ -1252,9 +1439,16 @@ func (r *MetadataRepository) UpsertSetupPage(ctx context.Context, page *models.S
 		page.ID = utils.GenerateID()
 	}
 
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysSetupPage_Label, constants.FieldSysSetupPage_Icon,
+		constants.FieldSysSetupPage_ComponentName, constants.FieldSysSetupPage_Category,
+		constants.FieldSysSetupPage_PageOrder, constants.FieldSysSetupPage_PermissionRequired,
+		constants.FieldSysSetupPage_IsEnabled, constants.FieldSysSetupPage_Description,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, label, icon, component_name, category, page_order, permission_required, is_enabled, description, created_date, last_modified_date)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, constants.TableSetupPage)
+		INSERT INTO %s (%s)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, constants.TableSetupPage, cols)
 
 	_, err = r.db.ExecContext(ctx, query, page.ID, page.Label, page.Icon, page.ComponentName, page.Category, page.PageOrder, page.PermissionRequired, page.IsEnabled, page.Description)
 	return err
@@ -1262,13 +1456,17 @@ func (r *MetadataRepository) UpsertSetupPage(ctx context.Context, page *models.S
 
 // GetSetupPages returns all setup pages
 func (r *MetadataRepository) GetSetupPages(ctx context.Context) ([]models.SetupPage, error) {
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysSetupPage_Label, constants.FieldSysSetupPage_Icon,
+		constants.FieldSysSetupPage_ComponentName, constants.FieldSysSetupPage_Category,
+		constants.FieldSysSetupPage_PageOrder, constants.FieldSysSetupPage_PermissionRequired,
+		constants.FieldSysSetupPage_IsEnabled, constants.FieldSysSetupPage_Description,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
 	query := fmt.Sprintf(`
-		SELECT 
-			id, label, icon, component_name, category, 
-			page_order, permission_required, is_enabled, description,
-			created_date, last_modified_date 
+		SELECT %s
 		FROM %s 
-		ORDER BY page_order ASC`, constants.TableSetupPage)
+		ORDER BY %s ASC`, cols, constants.TableSetupPage, constants.FieldSysSetupPage_PageOrder)
 
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
@@ -1304,7 +1502,7 @@ func (r *MetadataRepository) scanTheme(row Scannable) (*models.Theme, error) {
 	var colorsJSON, logoURL sql.NullString
 	var createdDateVal, lastModifiedDateVal interface{}
 
-	// Columns: id, name, is_active, colors, density, logo_url, created_date, last_modified_date
+	// Columns: id, name, is_active, colors, density, logo_url, __sys_gen_created_date, last_modified_date
 	if err := row.Scan(&theme.ID, &theme.Name, &theme.IsActive, &colorsJSON, &theme.Density, &logoURL, &createdDateVal, &lastModifiedDateVal); err != nil {
 		return nil, err
 	}
@@ -1323,7 +1521,12 @@ func (r *MetadataRepository) scanTheme(row Scannable) (*models.Theme, error) {
 
 // GetActiveTheme returns the currently active theme
 func (r *MetadataRepository) GetActiveTheme(ctx context.Context) (*models.Theme, error) {
-	query := fmt.Sprintf("SELECT id, name, is_active, colors, density, logo_url, created_date, last_modified_date FROM %s WHERE is_active = true LIMIT 1", constants.TableTheme)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysTheme_Name, constants.FieldSysTheme_IsActive,
+		constants.FieldSysTheme_Colors, constants.FieldSysTheme_Density, constants.FieldSysTheme_LogoURL,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = true LIMIT 1", cols, constants.TableTheme, constants.FieldSysTheme_IsActive)
 	row := r.db.QueryRowContext(ctx, query)
 	theme, err := r.scanTheme(row)
 	if err != nil {
@@ -1337,7 +1540,12 @@ func (r *MetadataRepository) GetActiveTheme(ctx context.Context) (*models.Theme,
 
 // GetThemeByName returns a theme by name
 func (r *MetadataRepository) GetThemeByName(ctx context.Context, name string) (*models.Theme, error) {
-	query := fmt.Sprintf("SELECT id, name, is_active, colors, density, logo_url, created_date, last_modified_date FROM %s WHERE name = ?", constants.TableTheme)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysTheme_Name, constants.FieldSysTheme_IsActive,
+		constants.FieldSysTheme_Colors, constants.FieldSysTheme_Density, constants.FieldSysTheme_LogoURL,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", cols, constants.TableTheme, constants.FieldSysTheme_Name)
 	row := r.db.QueryRowContext(ctx, query, name)
 	theme, err := r.scanTheme(row)
 	if err != nil {
@@ -1356,7 +1564,12 @@ func (r *MetadataRepository) CreateTheme(ctx context.Context, theme *models.Them
 		return fmt.Errorf("failed to marshal colors: %w", err)
 	}
 
-	query := fmt.Sprintf("INSERT INTO %s (id, name, is_active, colors, density, logo_url, created_date, last_modified_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", constants.TableTheme)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysTheme_Name, constants.FieldSysTheme_IsActive,
+		constants.FieldSysTheme_Colors, constants.FieldSysTheme_Density, constants.FieldSysTheme_LogoURL,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", constants.TableTheme, cols)
 	_, err = r.db.ExecContext(ctx, query, theme.ID, theme.Name, theme.IsActive, colorsJSON, theme.Density, theme.LogoURL, theme.CreatedDate, theme.LastModifiedDate)
 	return err
 }
@@ -1368,7 +1581,14 @@ func (r *MetadataRepository) UpdateTheme(ctx context.Context, theme *models.Them
 		return fmt.Errorf("failed to marshal colors: %w", err)
 	}
 
-	query := fmt.Sprintf("UPDATE %s SET is_active = ?, colors = ?, density = ?, logo_url = ?, last_modified_date = ? WHERE id = ?", constants.TableTheme)
+	updates := strings.Join([]string{
+		fmt.Sprintf("%s = ?", constants.FieldSysTheme_IsActive),
+		fmt.Sprintf("%s = ?", constants.FieldSysTheme_Colors),
+		fmt.Sprintf("%s = ?", constants.FieldSysTheme_Density),
+		fmt.Sprintf("%s = ?", constants.FieldSysTheme_LogoURL),
+		fmt.Sprintf("%s = ?", constants.FieldLastModifiedDate),
+	}, ", ")
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s = ?", constants.TableTheme, updates, constants.FieldID)
 	_, err = r.db.ExecContext(ctx, query, theme.IsActive, colorsJSON, theme.Density, theme.LogoURL, theme.LastModifiedDate, theme.ID)
 	return err
 }
@@ -1382,13 +1602,13 @@ func (r *MetadataRepository) ActivateTheme(ctx context.Context, themeID string) 
 	defer func() { _ = tx.Rollback() }()
 
 	// 1. Deactivate all
-	_, err = tx.ExecContext(ctx, fmt.Sprintf("UPDATE %s SET is_active = false", constants.TableTheme))
+	_, err = tx.ExecContext(ctx, fmt.Sprintf("UPDATE %s SET %s = false", constants.TableTheme, constants.FieldSysTheme_IsActive))
 	if err != nil {
 		return fmt.Errorf("failed to deactivate themes: %w", err)
 	}
 
 	// 2. Activate target
-	result, err := tx.ExecContext(ctx, fmt.Sprintf("UPDATE %s SET is_active = true WHERE id = ?", constants.TableTheme), themeID)
+	result, err := tx.ExecContext(ctx, fmt.Sprintf("UPDATE %s SET %s = true WHERE %s = ?", constants.TableTheme, constants.FieldSysTheme_IsActive, constants.FieldID), themeID)
 	if err != nil {
 		return fmt.Errorf("failed to activate theme: %w", err)
 	}
@@ -1403,7 +1623,13 @@ func (r *MetadataRepository) ActivateTheme(ctx context.Context, themeID string) 
 
 // UpsertAutoNumber inserts or updates an auto number configuration
 func (r *MetadataRepository) UpsertAutoNumber(ctx context.Context, id, objectAPIName, fieldAPIName, displayFormat string, startingNumber, currentNumber int) error {
-	query := fmt.Sprintf("INSERT INTO %s (id, object_api_name, field_api_name, display_format, starting_number, current_number, created_date, last_modified_date) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE display_format = VALUES(display_format), last_modified_date = NOW()", constants.TableAutoNumber)
+	query := fmt.Sprintf(`INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s, %s)
+		VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW()) 
+		ON DUPLICATE KEY UPDATE %s = VALUES(%s), %s = NOW()`,
+		constants.TableAutoNumber, constants.FieldID, constants.FieldObjectAPIName, constants.FieldSysAutoNumber_FieldAPIName,
+		constants.FieldSysAutoNumber_DisplayFormat, constants.FieldSysAutoNumber_StartingNumber,
+		constants.FieldSysAutoNumber_CurrentNumber, constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+		constants.FieldSysAutoNumber_DisplayFormat, constants.FieldSysAutoNumber_DisplayFormat, constants.FieldLastModifiedDate)
 	_, err := r.db.ExecContext(ctx, query, id, objectAPIName, fieldAPIName, displayFormat, startingNumber, currentNumber)
 	return err
 }
@@ -1417,12 +1643,17 @@ func (r *MetadataRepository) GetRelatedListConfigs(ctx context.Context, layoutOb
 }, error) {
 
 	query := fmt.Sprintf(`
-		SELECT f.api_name, o.api_name, o.plural_label, r.related_list_fields
+		SELECT f.%s, o.%s, o.%s, r.%s
 		FROM %s f
-		JOIN %s o ON f.object_id = o.id
-		LEFT JOIN %s r ON r.child_object_api_name = o.api_name AND r.field_api_name = f.api_name
-		WHERE f.reference_to = ? AND f.type = 'Lookup'
-	`, constants.TableField, constants.TableObject, constants.TableRelationship)
+		JOIN %s o ON f.%s = o.%s
+		LEFT JOIN %s r ON r.%s = o.%s AND r.%s = f.%s
+		WHERE f.%s = ? AND f.%s = 'Lookup'
+	`,
+		constants.FieldAPIName, constants.FieldAPIName, constants.FieldPluralLabel, constants.FieldSysRelationship_RelatedListFields,
+		constants.TableField,
+		constants.TableObject, constants.FieldObjectID, constants.FieldID,
+		constants.TableRelationship, constants.FieldSysRelationship_ChildObjectAPIName, constants.FieldAPIName, constants.FieldSysRelationship_FieldAPIName, constants.FieldAPIName,
+		constants.FieldReferenceTo, constants.FieldType)
 
 	rows, err := r.db.QueryContext(ctx, query, layoutObjectAPIName)
 	if err != nil {
@@ -1526,7 +1757,7 @@ func (r *MetadataRepository) scanField(row Scannable) (*models.FieldMetadata, st
 	}
 
 	field.Required = required.Bool
-	field.Unique = unique.Bool
+	field.IsUnique = unique.Bool
 	field.IsSystem = isSystem.Bool
 	field.TrackHistory = trackHistory.Bool
 	field.IsNameField = isNameField.Bool

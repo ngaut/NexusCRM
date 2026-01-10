@@ -189,7 +189,7 @@ test_case_creation() {
     
     # Check if Case schema exists
     local schema_check=$(api_get "/api/metadata/objects/case")
-    if echo "$schema_check" | grep -q "not found\|error"; then
+    if echo "$schema_check" | grep -qE "not found|404"; then
         echo "  Note: Case object not available in this environment"
         test_passed "Case creation (skipped - no Case object)"
         return
@@ -325,38 +325,24 @@ test_case_resolution() {
 }
 
 # Cleanup test data
+# Cleanup test data
 test_cleanup() {
     echo ""
     echo "Test 17.7: Cleanup Test Data"
     
-    # Delete Case
-    if [ -n "$TEST_CASE_ID" ]; then
-        api_delete "/api/data/case/$TEST_CASE_ID" > /dev/null
-        echo "  ✓ Case deleted"
-    fi
+    # Use robust prefix-based cleanup via Query
+    delete_via_query_by_prefix "case" "name" "Test Case " "Cases"
+    delete_via_query_by_prefix "contact" "name" "Support Contact " "Contacts"
+    delete_via_query_by_prefix "account" "name" "Service Test Account " "Accounts"
     
-    # Delete Contact
-    if [ -n "$TEST_CONTACT_ID" ]; then
-        api_delete "/api/data/contact/$TEST_CONTACT_ID" > /dev/null
-        echo "  ✓ Contact deleted"
-    fi
-    
-    # Delete Account
-    if [ -n "$TEST_ACCOUNT_ID" ]; then
-        api_delete "/api/data/account/$TEST_ACCOUNT_ID" > /dev/null
-        echo "  ✓ Account deleted"
-    fi
-    
-    # Delete Support Queue
-    if [ -n "$SUPPORT_QUEUE_ID" ]; then
-        api_delete "/api/data/_system_group/$SUPPORT_QUEUE_ID" > /dev/null
-        echo "  ✓ Support Queue deleted"
-    fi
+    # Clean up queues via query
+    delete_via_query_by_prefix "_System_Group" "name" "support_queue_" "Support Queues" "/api/data/_system_group"
     
     test_passed "Cleanup completed"
 }
 
 # Run if executed directly
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    trap test_cleanup EXIT
     run_suite
 fi

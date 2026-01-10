@@ -64,16 +64,16 @@ setup_test_users() {
     # Fetch a valid Profile ID
     local profiles_res=$(api_get "/api/auth/profiles")
     echo "  Debug: Profiles: $profiles_res"
-    local profile_id=$(echo "$profiles_res" | jq -r '.profiles[] | select(.name=="System Administrator") | .id' 2>/dev/null)
+    local profile_id=$(echo "$profiles_res" | jq -r '.data[] | select(.name=="System Administrator") | .__sys_gen_id' 2>/dev/null)
     
     # Fallback to Standard User
     if [ -z "$profile_id" ]; then
-        profile_id=$(echo "$profiles_res" | jq -r '.profiles[] | select(.name=="Standard User") | .id' 2>/dev/null)
+        profile_id=$(echo "$profiles_res" | jq -r '.data[] | select(.name=="Standard User") | .__sys_gen_id' 2>/dev/null)
     fi
     
     # Fallback to first profile
     if [ -z "$profile_id" ]; then
-        profile_id=$(echo "$profiles_res" | jq -r '.profiles[0].id' 2>/dev/null)
+        profile_id=$(echo "$profiles_res" | jq -r '.data[0].__sys_gen_id' 2>/dev/null)
     fi
     
     if [ -z "$profile_id" ]; then
@@ -93,7 +93,7 @@ setup_test_users() {
     }'
     local res_a=$(api_post "/api/auth/register" "$user_a_payload")
     # Extract ID from nested user object
-    USER_A_ID=$(echo "$res_a" | jq -r '.user.id // ""' 2>/dev/null)
+    USER_A_ID=$(echo "$res_a" | jq -r '.data.__sys_gen_id // ""' 2>/dev/null)
     
     # Create User B
     local user_b_payload='{
@@ -104,7 +104,7 @@ setup_test_users() {
     }'
     local res_b=$(api_post "/api/auth/register" "$user_b_payload")
     # Extract ID from nested user object
-    USER_B_ID=$(echo "$res_b" | jq -r '.user.id // ""' 2>/dev/null)
+    USER_B_ID=$(echo "$res_b" | jq -r '.data.__sys_gen_id // ""' 2>/dev/null)
     
     if [ -z "$USER_A_ID" ] || [ -z "$USER_B_ID" ]; then
         test_failed "Failed to create test users" "A: $res_a, B: $res_b"
@@ -260,8 +260,8 @@ test_concurrent_usage() {
     local list_a=$(api_req_user "GET" "/api/agent/conversations" "" "$TOKEN_A")
     local list_b=$(api_req_user "GET" "/api/agent/conversations" "" "$TOKEN_B")
     
-    local count_a=$(echo "$list_a" | grep -o "\"id\"" | wc -l)
-    local count_b=$(echo "$list_b" | grep -o "\"id\"" | wc -l)
+    local count_a=$(echo "$list_a" | grep -o "\"__sys_gen_id\"" | wc -l)
+    local count_b=$(echo "$list_b" | grep -o "\"__sys_gen_id\"" | wc -l)
     
     if [ "$count_a" -ge 1 ] && [ "$count_b" -ge 1 ]; then
         echo "  ✓ Both users successfully listed conversations concurrently"
@@ -281,7 +281,7 @@ test_conversation_history() {
     
     # List for User A
     local list_a=$(api_req_user "GET" "/api/agent/conversations" "" "$TOKEN_A")
-    local count=$(echo "$list_a" | grep -o "\"id\"" | wc -l)
+    local count=$(echo "$list_a" | grep -o "\"__sys_gen_id\"" | wc -l)
     
     if [ "$count" -ge 2 ]; then
         echo "  ✓ User A has multiple conversations in history"

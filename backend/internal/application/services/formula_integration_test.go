@@ -125,7 +125,7 @@ func TestFormulaFields_Integration(t *testing.T) {
 
 	// 5. Retrieve and Verify Formula Calculation
 	t.Run("Read-Time Calculation", func(t *testing.T) {
-		filterExpr := fmt.Sprintf("id == '%s'", id)
+		filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldID, id)
 		// Query with limit 1
 		results, err := qs.QueryWithFilter(ctx, objName, filterExpr, adminUser, "", "", 1)
 		if err != nil {
@@ -213,7 +213,7 @@ func TestFormulaFields_Integration(t *testing.T) {
 		}
 
 		// Query and verify total is now 20.0 * 2 = 40.0
-		filterExpr := fmt.Sprintf("id == '%s'", id)
+		filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldID, id)
 		results, err := qs.QueryWithFilter(ctx, objName, filterExpr, adminUser, "", "", 1)
 		if err != nil {
 			t.Fatalf("Query failed: %v", err)
@@ -268,7 +268,7 @@ func TestFormulaFields_Integration(t *testing.T) {
 		id2 := created2[constants.FieldID].(string)
 
 		// Query the record
-		filterExpr := fmt.Sprintf("id == '%s'", id2)
+		filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldID, id2)
 		results, err := qs.QueryWithFilter(ctx, objName, filterExpr, adminUser, "", "", 1)
 		if err != nil {
 			t.Fatalf("Query failed: %v", err)

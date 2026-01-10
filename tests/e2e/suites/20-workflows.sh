@@ -189,13 +189,13 @@ test_related_record_query() {
     [ -z "$TEST_ACCOUNT_ID" ] && { test_passed "Query (skipped)"; return; }
     
     # Query opportunities for this account
-    local opps=$(api_post "/api/data/query" '{"object_api_name": "opportunity", "filters": [{"field": "account_id", "operator": "=", "value": "'$TEST_ACCOUNT_ID'"}]}')
-    local count=$(echo "$opps" | jq '.records | length' 2>/dev/null || echo "0")
+    local opps=$(api_post "/api/data/query" '{"object_api_name": "opportunity", "filter_expr": "account_id == '\"'\"'$TEST_ACCOUNT_ID'\"'\"'"}')
+    local count=$(echo "$opps" | jq '.data | length' 2>/dev/null || echo "0")
     echo "  Account has $count opportunities"
     
     # Query contacts for this account
-    local contacts=$(api_post "/api/data/query" '{"object_api_name": "contact", "filters": [{"field": "account_id", "operator": "=", "value": "'$TEST_ACCOUNT_ID'"}]}')
-    local ccount=$(echo "$contacts" | jq '.records | length' 2>/dev/null || echo "0")
+    local contacts=$(api_post "/api/data/query" '{"object_api_name": "contact", "filter_expr": "account_id == '\"'\"'$TEST_ACCOUNT_ID'\"'\"'"}')
+    local ccount=$(echo "$contacts" | jq '.data | length' 2>/dev/null || echo "0")
     echo "  Account has $ccount contacts"
     
     test_passed "Related records query"
@@ -219,19 +219,24 @@ test_delete_flow() {
     test_passed "Delete flow"
 }
 
+# Cleanup test data
 test_cleanup() {
     echo ""
     echo "Test 20.9: Cleanup Test Data"
     
-    [ -n "$TEST_OPP_ID" ] && api_delete "/api/data/opportunity/$TEST_OPP_ID" > /dev/null 2>&1
-    [ -n "$TEST_CONTACT_ID" ] && api_delete "/api/data/contact/$TEST_CONTACT_ID" > /dev/null 2>&1
-    [ -n "$TEST_ACCOUNT_ID" ] && api_delete "/api/data/account/$TEST_ACCOUNT_ID" > /dev/null 2>&1
-    echo "  ✓ All test data cleaned up"
+    # Clean up ANY artifacts from this test (or previous failed runs)
+    delete_via_query_by_prefix "opportunity" "name" "Workflow Opp " "Opportunities"
+    delete_via_query_by_prefix "contact" "name" "Workflow Contact " "Contacts"
+    delete_via_query_by_prefix "account" "name" "Workflow Account " "Accounts"
+    
+    # Metadata cleanup
+    delete_items_by_prefix "/api/metadata/flows" "name" "Test Flow " "Test Flows"
     
     test_passed "Cleanup completed"
 }
 
 # Run if executed directly
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    trap test_cleanup EXIT
     run_suite
 fi

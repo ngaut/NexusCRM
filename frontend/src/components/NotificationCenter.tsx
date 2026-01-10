@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Check, Trash2, X } from 'lucide-react';
 import { SObject } from '../types';
-import { SYSTEM_TABLE_NAMES } from '../generated-schema';
+import { SYSTEM_TABLE_NAMES, COMMON_FIELDS } from '../generated-schema';
 import { dataAPI } from '../infrastructure/api/data';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
@@ -27,7 +27,7 @@ export const NotificationCenter: React.FC = () => {
         try {
             const results = await dataAPI.query({
                 objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_NOTIFICATION,
-                sortField: 'created_date',
+                sortField: COMMON_FIELDS.CREATED_DATE,
                 sortDirection: 'DESC',
                 filterExpr: "recipient_id == 'CURRENT_USER'"
             });
@@ -72,7 +72,7 @@ const NotificationCenterInner: React.FC = () => {
             const results = await dataAPI.query({
                 objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_NOTIFICATION,
                 filterExpr: `recipient_id == '${user.id}' && is_read == false`,
-                sortField: 'created_date',
+                sortField: COMMON_FIELDS.CREATED_DATE,
                 sortDirection: 'DESC',
                 limit: 50
             });

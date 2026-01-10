@@ -73,7 +73,7 @@ func (r *SchemaRepository) GetStandardFieldMetadata() []models.FieldMetadata {
 			Label:    col.Name,
 			Type:     models.FieldType(r.mapSQLTypeToLogical(col.Type)),
 			Required: !col.Nullable && !r.IsSystemColumn(col.Name),
-			Unique:   col.Unique,
+			IsUnique: col.Unique,
 			IsSystem: r.IsSystemColumn(col.Name),
 		}
 

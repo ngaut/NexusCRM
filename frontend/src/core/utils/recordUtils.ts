@@ -73,4 +73,3 @@ export function getHighlightFields(schema: ObjectMetadata, count: number = 5): i
         .filter(f => !f.is_system || f.is_name_field)
         .slice(0, count);
 }
-

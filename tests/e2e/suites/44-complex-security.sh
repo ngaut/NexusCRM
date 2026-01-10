@@ -30,11 +30,11 @@ ADMIN_TOKEN=$TOKEN
 echo "👥 Setting up Roles..."
 # Create HR Manager Role
 ROLE_MGR_RES=$(api_post "/api/data/_System_Role" "{\"name\": \"HR_Manager_$TIMESTAMP\", \"label\": \"HR Manager\", \"description\": \"HR Manager Role\"}")
-ROLE_MGR_ID=$(json_extract "$ROLE_MGR_RES" "id")
+ROLE_MGR_ID=$(json_extract "$ROLE_MGR_RES" "__sys_gen_id")
 
 # Create HR Assistant Role (Subordinate to HR Manager)
 ROLE_AST_RES=$(api_post "/api/data/_System_Role" "{\"name\": \"HR_Assistant_$TIMESTAMP\", \"label\": \"HR Assistant\", \"description\": \"HR Assistant Role\", \"parent_role_id\": \"$ROLE_MGR_ID\"}")
-ROLE_AST_ID=$(json_extract "$ROLE_AST_RES" "id")
+ROLE_AST_ID=$(json_extract "$ROLE_AST_RES" "__sys_gen_id")
 
 # Trigger role hierarchy cache refresh by hitting permissions endpoint
 echo "   Manager Role ID: $ROLE_MGR_ID"
@@ -54,7 +54,7 @@ echo "👤 Creating Users..."
 # Alice (Manager)
 ALICE_EMAIL="alice.$TIMESTAMP@test.com"
 ALICE_RES=$(api_post "/api/data/_System_User" "{\"username\": \"$ALICE_EMAIL\", \"email\": \"$ALICE_EMAIL\", \"password\": \"Password123!\", \"profile_id\": \"standard_user\", \"role_id\": \"$ROLE_MGR_ID\", \"first_name\": \"Alice\", \"last_name\": \"Manager\"}")
-ALICE_ID=$(json_extract "$ALICE_RES" "id")
+ALICE_ID=$(json_extract "$ALICE_RES" "__sys_gen_id")
 if [[ -z "$ALICE_ID" || "$ALICE_ID" == "null" ]]; then
     echo "❌ Failed to create Alice: $ALICE_RES"
     exit 1
@@ -63,7 +63,7 @@ fi
 # Bob (Assistant)
 BOB_EMAIL="bob.$TIMESTAMP@test.com"
 BOB_RES=$(api_post "/api/data/_System_User" "{\"username\": \"$BOB_EMAIL\", \"email\": \"$BOB_EMAIL\", \"password\": \"Password123!\", \"profile_id\": \"standard_user\", \"role_id\": \"$ROLE_AST_ID\", \"first_name\": \"Bob\", \"last_name\": \"Assistant\"}")
-BOB_ID=$(json_extract "$BOB_RES" "id")
+BOB_ID=$(json_extract "$BOB_RES" "__sys_gen_id")
 if [[ -z "$BOB_ID" || "$BOB_ID" == "null" ]]; then
     echo "❌ Failed to create Bob: $BOB_RES"
     exit 1
@@ -105,17 +105,11 @@ BOB_REC_ID=$(json_extract "$BOB_REC" "id")
 # Bob tries to get Alice's record
 echo "🔍 Bob trying to access Alice's record..."
 BOB_GET_ALICE=$(api_get "/api/data/salary/$ALICE_REC_ID")
-if [[ "$BOB_GET_ALICE" == *"forbidden"* || "$BOB_GET_ALICE" == *"not found"* || "$BOB_GET_ALICE" == "{}" ]]; then
+if echo "$BOB_GET_ALICE" | grep -qiE "forbidden|unauthorized|access denied|403|not found|404"; then
     echo "✅ Bob denied access to Alice's private record (as expected)"
 else
-    # Check if records array is empty (for queries) or 403 for direct GET
-    # Our API returns 403 Forbidden for direct GET if no access
-    if echo "$BOB_GET_ALICE" | grep -q "error"; then
-        echo "✅ Bob access denied (error returned)"
-    else
-        echo "❌ Bob could see Alice's record! $BOB_GET_ALICE"
-        exit 1
-    fi
+    echo "❌ Bob could see Alice's record or got unexpected response: $BOB_GET_ALICE"
+    exit 1
 fi
 
 # --- TEST 2: ROLE HIERARCHY ---
@@ -146,7 +140,7 @@ CHARLIE_ID=$USER_ID
 
 export TOKEN=$ADMIN_TOKEN
 GRP_RES=$(api_post "/api/data/_System_Group" "{\"name\": \"Accounting_$TIMESTAMP\", \"label\": \"Accounting Group $TIMESTAMP\", \"type\": \"Regular\"}")
-GRP_ID=$(json_extract "$GRP_RES" "id")
+GRP_ID=$(json_extract "$GRP_RES" "__sys_gen_id")
 if [[ -z "$GRP_ID" || "$GRP_ID" == "null" ]]; then
     echo "❌ Failed to create Group: $GRP_RES"
     exit 1
@@ -157,7 +151,7 @@ api_post "/api/data/_System_GroupMember" "{\"group_id\": \"$GRP_ID\", \"user_id\
 # Wait for Group to be ready (Polling)
 echo "   Waiting for Group propagation..."
 for i in {1..10}; do
-    count=$(api_post "/api/data/query" "{\"object_api_name\": \"_System_Group\", \"filters\": [{\"field\": \"id\", \"operator\": \"=\", \"value\": \"$GRP_ID\"}]}" | jq '.records | length')
+    count=$(api_post "/api/data/query" "{\"object_api_name\": \"_System_Group\", \"filter_expr\": \"id == '"'"'$GRP_ID'"'"'\"}" | jq '.data | length')
     if [[ "$count" -ge 1 ]]; then
         break
     fi

@@ -86,7 +86,7 @@ test_syntax_errors() {
     echo "Test 6.6: Formula Syntax Error Handling"
     
     local response=$(api_post "/api/formula/evaluate" '{"expression": "INVALID_FUNC(2 + +)", "context": {}}')
-    if echo "$response" | grep -qE "error|invalid|syntax"; then
+    if echo "$response" | grep -qE "syntax error|invalid function|unexpected token"; then
         test_passed "Formula engine properly handles syntax errors"
     else
         test_failed "Formula syntax error handling" "$response"

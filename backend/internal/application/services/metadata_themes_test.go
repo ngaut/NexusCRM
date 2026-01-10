@@ -36,7 +36,7 @@ func TestMetadataService_Themes_Integration(t *testing.T) {
 	themeName := fmt.Sprintf("Test Theme %d", time.Now().UnixNano())
 
 	defer func() {
-		_, _ = db.ExecContext(ctx, "DELETE FROM "+constants.TableTheme+" WHERE name = ?", themeName)
+		_, _ = db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableTheme, constants.FieldSysTheme_Name), themeName)
 	}()
 
 	repo := persistence.NewMetadataRepository(db)
@@ -61,7 +61,7 @@ func TestMetadataService_Themes_Integration(t *testing.T) {
 	// We need to fetch it to get ID because UpsertTheme by Name likely generated one
 	// But we passed empty ID, so it generated one. We need to query it back by Name
 	var fetchedID string
-	err = db.QueryRowContext(ctx, "SELECT id FROM "+constants.TableTheme+" WHERE name = ?", themeName).Scan(&fetchedID)
+	err = db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableTheme, constants.FieldSysTheme_Name), themeName).Scan(&fetchedID)
 	assert.NoError(t, err)
 	newTheme.ID = fetchedID
 

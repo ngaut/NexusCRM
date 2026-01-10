@@ -45,7 +45,7 @@ test_object_label_uniqueness() {
         ]
     }")
 
-    if echo "$res1" | grep -q "\"success\":true\|\"id\":"; then
+    if echo "$res1" | grep -q "\"success\":true\|\"__sys_gen_id\":"; then
         echo "  ✓ First object created successfully"
     else
          test_failed "Failed to create first object" "$res1"
@@ -86,7 +86,7 @@ test_app_label_uniqueness() {
     local APP_ID_2="app2_$UNIQUE_ID"
 
     echo "  Creating first app: $APP_LABEL"
-    api_post "/api/metadata/apps" "{\"id\": \"$APP_ID_1\", \"label\": \"$APP_LABEL\", \"description\": \"First App\"}" > /dev/null
+    api_post "/api/metadata/apps" "{\"__sys_gen_id\": \"$APP_ID_1\", \"label\": \"$APP_LABEL\", \"description\": \"First App\"}" > /dev/null
     echo "  ✓ First app created"
 
     echo "  Creating second app with SAME label..."
@@ -95,7 +95,7 @@ test_app_label_uniqueness() {
     local response_app=$(curl -s -X POST "$BASE_URL/api/metadata/apps" \
       -H "Authorization: Bearer $TOKEN" \
       -H "Content-Type: application/json" \
-      -d "{\"id\": \"$APP_ID_2\", \"label\": \"$APP_LABEL\", \"description\": \"Duplicate App\"}")
+      -d "{\"__sys_gen_id\": \"$APP_ID_2\", \"label\": \"$APP_LABEL\", \"description\": \"Duplicate App\"}")
 
     if echo "$response_app" | grep -q "Conflict\|duplicate\|already exists\|Duplicate entry"; then
         test_passed "Duplicate App Label Rejected"
@@ -150,7 +150,23 @@ test_flow_name_uniqueness() {
     fi
 }
 
+test_cleanup() {
+    echo ""
+    echo "Test 52.5: Cleanup"
+    
+    # Use global helper to clean up ANY artifacts starting with our test prefixes
+    # This also cleans up leftovers from previous failed runs (self-healing)
+    
+    delete_items_by_prefix "/api/metadata/objects" "label" "UniqueObj_" "Test Objects"
+    delete_items_by_prefix "/api/metadata/apps" "label" "UniqueApp_" "Test Apps"
+    delete_via_query_by_prefix "_System_Group" "label" "UniqueGroup_" "Test Groups" "/api/data/_system_group"
+    delete_items_by_prefix "/api/metadata/flows" "name" "UniqueFlow_" "Test Flows"
+    
+    test_passed "Cleanup completed"
+}
+
 # Run if executed directly
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    trap test_cleanup EXIT
     run_suite
 fi

@@ -80,7 +80,7 @@ func assertSystemFieldsConsistency(db *sql.DB, result *AssertionResult) {
 	// Get all tables from metadata
 	rows, err := db.Query(`
 		SELECT api_name FROM ` + "`" + constants.TableObject + "`" + `
-		WHERE is_deleted = false OR is_deleted IS NULL
+		WHERE `+constants.FieldIsDeleted+` = false OR `+constants.FieldIsDeleted+` IS NULL
 	`)
 	if err != nil {
 		log.Printf("   ⚠️  Could not query objects: %v", err)
@@ -103,7 +103,7 @@ func assertSystemFieldsConsistency(db *sql.DB, result *AssertionResult) {
 			SELECT f.api_name 
 			FROM `+"`"+constants.TableField+"`"+` f
 			JOIN `+"`"+constants.TableObject+"`"+` o ON f.object_id = o.id
-			WHERE o.api_name = ? AND (f.is_deleted = false OR f.is_deleted IS NULL)
+			WHERE o.api_name = ? AND (f.`+constants.FieldIsDeleted+` = false OR f.`+constants.FieldIsDeleted+` IS NULL)
 		`, tableName)
 		if err != nil {
 			continue
@@ -144,12 +144,12 @@ func assertNoDuplicateActions(db *sql.DB, result *AssertionResult) {
 	rows, err := db.Query(`
 		SELECT object_api_name, name, COUNT(*) as cnt
 		FROM ` + "`" + constants.TableAction + "`" + `
-		WHERE is_deleted = false OR is_deleted IS NULL
+		WHERE `+constants.FieldIsDeleted+` = false OR `+constants.FieldIsDeleted+` IS NULL
 		GROUP BY object_api_name, name
 		HAVING cnt > 1
 	`)
 	if err != nil {
-		// Table might not have is_deleted column, try without it
+		// Table might not have `+constants.FieldIsDeleted+` column, try without it
 		rows, err = db.Query(`
 			SELECT object_api_name, name, COUNT(*) as cnt
 			FROM ` + "`" + constants.TableAction + "`" + `
@@ -185,13 +185,13 @@ func assertNoDuplicateFlows(db *sql.DB, result *AssertionResult) {
 	rows, err := db.Query(`
 		SELECT trigger_object, trigger_type, COUNT(*) as cnt
 		FROM ` + "`" + constants.TableFlow + "`" + `
-		WHERE status = 'Active' AND (is_deleted = false OR is_deleted IS NULL)
+		WHERE status = 'Active' AND (`+constants.FieldIsDeleted+` = false OR `+constants.FieldIsDeleted+` IS NULL)
 		AND trigger_type != 'schedule'
 		GROUP BY trigger_object, trigger_type
 		HAVING cnt > 1
 	`)
 	if err != nil {
-		// Try without is_deleted if column doesn't exist
+		// Try without `+constants.FieldIsDeleted+` if column doesn't exist
 		rows, err = db.Query(`
 			SELECT trigger_object, trigger_type, COUNT(*) as cnt
 			FROM ` + "`" + constants.TableFlow + "`" + `
@@ -232,10 +232,10 @@ func assertNoOrphanedSharingRules(db *sql.DB, result *AssertionResult) {
 		LEFT JOIN ` + "`" + constants.TableGroup + "`" + ` g ON sr.share_with_group_id = g.id
 		WHERE sr.share_with_group_id IS NOT NULL 
 		  AND g.id IS NULL
-		  AND (sr.is_deleted = false OR sr.is_deleted IS NULL)
+		  AND (sr.`+constants.FieldIsDeleted+` = false OR sr.`+constants.FieldIsDeleted+` IS NULL)
 	`)
 	if err != nil {
-		// Try without is_deleted
+		// Try without `+constants.FieldIsDeleted+`
 		rows, err = db.Query(`
 			SELECT sr.id, sr.name, sr.share_with_group_id
 			FROM ` + "`" + constants.TableSharingRule + "`" + ` sr

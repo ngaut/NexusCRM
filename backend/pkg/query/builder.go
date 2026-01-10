@@ -113,13 +113,13 @@ func (b *Builder) Select(fields []string) *Builder {
 	// Always ensure ID is present
 	hasID := false
 	for _, f := range b.fields {
-		if strings.Contains(f, ".`id`") || f == "id" || f == "*" {
+		if strings.Contains(f, ".`"+constants.FieldID+"`") || f == constants.FieldID || f == "*" {
 			hasID = true
 			break
 		}
 	}
 	if !hasID {
-		b.fields = append([]string{fmt.Sprintf("`%s`.`id`", b.table)}, b.fields...)
+		b.fields = append([]string{fmt.Sprintf("`%s`.`%s`", b.table, constants.FieldID)}, b.fields...)
 	}
 
 	return b
@@ -358,4 +358,41 @@ func (b *Builder) ApplySecurity(securitySQL string, securityParams []interface{}
 		b.params = append(b.params, securityParams...)
 	}
 	return b
+}
+
+// BulkInsertOrdered generates a multi-row INSERT with explicit column order
+// This version ensures consistent column ordering across all records
+func BulkInsertOrdered(table string, columns []string, records []map[string]interface{}) (string, []interface{}) {
+	if len(records) == 0 || len(columns) == 0 {
+		return "", nil
+	}
+
+	// Format columns
+	var cols []string
+	for _, col := range columns {
+		cols = append(cols, fmt.Sprintf("`%s`", col))
+	}
+
+	// Generate placeholder rows and collect params
+	var rows []string
+	var params []interface{}
+	placeholders := make([]string, len(columns))
+	for i := range placeholders {
+		placeholders[i] = "?"
+	}
+	rowPlaceholder := "(" + strings.Join(placeholders, ", ") + ")"
+
+	for _, record := range records {
+		rows = append(rows, rowPlaceholder)
+		for _, col := range columns {
+			params = append(params, record[col])
+		}
+	}
+
+	sql := fmt.Sprintf("INSERT INTO `%s` (%s) VALUES %s",
+		table,
+		strings.Join(cols, ", "),
+		strings.Join(rows, ", "))
+
+	return sql, params
 }

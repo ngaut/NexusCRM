@@ -6,7 +6,7 @@
         "description": "Object metadata definitions",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
@@ -86,39 +86,39 @@
                 "nullable": true
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "label": "Deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "label": "Owner",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "label": "Created By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "label": "Last Modified By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
@@ -140,7 +140,7 @@
         "description": "Field metadata definitions",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
@@ -176,7 +176,7 @@
                 "default": "0"
             },
             {
-                "name": "unique",
+                "name": "is_unique",
                 "label": "Unique",
                 "type": "TINYINT(1)",
                 "default": "0"
@@ -332,39 +332,39 @@
                 "nullable": true
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "label": "Deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "label": "Owner",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "label": "Created By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "label": "Last Modified By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
@@ -393,7 +393,7 @@
         "foreignKeys": [
             {
                 "column": "object_id",
-                "references": "_System_Object(id)",
+                "references": "_System_Object(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -405,7 +405,7 @@
         "description": "Meta-metadata registry cataloging all tables",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
@@ -421,7 +421,8 @@
                 "name": "table_type",
                 "label": "Table Type",
                 "type": "ENUM('system_core', 'system_metadata', 'custom_object')",
-                "nullable": false
+                "nullable": false,
+                "default": "'custom_object'"
             },
             {
                 "name": "category",
@@ -452,14 +453,14 @@
                 "default": "'bootstrap'"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
@@ -491,7 +492,7 @@
         "description": "User profiles and permission sets",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
@@ -521,39 +522,39 @@
                 "default": "0"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "label": "Deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "label": "Owner",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "label": "Created By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "label": "Last Modified By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
@@ -568,7 +569,7 @@
         "description": "Role hierarchy for access control",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
@@ -602,14 +603,14 @@
                 "default": "1"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "label": "Deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "label": "Owner",
                 "type": "VARCHAR(255)",
                 "nullable": true,
@@ -619,7 +620,7 @@
                 ]
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "label": "Created By",
                 "type": "VARCHAR(255)",
                 "nullable": true,
@@ -629,7 +630,7 @@
                 ]
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "label": "Last Modified By",
                 "type": "VARCHAR(255)",
                 "nullable": true,
@@ -639,14 +640,14 @@
                 ]
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
@@ -663,7 +664,7 @@
         "foreignKeys": [
             {
                 "column": "parent_role_id",
-                "references": "_System_Role(id)",
+                "references": "_System_Role(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -675,7 +676,7 @@
         "description": "System users",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "label": "Record ID",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
@@ -749,14 +750,14 @@
                 "is_system": true
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "label": "Deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "label": "Owner",
                 "type": "VARCHAR(255)",
                 "nullable": true,
@@ -766,7 +767,7 @@
                 ]
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "label": "Created By",
                 "type": "VARCHAR(255)",
                 "nullable": true,
@@ -776,7 +777,7 @@
                 ]
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "label": "Last Modified By",
                 "type": "VARCHAR(255)",
                 "nullable": true,
@@ -792,14 +793,14 @@
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "label": "Created Date",
                 "type": "DATETIME",
                 "nullable": false,
                 "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "label": "Last Modified Date",
                 "type": "DATETIME",
                 "nullable": false,
@@ -821,11 +822,11 @@
         "foreignKeys": [
             {
                 "column": "profile_id",
-                "references": "_System_Profile(id)"
+                "references": "_System_Profile(__sys_gen_id)"
             },
             {
                 "column": "role_id",
-                "references": "_System_Role(id)",
+                "references": "_System_Role(__sys_gen_id)",
                 "onDelete": "SET NULL"
             }
         ]
@@ -837,7 +838,7 @@
         "description": "User authentication sessions",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -860,12 +861,14 @@
             {
                 "name": "expires_at",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "last_activity",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "ip_address",
@@ -881,14 +884,16 @@
                 "default": "0"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -906,7 +911,7 @@
         "foreignKeys": [
             {
                 "column": "user_id",
-                "references": "_System_User(id)",
+                "references": "_System_User(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -918,7 +923,7 @@
         "description": "Record type configurations",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -947,20 +952,22 @@
                 "default": "0"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -980,7 +987,7 @@
         "foreignKeys": [
             {
                 "column": "object_id",
-                "references": "_System_Object(id)",
+                "references": "_System_Object(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -992,7 +999,7 @@
         "description": "Auto-number sequence tracking",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -1024,14 +1031,16 @@
                 "default": "0"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -1051,7 +1060,7 @@
         "description": "Object relationship definitions",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -1099,14 +1108,16 @@
                 "type": "TEXT"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -1134,7 +1145,7 @@
         "description": "Field dependency rules",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -1158,14 +1169,16 @@
                 "type": "JSON"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -1183,12 +1196,12 @@
         "foreignKeys": [
             {
                 "column": "controlling_field_id",
-                "references": "_System_Field(id)",
+                "references": "_System_Field(__sys_gen_id)",
                 "onDelete": "CASCADE"
             },
             {
                 "column": "dependent_field_id",
-                "references": "_System_Field(id)",
+                "references": "_System_Field(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -1200,7 +1213,7 @@
         "description": "Dashboard configurations with widget-based layouts",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -1223,39 +1236,41 @@
                 "type": "JSON"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "label": "Owner",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "label": "Created By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "label": "Last Modified By",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "label": "Deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ]
     },
@@ -1266,7 +1281,7 @@
         "description": "Application configurations",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -1304,14 +1319,16 @@
                 "default": "0"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ]
     },
@@ -1322,7 +1339,7 @@
         "description": "Visual theme configurations",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -1353,14 +1370,16 @@
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ]
     },
@@ -1371,14 +1390,15 @@
         "description": "System event logs",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
             {
                 "name": "timestamp",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "level",
@@ -1400,14 +1420,16 @@
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -1430,7 +1452,7 @@
         "description": "Recently viewed records",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -1457,17 +1479,20 @@
             {
                 "name": "timestamp",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -1486,7 +1511,7 @@
         "foreignKeys": [
             {
                 "column": "user_id",
-                "references": "_System_User(id)",
+                "references": "_System_User(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -1516,14 +1541,16 @@
                 "type": "TEXT"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ]
     },
@@ -1534,7 +1561,7 @@
         "description": "Validation rule definitions",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(36)",
                 "primaryKey": true
             },
@@ -1564,14 +1591,16 @@
                 "nullable": false
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -1589,7 +1618,7 @@
         "description": "Workflow automation definitions",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -1639,27 +1668,28 @@
                 "default": "'active'"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "BOOLEAN",
                 "default": "0"
             },
@@ -1695,9 +1725,10 @@
                 "label": "Is Running"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -1720,7 +1751,7 @@
         "description": "Step definitions for multi-step flows",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -1772,34 +1803,36 @@
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "BOOLEAN",
                 "default": "0"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -1820,7 +1853,7 @@
         "foreignKeys": [
             {
                 "column": "flow_id",
-                "references": "_System_Flow(id)",
+                "references": "_System_Flow(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -1832,7 +1865,7 @@
         "description": "Tracks running and paused flow executions",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -1870,7 +1903,8 @@
             {
                 "name": "started_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "paused_date",
@@ -1883,32 +1917,34 @@
                 "nullable": true
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": true
+                "nullable": true,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "default": "0",
                 "nullable": false
@@ -1933,17 +1969,23 @@
                 "columns": [
                     "status"
                 ]
+            },
+            {
+                "name": "idx_flowinstance_current_step_id",
+                "columns": [
+                    "current_step_id"
+                ]
             }
         ],
         "foreignKeys": [
             {
                 "column": "flow_id",
-                "references": "_System_Flow(id)",
+                "references": "_System_Flow(__sys_gen_id)",
                 "onDelete": "CASCADE"
             },
             {
                 "column": "current_step_id",
-                "references": "_System_FlowStep(id)",
+                "references": "_System_FlowStep(__sys_gen_id)",
                 "onDelete": "SET NULL"
             }
         ]
@@ -1955,7 +1997,7 @@
         "description": "UI action definitions",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -1995,14 +2037,16 @@
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2027,7 +2071,7 @@
         "description": "List view configurations",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2052,14 +2096,16 @@
                 "nullable": false
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2077,7 +2123,7 @@
         "description": "Record sharing rules",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2111,35 +2157,37 @@
                 "nullable": true
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "nullable": false,
                 "default": "0"
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2147,17 +2195,29 @@
                 "columns": [
                     "object_api_name"
                 ]
+            },
+            {
+                "name": "idx_sharingrule_share_with_role_id",
+                "columns": [
+                    "share_with_role_id"
+                ]
+            },
+            {
+                "name": "idx_sharingrule_share_with_group_id",
+                "columns": [
+                    "share_with_group_id"
+                ]
             }
         ],
         "foreignKeys": [
             {
                 "column": "share_with_role_id",
-                "references": "_System_Role(id)",
+                "references": "_System_Role(__sys_gen_id)",
                 "onDelete": "CASCADE"
             },
             {
                 "column": "share_with_group_id",
-                "references": "_System_Group(id)",
+                "references": "_System_Group(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -2169,7 +2229,7 @@
         "description": "Recycle bin for soft-deleted records",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2200,17 +2260,20 @@
             {
                 "name": "deleted_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2233,7 +2296,7 @@
         "description": "Page layout configurations",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2247,14 +2310,16 @@
                 "type": "JSON"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2272,6 +2337,11 @@
         "description": "Profile to layout assignments",
         "columns": [
             {
+                "name": "__sys_gen_id",
+                "type": "VARCHAR(255)",
+                "primaryKey": true
+            },
+            {
                 "name": "profile_id",
                 "type": "VARCHAR(255)",
                 "nullable": false
@@ -2287,14 +2357,16 @@
                 "nullable": false
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2304,17 +2376,23 @@
                     "object_api_name"
                 ],
                 "unique": true
+            },
+            {
+                "name": "idx_profilelayout_layout_id",
+                "columns": [
+                    "layout_id"
+                ]
             }
         ],
         "foreignKeys": [
             {
                 "column": "profile_id",
-                "references": "_System_Profile(id)",
+                "references": "_System_Profile(__sys_gen_id)",
                 "onDelete": "CASCADE"
             },
             {
                 "column": "layout_id",
-                "references": "_System_Layout(id)",
+                "references": "_System_Layout(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -2326,7 +2404,7 @@
         "description": "Setup page definitions",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2376,14 +2454,16 @@
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2401,7 +2481,7 @@
         "description": "Object permissions for profiles",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2451,14 +2531,16 @@
                 "default": "0"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2481,12 +2563,12 @@
         "foreignKeys": [
             {
                 "column": "profile_id",
-                "references": "_System_Profile(id)",
+                "references": "_System_Profile(__sys_gen_id)",
                 "onDelete": "CASCADE"
             },
             {
                 "column": "permission_set_id",
-                "references": "_System_PermissionSet(id)",
+                "references": "_System_PermissionSet(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -2498,7 +2580,7 @@
         "description": "Field permissions for profiles",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2533,14 +2615,16 @@
                 "default": "0"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2565,12 +2649,12 @@
         "foreignKeys": [
             {
                 "column": "profile_id",
-                "references": "_System_Profile(id)",
+                "references": "_System_Profile(__sys_gen_id)",
                 "onDelete": "CASCADE"
             },
             {
                 "column": "permission_set_id",
-                "references": "_System_PermissionSet(id)",
+                "references": "_System_PermissionSet(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -2582,7 +2666,7 @@
         "description": "User comments on records",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2602,17 +2686,18 @@
                 "nullable": false
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": false
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "default": "0"
             },
@@ -2627,9 +2712,10 @@
                 "default": "0"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2641,7 +2727,7 @@
             },
             {
                 "columns": [
-                    "created_by_id"
+                    "__sys_gen_created_by_id"
                 ]
             },
             {
@@ -2658,7 +2744,7 @@
         "description": "Field history tracking",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2693,17 +2779,20 @@
             {
                 "name": "changed_at",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2727,14 +2816,15 @@
         "description": "System operation logs",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
             {
                 "name": "timestamp",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "level",
@@ -2765,7 +2855,7 @@
         "description": "User notifications",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2789,21 +2879,24 @@
             },
             {
                 "name": "is_read",
-                "type": "TINYINT(1)"
+                "type": "TINYINT(1)",
+                "default": "0"
             },
             {
                 "name": "notification_type",
                 "type": "VARCHAR(50)"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2826,7 +2919,7 @@
         "description": "File attachments",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2854,19 +2947,21 @@
                 "type": "VARCHAR(512)"
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": false
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2884,7 +2979,7 @@
         "description": "Groups and Queues",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2911,20 +3006,22 @@
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "default": "0",
                 "nullable": false
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ]
     },
@@ -2935,7 +3032,7 @@
         "description": "Group membership",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -2950,20 +3047,22 @@
                 "nullable": false
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "default": "0",
                 "nullable": false
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -2978,12 +3077,12 @@
         "foreignKeys": [
             {
                 "column": "group_id",
-                "references": "_System_Group(id)",
+                "references": "_System_Group(__sys_gen_id)",
                 "onDelete": "CASCADE"
             },
             {
                 "column": "user_id",
-                "references": "_System_User(id)",
+                "references": "_System_User(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -2995,7 +3094,7 @@
         "description": "Additive permission sets",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -3021,20 +3120,22 @@
                 "default": "1"
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "default": "0",
                 "nullable": false
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ]
     },
@@ -3045,7 +3146,7 @@
         "description": "Assignment of permission sets to users",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -3060,20 +3161,22 @@
                 "nullable": false
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "default": "0",
                 "nullable": false
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -3089,12 +3192,12 @@
         "foreignKeys": [
             {
                 "column": "assignee_id",
-                "references": "_System_User(id)",
+                "references": "_System_User(__sys_gen_id)",
                 "onDelete": "CASCADE"
             },
             {
                 "column": "permission_set_id",
-                "references": "_System_PermissionSet(id)",
+                "references": "_System_PermissionSet(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -3106,7 +3209,7 @@
         "description": "Manual record sharing with users or groups",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -3142,27 +3245,29 @@
                 "default": "'Manual'"
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": true
+                "nullable": true,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "default": "0",
                 "nullable": false
@@ -3192,12 +3297,12 @@
         "foreignKeys": [
             {
                 "column": "share_with_user_id",
-                "references": "_System_User(id)",
+                "references": "_System_User(__sys_gen_id)",
                 "onDelete": "CASCADE"
             },
             {
                 "column": "share_with_group_id",
-                "references": "_System_Group(id)",
+                "references": "_System_Group(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -3209,7 +3314,7 @@
         "description": "Generic record team members",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -3240,27 +3345,29 @@
                 "default": "'Read'"
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": true
+                "nullable": true,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "default": "0",
                 "nullable": false
@@ -3293,7 +3400,7 @@
         "foreignKeys": [
             {
                 "column": "user_id",
-                "references": "_System_User(id)",
+                "references": "_System_User(__sys_gen_id)",
                 "onDelete": "CASCADE"
             }
         ]
@@ -3305,7 +3412,7 @@
         "description": "Approval process definitions",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -3347,32 +3454,34 @@
                 "nullable": false
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": true
+                "nullable": true,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "default": "0",
                 "nullable": false
@@ -3402,7 +3511,7 @@
         "description": "Pending approval work items",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -3445,7 +3554,8 @@
             {
                 "name": "submitted_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
                 "name": "approver_id",
@@ -3468,32 +3578,34 @@
                 "nullable": true
             },
             {
-                "name": "owner_id",
+                "name": "__sys_gen_owner_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_by_id",
+                "name": "__sys_gen_last_modified_by_id",
                 "type": "VARCHAR(255)",
                 "nullable": true
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": true
+                "nullable": true,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "default": "0",
                 "nullable": false
@@ -3524,22 +3636,28 @@
                 "columns": [
                     "approver_id"
                 ]
+            },
+            {
+                "name": "idx_approvalworkitem_submitted_by_id",
+                "columns": [
+                    "submitted_by_id"
+                ]
             }
         ],
         "foreignKeys": [
             {
                 "column": "process_id",
-                "references": "_System_ApprovalProcess(id)",
+                "references": "_System_ApprovalProcess(__sys_gen_id)",
                 "onDelete": "CASCADE"
             },
             {
                 "column": "submitted_by_id",
-                "references": "_System_User(id)",
+                "references": "_System_User(__sys_gen_id)",
                 "onDelete": "SET NULL"
             },
             {
                 "column": "approver_id",
-                "references": "_System_User(id)",
+                "references": "_System_User(__sys_gen_id)",
                 "onDelete": "SET NULL"
             }
         ]
@@ -3551,7 +3669,7 @@
         "description": "Registered UI components",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -3581,12 +3699,14 @@
                 "nullable": true
             },
             {
-                "name": "created_date",
-                "type": "DATETIME"
+                "name": "__sys_gen_created_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
-                "type": "DATETIME"
+                "name": "__sys_gen_last_modified_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
@@ -3604,7 +3724,7 @@
         "description": "Transactional event outbox for guaranteed delivery",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(36)",
                 "primaryKey": true
             },
@@ -3640,21 +3760,23 @@
                 "nullable": true
             },
             {
-                "name": "created_date",
+                "name": "__sys_gen_created_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
+                "name": "__sys_gen_last_modified_date",
                 "type": "DATETIME",
-                "nullable": false
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
             }
         ],
         "indices": [
             {
                 "columns": [
                     "status",
-                    "created_date"
+                    "__sys_gen_created_date"
                 ],
                 "name": "idx_outbox_pending"
             }
@@ -3667,7 +3789,7 @@
         "description": "External webhook configurations",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(36)",
                 "primaryKey": true
             },
@@ -3705,12 +3827,14 @@
                 "default": "1"
             },
             {
-                "name": "created_date",
-                "type": "DATETIME"
+                "name": "__sys_gen_created_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
-                "type": "DATETIME"
+                "name": "__sys_gen_last_modified_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
             }
         ]
     },
@@ -3721,7 +3845,7 @@
         "description": "Email templates for notifications",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(36)",
                 "primaryKey": true
             },
@@ -3761,12 +3885,14 @@
                 "default": "1"
             },
             {
-                "name": "created_date",
-                "type": "DATETIME"
+                "name": "__sys_gen_created_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
-                "type": "DATETIME"
+                "name": "__sys_gen_last_modified_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
             }
         ]
     },
@@ -3777,7 +3903,7 @@
         "description": "Feed items for chatter and notifications",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(36)",
                 "primaryKey": true
             },
@@ -3796,16 +3922,18 @@
                 "type": "TEXT"
             },
             {
-                "name": "created_by_id",
+                "name": "__sys_gen_created_by_id",
                 "type": "VARCHAR(36)"
             },
             {
-                "name": "created_date",
-                "type": "DATETIME"
+                "name": "__sys_gen_created_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
-                "type": "DATETIME"
+                "name": "__sys_gen_last_modified_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
             }
         ]
     },
@@ -3816,7 +3944,7 @@
         "description": "Persisted AI conversation history per user",
         "columns": [
             {
-                "name": "id",
+                "name": "__sys_gen_id",
                 "type": "VARCHAR(255)",
                 "primaryKey": true
             },
@@ -3840,15 +3968,17 @@
                 "default": "1"
             },
             {
-                "name": "created_date",
-                "type": "DATETIME"
+                "name": "__sys_gen_created_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "last_modified_date",
-                "type": "DATETIME"
+                "name": "__sys_gen_last_modified_date",
+                "type": "DATETIME",
+                "default": "CURRENT_TIMESTAMP"
             },
             {
-                "name": "is_deleted",
+                "name": "__sys_gen_is_deleted",
                 "type": "TINYINT(1)",
                 "default": "0",
                 "nullable": false

@@ -366,6 +366,7 @@ func main() {
 			data.POST("/:objectApiName/calculate", dataHandler.Calculate)
 			data.GET("/:objectApiName/:id", dataHandler.GetRecord)
 			data.POST("/:objectApiName", dataHandler.CreateRecord)
+			data.POST("/:objectApiName/bulk", dataHandler.BulkCreateRecords)
 			data.PATCH("/:objectApiName/:id", dataHandler.UpdateRecord)
 			data.DELETE("/:objectApiName/:id", dataHandler.DeleteRecord)
 		}

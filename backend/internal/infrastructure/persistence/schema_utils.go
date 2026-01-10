@@ -7,7 +7,9 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -261,27 +263,29 @@ func GetPolymorphicTypeColumnName(fieldAPIName string) string {
 
 // GenerateObjectID generates a standardized ID for an object based on its API Name
 func GenerateObjectID(apiName string) string {
-	return constants.PrefixObject + apiName
+	// Hybrid ID: Readable prefix + Name + Random UUID
+	// Example: obj_car_550e8400-e29b-41d4-a716-446655440000
+	return fmt.Sprintf("%s%s_%s", constants.PrefixObject, apiName, uuid.NewString())
 }
 
 // GenerateFieldID generates a standardized ID for a field
 func GenerateFieldID(objectAPIName, fieldAPIName string) string {
-	return fmt.Sprintf("%s%s_%s", constants.PrefixField, objectAPIName, fieldAPIName)
+	return fmt.Sprintf("%s%s_%s_%s", constants.PrefixField, objectAPIName, fieldAPIName, uuid.NewString())
 }
 
 // GenerateTableID generates a standardized ID for a table
 func GenerateTableID(tableName string) string {
-	return constants.PrefixTable + tableName
+	return fmt.Sprintf("%s%s_%s", constants.PrefixTable, tableName, uuid.NewString())
 }
 
 // GenerateAutoNumberID generates a standardized ID for an auto-number sequence
 func GenerateAutoNumberID(objectAPIName, fieldAPIName string) string {
-	return fmt.Sprintf("%s%s_%s", constants.PrefixAutoNumber, objectAPIName, fieldAPIName)
+	return fmt.Sprintf("%s%s_%s_%s", constants.PrefixAutoNumber, objectAPIName, fieldAPIName, uuid.NewString())
 }
 
 // GenerateAppID generates a standardized ID for an app
 func GenerateAppID(apiName string) string {
-	return constants.PrefixApp + apiName
+	return fmt.Sprintf("%s%s_%s", constants.PrefixApp, apiName, uuid.NewString())
 }
 
 // ==================== SQL Helpers ====================
@@ -327,4 +331,14 @@ func SliceToNullJSON(slice []string) sql.NullString {
 		return sql.NullString{Valid: false}
 	}
 	return sql.NullString{String: string(b), Valid: true}
+}
+
+// ParseDBTime parses a time string from the database which might be in different formats
+// Supports generic SQL format (2006-01-02 15:04:05) and RFC3339
+func ParseDBTime(raw []byte) (time.Time, error) {
+	s := string(raw)
+	if t, err := time.Parse("2006-01-02 15:04:05", s); err == nil {
+		return t, nil
+	}
+	return time.Parse(time.RFC3339, s)
 }

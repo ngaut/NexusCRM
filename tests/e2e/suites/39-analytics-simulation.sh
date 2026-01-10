@@ -89,7 +89,7 @@ test_analytics_count() {
         "operation": "count"
     }')
     
-    local val=$(echo "$res" | jq -r '.result')
+    local val=$(echo "$res" | jq -r '.data')
     
     if [ "$val" = "3" ]; then
         test_passed "Count is correct (3)"
@@ -109,7 +109,7 @@ test_analytics_sum() {
         "field": "amount"
     }')
     
-    local val=$(echo "$res" | jq -r '.result')
+    local val=$(echo "$res" | jq -r '.data')
     
     # Check if starts with 800 (handles 800 or 800.00)
     if [[ "$val" == "800"* ]]; then
@@ -132,8 +132,8 @@ test_analytics_group_by() {
     }')
     
     # Expected: [{name: "North", value: 300}, {name: "South", value: 500}]
-    local north=$(echo "$res" | jq -r '.result[] | select(.name == "North") | .value')
-    local south=$(echo "$res" | jq -r '.result[] | select(.name == "South") | .value')
+    local north=$(echo "$res" | jq -r '.data[] | select(.name == "North") | .value')
+    local south=$(echo "$res" | jq -r '.data[] | select(.name == "South") | .value')
     
     if [[ "$north" == "300"* ]] && [[ "$south" == "500"* ]]; then
         test_passed "Group By correct (North=300, South=500)"

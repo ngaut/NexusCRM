@@ -1,6 +1,6 @@
 [
     {
-        "id": "setup_users_manage",
+        "__sys_gen_id": "setup_users_manage",
         "label": "Users",
         "icon": "Users",
         "component_name": "UserManager",

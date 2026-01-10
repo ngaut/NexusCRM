@@ -33,7 +33,7 @@ func (h *DataHandler) Query(c *gin.Context) {
 	// Normalize object API name from JSON body
 	req.ObjectAPIName = strings.ToLower(req.ObjectAPIName)
 
-	// Map generic OrderBy to legacy SortField if present
+	// Map OrderBy to SortField for backwards compatibility
 	if len(req.OrderBy) > 0 && req.SortField == "" {
 		req.SortField = req.OrderBy[0].Field
 		req.SortDirection = req.OrderBy[0].Direction
@@ -234,5 +234,50 @@ func (h *DataHandler) Calculate(c *gin.Context) {
 
 	HandleGetEnvelope(c, "data", func() (interface{}, error) {
 		return h.svc.QuerySvc.Calculate(c.Request.Context(), objectApiName, record, user)
+	})
+}
+
+// BulkCreateRecords handles POST /api/data/:objectApiName/bulk
+func (h *DataHandler) BulkCreateRecords(c *gin.Context) {
+	user := GetUserFromContext(c)
+	objectApiName := strings.ToLower(c.Param("objectApiName"))
+
+	var req struct {
+		Records         []models.SObject `json:"records" binding:"required"`
+		BatchSize       int              `json:"batch_size,omitempty"`
+		SkipFlows       bool             `json:"skip_flows,omitempty"`
+		SkipAutoNumbers bool             `json:"skip_auto_numbers,omitempty"`
+	}
+
+	if !BindJSON(c, &req) {
+		return
+	}
+
+	if len(req.Records) == 0 {
+		RespondAppError(c, errors.NewValidationError("records", "At least one record is required"))
+		return
+	}
+
+	// Limit bulk size to prevent overload
+	const maxBulkSize = 1000
+	if len(req.Records) > maxBulkSize {
+		RespondAppError(c, errors.NewValidationError("records", fmt.Sprintf("Maximum %d records per request", maxBulkSize)))
+		return
+	}
+
+	options := services.BulkInsertOptions{
+		BatchSize:       req.BatchSize,
+		SkipFlows:       req.SkipFlows,
+		SkipAutoNumbers: req.SkipAutoNumbers,
+	}
+
+	result, err := h.svc.Persistence.BulkInsert(c.Request.Context(), objectApiName, req.Records, user, options)
+	if err != nil {
+		RespondAppError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data": result,
 	})
 }

@@ -6,7 +6,7 @@ import { feedAPI } from '../infrastructure/api/feed';
 import { formatDistanceToNow } from 'date-fns';
 import { CommentList, Comment } from './feed/CommentList';
 import { AuditLogList, AuditLog } from './feed/AuditLogList';
-import { SYSTEM_TABLE_NAMES } from '../generated-schema';
+import { SYSTEM_TABLE_NAMES, COMMON_FIELDS } from '../generated-schema';
 
 interface ActivityFeedProps {
     objectApiName: string;
@@ -35,7 +35,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ objectApiName, recor
 
                 const commentIds = systemComments.map(r => r.id);
                 // Collect unique user IDs
-                const userIds = Array.from(new Set(systemComments.map(c => c.created_by).filter(Boolean)));
+                const userIds = Array.from(new Set(systemComments.map(c => c.created_by_id).filter(Boolean)));
 
                 // Fetch Users (Names)
                 let userMap = new Map<string, string>();
@@ -65,7 +65,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ objectApiName, recor
                         dataAPI.query({
                             objectApiName: SYSTEM_TABLE_NAMES.SYSTEM_FILE,
                             filterExpr: `parent_id == '${c.id}'`,
-                            sortField: 'created_date',
+                            sortField: COMMON_FIELDS.CREATED_DATE,
                             sortDirection: 'ASC'
                         })
                     );
@@ -102,8 +102,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ objectApiName, recor
                         id: r.id,
                         body: r.body,
                         created_date: timeDisplay,
-                        created_by: r.created_by,
-                        author_name: userMap.get(r.created_by) || 'User',
+                        created_by: r.created_by_id,
+                        author_name: userMap.get(r.created_by_id || '') || 'User',
                         parent_comment_id: r.parent_comment_id,
                         is_resolved: !!r.is_resolved,
                         attachments: myFiles,

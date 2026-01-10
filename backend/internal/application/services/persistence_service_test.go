@@ -168,7 +168,7 @@ func TestPersistenceService_Integration(t *testing.T) {
 		saved1, err := svc.Insert(ctx, objectName, rec1, adminUser)
 		require.NoError(t, err, "Insert record 1 should succeed")
 		t.Cleanup(func() {
-			svc.Delete(context.Background(), objectName, saved1["id"].(string), adminUser)
+			svc.Delete(context.Background(), objectName, saved1[constants.FieldID].(string), adminUser)
 		})
 
 		val1 := saved1[fieldName]
@@ -190,7 +190,7 @@ func TestPersistenceService_Integration(t *testing.T) {
 		saved2, err := svc.Insert(ctx, objectName, rec2, adminUser)
 		require.NoError(t, err, "Insert record 2 should succeed")
 		t.Cleanup(func() {
-			svc.Delete(context.Background(), objectName, saved2["id"].(string), adminUser)
+			svc.Delete(context.Background(), objectName, saved2[constants.FieldID].(string), adminUser)
 		})
 
 		val2 := saved2[fieldName]

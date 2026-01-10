@@ -66,8 +66,9 @@ test_approval_submission_flow() {
     
     if ! echo "$proc_check" | grep -q '"id"'; then
         echo "     No active process found. Creating one..."
+        TIMESTAMP=$(date +%s)
         create_proc_resp=$(api_post "/api/data/_System_ApprovalProcess" '{
-            "name": "E2E Auto Process", 
+            "name": "E2E Auto Process '$TIMESTAMP'", 
             "object_api_name": "Lead", 
             "is_active": true, 
             "approver_type": "Self",

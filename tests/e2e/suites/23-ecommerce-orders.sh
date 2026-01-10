@@ -220,12 +220,12 @@ test_query_orders() {
     echo ""
     echo "Test 23.7: Query Orders"
     
-    local delivered=$(api_post "/api/data/query" '{"object_api_name": "ecom_order", "filters": [{"field": "status", "operator": "=", "value": "Delivered"}]}')
-    echo "  Delivered orders: $(echo "$delivered" | jq '.records | length' 2>/dev/null || echo 0)"
+    local delivered=$(api_post "/api/data/query" '{"object_api_name": "ecom_order", "filter_expr": "status == '"'"'Delivered'"'"'"}')
+    echo "  Delivered orders: $(echo "$delivered" | jq '.data | length' 2>/dev/null || echo 0)"
     
     if [ -n "$ORDER_ID" ]; then
-        local lineitems=$(api_post "/api/data/query" '{"object_api_name": "ecom_lineitem", "filters": [{"field": "order_id", "operator": "=", "value": "'$ORDER_ID'"}]}')
-        echo "  Line items in order: $(echo "$lineitems" | jq '.records | length' 2>/dev/null || echo 0)"
+        local lineitems=$(api_post "/api/data/query" '{"object_api_name": "ecom_lineitem", "filter_expr": "order_id == '"'"'$ORDER_ID'"'"'"}')
+        echo "  Line items in order: $(echo "$lineitems" | jq '.data | length' 2>/dev/null || echo 0)"
     fi
     
     test_passed "Order queries completed"

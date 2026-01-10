@@ -34,23 +34,22 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 	createRole := func(name, label, parentID string) string {
 		id := services.GenerateID()
 		// Note: 'label' is not in the schema based on previous error, using 'description' for label text
-
-		// Note: 'label' is not in the schema based on previous error, using 'description' for label text
 		var query string
 		var err error
 
+		roleCols := fmt.Sprintf("%s, %s, %s, %s, %s, %s", constants.FieldID, constants.FieldSysRole_Name, constants.FieldSysRole_Description, constants.FieldSysRole_ParentRoleID, constants.FieldCreatedDate, constants.FieldLastModifiedDate)
 		if parentID == "" {
-			query = fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id, created_date, last_modified_date) VALUES (?, ?, ?, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableRole)
+			query = fmt.Sprintf("INSERT INTO %s (%s) VALUES (?, ?, ?, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableRole, roleCols)
 			_, err = db.Exec(query, id, name, label)
 		} else {
-			query = fmt.Sprintf("INSERT INTO %s (id, name, description, parent_role_id, created_date, last_modified_date) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableRole)
+			query = fmt.Sprintf("INSERT INTO %s (%s) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableRole, roleCols)
 			_, err = db.Exec(query, id, name, label, parentID)
 		}
 		require.NoError(t, err)
 
 		// Register cleanup
 		t.Cleanup(func() {
-			_, _ = db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableRole), id)
+			_, _ = db.Exec(fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableRole, constants.FieldID), id)
 		})
 		return id
 	}
@@ -69,12 +68,13 @@ func TestRoleHierarchy_ManagerVisibility(t *testing.T) {
 		userID := services.GenerateID()
 		username := "user_" + userID + "@test.com"
 
-		_, err := db.Exec(fmt.Sprintf("INSERT INTO %s (id, username, email, password, first_name, last_name, profile_id, role_id, is_active, created_date, last_modified_date) VALUES (?, ?, ?, 'pass', 'Test', 'User', ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableUser),
+		userCols := fmt.Sprintf("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s", constants.FieldID, constants.FieldUsername, constants.FieldEmail, constants.FieldPassword, constants.FieldFirstName, constants.FieldLastName, constants.FieldProfileID, constants.FieldRoleID, constants.FieldIsActive, constants.FieldCreatedDate, constants.FieldLastModifiedDate)
+		_, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s) VALUES (?, ?, ?, 'pass', 'Test', 'User', ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", constants.TableUser, userCols),
 			userID, username, username, constants.ProfileStandardUser, roleID)
 		require.NoError(t, err)
 
 		t.Cleanup(func() {
-			_, _ = db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableUser), userID)
+			_, _ = db.Exec(fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableUser, constants.FieldID), userID)
 		})
 
 		return &models.UserSession{

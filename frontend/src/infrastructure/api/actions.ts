@@ -17,6 +17,7 @@ export interface ExecuteActionResponse {
 
 export interface ActionMetadata {
     [COMMON_FIELDS.ID]: string;
+    id?: string; // Alias for [COMMON_FIELDS.ID]
     [COMMON_FIELDS.OBJECT_API_NAME]: string;
     [COMMON_FIELDS.NAME]: string;
     [COMMON_FIELDS.LABEL]: string;

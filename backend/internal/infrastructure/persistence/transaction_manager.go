@@ -126,7 +126,7 @@ const (
 	ReadUncommitted IsolationLevel = "READ UNCOMMITTED"
 	ReadCommitted   IsolationLevel = "READ COMMITTED"
 	RepeatableRead  IsolationLevel = "REPEATABLE READ"
-	Serializable    IsolationLevel = "SERIALIZABLE"
+	Serializable    IsolationLevel = IsoLevelSerializable
 )
 
 // isDeadlock checks if an error is a deadlock error.
@@ -141,6 +141,6 @@ func isDeadlock(err error) bool {
 	errMsg := strings.ToLower(err.Error())
 	return strings.Contains(errMsg, "deadlock") ||
 		strings.Contains(errMsg, "lock wait timeout") ||
-		strings.Contains(errMsg, "1213") ||
-		strings.Contains(errMsg, "1205")
+		strings.Contains(errMsg, ErrCodeDeadlock) ||
+		strings.Contains(errMsg, ErrCodeLockWait)
 }

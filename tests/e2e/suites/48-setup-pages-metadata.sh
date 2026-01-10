@@ -33,7 +33,7 @@ test_query_setup_pages() {
     }')
     
     if echo "$response" | grep -q '"records"'; then
-        local count=$(echo "$response" | grep -o '"id":' | wc -l)
+        local count=$(echo "$response" | grep -o '"__sys_gen_id":' | wc -l)
         echo "  Found $count setup pages"
         test_passed "Query _System_SetupPage returns records"
     else
@@ -95,7 +95,7 @@ test_filter_enabled_pages() {
     
     if echo "$response" | grep -q '"records"'; then
         # Use jq for robust counting (handles spacing/formatting differences)
-        local count=$(echo "$response" | jq '.records | length')
+        local count=$(echo "$response" | jq '.data | length')
         echo "  Found $count enabled setup pages"
         if [ "$count" -ge 8 ]; then
             test_passed "Filter by is_enabled returns expected results"

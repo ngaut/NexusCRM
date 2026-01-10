@@ -111,7 +111,7 @@ test_query_records() {
     response=$(api_post "/api/data/query" "{\"object_api_name\": \"$TEST_OBJ\", \"limit\": 10}")
     
     if echo "$response" | grep -q '"id"'; then
-        count=$(echo "$response" | grep -o '"id":' | wc -l)
+        count=$(echo "$response" | grep -o '"__sys_gen_id":' | wc -l)
         test_passed "POST /api/data/query returns records ($count found)"
     else
         test_failed "POST /api/data/query returned no records" "$response"

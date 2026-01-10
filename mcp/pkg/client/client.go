@@ -139,10 +139,13 @@ func (c *NexusClient) CreateRecord(ctx context.Context, objectName string, data 
 		return "", err
 	}
 
-	// Check "data" -> "id"
+	// Check "data" -> "id" or "__sys_gen_id"
 	if dataVal, ok := rawResp["data"]; ok {
 		if dataMap, ok := dataVal.(map[string]interface{}); ok {
 			if id, ok := dataMap["id"].(string); ok {
+				return id, nil
+			}
+			if id, ok := dataMap["__sys_gen_id"].(string); ok {
 				return id, nil
 			}
 		}
@@ -228,10 +231,13 @@ func (c *NexusClient) CreateApp(ctx context.Context, app models.AppConfig, authT
 		return "", err
 	}
 
-	// Check "data" -> "id"
+	// Check "data" -> "id" or "__sys_gen_id"
 	if dataVal, ok := rawResp["data"]; ok {
 		if dataMap, ok := dataVal.(map[string]interface{}); ok {
 			if id, ok := dataMap["id"].(string); ok {
+				return id, nil
+			}
+			if id, ok := dataMap["__sys_gen_id"].(string); ok {
 				return id, nil
 			}
 		}
@@ -442,10 +448,13 @@ func (c *NexusClient) CreateValidationRule(ctx context.Context, rule models.Vali
 		return "", err
 	}
 
-	// Check "data" -> "id"
+	// Check "data" -> "id" or "__sys_gen_id"
 	if dataVal, ok := rawResp["data"]; ok {
 		if dataMap, ok := dataVal.(map[string]interface{}); ok {
 			if id, ok := dataMap["id"].(string); ok {
+				return id, nil
+			}
+			if id, ok := dataMap["__sys_gen_id"].(string); ok {
 				return id, nil
 			}
 		}

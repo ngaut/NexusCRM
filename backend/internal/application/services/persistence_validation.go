@@ -13,7 +13,7 @@ import (
 // checkUniqueness checks if unique fields are unique
 func (s *PersistenceService) checkUniqueness(ctx context.Context, objectName string, data models.SObject, schema *models.ObjectMetadata, excludeID string) error {
 	for _, field := range schema.Fields {
-		if !field.Unique {
+		if !field.IsUnique {
 			continue
 		}
 
@@ -104,7 +104,7 @@ func (s *PersistenceService) generateSystemFields(
 
 			// Created By
 			if fieldName == constants.FieldCreatedByID && isInsert {
-				if currentUser != nil {
+				if !exists && currentUser != nil {
 					result[constants.FieldCreatedByID] = currentUser.ID
 				}
 				continue
@@ -112,12 +112,18 @@ func (s *PersistenceService) generateSystemFields(
 
 			// Created Date
 			if fieldName == constants.FieldCreatedDate && isInsert {
-				result[constants.FieldCreatedDate] = NowTimestamp()
+				if !exists {
+					result[constants.FieldCreatedDate] = NowTimestamp()
+				}
 				continue
 			}
 
 			// Last Modified By
 			if fieldName == constants.FieldLastModifiedByID {
+				if isInsert && exists {
+					// Respect provided value on insert
+					continue
+				}
 				if currentUser != nil {
 					result[constants.FieldLastModifiedByID] = currentUser.ID
 				}
@@ -126,6 +132,10 @@ func (s *PersistenceService) generateSystemFields(
 
 			// Last Modified Date
 			if fieldName == constants.FieldLastModifiedDate {
+				if isInsert && exists {
+					// Respect provided value on insert
+					continue
+				}
 				result[constants.FieldLastModifiedDate] = NowTimestamp()
 				continue
 			}

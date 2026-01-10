@@ -66,7 +66,7 @@ type genContext struct {
 
 var commonFieldNames = []string{
 	// Primary/Core fields
-	"id",
+	"__sys_gen_id",
 	"name",
 	"api_name",
 	"label",
@@ -74,12 +74,12 @@ var commonFieldNames = []string{
 	"description",
 
 	// Audit fields
-	"created_date",
-	"created_by_id",
-	"last_modified_date",
-	"last_modified_by_id",
-	"owner_id",
-	"is_deleted",
+	"__sys_gen_created_date",
+	"__sys_gen_created_by_id",
+	"__sys_gen_last_modified_date",
+	"__sys_gen_last_modified_by_id",
+	"__sys_gen_owner_id",
+	"__sys_gen_is_deleted",
 	"created_by",
 
 	// User fields
@@ -508,7 +508,11 @@ func generateTypeScript(ctx *genContext, projectRoot string) error {
 		})
 
 		for _, col := range sortedCols {
-			key := strings.ToUpper(col.Name)
+			// Generate clean key: __sys_gen_id -> ID
+			pascal := snakeToPascal(col.Name) // ID
+			snake := pascalToSnake(pascal)    // id
+			key := strings.ToUpper(snake)     // ID
+
 			sb.WriteString(fmt.Sprintf("    %s: '%s',\n", key, col.Name))
 		}
 		sb.WriteString("} as const;\n\n")
@@ -539,6 +543,14 @@ func generateTypeScript(ctx *genContext, projectRoot string) error {
 				sb.WriteString(fmt.Sprintf("    %s?: %s;\n", col.Name, tsType))
 			} else {
 				sb.WriteString(fmt.Sprintf("    %s: %s;\n", col.Name, tsType))
+			}
+
+			// Generate friendly aliases for __sys_gen_* fields
+			// This allows frontend code to use .id, .created_date, etc.
+			if strings.HasPrefix(col.Name, "__sys_gen_") {
+				alias := strings.TrimPrefix(col.Name, "__sys_gen_")
+				// Always make aliases optional to avoid conflicts
+				sb.WriteString(fmt.Sprintf("    %s?: %s; // Alias for %s\n", alias, tsType, col.Name))
 			}
 		}
 		sb.WriteString("}\n\n")
@@ -1069,6 +1081,9 @@ func tableNameToTSKey(name string) string {
 
 // snakeToPascal converts "created_date" to "CreatedDate"
 func snakeToPascal(s string) string {
+	// Strip system prefix for clean Go/TS identifiers
+	s = strings.TrimPrefix(s, "__sys_gen_")
+
 	parts := strings.Split(s, "_")
 	for i, p := range parts {
 		if len(p) > 0 {

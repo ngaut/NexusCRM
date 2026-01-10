@@ -90,7 +90,7 @@ echo "🧪 Test 2: Add Widgets via UPDATE (JSON Patch)..."
 # Construct widgets JSON array
 WIDGETS_JSON='[
     {
-        "id": "widget1",
+        "__sys_gen_id": "widget1",
         "type": "metric",
         "title": "Total Sales",
         "config": {
@@ -101,7 +101,7 @@ WIDGETS_JSON='[
         "position": {"x": 0, "y": 0, "w": 3, "h": 2}
     },
     {
-        "id": "widget2",
+        "__sys_gen_id": "widget2",
         "title": "Sales by Region",
         "type": "chart-bar",
         "config": {
@@ -119,7 +119,7 @@ UPDATE_RES=$(api_patch "/api/data/_System_Dashboard/$DASHBOARD_ID" "{
     \"widgets\": $WIDGETS_JSON
 }")
 
-if echo "$UPDATE_RES" | grep -q "error"; then
+if echo "$UPDATE_RES" | grep -qiE "error|fail|exception"; then
     echo "❌ Dashboard update failed: $UPDATE_RES"
     exit 1
 fi
@@ -129,7 +129,7 @@ echo "✅ Dashboard widgets updated successfully"
 echo "🧪 Test 3: Verify Widgets Persisted..."
 
 DASHBOARD_GET=$(api_get "/api/data/_System_Dashboard/$DASHBOARD_ID")
-WIDGETS_RETRIEVED=$(echo "$DASHBOARD_GET" | jq '.record.widgets // .widgets')
+WIDGETS_RETRIEVED=$(echo "$DASHBOARD_GET" | jq '.data.widgets')
 WIDGETS_RETRIEVED=$(echo "$WIDGETS_RETRIEVED" | jq 'if . == null then [] else . end')
 WIDGET_COUNT=$(echo "$WIDGETS_RETRIEVED" | jq 'length')
 
@@ -148,7 +148,7 @@ AGG_QUERY=$(api_post "/api/data/query" "{
     \"fields\": [\"amount\"],
     \"aggregations\": [{\"function\": \"SUM\", \"field\": \"amount\", \"alias\": \"total\"}]
 }")
-TOTAL_AMOUNT=$(echo "$AGG_QUERY" | jq -r '.aggregations.total // .records[0].total // empty')
+TOTAL_AMOUNT=$(echo "$AGG_QUERY" | jq -r '.aggregations.total // .data[0].total // empty')
 
 # We created: 50000 + 75000 + 60000 + 85000 + 40000 = 310000
 if [[ -z "$TOTAL_AMOUNT" ]]; then
@@ -164,7 +164,7 @@ echo "🧪 Test 5: Modify Widgets (Add one, Remove one)..."
 # New Set: Remove widget1, keep widget2, add widget3
 NEW_WIDGETS_JSON='[
     {
-        "id": "widget2",
+        "__sys_gen_id": "widget2",
         "title": "Sales by Region",
         "type": "chart-bar",
         "config": {
@@ -177,7 +177,7 @@ NEW_WIDGETS_JSON='[
         "position": {"x": 3, "y": 0, "w": 6, "h": 4}
     },
     {
-        "id": "widget3",
+        "__sys_gen_id": "widget3",
         "title": "Recent Sales",
         "type": "record-list",
         "config": {
@@ -194,14 +194,14 @@ UPDATE_RES_2=$(api_patch "/api/data/_System_Dashboard/$DASHBOARD_ID" "{
     \"widgets\": $NEW_WIDGETS_JSON
 }")
 
-if echo "$UPDATE_RES_2" | grep -q "error"; then
+if echo "$UPDATE_RES_2" | grep -qiE "error|fail|exception"; then
     echo "❌ Dashboard update 2 failed: $UPDATE_RES_2"
     exit 1
 fi
 
 # Verify
 DASHBOARD_GET_2=$(api_get "/api/data/_System_Dashboard/$DASHBOARD_ID")
-WIDGET_COUNT_2=$(echo "$DASHBOARD_GET_2" | jq '.record.widgets // .widgets | length')
+WIDGET_COUNT_2=$(echo "$DASHBOARD_GET_2" | jq '.data.widgets | length')
 
 if [[ "$WIDGET_COUNT_2" -ne 2 ]]; then
     echo "❌ Expected 2 widgets after modification, got $WIDGET_COUNT_2"
@@ -209,7 +209,7 @@ if [[ "$WIDGET_COUNT_2" -ne 2 ]]; then
 fi
 
 # Check if widget3 is present
-HAS_WIDGET3=$(echo "$DASHBOARD_GET_2" | jq '(.record.widgets // .widgets)[] | select(.id=="widget3") | .id')
+HAS_WIDGET3=$(echo "$DASHBOARD_GET_2" | jq '.data.widgets[] | select(.__sys_gen_id=="widget3") | .__sys_gen_id')
 if [[ -z "$HAS_WIDGET3" ]]; then
     echo "❌ Widget 3 not found after update!"
     exit 1

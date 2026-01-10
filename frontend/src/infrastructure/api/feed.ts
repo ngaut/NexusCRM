@@ -1,17 +1,9 @@
 import { apiClient } from './client';
 import { API_ENDPOINTS } from './endpoints';
-import { COMMON_FIELDS } from '../../core/constants';
+import { SystemComment } from '../../generated-schema';
 
-export interface SystemComment {
-    [COMMON_FIELDS.ID]: string;
-    body: string;
-    [COMMON_FIELDS.OBJECT_API_NAME]: string;
-    [COMMON_FIELDS.RECORD_ID]: string;
-    parent_comment_id?: string;
-    is_resolved: boolean;
-    [COMMON_FIELDS.CREATED_BY]: string;
-    [COMMON_FIELDS.CREATED_DATE]: string;
-}
+// Re-export for consumers
+export type { SystemComment } from '../../generated-schema';
 
 export const feedAPI = {
     /**

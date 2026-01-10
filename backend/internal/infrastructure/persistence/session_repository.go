@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
@@ -21,10 +22,13 @@ func NewSessionRepository(db *sql.DB) *SessionRepository {
 
 // InsertSession creates a new session in the database
 func (r *SessionRepository) InsertSession(ctx context.Context, session *models.SystemSession) error {
-	query := fmt.Sprintf(`
-		INSERT INTO %s (id, user_id, token, expires_at, ip_address, user_agent, is_revoked, last_activity, created_date, last_modified_date)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-		constants.TableSession)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysSession_UserID, constants.FieldSysSession_Token,
+		constants.FieldSysSession_ExpiresAt, constants.FieldSysSession_IPAddress, constants.FieldSysSession_UserAgent,
+		constants.FieldSysSession_IsRevoked, constants.FieldSysSession_LastActivity,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+	query := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`, constants.TableSession, cols)
 
 	_, err := r.db.ExecContext(ctx, query,
 		session.ID,
@@ -41,11 +45,17 @@ func (r *SessionRepository) InsertSession(ctx context.Context, session *models.S
 
 // GetSession retrieves a session by its ID (from JWT claim)
 func (r *SessionRepository) GetSession(ctx context.Context, sessionID string) (*models.SystemSession, error) {
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysSession_UserID, constants.FieldSysSession_Token,
+		constants.FieldSysSession_ExpiresAt, constants.FieldSysSession_IPAddress, constants.FieldSysSession_UserAgent,
+		constants.FieldSysSession_IsRevoked, constants.FieldSysSession_LastActivity,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		SELECT id, user_id, token, expires_at, ip_address, user_agent, is_revoked, last_activity, created_date, last_modified_date 
-		FROM %s 
-		WHERE id = ? LIMIT 1`,
-		constants.TableSession)
+		SELECT %s FROM %s 
+		WHERE %s = ? LIMIT 1`,
+		cols, constants.TableSession, constants.FieldID)
 
 	var s models.SystemSession
 	var createdDateRaw, lastModifiedDateRaw, lastActivityRaw []byte
@@ -80,14 +90,16 @@ func (r *SessionRepository) GetSession(ctx context.Context, sessionID string) (*
 
 // RevokeSession marks a session as revoked
 func (r *SessionRepository) RevokeSession(ctx context.Context, sessionID string) error {
-	query := fmt.Sprintf("UPDATE %s SET is_revoked = 1, last_modified_date = NOW() WHERE id = ?", constants.TableSession)
+	query := fmt.Sprintf("UPDATE %s SET %s = 1, %s = NOW() WHERE %s = ?",
+		constants.TableSession, constants.FieldSysSession_IsRevoked, constants.FieldLastModifiedDate, constants.FieldID)
 	_, err := r.db.ExecContext(ctx, query, sessionID)
 	return err
 }
 
 // UpdateLastActivity updates the last activity timestamp
 func (r *SessionRepository) UpdateLastActivity(ctx context.Context, sessionID string) error {
-	query := fmt.Sprintf("UPDATE %s SET last_activity = NOW() WHERE id = ?", constants.TableSession)
+	query := fmt.Sprintf("UPDATE %s SET %s = NOW() WHERE %s = ?",
+		constants.TableSession, constants.FieldSysSession_LastActivity, constants.FieldID)
 	_, err := r.db.ExecContext(ctx, query, sessionID)
 	return err
 }

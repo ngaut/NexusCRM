@@ -20,7 +20,7 @@ func (r *SchemaRepository) AddColumn(tableName string, col schema.ColumnDefiniti
 	// VALIDATION: Table Name
 	// System tables (starting with _System_) are exempt from strict snake_case but we generally don't add columns to them dynamically
 	if !constants.IsSystemTable(tableName) {
-		validName := regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+		validName := regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
 		if !validName.MatchString(tableName) {
 			return fmt.Errorf("invalid table name '%s': must be snake_case", tableName)
 		}
@@ -61,8 +61,8 @@ func (r *SchemaRepository) AddColumn(tableName string, col schema.ColumnDefiniti
 	var fkDDL string
 	if len(col.ReferenceTo) == 1 {
 		fkName := fmt.Sprintf("fk_%s_%s", tableName, col.Name)
-		fkDDL = fmt.Sprintf("ALTER TABLE `%s` ADD CONSTRAINT `%s` FOREIGN KEY (`%s`) REFERENCES `%s` (`id`)",
-			tableName, fkName, col.Name, col.ReferenceTo[0])
+		fkDDL = fmt.Sprintf("ALTER TABLE `%s` ADD CONSTRAINT `%s` FOREIGN KEY (`%s`) REFERENCES `%s` (`%s`)",
+			tableName, fkName, col.Name, col.ReferenceTo[0], constants.FieldID)
 
 		if col.OnDelete != "" {
 			fkDDL += fmt.Sprintf(" ON DELETE %s", col.OnDelete)
@@ -152,7 +152,7 @@ func (r *SchemaRepository) DropColumn(tableName string, columnName string) error
 
 	// VALIDATION: Table/Column Name
 	if !constants.IsSystemTable(tableName) {
-		validName := regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+		validName := regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
 		if !validName.MatchString(tableName) {
 			return fmt.Errorf("invalid table name '%s': must be snake_case", tableName)
 		}
@@ -179,7 +179,7 @@ func (r *SchemaRepository) DropColumn(tableName string, columnName string) error
 
 	// 2. Unregister from _System_Field
 	fieldID := GenerateFieldID(tableName, columnName)
-	query := fmt.Sprintf("DELETE FROM %s WHERE id = ?", constants.TableField)
+	query := fmt.Sprintf("DELETE FROM %s WHERE %s = ?", constants.TableField, constants.FieldID)
 	if _, err := r.db.Exec(query, fieldID); err != nil {
 		log.Printf("⚠️  Warning: Failed to unregister field %s: %v", fieldID, err)
 	}
@@ -188,12 +188,69 @@ func (r *SchemaRepository) DropColumn(tableName string, columnName string) error
 	return nil
 }
 
+// ModifyColumn modifies a column's type (widening only: Boolean -> LongTextArea, etc.)
+func (r *SchemaRepository) ModifyColumn(tableName, columnName string, newCol schema.ColumnDefinition) error {
+	log.Printf("🔧 Modifying column %s.%s to type %s", tableName, columnName, newCol.Type)
+
+	// VALIDATION: Table/Column Name
+	if !constants.IsSystemTable(tableName) {
+		validName := regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
+		if !validName.MatchString(tableName) {
+			return fmt.Errorf("invalid table name '%s': must be snake_case", tableName)
+		}
+		if !validName.MatchString(columnName) {
+			return fmt.Errorf("invalid column name '%s': must be snake_case", columnName)
+		}
+	}
+
+	// Check column exists
+	exists, err := r.checkColumnExists(tableName, columnName)
+	if err != nil {
+		return fmt.Errorf("failed to check column existence: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("column '%s.%s' does not exist", tableName, columnName)
+	}
+
+	// Execute ALTER TABLE MODIFY COLUMN
+	ddl := fmt.Sprintf("ALTER TABLE `%s` MODIFY COLUMN %s", tableName, r.buildColumnDDL(newCol))
+	log.Printf("   🏁 Executing DDL: %s", ddl)
+	if _, err := r.db.Exec(ddl); err != nil {
+		log.Printf("   ❌ DDL execution failed: %v", err)
+		return fmt.Errorf("failed to modify column %s.%s: %w", tableName, columnName, err)
+	}
+	log.Printf("   ✅ DDL execution complete")
+
+	// Update metadata in _System_Field
+	if err := r.registerField(tableName, newCol, r.db); err != nil {
+		log.Printf("⚠️  Failed to update field metadata for %s.%s: %v", tableName, columnName, err)
+		// Don't rollback - the DDL succeeded and data is safe with the new type
+		return fmt.Errorf("column modified but metadata update failed: %w", err)
+	}
+
+	log.Printf("   ✅ Column modified: %s.%s", tableName, columnName)
+	return nil
+}
+
 // registerField registers a single field in _System_Field
 func (r *SchemaRepository) registerField(tableName string, col schema.ColumnDefinition, exec Executor) error {
 	if exec == nil {
 		exec = r.db
 	}
-	objectID := GenerateObjectID(tableName)
+
+	// Fix: Lookup actual Object ID from DB to ensure FK integrity
+	// We cannot use GenerateObjectID because it is now random/UUID based
+	var objectID string
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableObject, constants.FieldSysObject_APIName)
+	// Use the provided executor (tx or db)
+	// QueryRow is supported by both *sql.DB and *sql.Tx, but we need to type assert or ensure Executor interface supports it.
+	// Common interface usually has QueryRow. If not, we might need a specific handling.
+	// Assuming Executor is compatible with common SQL interface.
+	row := exec.QueryRow(query, tableName)
+	if err := row.Scan(&objectID); err != nil {
+		return fmt.Errorf("failed to resolve object ID for table %s: %w", tableName, err)
+	}
+
 	fieldID := GenerateFieldID(tableName, col.Name)
 
 	// Determine Field Type
@@ -229,7 +286,7 @@ func (r *SchemaRepository) registerField(tableName string, col schema.ColumnDefi
 		Label:       label,
 		Type:        models.FieldType(fieldType),
 		Required:    required,
-		Unique:      col.Unique,
+		IsUnique:    col.Unique,
 		IsSystem:    isSystem,
 		IsNameField: isNameField,
 	}

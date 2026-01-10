@@ -50,7 +50,7 @@ func TestMetadataService_Objects_ThemeColor_Integration(t *testing.T) {
 	// Direct DB Query to _System_Object
 	ctx := context.Background()
 	var storedColor string
-	query := fmt.Sprintf("SELECT theme_color FROM %s WHERE api_name = ?", constants.TableObject)
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldSysObject_ThemeColor, constants.TableObject, constants.FieldSysObject_APIName)
 	err = db.QueryRowContext(ctx, query, apiName).Scan(&storedColor)
 
 	assert.NoError(t, err)

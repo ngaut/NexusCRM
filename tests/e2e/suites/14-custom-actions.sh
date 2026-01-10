@@ -48,12 +48,12 @@ test_custom_action_flow() {
     # 3. Add Action to Layout headers
     echo "Fetching Lead Layout..."
     local layouts_resp=$(api_get "/api/metadata/layouts?objectApiName=lead")
-    local layout_id=$(echo "$layouts_resp" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+    local layout_id=$(echo "$layouts_resp" | grep -o '"__sys_gen_id":"[^"]*"' | head -1 | cut -d'"' -f4)
     
     if [ -z "$layout_id" ]; then
         echo "No layout found, creating default layout..."
         local new_layout_id="Layout-$(date +%s)"
-        local layout_payload='{"id":"'"$new_layout_id"'","object_api_name":"lead","layout_name":"Default Lead Layout","type":"Detail","sections":[{"label":"Information","columns":2,"fields":["name","company"]}]}'
+        local layout_payload='{"__sys_gen_id":"'"$new_layout_id"'","object_api_name":"lead","layout_name":"Default Lead Layout","type":"Detail","sections":[{"label":"Information","columns":2,"fields":["name","company"]}]}'
         local create_layout_resp=$(api_post "/api/metadata/layouts" "$layout_payload")
         
         # Check if creation succeeded by checking if ID matches (or just proceed)
@@ -75,7 +75,7 @@ test_custom_action_flow() {
     # POST to /layouts is upsert. We must provide the full layout or at least the fields we want to persist if it merges.
     # Assuming replace behavior for lists.
     # Re-using the creation payload but adding header_actions and ID.
-    local update_payload='{"id":"'"$layout_id"'","object_api_name":"lead","layout_name":"Default Lead Layout","type":"Detail","header_actions":[{"name":"E2EConvert","label":"E2E Convert","type":"Custom","icon":"Zap","component":"LeadConvertModal"}],"sections":[{"label":"Information","columns":2,"fields":["name","company"]}]}'
+    local update_payload='{"__sys_gen_id":"'"$layout_id"'","object_api_name":"lead","layout_name":"Default Lead Layout","type":"Detail","header_actions":[{"name":"E2EConvert","label":"E2E Convert","type":"Custom","icon":"Zap","component":"LeadConvertModal"}],"sections":[{"label":"Information","columns":2,"fields":["name","company"]}]}'
     
     local update_resp=$(api_post "/api/metadata/layouts" "$update_payload")
     echo "Update Response: $update_resp"

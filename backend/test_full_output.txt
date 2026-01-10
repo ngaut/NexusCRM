@@ -1,0 +1,350 @@
+?   	github.com/nexuscrm/backend/cmd/codegen	[no test files]
+?   	github.com/nexuscrm/backend/cmd/debug_id	[no test files]
+?   	github.com/nexuscrm/backend/cmd/server	[no test files]
+?   	github.com/nexuscrm/backend/cmd/wipe	[no test files]
+?   	github.com/nexuscrm/backend/cmd/wipe_db	[no test files]
+2026/01/09 10:25:09 📁 Loaded .env from ../../../../.env for tests
+=== RUN   TestFlowExecutor_PasswordHashing
+2026/01/09 10:25:09 ✅ FlowExecutor: Registered handlers for 3 supported events
+=== RUN   TestFlowExecutor_PasswordHashing/Should_hash_password_on_beforeCreate
+2026/01/09 10:25:09 🔍 FlowExecutor: checking 1 flows for trigger 'beforeCreate' on object '_System_User'
+2026/01/09 10:25:09 🔄 Flow Test_Password_Hash: executing UpdateRecord action on _System_User
+2026/01/09 10:25:09 ✅ Flow Test_Password_Hash: executed successfully
+2026/01/09 10:25:09 Verified: SecurePass123! -> $2a$10$HMd009CjGzAFNa9vBpJTbuEtCR83xg6DxbUZAnZXhjZVJujNxI2hq
+--- PASS: TestFlowExecutor_PasswordHashing (0.10s)
+    --- PASS: TestFlowExecutor_PasswordHashing/Should_hash_password_on_beforeCreate (0.10s)
+=== RUN   TestFlowExecutor_HighPriorityAlert
+2026/01/09 10:25:09 ✅ FlowExecutor: Registered handlers for 3 supported events
+=== RUN   TestFlowExecutor_HighPriorityAlert/Should_Trigger_Alert_on_High_Priority
+2026/01/09 10:25:09 🔍 FlowExecutor: checking 1 flows for trigger 'afterCreate' on object 'Ticket'
+2026/01/09 10:25:09 🔄 Flow High Priority Alert: executing CreateRecord action on Ticket
+2026/01/09 10:25:09 ✅ Flow High Priority Alert: executed successfully
+=== RUN   TestFlowExecutor_HighPriorityAlert/Should_NOT_Trigger_Alert_on_Low_Priority
+2026/01/09 10:25:09 🔍 FlowExecutor: checking 1 flows for trigger 'afterCreate' on object 'Ticket'
+--- PASS: TestFlowExecutor_HighPriorityAlert (0.00s)
+    --- PASS: TestFlowExecutor_HighPriorityAlert/Should_Trigger_Alert_on_High_Priority (0.00s)
+    --- PASS: TestFlowExecutor_HighPriorityAlert/Should_NOT_Trigger_Alert_on_Low_Priority (0.00s)
+=== RUN   TestMasterDetail_CascadeDelete
+2026/01/09 10:25:09 Warning: Failed to load role hierarchy: failed to query roles: Error 1146 (42S02): Table 'test._System_Role' doesn't exist
+2026/01/09 10:25:09 📐 Creating table: project_1767925509553764000
+2026/01/09 10:25:09 📝 Executing DDL for project_1767925509553764000: 
+CREATE TABLE IF NOT EXISTS `project_1767925509553764000` (
+  `__sys_gen_id` VARCHAR(36) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `__sys_gen_owner_id` VARCHAR(36),
+  `__sys_gen_created_by_id` VARCHAR(36),
+  `__sys_gen_last_modified_by_id` VARCHAR(36),
+  `__sys_gen_created_date` DATETIME NOT NULL,
+  `__sys_gen_last_modified_date` DATETIME NOT NULL,
+  `__sys_gen_is_deleted` TINYINT(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+2026/01/09 10:25:09 ✅ DDL executed successfully for project_1767925509553764000
+2026/01/09 10:25:09 ⚠️ An error occurred during registration. Rolling back table creation: project_1767925509553764000
+    master_detail_test.go:85: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/master_detail_test.go:85
+        	Error:      	Received unexpected error:
+        	            	failed to register table project_1767925509553764000: Error 1146 (42S02): Table 'test._System_Table' doesn't exist
+        	Test:       	TestMasterDetail_CascadeDelete
+--- FAIL: TestMasterDetail_CascadeDelete (0.11s)
+=== RUN   TestMetadataService_Apps_IsDefault
+=== RUN   TestMetadataService_Apps_IsDefault/Create_App_With_Default
+    metadata_apps_test.go:41: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_apps_test.go:41
+        	Error:      	Received unexpected error:
+        	            	failed to check app existence: Error 1146 (42S02): Table 'test._System_App' doesn't exist
+        	Test:       	TestMetadataService_Apps_IsDefault/Create_App_With_Default
+=== RUN   TestMetadataService_Apps_IsDefault/Update_App_To_Default
+    metadata_apps_test.go:60: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_apps_test.go:60
+        	Error:      	Received unexpected error:
+        	            	failed to check app existence: Error 1146 (42S02): Table 'test._System_App' doesn't exist
+        	Test:       	TestMetadataService_Apps_IsDefault/Update_App_To_Default
+--- FAIL: TestMetadataService_Apps_IsDefault (0.00s)
+    --- FAIL: TestMetadataService_Apps_IsDefault/Create_App_With_Default (0.00s)
+    --- FAIL: TestMetadataService_Apps_IsDefault/Update_App_To_Default (0.00s)
+=== RUN   TestMetadataService_Objects_ThemeColor_Integration
+2026/01/09 10:25:09 📐 Creating table: color_test_1767925509661591000
+2026/01/09 10:25:09 📝 Executing DDL for color_test_1767925509661591000: 
+CREATE TABLE IF NOT EXISTS `color_test_1767925509661591000` (
+  `__sys_gen_id` VARCHAR(36) PRIMARY KEY,
+  `__sys_gen_owner_id` VARCHAR(36),
+  `__sys_gen_created_by_id` VARCHAR(36),
+  `__sys_gen_last_modified_by_id` VARCHAR(36),
+  `__sys_gen_created_date` DATETIME,
+  `__sys_gen_last_modified_date` DATETIME,
+  `__sys_gen_is_deleted` BOOLEAN,
+  `name` VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+2026/01/09 10:25:09 ✅ DDL executed successfully for color_test_1767925509661591000
+2026/01/09 10:25:09 ⚠️ An error occurred during registration. Rolling back table creation: color_test_1767925509661591000
+    metadata_objects_test.go:47: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_objects_test.go:47
+        	Error:      	Received unexpected error:
+        	            	failed to create schema: failed to register table color_test_1767925509661591000: Error 1146 (42S02): Table 'test._System_Table' doesn't exist
+        	Test:       	TestMetadataService_Objects_ThemeColor_Integration
+    metadata_objects_test.go:56: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_objects_test.go:56
+        	Error:      	Received unexpected error:
+        	            	Error 1146 (42S02): Table 'test._System_Object' doesn't exist
+        	Test:       	TestMetadataService_Objects_ThemeColor_Integration
+    metadata_objects_test.go:57: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_objects_test.go:57
+        	Error:      	Not equal: 
+        	            	expected: "#123456"
+        	            	actual  : ""
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-#123456
+        	            	+
+        	Test:       	TestMetadataService_Objects_ThemeColor_Integration
+        	Messages:   	Theme color should be persisted correctly
+2026/01/09 10:25:09 🔥 Dropping table: color_test_1767925509661591000
+2026/01/09 10:25:09 ⚠️  Warning: Failed to unregister table color_test_1767925509661591000: Error 1146 (42S02): Table 'test._System_Table' doesn't exist
+2026/01/09 10:25:09 ⚠️  Warning: Failed to delete fields for object color_test_1767925509661591000: Error 1146 (42S02): Table 'test._System_Field' doesn't exist
+2026/01/09 10:25:09 ⚠️  Warning: Failed to delete object metadata color_test_1767925509661591000: Error 1146 (42S02): Table 'test._System_Object' doesn't exist
+2026/01/09 10:25:09 ⚠️  Warning: Failed to delete auto-number metadata for color_test_1767925509661591000: Error 1146 (42S02): Table 'test._System_AutoNumber' doesn't exist
+2026/01/09 10:25:09 ⚠️  Warning: Failed to delete object permissions for color_test_1767925509661591000: Error 1146 (42S02): Table 'test._System_ObjectPerms' doesn't exist
+2026/01/09 10:25:09 ⚠️  Warning: Failed to delete field permissions for color_test_1767925509661591000: Error 1146 (42S02): Table 'test._System_FieldPerms' doesn't exist
+2026/01/09 10:25:09    ✅ Table dropped and metadata cleaned: color_test_1767925509661591000
+--- FAIL: TestMetadataService_Objects_ThemeColor_Integration (0.10s)
+=== RUN   TestMetadataService_Themes_Integration
+    metadata_themes_test.go:60: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_themes_test.go:60
+        	Error:      	Received unexpected error:
+        	            	failed to check theme existence: Error 1146 (42S02): Table 'test._System_Theme' doesn't exist
+        	Test:       	TestMetadataService_Themes_Integration
+    metadata_themes_test.go:65: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_themes_test.go:65
+        	Error:      	Received unexpected error:
+        	            	Error 1146 (42S02): Table 'test._System_Theme' doesn't exist
+        	Test:       	TestMetadataService_Themes_Integration
+    metadata_themes_test.go:70: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_themes_test.go:70
+        	Error:      	Received unexpected error:
+        	            	Error 1146 (42S02): Table 'test._System_Theme' doesn't exist
+        	Test:       	TestMetadataService_Themes_Integration
+    metadata_themes_test.go:74: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_themes_test.go:74
+        	Error:      	Received unexpected error:
+        	            	failed to deactivate themes: Error 1146 (42S02): Table 'test._System_Theme' doesn't exist
+        	Test:       	TestMetadataService_Themes_Integration
+    metadata_themes_test.go:78: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_themes_test.go:78
+        	Error:      	Received unexpected error:
+        	            	Error 1146 (42S02): Table 'test._System_Theme' doesn't exist
+        	Test:       	TestMetadataService_Themes_Integration
+    metadata_themes_test.go:79: 
+        	Error Trace:	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_themes_test.go:79
+        	Error:      	Expected value not to be nil.
+        	Test:       	TestMetadataService_Themes_Integration
+--- FAIL: TestMetadataService_Themes_Integration (0.00s)
+panic: runtime error: invalid memory address or nil pointer dereference [recovered]
+	panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x2 addr=0x8 pc=0x104750e60]
+
+goroutine 12 [running]:
+testing.tRunner.func1.2({0x1049ad0e0, 0x105704860})
+	/opt/homebrew/Cellar/go/1.24.3/libexec/src/testing/testing.go:1734 +0x1ac
+testing.tRunner.func1()
+	/opt/homebrew/Cellar/go/1.24.3/libexec/src/testing/testing.go:1737 +0x334
+panic({0x1049ad0e0?, 0x105704860?})
+	/opt/homebrew/Cellar/go/1.24.3/libexec/src/runtime/panic.go:792 +0x124
+github.com/nexuscrm/backend/internal/application/services.TestMetadataService_Themes_Integration(0x140002ecc40)
+	/Users/qiliu/projects/nexuscrm/backend/internal/application/services/metadata_themes_test.go:80 +0x5e0
+testing.tRunner(0x140002ecc40, 0x104a76c28)
+	/opt/homebrew/Cellar/go/1.24.3/libexec/src/testing/testing.go:1792 +0xe4
+created by testing.(*T).Run in goroutine 1
+	/opt/homebrew/Cellar/go/1.24.3/libexec/src/testing/testing.go:1851 +0x374
+FAIL	github.com/nexuscrm/backend/internal/application/services	0.607s
+?   	github.com/nexuscrm/backend/internal/bootstrap	[no test files]
+=== RUN   TestFlowStateMachine_ValidTransitions
+=== RUN   TestFlowStateMachine_ValidTransitions/Running_->_Paused_via_Pause
+=== RUN   TestFlowStateMachine_ValidTransitions/Running_->_Completed_via_Complete
+=== RUN   TestFlowStateMachine_ValidTransitions/Running_->_Failed_via_Fail
+=== RUN   TestFlowStateMachine_ValidTransitions/Paused_->_Running_via_Resume
+=== RUN   TestFlowStateMachine_ValidTransitions/Paused_->_Failed_via_Fail
+=== RUN   TestFlowStateMachine_ValidTransitions/Paused_->_Completed_(invalid)
+=== RUN   TestFlowStateMachine_ValidTransitions/Completed_->_Running_(terminal)
+=== RUN   TestFlowStateMachine_ValidTransitions/Failed_->_Running_(terminal)
+=== RUN   TestFlowStateMachine_ValidTransitions/Running_->_Running_via_Resume_(invalid)
+--- PASS: TestFlowStateMachine_ValidTransitions (0.00s)
+    --- PASS: TestFlowStateMachine_ValidTransitions/Running_->_Paused_via_Pause (0.00s)
+    --- PASS: TestFlowStateMachine_ValidTransitions/Running_->_Completed_via_Complete (0.00s)
+    --- PASS: TestFlowStateMachine_ValidTransitions/Running_->_Failed_via_Fail (0.00s)
+    --- PASS: TestFlowStateMachine_ValidTransitions/Paused_->_Running_via_Resume (0.00s)
+    --- PASS: TestFlowStateMachine_ValidTransitions/Paused_->_Failed_via_Fail (0.00s)
+    --- PASS: TestFlowStateMachine_ValidTransitions/Paused_->_Completed_(invalid) (0.00s)
+    --- PASS: TestFlowStateMachine_ValidTransitions/Completed_->_Running_(terminal) (0.00s)
+    --- PASS: TestFlowStateMachine_ValidTransitions/Failed_->_Running_(terminal) (0.00s)
+    --- PASS: TestFlowStateMachine_ValidTransitions/Running_->_Running_via_Resume_(invalid) (0.00s)
+=== RUN   TestFlowStateMachine_CanTransition
+--- PASS: TestFlowStateMachine_CanTransition (0.00s)
+=== RUN   TestFlowStateMachine_ValidTransitionsFromState
+--- PASS: TestFlowStateMachine_ValidTransitionsFromState (0.00s)
+=== RUN   TestFlowStateMachine_IsTerminal
+--- PASS: TestFlowStateMachine_IsTerminal (0.00s)
+PASS
+ok  	github.com/nexuscrm/backend/internal/domain	(cached)
+?   	github.com/nexuscrm/backend/internal/domain/events	[no test files]
+?   	github.com/nexuscrm/backend/internal/domain/ports	[no test files]
+?   	github.com/nexuscrm/backend/internal/domain/schema	[no test files]
+?   	github.com/nexuscrm/backend/internal/infrastructure/database	[no test files]
+=== RUN   TestRecordRepository_Integration
+    record_repository_test.go:33: Creating test table: test_record_repo_1767925479365497000
+    record_repository_test.go:60: Dropping test table: test_record_repo_1767925479365497000
+--- PASS: TestRecordRepository_Integration (0.10s)
+=== RUN   TestCheckUserExistsByEmail
+--- PASS: TestCheckUserExistsByEmail (0.00s)
+=== RUN   TestCheckUserExistsByID
+--- PASS: TestCheckUserExistsByID (0.00s)
+=== RUN   TestCheckEmailConflict
+--- PASS: TestCheckEmailConflict (0.00s)
+PASS
+ok  	github.com/nexuscrm/backend/internal/infrastructure/persistence	(cached)
+?   	github.com/nexuscrm/backend/internal/interfaces/middleware	[no test files]
+=== RUN   TestApprovalHandler_Submit
+=== RUN   TestApprovalHandler_Submit/Success
+=== RUN   TestApprovalHandler_Submit/Permission_Denied
+=== RUN   TestApprovalHandler_Submit/No_Active_Process
+=== RUN   TestApprovalHandler_Submit/Already_Pending
+=== RUN   TestApprovalHandler_Submit/Generic_Error
+2026/01/09 10:24:41 ❌ ERROR [500] POST /approvals/submit: db disconnect
+--- PASS: TestApprovalHandler_Submit (0.00s)
+    --- PASS: TestApprovalHandler_Submit/Success (0.00s)
+    --- PASS: TestApprovalHandler_Submit/Permission_Denied (0.00s)
+    --- PASS: TestApprovalHandler_Submit/No_Active_Process (0.00s)
+    --- PASS: TestApprovalHandler_Submit/Already_Pending (0.00s)
+    --- PASS: TestApprovalHandler_Submit/Generic_Error (0.00s)
+PASS
+ok  	github.com/nexuscrm/backend/internal/interfaces/rest	(cached)
+?   	github.com/nexuscrm/backend/pkg/auth	[no test files]
+?   	github.com/nexuscrm/backend/pkg/errors	[no test files]
+=== RUN   TestEngine_Evaluate
+=== RUN   TestEngine_Evaluate/Simple_Math
+=== RUN   TestEngine_Evaluate/Variable_Access
+=== RUN   TestEngine_Evaluate/Nested_Access
+=== RUN   TestEngine_Evaluate/Date_Function
+=== RUN   TestEngine_Evaluate/String_Function
+=== RUN   TestEngine_Evaluate/Ternary
+=== RUN   TestEngine_Evaluate/Complex_Logic
+--- PASS: TestEngine_Evaluate (0.00s)
+    --- PASS: TestEngine_Evaluate/Simple_Math (0.00s)
+    --- PASS: TestEngine_Evaluate/Variable_Access (0.00s)
+    --- PASS: TestEngine_Evaluate/Nested_Access (0.00s)
+    --- PASS: TestEngine_Evaluate/Date_Function (0.00s)
+    --- PASS: TestEngine_Evaluate/String_Function (0.00s)
+    --- PASS: TestEngine_Evaluate/Ternary (0.00s)
+    --- PASS: TestEngine_Evaluate/Complex_Logic (0.00s)
+=== RUN   TestToSQL
+=== RUN   TestToSQL/simple_equality
+=== RUN   TestToSQL/simple_greater_than
+=== RUN   TestToSQL/string_literal
+=== RUN   TestToSQL/logical_AND
+=== RUN   TestToSQL/logical_OR
+=== RUN   TestToSQL/mixed_logic
+=== RUN   TestToSQL/function_UPPER
+=== RUN   TestToSQL/function_LOWER
+=== RUN   TestToSQL/function_LEN
+=== RUN   TestToSQL/function_IF
+=== RUN   TestToSQL/function_TODAY
+=== RUN   TestToSQL/function_NOW
+=== RUN   TestToSQL/function_DATE_ADD
+=== RUN   TestToSQL/null_comparison_IS_NOT_NULL
+=== RUN   TestToSQL/null_comparison_IS_NULL
+=== RUN   TestToSQL/null_comparison_combined_with_other_conditions
+=== RUN   TestToSQL/unsupported_AND_keyword
+=== RUN   TestToSQL/unsupported_OR_keyword
+=== RUN   TestToSQL/unsupported_node
+--- PASS: TestToSQL (0.00s)
+    --- PASS: TestToSQL/simple_equality (0.00s)
+    --- PASS: TestToSQL/simple_greater_than (0.00s)
+    --- PASS: TestToSQL/string_literal (0.00s)
+    --- PASS: TestToSQL/logical_AND (0.00s)
+    --- PASS: TestToSQL/logical_OR (0.00s)
+    --- PASS: TestToSQL/mixed_logic (0.00s)
+    --- PASS: TestToSQL/function_UPPER (0.00s)
+    --- PASS: TestToSQL/function_LOWER (0.00s)
+    --- PASS: TestToSQL/function_LEN (0.00s)
+    --- PASS: TestToSQL/function_IF (0.00s)
+    --- PASS: TestToSQL/function_TODAY (0.00s)
+    --- PASS: TestToSQL/function_NOW (0.00s)
+    --- PASS: TestToSQL/function_DATE_ADD (0.00s)
+    --- PASS: TestToSQL/null_comparison_IS_NOT_NULL (0.00s)
+    --- PASS: TestToSQL/null_comparison_IS_NULL (0.00s)
+    --- PASS: TestToSQL/null_comparison_combined_with_other_conditions (0.00s)
+    --- PASS: TestToSQL/unsupported_AND_keyword (0.00s)
+    --- PASS: TestToSQL/unsupported_OR_keyword (0.00s)
+    --- PASS: TestToSQL/unsupported_node (0.00s)
+PASS
+ok  	github.com/nexuscrm/backend/pkg/expression	(cached)
+=== RUN   TestPluginRegistry_Lifecycle
+--- PASS: TestPluginRegistry_Lifecycle (0.00s)
+=== RUN   TestCustomRegistration
+--- PASS: TestCustomRegistration (0.00s)
+PASS
+ok  	github.com/nexuscrm/backend/pkg/fieldtypes	(cached)
+=== RUN   TestFormulaEngine_BasicArithmetic
+=== RUN   TestFormulaEngine_BasicArithmetic/addition
+=== RUN   TestFormulaEngine_BasicArithmetic/subtraction
+=== RUN   TestFormulaEngine_BasicArithmetic/multiplication
+=== RUN   TestFormulaEngine_BasicArithmetic/division
+--- PASS: TestFormulaEngine_BasicArithmetic (0.00s)
+    --- PASS: TestFormulaEngine_BasicArithmetic/addition (0.00s)
+    --- PASS: TestFormulaEngine_BasicArithmetic/subtraction (0.00s)
+    --- PASS: TestFormulaEngine_BasicArithmetic/multiplication (0.00s)
+    --- PASS: TestFormulaEngine_BasicArithmetic/division (0.00s)
+=== RUN   TestFormulaEngine_RecordFields
+=== RUN   TestFormulaEngine_RecordFields/simple_field_access
+=== RUN   TestFormulaEngine_RecordFields/field_arithmetic
+=== RUN   TestFormulaEngine_RecordFields/string_concatenation
+--- PASS: TestFormulaEngine_RecordFields (0.00s)
+    --- PASS: TestFormulaEngine_RecordFields/simple_field_access (0.00s)
+    --- PASS: TestFormulaEngine_RecordFields/field_arithmetic (0.00s)
+    --- PASS: TestFormulaEngine_RecordFields/string_concatenation (0.00s)
+=== RUN   TestFormulaEngine_Functions
+=== RUN   TestFormulaEngine_Functions/TODAY_function
+=== RUN   TestFormulaEngine_Functions/NOW_function
+=== RUN   TestFormulaEngine_Functions/UPPER_function
+=== RUN   TestFormulaEngine_Functions/LOWER_function
+--- PASS: TestFormulaEngine_Functions (0.00s)
+    --- PASS: TestFormulaEngine_Functions/TODAY_function (0.00s)
+    --- PASS: TestFormulaEngine_Functions/NOW_function (0.00s)
+    --- PASS: TestFormulaEngine_Functions/UPPER_function (0.00s)
+    --- PASS: TestFormulaEngine_Functions/LOWER_function (0.00s)
+PASS
+ok  	github.com/nexuscrm/backend/pkg/formula	(cached)
+=== RUN   TestParseFormulaQuery
+=== RUN   TestParseFormulaQuery/Simple_Equality
+=== RUN   TestParseFormulaQuery/Inequality_(!=)
+=== RUN   TestParseFormulaQuery/Inequality_(<>)
+=== RUN   TestParseFormulaQuery/Greater_Than
+=== RUN   TestParseFormulaQuery/Less_Than_or_Equal
+=== RUN   TestParseFormulaQuery/Invalid_Field_Name_(Injection_Attempt)
+=== RUN   TestParseFormulaQuery/Invalid_Field_Name_(Space)
+=== RUN   TestParseFormulaQuery/No_Operator
+=== RUN   TestParseFormulaQuery/Empty_Term
+=== RUN   TestParseFormulaQuery/Underscore_in_Field_Name_(Valid)
+=== RUN   TestParseFormulaQuery/Numeric_Field_Name_(Valid)
+--- PASS: TestParseFormulaQuery (0.00s)
+    --- PASS: TestParseFormulaQuery/Simple_Equality (0.00s)
+    --- PASS: TestParseFormulaQuery/Inequality_(!=) (0.00s)
+    --- PASS: TestParseFormulaQuery/Inequality_(<>) (0.00s)
+    --- PASS: TestParseFormulaQuery/Greater_Than (0.00s)
+    --- PASS: TestParseFormulaQuery/Less_Than_or_Equal (0.00s)
+    --- PASS: TestParseFormulaQuery/Invalid_Field_Name_(Injection_Attempt) (0.00s)
+    --- PASS: TestParseFormulaQuery/Invalid_Field_Name_(Space) (0.00s)
+    --- PASS: TestParseFormulaQuery/No_Operator (0.00s)
+    --- PASS: TestParseFormulaQuery/Empty_Term (0.00s)
+    --- PASS: TestParseFormulaQuery/Underscore_in_Field_Name_(Valid) (0.00s)
+    --- PASS: TestParseFormulaQuery/Numeric_Field_Name_(Valid) (0.00s)
+PASS
+ok  	github.com/nexuscrm/backend/pkg/query	(cached)
+?   	github.com/nexuscrm/backend/pkg/utils	[no test files]
+?   	github.com/nexuscrm/backend/pkg/validator	[no test files]
+?   	github.com/nexuscrm/backend/pkg/versioning	[no test files]
+?   	github.com/nexuscrm/backend/scripts	[no test files]
+?   	github.com/nexuscrm/backend/tools/force_login	[no test files]
+FAIL

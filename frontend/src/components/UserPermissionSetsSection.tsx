@@ -1,23 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Plus, X, Loader2, Shield, Trash2, Check } from 'lucide-react';
+import { Key, Plus, X, Loader2, Shield, Trash2 } from 'lucide-react';
 import { dataAPI } from '../infrastructure/api/data';
 import { SYSTEM_TABLE_NAMES } from '../generated-schema';
 import { useErrorToast, useSuccessToast } from './ui/Toast';
+import type { PermissionSet, PermissionSetAssignment } from '../types';
 
-interface PermissionSet {
-    id: string;
-    name: string;
-    label: string;
-    description?: string;
-    is_active: boolean;
-}
-
-interface PermissionSetAssignment {
-    id: string;
-    assignee_id: string;
-    permission_set_id: string;
-    created_date?: string;
-}
 
 interface UserPermissionSetsSectionProps {
     userId: string;

@@ -39,6 +39,8 @@ func (ms *MetadataService) CreateValidationRule(ctx context.Context, rule *model
 		return fmt.Errorf("failed to insert validation rule: %w", err)
 	}
 
+	// Invalidate cache
+	ms.invalidateCacheLocked()
 	return nil
 }
 
@@ -75,6 +77,8 @@ func (ms *MetadataService) UpdateValidationRule(ctx context.Context, id string, 
 		return fmt.Errorf("failed to update validation rule: %w", err)
 	}
 
+	// Invalidate cache
+	ms.invalidateCacheLocked()
 	return nil
 }
 
@@ -86,6 +90,9 @@ func (ms *MetadataService) DeleteValidationRule(ctx context.Context, id string) 
 	if err := ms.repo.DeleteValidationRule(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete validation rule: %w", err)
 	}
+
+	// Invalidate cache
+	ms.invalidateCacheLocked()
 	return nil
 }
 

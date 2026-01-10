@@ -12,13 +12,15 @@ import (
 
 // GetFlow returns a flow by its ID
 func (ms *MetadataService) GetFlow(ctx context.Context, flowID string) *models.Flow {
-	ms.mu.RLock()
-	defer ms.mu.RUnlock()
-	flow, err := ms.repo.GetFlow(ctx, flowID)
-	if err != nil {
+	if err := ms.ensureCacheInitialized(); err != nil {
 		return nil
 	}
-	return flow
+	ms.mu.RLock()
+	defer ms.mu.RUnlock()
+	if ms.flowMap == nil {
+		return nil
+	}
+	return ms.flowMap[flowID]
 }
 
 // CreateFlow creates a new flow
@@ -55,9 +57,13 @@ func (ms *MetadataService) CreateFlow(ctx context.Context, flow *models.Flow) er
 
 	// Create steps
 	if len(flow.Steps) > 0 {
-		return ms.repo.SaveFlowSteps(ctx, flow.ID, flow.Steps)
+		if err := ms.repo.SaveFlowSteps(ctx, flow.ID, flow.Steps); err != nil {
+			return err
+		}
 	}
 
+	// Invalidate cache to include new flow
+	ms.invalidateCacheLocked()
 	return nil
 }
 
@@ -139,6 +145,8 @@ func (ms *MetadataService) UpdateFlow(ctx context.Context, flowID string, update
 		}
 	}
 
+	// Invalidate cache to reflect updated flow
+	ms.invalidateCacheLocked()
 	return nil
 }
 
@@ -154,5 +162,11 @@ func (ms *MetadataService) DeleteFlow(ctx context.Context, flowID string) error 
 	}
 
 	// Delete from database via Repo
-	return ms.repo.DeleteFlow(ctx, flowID)
+	if err := ms.repo.DeleteFlow(ctx, flowID); err != nil {
+		return err
+	}
+
+	// Invalidate cache
+	ms.invalidateCacheLocked()
+	return nil
 }

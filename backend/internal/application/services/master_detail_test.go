@@ -115,18 +115,20 @@ func TestMasterDetail_CascadeDelete(t *testing.T) {
 	// We'll update _System_Field directly for simplicity to avoid constructing complex structs for SchemaManager.
 
 	// Find Field ID dynamically to ensure proper targeting
+	// Find Field ID dynamically to ensure proper targeting
 	var fieldID string
-	fieldIDQuery := fmt.Sprintf("SELECT id FROM %s WHERE object_id = (SELECT id FROM %s WHERE api_name = ?) AND api_name = ?",
-		constants.TableField, constants.TableObject)
+	fieldIDQuery := fmt.Sprintf("SELECT %s FROM %s WHERE %s = (SELECT %s FROM %s WHERE %s = ?) AND %s = ?",
+		constants.FieldID, constants.TableField, constants.FieldObjectID, constants.FieldID, constants.TableObject, constants.FieldSysObject_APIName, constants.FieldSysField_APIName)
 	err = db.QueryRow(fieldIDQuery, detailObjName, "project_id").Scan(&fieldID)
 	require.NoError(t, err, "Failed to find field ID for project_id")
 
 	updateQuery := fmt.Sprintf(`
 		UPDATE %s 
 		SET %s = ?, %s = ?, %s = ?, %s = ?
-		WHERE id = ?
+		WHERE %s = ?
 	`, constants.TableField,
-		"type", "reference_to", "delete_rule", "is_master_detail")
+		constants.FieldSysField_Type, constants.FieldSysField_ReferenceTo, constants.FieldSysField_DeleteRule, constants.FieldSysField_IsMasterDetail,
+		constants.FieldID)
 
 	res, err := db.Exec(updateQuery,
 		constants.FieldTypeLookup,              // type
@@ -156,7 +158,7 @@ func TestMasterDetail_CascadeDelete(t *testing.T) {
 
 	// Verify Child Exists
 	var count int
-	err = db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE id = ?", detailObjName), taskID).Scan(&count)
+	err = db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ?", detailObjName, constants.FieldID), taskID).Scan(&count)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 
@@ -167,14 +169,14 @@ func TestMasterDetail_CascadeDelete(t *testing.T) {
 
 	// 7. Verify Parent Deleted (Soft Delete)
 	var pDeleted bool
-	pQuery := fmt.Sprintf("SELECT is_deleted FROM %s WHERE id = ?", masterObjName)
+	pQuery := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldIsDeleted, masterObjName, constants.FieldID)
 	err = db.QueryRow(pQuery, projectID).Scan(&pDeleted)
 	assert.NoError(t, err)
 	assert.True(t, pDeleted, "Parent should be soft deleted")
 
 	// 8. Verify Child Deleted (Cascade Soft Delete)
 	var tDeleted bool
-	tQuery := fmt.Sprintf("SELECT is_deleted FROM %s WHERE id = ?", detailObjName)
+	tQuery := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldIsDeleted, detailObjName, constants.FieldID)
 	err = db.QueryRow(tQuery, taskID).Scan(&tDeleted)
 	assert.NoError(t, err)
 	assert.True(t, tDeleted, "Child should be soft deleted (Cascade)")

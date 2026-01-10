@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/nexuscrm/backend/pkg/utils"
@@ -53,15 +54,19 @@ func (r *OutboxRepository) Enqueue(ctx context.Context, exec Executor, eventType
 		return "", fmt.Errorf("failed to marshal event payload: %w", err)
 	}
 
-	query := fmt.Sprintf(`
-		INSERT INTO %s (id, event_type, payload, status, retry_count, created_date, last_modified_date)
-		VALUES (?, ?, ?, ?, 0, NOW(), NOW())
-	`, constants.TableOutboxEvent)
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysOutboxEvent_EventType, constants.FieldSysOutboxEvent_Payload,
+		constants.FieldSysOutboxEvent_Status, constants.FieldSysOutboxEvent_RetryCount,
+		constants.FieldCreatedDate, constants.FieldLastModifiedDate,
+	}, ", ")
 
-	// Status defaults to 'pending' from constant (imported or defined locally? Using string literal or passing it in?)
-	// OutboxService defined constants. Ideally constants should be in shared.
-	// For now, I'll accept 'status' or just hardcode 'pending' if this is Enqueue.
-	// OutboxService uses "pending".
+	query := fmt.Sprintf(`
+		INSERT INTO %s (%s)
+		VALUES (?, ?, ?, ?, 0, NOW(), NOW())
+	`, constants.TableOutboxEvent, cols)
+
+	// Status defaults to 'pending'
+	// Ideally constants should be in shared (currently used from constants package)
 	status := constants.OutboxStatusPending
 
 	_, err = executor.ExecContext(ctx, query, id, eventType, payloadJSON, status)
@@ -74,13 +79,17 @@ func (r *OutboxRepository) Enqueue(ctx context.Context, exec Executor, eventType
 
 // GetPendingEvents retrieves IDs of pending events ordered by creation time
 func (r *OutboxRepository) GetPendingEvents(ctx context.Context, limit int) ([]OutboxEvent, error) {
+	cols := strings.Join([]string{
+		constants.FieldID, constants.FieldSysOutboxEvent_EventType, constants.FieldSysOutboxEvent_Payload, constants.FieldSysOutboxEvent_RetryCount,
+	}, ", ")
+
 	query := fmt.Sprintf(`
-		SELECT id, event_type, payload, retry_count
+		SELECT %s
 		FROM %s
-		WHERE status = ?
-		ORDER BY created_date ASC
+		WHERE %s = ?
+		ORDER BY %s ASC
 		LIMIT ?
-	`, constants.TableOutboxEvent)
+	`, cols, constants.TableOutboxEvent, constants.FieldSysOutboxEvent_Status, constants.FieldCreatedDate)
 
 	rows, err := r.db.QueryContext(ctx, query, constants.OutboxStatusPending, limit)
 	if err != nil {
@@ -104,10 +113,10 @@ func (r *OutboxRepository) GetPendingEvents(ctx context.Context, limit int) ([]O
 // ClaimEvent attempts to lock a specific event for processing
 func (r *OutboxRepository) ClaimEvent(ctx context.Context, exec Executor, id string) (string, error) {
 	query := fmt.Sprintf(`
-		SELECT id FROM %s 
-		WHERE id = ? AND status = ? 
+		SELECT %s FROM %s 
+		WHERE %s = ? AND %s = ? 
 		FOR UPDATE SKIP LOCKED
-	`, constants.TableOutboxEvent)
+	`, constants.FieldID, constants.TableOutboxEvent, constants.FieldID, constants.FieldSysOutboxEvent_Status)
 
 	var claimedID string
 	err := exec.QueryRowContext(ctx, query, id, constants.OutboxStatusPending).Scan(&claimedID)
@@ -128,16 +137,16 @@ func (r *OutboxRepository) UpdateStatus(ctx context.Context, exec Executor, id s
 	if status == string(constants.OutboxStatusProcessed) {
 		query = fmt.Sprintf(`
 			UPDATE %s 
-			SET status = ?, processed_date = NOW(), last_modified_date = NOW()
-			WHERE id = ?
-		`, constants.TableOutboxEvent)
+			SET %s = ?, %s = NOW(), %s = NOW()
+			WHERE %s = ?
+		`, constants.TableOutboxEvent, constants.FieldSysOutboxEvent_Status, constants.FieldSysOutboxEvent_ProcessedDate, constants.FieldLastModifiedDate, constants.FieldID)
 		args = []interface{}{status, id}
 	} else if status == string(constants.OutboxStatusFailed) {
 		query = fmt.Sprintf(`
 			UPDATE %s 
-			SET status = ?, error_message = ?, last_modified_date = NOW()
-			WHERE id = ?
-		`, constants.TableOutboxEvent)
+			SET %s = ?, %s = ?, %s = NOW()
+			WHERE %s = ?
+		`, constants.TableOutboxEvent, constants.FieldSysOutboxEvent_Status, constants.FieldSysOutboxEvent_ErrorMessage, constants.FieldLastModifiedDate, constants.FieldID)
 		args = []interface{}{status, errMessage, id}
 	} else {
 		return fmt.Errorf("unsupported status update: %s", status)
@@ -151,9 +160,9 @@ func (r *OutboxRepository) UpdateStatus(ctx context.Context, exec Executor, id s
 func (r *OutboxRepository) IncrementRetry(ctx context.Context, exec Executor, id string, newCount int, errMessage string) error {
 	query := fmt.Sprintf(`
 		UPDATE %s 
-		SET retry_count = ?, error_message = ?, last_modified_date = NOW()
-		WHERE id = ?
-	`, constants.TableOutboxEvent)
+		SET %s = ?, %s = ?, %s = NOW()
+		WHERE %s = ?
+	`, constants.TableOutboxEvent, constants.FieldSysOutboxEvent_RetryCount, constants.FieldSysOutboxEvent_ErrorMessage, constants.FieldLastModifiedDate, constants.FieldID)
 
 	_, err := exec.ExecContext(ctx, query, newCount, errMessage, id)
 	return err
@@ -163,8 +172,8 @@ func (r *OutboxRepository) IncrementRetry(ctx context.Context, exec Executor, id
 func (r *OutboxRepository) CleanupProcessed(ctx context.Context, cutoff time.Time) (int64, error) {
 	query := fmt.Sprintf(`
 		DELETE FROM %s 
-		WHERE status = ? AND processed_date < ?
-	`, constants.TableOutboxEvent)
+		WHERE %s = ? AND %s < ?
+	`, constants.TableOutboxEvent, constants.FieldSysOutboxEvent_Status, constants.FieldSysOutboxEvent_ProcessedDate)
 
 	result, err := r.db.ExecContext(ctx, query, constants.OutboxStatusProcessed, cutoff)
 	if err != nil {

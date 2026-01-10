@@ -60,7 +60,8 @@ func (ms *MetadataService) PrepareTableDefinition(schema *models.ObjectMetadata)
 			Type:        ms.schemaMgr.MapFieldTypeToSQL(string(field.Type)),
 			LogicalType: string(field.Type),
 			Nullable:    !field.Required, // If required, then NOT NULL
-			Unique:      field.Unique,
+			Unique:      field.IsUnique,
+			Options:     field.Options,
 		}
 
 		// Special handling for ID -> Make it Primary Key

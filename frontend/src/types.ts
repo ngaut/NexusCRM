@@ -104,9 +104,7 @@ export interface ObjectMetadata {
 
 // --- Permissions & Security ---
 
-// Note: SystemProfile has 'name', 'description', 'is_active', 'is_system', 'is_deleted', etc.
-// The manual Profile interface had 'id', 'name', 'description', 'is_system'.
-// SystemProfile satisfies this.
+// Note: Generated types (SystemProfile, SystemRole, etc.) already include id aliases from codegen
 export interface Profile extends SystemProfile { }
 
 export interface Role extends SystemRole { }
@@ -115,32 +113,33 @@ export interface Role extends SystemRole { }
 
 export interface Group extends SystemGroup { }
 
-export interface GroupMember extends Omit<SystemGroupMember, 'id' | 'created_date' | 'last_modified_date' | 'is_deleted'> {
-  id?: string;
-  created_date?: string;
-}
+export interface GroupMember extends SystemGroupMember { }
 
 // --- Permission Sets ---
 
 export interface PermissionSet extends SystemPermissionSet { }
 
-export interface PermissionSetAssignment extends Omit<SystemPermissionSetAssignment, 'id' | 'created_date' | 'last_modified_date' | 'is_deleted'> {
-  id?: string;
-  created_date?: string;
+export interface PermissionSetAssignment extends SystemPermissionSetAssignment { }
+
+// ObjectPermission and FieldPermission: system fields are optional for new records (before save)
+export interface ObjectPermission extends Partial<SystemObjectPerms> {
+  object_api_name: string; // Required field
+  allow_read: boolean;
+  allow_create: boolean;
+  allow_edit: boolean;
+  allow_delete: boolean;
+  view_all: boolean;
+  modify_all: boolean;
 }
 
-export interface ObjectPermission extends Omit<SystemObjectPerms, 'id' | 'created_date' | 'last_modified_date'> {
-  // Allow optional system fields for updates
-  id?: string;
+export interface FieldPermission extends Partial<SystemFieldPerms> {
+  object_api_name: string; // Required field
+  field_api_name: string; // Required field  
+  readable: boolean;
+  editable: boolean;
 }
 
-export interface FieldPermission extends Omit<SystemFieldPerms, 'id' | 'created_date' | 'last_modified_date'> {
-  id?: string;
-}
-
-export interface SharingRule extends Omit<SystemSharingRule, 'access_level'> {
-  access_level: 'Read' | 'Edit';
-}
+export interface SharingRule extends SystemSharingRule { }
 
 export interface ProfileLayoutAssignment {
   id: string; // Composite key: profileId-objectApiName
@@ -242,9 +241,9 @@ export interface PageLayout {
 
 export interface ListView {
   [COMMON_FIELDS.ID]: string;
+  id?: string; // Alias for [COMMON_FIELDS.ID]
   [COMMON_FIELDS.OBJECT_API_NAME]: string;
   [COMMON_FIELDS.LABEL]: string;
-
   filter_expr?: string;
   fields?: string[]; // Columns to display
 }
@@ -409,13 +408,20 @@ export interface AppConfig {
 
 export interface SObject {
   [COMMON_FIELDS.ID]?: string;
+  id?: string; // Alias for COMMON_FIELDS.ID
   [COMMON_FIELDS.CREATED_DATE]?: string;
+  created_date?: string; // Alias for COMMON_FIELDS.CREATED_DATE
   [COMMON_FIELDS.OWNER_ID]?: string;
+  owner_id?: string; // Alias for COMMON_FIELDS.OWNER_ID
   [COMMON_FIELDS.CREATED_BY_ID]?: string;
+  created_by_id?: string; // Alias for COMMON_FIELDS.CREATED_BY_ID
   [COMMON_FIELDS.LAST_MODIFIED_DATE]?: string;
+  last_modified_date?: string; // Alias for COMMON_FIELDS.LAST_MODIFIED_DATE
   [COMMON_FIELDS.LAST_MODIFIED_BY_ID]?: string;
+  last_modified_by_id?: string; // Alias for COMMON_FIELDS.LAST_MODIFIED_BY_ID
   [COMMON_FIELDS.IS_DELETED]?: boolean; // Soft Delete Flag
-  [key: string]: any;
+  is_deleted?: boolean; // Alias for COMMON_FIELDS.IS_DELETED
+  [key: string]: unknown;
 }
 
 export interface SearchResult {
@@ -432,21 +438,7 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-// --- Platform Features ---
-
-import { FlowStatus } from './core/constants/FlowConstants';
-
-export interface Flow {
-  id: string;
-  name: string;
-  description: string;
-  trigger_object: string;
-  trigger_condition: string;
-  action_type: string;
-  action_config: Record<string, unknown>; // Structured configuration for the action
-  status: FlowStatus;
-  last_modified: string;
-}
+// Note: Flow and FlowStep types are in infrastructure/api/flows.ts
 
 export interface ValidationRule {
   id: string;
@@ -472,6 +464,7 @@ export interface ApprovalProcess {
 
 export interface RecycleBinItem {
   [COMMON_FIELDS.ID]: string;
+  id?: string; // Alias for [COMMON_FIELDS.ID]
   [COMMON_FIELDS.RECORD_ID]: string;
   [COMMON_FIELDS.OBJECT_API_NAME]: string;
   record_name: string;
@@ -479,20 +472,5 @@ export interface RecycleBinItem {
   [COMMON_FIELDS.DELETED_DATE]: string;
 }
 
-export interface SystemLog {
-  id: string;
-  timestamp: string;
-  level: 'INFO' | 'WARN' | 'ERROR';
-  source: string;
-  message: string;
-  details?: string;
-}
-
-export interface RecentItem {
-  id: string;
-  user_id: string;
-  object_api_name: string;
-  record_id: string;
-  record_name: string;
-  timestamp: string;
-}
+// Note: SystemLog is available in generated-schema.ts (SystemSystemLog)
+// Note: RecentItem can be added back if needed

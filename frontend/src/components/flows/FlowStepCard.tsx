@@ -1,6 +1,6 @@
 import React from 'react';
 import { Trash2, GripVertical, CheckCircle, XCircle, ArrowRight, AlertCircle } from 'lucide-react';
-import { FlowStep } from './FlowStepEditor';
+import { FlowStep } from '../../infrastructure/api/flows';
 
 export interface StepCardProps {
     step: FlowStep;

@@ -9,6 +9,7 @@ import type { SObject } from '../../types';
 
 export interface ApprovalWorkItem {
     [COMMON_FIELDS.ID]: string;
+    id?: string; // Alias for [COMMON_FIELDS.ID]
     [COMMON_FIELDS.PROCESS_ID]: string;
     [COMMON_FIELDS.OBJECT_API_NAME]: string;
     [COMMON_FIELDS.RECORD_ID]: string;
@@ -134,6 +135,7 @@ export const approvalsAPI = {
 // Flow Instance Progress for multi-step approvals
 export interface FlowInstanceProgress {
     [COMMON_FIELDS.ID]: string;
+    id?: string; // Alias for [COMMON_FIELDS.ID]
     [COMMON_FIELDS.FLOW_ID]: string;
     [COMMON_FIELDS.STATUS]: 'Running' | 'Paused' | 'Completed' | 'Failed';
     [COMMON_FIELDS.CURRENT_STEP_ID]?: string;
@@ -144,6 +146,7 @@ export interface FlowInstanceProgress {
 
 export interface FlowStepProgress {
     [COMMON_FIELDS.ID]: string;
+    id?: string; // Alias for [COMMON_FIELDS.ID]
     [COMMON_FIELDS.STEP_ORDER]: number;
     [COMMON_FIELDS.STEP_NAME]: string;
     [COMMON_FIELDS.STEP_TYPE]: 'action' | 'approval' | 'decision';

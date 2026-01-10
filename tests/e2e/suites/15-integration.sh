@@ -9,6 +9,7 @@ SUITE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SUITE_DIR/../config.sh"
 source "$SUITE_DIR/../lib/helpers.sh"
 source "$SUITE_DIR/../lib/api.sh"
+source "$SUITE_DIR/../lib/constants.sh"
 
 SUITE_NAME="Integration (The Whole Picture)"
 
@@ -50,16 +51,16 @@ run_suite() {
 setup_test_object() {
     echo "Setup: Creating test object '$TEST_OBJ'..."
     
-    local response=$(api_post "/api/metadata/objects" "{
-        \"label\": \"$TEST_OBJ\",
-        \"plural_label\": \"${TEST_OBJ}s\",
-        \"api_name\": \"$TEST_OBJ\",
-        \"description\": \"E2E Integration Test Object\",
-        \"is_custom\": true,
-        \"searchable\": true
+    local response=$(api_post "$API_METADATA_OBJECTS" "{
+        \"$FIELD_LABEL\": \"$TEST_OBJ\",
+        \"$FIELD_PLURAL_LABEL\": \"${TEST_OBJ}s\",
+        \"$FIELD_OBJECT_API_NAME\": \"$TEST_OBJ\",
+        \"$FIELD_DESCRIPTION\": \"E2E Integration Test Object\",
+        \"$FIELD_IS_CUSTOM\": true,
+        \"$FIELD_SEARCHABLE\": true
     }")
     
-    if echo "$response" | grep -q "\"api_name\":\"$TEST_OBJ\""; then
+    if echo "$response" | grep -q "\"$FIELD_OBJECT_API_NAME\":\"$TEST_OBJ\""; then
         echo "  ✓ Test object created: $TEST_OBJ"
     else
         echo "  ✗ Failed to create test object"
@@ -68,10 +69,10 @@ setup_test_object() {
     fi
     
     # Add fields
-    api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "email", "label": "Email", "type": "Email"}' > /dev/null
-    api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "company", "label": "Company", "type": "Text"}' > /dev/null
-    api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "state", "label": "State", "type": "Text"}' > /dev/null
-    api_post "/api/metadata/objects/$TEST_OBJ/fields" '{"api_name": "status", "label": "Status", "type": "Text"}' > /dev/null
+    api_post "$API_METADATA_OBJECTS/$TEST_OBJ/fields" '{"'$FIELD_OBJECT_API_NAME'": "email", "'$FIELD_LABEL'": "Email", "'$FIELD_TYPE'": "'$VAL_FIELD_TYPE_EMAIL'"}' > /dev/null
+    api_post "$API_METADATA_OBJECTS/$TEST_OBJ/fields" '{"'$FIELD_OBJECT_API_NAME'": "company", "'$FIELD_LABEL'": "Company", "'$FIELD_TYPE'": "'$VAL_FIELD_TYPE_TEXT'"}' > /dev/null
+    api_post "$API_METADATA_OBJECTS/$TEST_OBJ/fields" '{"'$FIELD_OBJECT_API_NAME'": "state", "'$FIELD_LABEL'": "State", "'$FIELD_TYPE'": "'$VAL_FIELD_TYPE_TEXT'"}' > /dev/null
+    api_post "$API_METADATA_OBJECTS/$TEST_OBJ/fields" '{"'$FIELD_OBJECT_API_NAME'": "status", "'$FIELD_LABEL'": "Status", "'$FIELD_TYPE'": "'$VAL_FIELD_TYPE_TEXT'"}' > /dev/null
     echo "  ✓ Fields added to test object"
     
     # Wait for Schema Cache (Polling)
@@ -104,14 +105,14 @@ test_setup_queues_and_groups() {
     
     # Create West Coast Queue
     local queue_payload='{
-        "name": "west_coast_queue_'$TIMESTAMP'",
-        "label": "West Coast Queue '$TIMESTAMP'",
-        "type": "Queue",
-        "email": "westcoast@example.com"
+        "'$FIELD_NAME'": "west_coast_queue_'$TIMESTAMP'",
+        "'$FIELD_LABEL'": "West Coast Queue '$TIMESTAMP'",
+        "'$FIELD_TYPE'": "'$VAL_GROUP_TYPE_QUEUE'",
+        "'$FIELD_EMAIL'": "westcoast@example.com"
     }'
     
-    local queue_res=$(api_post "/api/data/_system_group" "$queue_payload")
-    WEST_COAST_QUEUE_ID=$(json_extract "$queue_res" "id")
+    local queue_res=$(api_post "$API_DATA/$SYS_GROUP" "$queue_payload")
+    WEST_COAST_QUEUE_ID=$(json_extract "$queue_res" "$FIELD_ID")
     
     if [ -z "$WEST_COAST_QUEUE_ID" ]; then
         test_failed "Failed to create West Coast Queue" "$queue_res"
@@ -121,8 +122,8 @@ test_setup_queues_and_groups() {
     
     # Add current user to queue (simulating User B)
     local member_payload='{
-        "group_id": "'$WEST_COAST_QUEUE_ID'",
-        "user_id": "'$USER_ID'"
+        "'$FIELD_GROUP_ID'": "'$WEST_COAST_QUEUE_ID'",
+        "'$FIELD_USER_ID'": "'$USER_ID'"
     }'
     
     local member_res=$(api_post "/api/data/_system_groupmember" "$member_payload")
@@ -134,13 +135,13 @@ test_setup_queues_and_groups() {
     
     # Create VP of Sales Group
     local vp_payload='{
-        "name": "vp_sales_group_'$TIMESTAMP'",
-        "label": "VP of Sales Group '$TIMESTAMP'",
-        "type": "Regular"
+        "'$FIELD_NAME'": "vp_sales_group_'$TIMESTAMP'",
+        "'$FIELD_LABEL'": "VP of Sales Group '$TIMESTAMP'",
+        "'$FIELD_TYPE'": "'$VAL_GROUP_TYPE_REGULAR'"
     }'
     
-    local vp_res=$(api_post "/api/data/_system_group" "$vp_payload")
-    VP_GROUP_ID=$(json_extract "$vp_res" "id")
+    local vp_res=$(api_post "$API_DATA/$SYS_GROUP" "$vp_payload")
+    VP_GROUP_ID=$(json_extract "$vp_res" "$FIELD_ID")
     
     if [ -z "$VP_GROUP_ID" ]; then
         test_failed "Failed to create VP Group" "$vp_res"
@@ -150,11 +151,11 @@ test_setup_queues_and_groups() {
     
     # Add current user to VP group (simulating VP access)
     local vp_member_payload='{
-        "group_id": "'$VP_GROUP_ID'",
-        "user_id": "'$USER_ID'"
+        "'$FIELD_GROUP_ID'": "'$VP_GROUP_ID'",
+        "'$FIELD_USER_ID'": "'$USER_ID'"
     }'
     
-    api_post "/api/data/_system_groupmember" "$vp_member_payload" > /dev/null
+    api_post "$API_DATA/$SYS_GROUP_MEMBER" "$vp_member_payload" > /dev/null
     
     test_passed "Setup West Coast Queue and VP Group"
 }
@@ -167,21 +168,21 @@ test_create_assignment_flow() {
     # Create a flow that assigns record to West Coast Queue when state = California
     # Using the updateRecord action type
     local flow_payload='{
-        "name": "California Assignment '$TIMESTAMP'",
-        "trigger_object": "'$TEST_OBJ'",
-        "trigger_type": "afterCreate",
-        "trigger_condition": "state = \"California\"",
-        "action_type": "updateRecord",
-        "action_config": {
-            "fields": {
-                "owner_id": "'$WEST_COAST_QUEUE_ID'"
+        "'$FIELD_NAME'": "California Assignment '$TIMESTAMP'",
+        "'$FIELD_TRIGGER_OBJECT'": "'$TEST_OBJ'",
+        "'$FIELD_TRIGGER_TYPE'": "'$VAL_TRIGGER_TYPE_AFTER_CREATE'",
+        "'$FIELD_TRIGGER_CONDITION'": "state = \"California\"",
+        "'$FIELD_ACTION_TYPE'": "'$VAL_ACTION_TYPE_UPDATE_RECORD'",
+        "'$FIELD_ACTION_CONFIG'": {
+            "'$FIELD_FIELDS'": {
+                "'$FIELD_OWNER_ID'": "'$WEST_COAST_QUEUE_ID'"
             }
         },
-        "status": "Active"
+        "'$FIELD_STATUS'": "'$VAL_STATUS_ACTIVE'"
     }'
     
-    local flow_res=$(api_post "/api/metadata/flows" "$flow_payload")
-    ASSIGNMENT_FLOW_ID=$(json_extract "$flow_res" "id")
+    local flow_res=$(api_post "$API_METADATA_FLOWS" "$flow_payload")
+    ASSIGNMENT_FLOW_ID=$(json_extract "$flow_res" "$FIELD_ID")
     
     if [ -z "$ASSIGNMENT_FLOW_ID" ]; then
         # Flow might already exist or different error
@@ -201,15 +202,15 @@ test_create_sharing_rule() {
     
     # Create sharing rule: Share all records with VP Group
     local rule_payload='{
-        "name": "Share Records with VP '$TIMESTAMP'",
-        "object_api_name": "'$TEST_OBJ'",
-        "criteria": "1=1",
-        "access_level": "Read",
-        "share_with_group_id": "'$VP_GROUP_ID'"
+        "'$FIELD_NAME'": "Share Records with VP '$TIMESTAMP'",
+        "'$FIELD_OBJECT_API_NAME'": "'$TEST_OBJ'",
+        "'$FIELD_CRITERIA'": "1=1",
+        "'$FIELD_ACCESS_LEVEL'": "'$VAL_ACCESS_LEVEL_READ'",
+        "'$FIELD_SHARE_WITH_GROUP_ID'": "'$VP_GROUP_ID'"
     }'
     
-    local rule_res=$(api_post "/api/data/_system_sharingrule" "$rule_payload")
-    SHARING_RULE_ID=$(json_extract "$rule_res" "id")
+    local rule_res=$(api_post "$API_DATA/$SYS_SHARING_RULE" "$rule_payload")
+    SHARING_RULE_ID=$(json_extract "$rule_res" "$FIELD_ID")
     
     if [ -z "$SHARING_RULE_ID" ]; then
         echo "  Note: Sharing rule creation returned: $rule_res"
@@ -288,13 +289,11 @@ test_queue_member_visibility() {
     
     # Query records owned by the queue
     local query_payload='{
-        "object_api_name": "'$TEST_OBJ'",
-        "filters": [
-            {"field": "owner_id", "operator": "=", "value": "'$WEST_COAST_QUEUE_ID'"}
-        ]
+        "'$FIELD_OBJECT_API_NAME'": "'$TEST_OBJ'",
+        "filter_expr": "'$FIELD_OWNER_ID' == '"'"'$WEST_COAST_QUEUE_ID'"'"'"
     }'
     
-    local query_res=$(api_post "/api/data/query" "$query_payload")
+    local query_res=$(api_post "$API_DATA_QUERY" "$query_payload")
     
     if echo "$query_res" | grep -q "$TEST_RECORD_ID"; then
         test_passed "Queue member can see Record in queue"
@@ -316,10 +315,10 @@ test_take_ownership() {
     fi
     
     local update_payload='{
-        "owner_id": "'$USER_ID'"
+        "'$FIELD_OWNER_ID'": "'$USER_ID'"
     }'
     
-    local update_res=$(api_patch "/api/data/$TEST_OBJ/$TEST_RECORD_ID" "$update_payload")
+    local update_res=$(api_patch "$API_DATA/$TEST_OBJ/$TEST_RECORD_ID" "$update_payload")
     
     # Accept either "id" or "success" or "updated" in response
     if echo "$update_res" | grep -qE '"id"|"success"|updated'; then
@@ -344,7 +343,7 @@ test_sharing_rule_grants_visibility() {
     
     # Since we're using the same user for simplicity, verify the sharing rule metadata exists
     if [ -n "$SHARING_RULE_ID" ]; then
-        local rule_get=$(api_get "/api/data/_system_sharingrule/$SHARING_RULE_ID")
+        local rule_get=$(api_get "$API_DATA/$SYS_SHARING_RULE/$SHARING_RULE_ID")
         
         if echo "$rule_get" | grep -q "$VP_GROUP_ID"; then
             test_passed "Sharing Rule correctly references VP Group"
@@ -354,13 +353,11 @@ test_sharing_rule_grants_visibility() {
     else
         # Alternative: Verify VP group member can query the record
         local query_payload='{
-            "object_api_name": "'$TEST_OBJ'",
-            "filters": [
-                {"field": "id", "operator": "=", "value": "'$TEST_RECORD_ID'"}
-            ]
+            "'$FIELD_OBJECT_API_NAME'": "'$TEST_OBJ'",
+            "filter_expr": "'$FIELD_ID' == '"'"'$TEST_RECORD_ID'"'"'"
         }'
         
-        local query_res=$(api_post "/api/data/query" "$query_payload")
+        local query_res=$(api_post "$API_DATA_QUERY" "$query_payload")
         
         if echo "$query_res" | grep -q "$TEST_RECORD_ID"; then
             test_passed "VP Group member can access Record"

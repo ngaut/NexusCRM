@@ -37,8 +37,14 @@ json_extract() {
     local response="$1"
     local field="$2"
     
-    # Try .data.field (New Standard), then direct field, then legacy wrappers
-    local result=$(echo "$response" | jq -r ".data.$field // .$field // .record.$field // .user.$field // empty" 2>/dev/null)
+    # API consistently returns data in .data wrapper
+    local result=$(echo "$response" | jq -r ".data.$field // .$field // empty" 2>/dev/null)
+    
+    # If field is "id" and empty, try __sys_gen_id instead (UUID migration compatibility)
+    if [ -z "$result" ] && [ "$field" = "id" ]; then
+        result=$(echo "$response" | jq -r ".data.__sys_gen_id // .__sys_gen_id // empty" 2>/dev/null)
+    fi
+    
     echo "$result"
 }
 
@@ -120,4 +126,63 @@ assert_status() {
         test_failed "$message" "Expected HTTP $expected, got $actual"
         return 1
     fi
+}
+
+# Cleanup helper: Delete items where a field starts with a prefix
+delete_items_by_prefix() {
+    local endpoint="$1"
+    local field="$2"
+    local prefix="$3"
+    local description="$4"
+
+    echo "  Cleaning up $description ($field starts with '$prefix')..."
+    
+    # fetch all items
+    local response=$(api_get "$endpoint")
+    
+    # Extract IDs of items matching prefix
+    # Use jq to select items where the field starts with prefix, then output ID
+    local ids=$(echo "$response" | jq -r ".data[] | select(.$field | tostring | startswith(\"$prefix\")) | .__sys_gen_id // .id")
+    
+    if [ -z "$ids" ]; then
+        echo "    No items found to clean."
+        return
+    fi
+
+    for id in $ids; do
+        if [ "$id" != "null" ] && [ -n "$id" ]; then
+            echo "    Deleting $id..."
+            api_delete "$endpoint/$id" > /dev/null
+        fi
+    done
+}
+
+# Cleanup helper: Delete items VIA QUERY command (for system objects without list endpoints)
+delete_via_query_by_prefix() {
+    local object_api_name="$1"
+    local field="$2"
+    local prefix="$3"
+    local description="$4"
+    local delete_endpoint="${5:-/api/data/$object_api_name}"
+
+    echo "  Cleaning up $description ($field starts with '$prefix') via Query..."
+    
+    # Query for items without 'fields' param (returns all fields, safe)
+    # limit=1000 to ensure we catch recent items even if pagination is active
+    local response=$(api_post "/api/data/query" "{\"object_api_name\": \"$object_api_name\", \"limit\": 1000}")
+
+    # Extract IDs
+    local ids=$(echo "$response" | jq -r ".data[] | select(.$field | tostring | startswith(\"$prefix\")) | .__sys_gen_id // .id")
+    
+    if [ -z "$ids" ]; then
+        echo "    No items found to clean."
+        return
+    fi
+
+    for id in $ids; do
+        if [ "$id" != "null" ] && [ -n "$id" ]; then
+            echo "    Deleting $id..."
+            api_delete "$delete_endpoint/$id" > /dev/null
+        fi
+    done
 }

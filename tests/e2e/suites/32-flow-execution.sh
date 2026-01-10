@@ -45,7 +45,7 @@ test_create_test_flow() {
         "action_config": {
             "target_object": "contact",
             "field_mappings": {
-                "last_name": "Test Contact From Flow"
+                "last_name": "Test Contact From Flow '$TIMESTAMP'"
             }
         }
     }'
@@ -73,7 +73,7 @@ test_execute_flow_without_context() {
     if [ -z "$TEST_FLOW_ID" ]; then
         # Try to get any existing flow
         local flows_res=$(api_get "/api/metadata/flows")
-        TEST_FLOW_ID=$(echo "$flows_res" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+        TEST_FLOW_ID=$(echo "$flows_res" | grep -o '"__sys_gen_id":"[^"]*"' | head -1 | cut -d'"' -f4)
         
         if [ -z "$TEST_FLOW_ID" ]; then
             echo "  No flows available to execute"
@@ -159,7 +159,7 @@ test_execute_invalid_flow() {
     local invalid_id="non-existent-flow-id-$TIMESTAMP"
     local exec_res=$(api_post "/api/flows/$invalid_id/execute" "{}")
     
-    if echo "$exec_res" | grep -qi "not found\|invalid\|error"; then
+    if echo "$exec_res" | grep -qi "not found\|invalid flow\|404"; then
         echo "  ✓ Invalid flow correctly rejected"
         test_passed "Invalid flow handling"
     else
@@ -173,25 +173,16 @@ test_cleanup() {
     echo ""
     echo "Test 32.5: Cleanup Test Data"
     
-    # Delete test record
-    if [ -n "$TEST_RECORD_ID" ]; then
-        api_delete "/api/data/account/$TEST_RECORD_ID" > /dev/null
-        echo "  ✓ Test record deleted"
-    fi
-    
-    # Delete test flow (only if we created it)
-    if [ -n "$TEST_FLOW_ID" ]; then
-        # Only delete if it matches our timestamp pattern
-        if echo "$TEST_FLOW_ID" | grep -q "$TIMESTAMP"; then
-            api_delete "/api/metadata/flows/$TEST_FLOW_ID" > /dev/null
-            echo "  ✓ Test flow deleted"
-        fi
-    fi
+    # Robust cleanup
+    delete_via_query_by_prefix "account" "name" "Flow Context Test " "Context Accounts"
+    delete_via_query_by_prefix "contact" "last_name" "Test Contact From Flow " "Flow Created Contacts"
+    delete_items_by_prefix "/api/metadata/flows" "name" "E2E Test Flow " "Test Flows"
     
     test_passed "Cleanup completed"
 }
 
 # Run if executed directly
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    trap test_cleanup EXIT
     run_suite
 fi

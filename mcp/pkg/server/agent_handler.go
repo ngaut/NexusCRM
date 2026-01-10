@@ -284,9 +284,9 @@ func (h *AgentHandler) GetConversation(c *gin.Context) {
 		// Load most recent active conversation
 		queryReq := models.QueryRequest{
 			ObjectAPIName: ObjectAIConversation,
-			FilterExpr:    fmt.Sprintf("user_id == '%s' && is_active == true", user.ID),
+			FilterExpr:    fmt.Sprintf("%s == '%s' && %s == true", constants.FieldUserID, user.ID, constants.FieldIsActive),
 			SortField:     constants.FieldLastModifiedDate,
-			SortDirection: "desc",
+			SortDirection: constants.SortDESC, // Use constant (value is "DESC", check case sensitivity if needed)
 			Limit:         1,
 		}
 		records, err := h.nexusClient.Query(c.Request.Context(), queryReq, token)
@@ -323,8 +323,8 @@ func (h *AgentHandler) GetConversation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"conversation": gin.H{
-				"id":    record[constants.FieldID],
-				"title": record["title"],
+				constants.FieldID:                      record[constants.FieldID],
+				constants.FieldSysAIConversation_Title: record[constants.FieldSysAIConversation_Title],
 			},
 			"messages": messages,
 		},
@@ -367,10 +367,10 @@ func (h *AgentHandler) SaveConversation(c *gin.Context) {
 		}
 
 		updateData := map[string]interface{}{
-			"messages": string(messagesJSON),
+			constants.FieldSysAIConversation_Messages: string(messagesJSON),
 		}
 		if req.Title != "" {
-			updateData["title"] = req.Title
+			updateData[constants.FieldSysAIConversation_Title] = req.Title
 		}
 		err = h.nexusClient.UpdateRecord(c.Request.Context(), ObjectAIConversation, req.ConversationID, updateData, token)
 		if err != nil {
@@ -402,10 +402,10 @@ func (h *AgentHandler) SaveConversation(c *gin.Context) {
 		}
 
 		createData := map[string]interface{}{
-			constants.FieldUserID:   user.ID,
-			"title":                 title,
-			"messages":              string(messagesJSON),
-			constants.FieldIsActive: true,
+			constants.FieldUserID:                     user.ID,
+			constants.FieldSysAIConversation_Title:    title,
+			constants.FieldSysAIConversation_Messages: string(messagesJSON),
+			constants.FieldIsActive:                   true,
 		}
 		id, err := h.nexusClient.CreateRecord(c.Request.Context(), ObjectAIConversation, createData, token)
 		if err != nil {
@@ -440,7 +440,7 @@ func (h *AgentHandler) ClearConversation(c *gin.Context) {
 		}
 		// Clear messages instead of delete (keeps history record)
 		updateData := map[string]interface{}{
-			"messages": "[]",
+			constants.FieldSysAIConversation_Messages: "[]",
 		}
 		h.nexusClient.UpdateRecord(c.Request.Context(), ObjectAIConversation, convID, updateData, token)
 	}
@@ -458,9 +458,9 @@ func (h *AgentHandler) ListConversations(c *gin.Context) {
 
 	queryReq := models.QueryRequest{
 		ObjectAPIName: ObjectAIConversation,
-		FilterExpr:    fmt.Sprintf("user_id == '%s'", user.ID),
-		SortField:     "last_modified_date",
-		SortDirection: "desc",
+		FilterExpr:    fmt.Sprintf("%s == '%s'", constants.FieldUserID, user.ID),
+		SortField:     constants.FieldLastModifiedDate,
+		SortDirection: constants.SortDESC, // Use constant
 		Limit:         100,
 	}
 
@@ -474,11 +474,11 @@ func (h *AgentHandler) ListConversations(c *gin.Context) {
 	conversations := make([]gin.H, 0, len(records))
 	for _, record := range records {
 		conv := gin.H{
-			constants.FieldID:               record[constants.FieldID],
-			"title":                         record["title"],
-			constants.FieldIsActive:         record[constants.FieldIsActive],
-			constants.FieldCreatedDate:      record[constants.FieldCreatedDate],
-			constants.FieldLastModifiedDate: record[constants.FieldLastModifiedDate],
+			constants.FieldID:                      record[constants.FieldID],
+			constants.FieldSysAIConversation_Title: record[constants.FieldSysAIConversation_Title],
+			constants.FieldIsActive:                record[constants.FieldIsActive],
+			constants.FieldCreatedDate:             record[constants.FieldCreatedDate],
+			constants.FieldLastModifiedDate:        record[constants.FieldLastModifiedDate],
 		}
 		conversations = append(conversations, conv)
 	}

@@ -78,11 +78,11 @@ fi
 # Need to distinguish between 404 (success) and other errors.
 # api_get returns the body. If row not found, usually 404 error json.
 
-if echo "$CHILD_CHECK" | grep -q "not found" || echo "$CHILD_CHECK" | grep -q "\"error\""; then
+if echo "$CHILD_CHECK" | grep -q "not found" || echo "$CHILD_CHECK" | grep -q "\"message\""; then
     echo "✅ Child correctly deleted (Cascade worked)"
 else
     # Double check by querying
-    COUNT=$(api_post "/api/data/query" "{\"object_api_name\": \"ri_child_cascade\", \"filters\": [{\"field\": \"id\", \"operator\": \"=\", \"value\": \"$CHILD1_ID\"}]}" | jq '.records | length')
+    COUNT=$(api_post "/api/data/query" "{\"object_api_name\": \"ri_child_cascade\", \"filter_expr\": \"id == '"'"'$CHILD1_ID'"'"'\"}" | jq '.data | length')
     if [[ "$COUNT" -eq 0 ]]; then
          echo "✅ Child correctly deleted (Cascade confirmed via query)"
     else
@@ -109,7 +109,7 @@ echo "   Attempting to delete parent (should fail)..."
 DELETE_RES=$(api_delete "/api/data/ri_parent/$PARENT2_ID")
 
 # Verify Failure
-if echo "$DELETE_RES" | grep -q "error"; then
+if echo "$DELETE_RES" | grep -q "message"; then
      # Check for specific restrict message if possible (usually "validation error" or "foreign key constraint")
      echo "✅ Delete blocked: $DELETE_RES"
 else

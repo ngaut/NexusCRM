@@ -24,10 +24,12 @@ func NewSchedulerRepository(db *sql.DB) *SchedulerRepository {
 // AcquireExecutionLock atomically sets is_running = true if not already running
 func (r *SchedulerRepository) AcquireExecutionLock(flowID string) (bool, error) {
 	query := fmt.Sprintf(`
-		UPDATE %s 
-		SET is_running = true 
-		WHERE id = ? AND (is_running = false OR is_running IS NULL)
-	`, constants.TableFlow)
+		%s %s 
+		%s %s = %s 
+		%s %s = ? %s (%s = %s %s %s IS %s)
+	`, KeywordUpdate, constants.TableFlow,
+		KeywordSet, constants.FieldSysFlow_IsRunning, KeywordTrue,
+		KeywordWhere, constants.FieldID, KeywordAnd, constants.FieldSysFlow_IsRunning, KeywordFalse, KeywordOr, constants.FieldSysFlow_IsRunning, KeywordNull)
 
 	result, err := r.db.Exec(query, flowID)
 	if err != nil {
@@ -44,7 +46,8 @@ func (r *SchedulerRepository) AcquireExecutionLock(flowID string) (bool, error) 
 
 // ReleaseExecutionLock sets is_running = false
 func (r *SchedulerRepository) ReleaseExecutionLock(flowID string) error {
-	query := fmt.Sprintf(`UPDATE %s SET is_running = false WHERE id = ?`, constants.TableFlow)
+	query := fmt.Sprintf(`%s %s %s %s = %s %s %s = ?`,
+		KeywordUpdate, constants.TableFlow, KeywordSet, constants.FieldSysFlow_IsRunning, KeywordFalse, KeywordWhere, constants.FieldID)
 	_, err := r.db.Exec(query, flowID)
 	return err
 }
@@ -52,14 +55,16 @@ func (r *SchedulerRepository) ReleaseExecutionLock(flowID string) error {
 // UpdateFlowRunStatus updates last_run_at
 func (r *SchedulerRepository) UpdateFlowRunStatus(flowID string) error {
 	now := time.Now().UTC()
-	query := fmt.Sprintf(`UPDATE %s SET last_run_at = ? WHERE id = ?`, constants.TableFlow)
+	query := fmt.Sprintf(`%s %s %s %s = ? %s %s = ?`,
+		KeywordUpdate, constants.TableFlow, KeywordSet, constants.FieldSysFlow_LastRunAt, KeywordWhere, constants.FieldID)
 	_, err := r.db.Exec(query, now, flowID)
 	return err
 }
 
 // UpdateNextRunAt updates next_run_at
 func (r *SchedulerRepository) UpdateNextRunAt(flowID string, nextRun time.Time) error {
-	query := fmt.Sprintf(`UPDATE %s SET next_run_at = ? WHERE id = ?`, constants.TableFlow)
+	query := fmt.Sprintf(`%s %s %s %s = ? %s %s = ?`,
+		KeywordUpdate, constants.TableFlow, KeywordSet, constants.FieldSysFlow_NextRunAt, KeywordWhere, constants.FieldID)
 	_, err := r.db.Exec(query, nextRun, flowID)
 	return err
 }

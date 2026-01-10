@@ -26,12 +26,12 @@ type RollupConfig struct {
 
 // FieldMetadata represents field-level metadata
 type FieldMetadata struct {
-	ID                 string              `json:"id,omitempty"`
+	ID                 string              `json:"__sys_gen_id,omitempty"`
 	APIName            string              `json:"api_name"`
 	Label              string              `json:"label"`
 	Type               FieldType           `json:"type"`
 	Required           bool                `json:"required,omitempty"`
-	Unique             bool                `json:"unique,omitempty"`
+	IsUnique           bool                `json:"is_unique,omitempty"`
 	IsNameField        bool                `json:"is_name_field,omitempty"`
 	Options            []string            `json:"options,omitempty"`
 	ReferenceTo        []string            `json:"reference_to,omitempty"`   // Supports polymorphic (multiple objects)
@@ -60,7 +60,7 @@ type FieldMetadata struct {
 
 // ObjectMetadata represents object-level metadata
 type ObjectMetadata struct {
-	ID                     string          `json:"id,omitempty"`
+	ID                     string          `json:"__sys_gen_id,omitempty"`
 	AppID                  *string         `json:"app_id,omitempty"`
 	APIName                string          `json:"api_name"`
 	Label                  string          `json:"label"`
@@ -83,7 +83,7 @@ type ObjectMetadata struct {
 
 // ListView represents a list view configuration
 type ListView struct {
-	ID            string `json:"id"`
+	ID            string `json:"__sys_gen_id"`
 	ObjectAPIName string `json:"object_api_name"`
 	Label         string `json:"label"`
 
@@ -93,7 +93,7 @@ type ListView struct {
 
 // PageLayout represents page layout configuration
 type PageLayout struct {
-	ID               string              `json:"id"`
+	ID               string              `json:"__sys_gen_id"`
 	ObjectAPIName    string              `json:"object_api_name"`
 	LayoutName       string              `json:"layout_name"`
 	Type             string              `json:"type,omitempty"` // Detail, Edit, Create, List
@@ -110,7 +110,7 @@ type PageLayout struct {
 
 // PageSection represents a section in a page layout
 type PageSection struct {
-	ID                  string                 `json:"id"`
+	ID                  string                 `json:"__sys_gen_id"`
 	Label               string                 `json:"label"`
 	Type                *string                `json:"type,omitempty"` // Fields, Component
 	ComponentName       *string                `json:"component_name,omitempty"`
@@ -122,7 +122,7 @@ type PageSection struct {
 
 // RelatedListConfig represents a related list configuration
 type RelatedListConfig struct {
-	ID            string   `json:"id"`
+	ID            string   `json:"__sys_gen_id"`
 	Label         string   `json:"label"`
 	ObjectAPIName string   `json:"object_api_name"`
 	LookupField   string   `json:"lookup_field"`
@@ -143,7 +143,7 @@ type ActionConfig struct {
 
 // ActionMetadata represents action metadata
 type ActionMetadata struct {
-	ID            string                 `json:"id"`
+	ID            string                 `json:"__sys_gen_id"`
 	ObjectAPIName string                 `json:"object_api_name"`
 	Name          string                 `json:"name"`
 	Label         string                 `json:"label"`
@@ -154,7 +154,7 @@ type ActionMetadata struct {
 }
 
 type RecordType struct {
-	ID                string    `json:"id"`
+	ID                string    `json:"__sys_gen_id"`
 	ObjectAPIName     string    `json:"object_api_name"`
 	Name              string    `json:"name"`
 	Label             string    `json:"label"`
@@ -162,23 +162,23 @@ type RecordType struct {
 	IsActive          bool      `json:"is_active"`
 	IsDefault         bool      `json:"is_default"`
 	BusinessProcessID *string   `json:"business_process_id,omitempty"`
-	CreatedDate       time.Time `json:"created_date"`
-	LastModifiedDate  time.Time `json:"last_modified_date"`
+	CreatedDate       time.Time `json:"__sys_gen_created_date"`
+	LastModifiedDate  time.Time `json:"__sys_gen_last_modified_date"`
 }
 
 type AutoNumber struct {
-	ID               string    `json:"id"`
+	ID               string    `json:"__sys_gen_id"`
 	ObjectAPIName    string    `json:"object_api_name"`
 	FieldAPIName     string    `json:"field_api_name"`
 	DisplayFormat    string    `json:"display_format"`
 	StartingNumber   int       `json:"starting_number"`
 	CurrentValue     int       `json:"current_value"`
-	CreatedDate      time.Time `json:"created_date"`
-	LastModifiedDate time.Time `json:"last_modified_date"`
+	CreatedDate      time.Time `json:"__sys_gen_created_date"`
+	LastModifiedDate time.Time `json:"__sys_gen_last_modified_date"`
 }
 
 type Relationship struct {
-	ID                  string    `json:"id"`
+	ID                  string    `json:"__sys_gen_id"`
 	ChildObjectAPIName  string    `json:"child_object_api_name"`
 	ParentObjectAPIName string    `json:"parent_object_api_name"`
 	FieldAPIName        string    `json:"field_api_name"`
@@ -188,25 +188,25 @@ type Relationship struct {
 	RestrictedDelete    bool      `json:"restricted_delete"`
 	RelatedListLabel    *string   `json:"related_list_label,omitempty"`
 	RelatedListFields   *string   `json:"related_list_fields,omitempty"`
-	CreatedDate         time.Time `json:"created_date"`
-	LastModifiedDate    time.Time `json:"last_modified_date"`
+	CreatedDate         time.Time `json:"__sys_gen_created_date"`
+	LastModifiedDate    time.Time `json:"__sys_gen_last_modified_date"`
 }
 
 type FieldDependency struct {
-	ID               string    `json:"id"`
+	ID               string    `json:"__sys_gen_id"`
 	ObjectAPIName    string    `json:"object_api_name"`
 	ControllingField string    `json:"controlling_field"`
 	DependentField   string    `json:"dependent_field"`
 	ControllingValue string    `json:"controlling_value"`
-	Action           string    `json:"action"`
+	DependentValues  []string  `json:"dependent_values"`
 	IsActive         bool      `json:"is_active"`
-	CreatedDate      time.Time `json:"created_date"`
-	LastModifiedDate time.Time `json:"last_modified_date"`
+	CreatedDate      time.Time `json:"__sys_gen_created_date"`
+	LastModifiedDate time.Time `json:"__sys_gen_last_modified_date"`
 }
 
 // ValidationRule represents a validation rule
 type ValidationRule struct {
-	ID            string `json:"id"`
+	ID            string `json:"__sys_gen_id"`
 	ObjectAPIName string `json:"object_api_name"`
 	Name          string `json:"name"`
 	Active        bool   `json:"active"`
@@ -216,7 +216,7 @@ type ValidationRule struct {
 
 // NavigationItem represents a navigation item in an app
 type NavigationItem struct {
-	ID            string `json:"id"`
+	ID            string `json:"__sys_gen_id"`
 	Type          string `json:"type"` // object, page, web
 	ObjectAPIName string `json:"object_api_name,omitempty"`
 	PageURL       string `json:"page_url,omitempty"`
@@ -227,7 +227,7 @@ type NavigationItem struct {
 
 // AppConfig represents application configuration
 type AppConfig struct {
-	ID               string           `json:"id"`
+	ID               string           `json:"__sys_gen_id"`
 	Label            string           `json:"label"`
 	Description      string           `json:"description"`
 	Icon             string           `json:"icon"`
@@ -240,7 +240,7 @@ type AppConfig struct {
 
 // Theme represents a visual theme
 type Theme struct {
-	ID               string                 `json:"id"`
+	ID               string                 `json:"__sys_gen_id"`
 	Name             string                 `json:"name"`
 	IsActive         bool                   `json:"is_active"`
 	Colors           map[string]interface{} `json:"colors"`
@@ -252,7 +252,7 @@ type Theme struct {
 
 // DashboardConfig represents dashboard configuration
 type DashboardConfig struct {
-	ID          string         `json:"id"`
+	ID          string         `json:"__sys_gen_id"`
 	Label       string         `json:"label"`
 	Description *string        `json:"description,omitempty"`
 	Layout      string         `json:"layout,omitempty"`
@@ -261,7 +261,7 @@ type DashboardConfig struct {
 
 // WidgetConfig represents a dashboard widget
 type WidgetConfig struct {
-	ID     string                 `json:"id"`
+	ID     string                 `json:"__sys_gen_id"`
 	Title  string                 `json:"title"`
 	Type   string                 `json:"type"`
 	Query  AnalyticsQuery         `json:"query"`
@@ -280,7 +280,7 @@ type ProfileLayoutAssignment struct {
 
 // SetupPage represents a page in the setup area
 type SetupPage struct {
-	ID                 string    `json:"id"`
+	ID                 string    `json:"__sys_gen_id"`
 	Label              string    `json:"label"`
 	Icon               string    `json:"icon"`
 	ComponentName      string    `json:"component_name"`
@@ -289,13 +289,13 @@ type SetupPage struct {
 	PermissionRequired string    `json:"permission_required,omitempty"`
 	IsEnabled          bool      `json:"is_enabled"`
 	Description        string    `json:"description,omitempty"`
-	CreatedDate        time.Time `json:"created_date"`
-	LastModifiedDate   time.Time `json:"last_modified_date"`
+	CreatedDate        time.Time `json:"__sys_gen_created_date"`
+	LastModifiedDate   time.Time `json:"__sys_gen_last_modified_date"`
 }
 
 // UIComponent represents a registered UI component
 type UIComponent struct {
-	ID            string    `json:"id"`
+	ID            string    `json:"__sys_gen_id"`
 	Name          string    `json:"name"`
 	Type          string    `json:"type"` // page, widget, etc.
 	IsEmbeddable  bool      `json:"is_embeddable"`

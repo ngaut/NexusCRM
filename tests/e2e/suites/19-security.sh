@@ -62,8 +62,8 @@ test_role_hierarchy() {
     # Check _System_Role exists
     local roles=$(api_post "/api/data/query" '{"object_api_name": "_system_role", "limit": 10}')
     
-    if echo "$roles" | jq -e '.records' > /dev/null 2>&1; then
-        local count=$(echo "$roles" | jq '.records | length')
+    if echo "$roles" | jq -e '.data' > /dev/null 2>&1; then
+        local count=$(echo "$roles" | jq '.data | length')
         echo "  ✓ Found $count roles in system"
         
         # Check for parent_role_id field (hierarchy support)
@@ -88,13 +88,13 @@ test_profile_permissions() {
     
     local profiles=$(api_post "/api/data/query" '{"object_api_name": "_system_profile", "limit": 10}')
     
-    if echo "$profiles" | jq -e '.records' > /dev/null 2>&1; then
-        local count=$(echo "$profiles" | jq '.records | length')
+    if echo "$profiles" | jq -e '.data' > /dev/null 2>&1; then
+        local count=$(echo "$profiles" | jq '.data | length')
         echo "  ✓ Found $count profiles"
         
         # Query object permissions
         local perms=$(api_post "/api/data/query" '{"object_api_name": "_system_objectperm", "limit": 5}')
-        local perm_count=$(echo "$perms" | jq '.records | length' 2>/dev/null || echo "0")
+        local perm_count=$(echo "$perms" | jq '.data | length' 2>/dev/null || echo "0")
         echo "  ✓ Object permissions table has $perm_count entries"
         
         test_passed "Profile permissions verified"
@@ -113,13 +113,13 @@ test_permission_sets() {
     
     local permsets=$(api_post "/api/data/query" '{"object_api_name": "_system_permissionset", "limit": 10}')
     
-    if echo "$permsets" | jq -e '.records' > /dev/null 2>&1; then
-        local count=$(echo "$permsets" | jq '.records | length')
+    if echo "$permsets" | jq -e '.data' > /dev/null 2>&1; then
+        local count=$(echo "$permsets" | jq '.data | length')
         echo "  ✓ Found $count permission sets"
         
         # Check assignments
         local assignments=$(api_post "/api/data/query" '{"object_api_name": "_system_permissionsetassignment", "limit": 5}')
-        local assign_count=$(echo "$assignments" | jq '.records | length' 2>/dev/null || echo "0")
+        local assign_count=$(echo "$assignments" | jq '.data | length' 2>/dev/null || echo "0")
         echo "  ✓ Permission set assignments: $assign_count"
         
         test_passed "Permission sets verified"
@@ -138,12 +138,12 @@ test_field_level_security() {
     
     local fls=$(api_post "/api/data/query" '{"object_api_name": "_system_fieldperm", "limit": 5}')
     
-    if echo "$fls" | jq -e '.records' > /dev/null 2>&1; then
-        local count=$(echo "$fls" | jq '.records | length')
+    if echo "$fls" | jq -e '.data' > /dev/null 2>&1; then
+        local count=$(echo "$fls" | jq '.data | length')
         echo "  ✓ Field permissions table has $count entries"
         
         # Check structure
-        local first=$(echo "$fls" | jq -r '.records[0] // empty' 2>/dev/null)
+        local first=$(echo "$fls" | jq -r '.data[0] // empty' 2>/dev/null)
         if [ -n "$first" ]; then
             echo "  ✓ FLS records contain readable/editable flags"
         fi
@@ -285,9 +285,9 @@ test_manual_sharing() {
         # Query to verify share exists
         local shares=$(api_post "/api/data/query" '{
             "object_api_name": "_system_recordshare",
-            "filters": [{"field": "record_id", "operator": "=", "value": "'$TEST_ACCOUNT_ID'"}]
+            "filter_expr": "record_id == '$TEST_ACCOUNT_ID'"
         }')
-        local count=$(echo "$shares" | jq '.records | length' 2>/dev/null || echo "0")
+        local count=$(echo "$shares" | jq '.data | length' 2>/dev/null || echo "0")
         echo "  ✓ Found $count shares for record"
         
         test_passed "Manual sharing working"
@@ -327,9 +327,9 @@ test_team_members() {
         # Query to verify
         local members=$(api_post "/api/data/query" '{
             "object_api_name": "_system_teammember",
-            "filters": [{"field": "record_id", "operator": "=", "value": "'$TEST_ACCOUNT_ID'"}]
+            "filter_expr": "record_id == '$TEST_ACCOUNT_ID'"
         }')
-        local count=$(echo "$members" | jq '.records | length' 2>/dev/null || echo "0")
+        local count=$(echo "$members" | jq '.data | length' 2>/dev/null || echo "0")
         echo "  ✓ Account has $count team members"
         
         test_passed "Team members working"

@@ -121,7 +121,7 @@ func (ms *MetadataService) CreateField(ctx context.Context, objectAPIName string
 		Type:             ms.schemaMgr.MapFieldTypeToSQL(string(field.Type)),
 		LogicalType:      string(field.Type),
 		Nullable:         !field.Required,
-		Unique:           field.Unique,
+		Unique:           field.IsUnique,
 		IsMasterDetail:   field.IsMasterDetail,
 		RelationshipName: relationshipName,
 	}
@@ -221,7 +221,7 @@ func (ms *MetadataService) UpdateField(ctx context.Context, objectAPIName, field
 	if existingField.IsSystem {
 		if (updates.Type != "" && updates.Type != existingField.Type) ||
 			(updates.Required != existingField.Required) ||
-			(updates.Unique != existingField.Unique) {
+			(updates.IsUnique != existingField.IsUnique) {
 			return fmt.Errorf("cannot modify structural properties of system field '%s'", fieldAPIName)
 		}
 	}
@@ -231,7 +231,7 @@ func (ms *MetadataService) UpdateField(ctx context.Context, objectAPIName, field
 		existingField.Label = updates.Label
 	}
 	existingField.Required = updates.Required
-	existingField.Unique = updates.Unique
+	existingField.IsUnique = updates.IsUnique
 
 	if updates.HelpText != nil {
 		existingField.HelpText = updates.HelpText
@@ -256,6 +256,25 @@ func (ms *MetadataService) UpdateField(ctx context.Context, objectAPIName, field
 	}
 	if updates.ReturnType != nil {
 		existingField.ReturnType = updates.ReturnType
+	}
+
+	// Handle Type Changes (for non-system fields only)
+	if updates.Type != "" && updates.Type != existingField.Type {
+		log.Printf("🔧 Field type change detected: %s.%s from %s to %s", objectAPIName, fieldAPIName, existingField.Type, updates.Type)
+
+		// Build column definition for ALTER TABLE
+		colDef := domainSchema.ColumnDefinition{
+			Name:        fieldAPIName,
+			Type:        ms.schemaMgr.MapFieldTypeToSQL(string(updates.Type)),
+			LogicalType: string(updates.Type),
+			Nullable:    !existingField.Required,
+		}
+
+		if err := ms.schemaMgr.ModifyColumn(objectAPIName, fieldAPIName, colDef); err != nil {
+			return fmt.Errorf("failed to modify field type: %w", err)
+		}
+
+		existingField.Type = updates.Type
 	}
 
 	// Generate Field ID (reuse existing)

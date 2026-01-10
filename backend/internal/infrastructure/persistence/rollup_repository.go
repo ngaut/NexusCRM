@@ -27,14 +27,14 @@ func NewRollupRepository(db *sql.DB) *RollupRepository {
 // The query is constructed dynamically based on metadata configuration.
 func (r *RollupRepository) CalculateRollup(ctx context.Context, tx *sql.Tx, calcType, summaryObject, summaryField, relationField, parentID string, filter *string) (interface{}, error) {
 	// 1. Build Aggregation Query
-	// SELECT FUNC(field) FROM child WHERE rel_field = ? AND is_deleted = false
+	// SELECT FUNC(field) FROM child WHERE rel_field = ? AND __sys_gen_is_deleted = false
 
 	funcMap := map[string]string{
-		"COUNT": "COUNT",
-		"SUM":   "SUM",
-		"MIN":   "MIN",
-		"MAX":   "MAX",
-		"AVG":   "AVG",
+		RollupTypeCount: RollupTypeCount,
+		RollupTypeSum:   RollupTypeSum,
+		RollupTypeMin:   RollupTypeMin,
+		RollupTypeMax:   RollupTypeMax,
+		RollupTypeAvg:   RollupTypeAvg,
 	}
 
 	aggFunc, ok := funcMap[strings.ToUpper(calcType)]
@@ -43,7 +43,7 @@ func (r *RollupRepository) CalculateRollup(ctx context.Context, tx *sql.Tx, calc
 	}
 
 	aggExpression := "*"
-	if calcType != "COUNT" {
+	if calcType != RollupTypeCount {
 		aggExpression = fmt.Sprintf("`%s`", summaryField)
 	}
 
@@ -74,7 +74,7 @@ func (r *RollupRepository) CalculateRollup(ctx context.Context, tx *sql.Tx, calc
 
 	// Decide scan destination based on expected return type from DB perspective
 	switch calcType {
-	case "COUNT":
+	case RollupTypeCount:
 		// Count always returns a number (int)
 		if err := row.Scan(&scanDest); err != nil {
 			return nil, err
@@ -82,7 +82,7 @@ func (r *RollupRepository) CalculateRollup(ctx context.Context, tx *sql.Tx, calc
 		// Convert byte array or other types to int/float if needed, but usually driver handles scalar
 		// TiDB/MySQL driver usually returns int64 for COUNT
 		return scanDest, nil
-	case "SUM", "AVG":
+	case RollupTypeSum, RollupTypeAvg:
 		// Return float/decimal
 		if err := row.Scan(&nullFloat); err != nil {
 			return nil, err
@@ -91,7 +91,7 @@ func (r *RollupRepository) CalculateRollup(ctx context.Context, tx *sql.Tx, calc
 			return nullFloat.Float64, nil
 		}
 		return 0, nil // Default for Sum/Avg is 0
-	case "MIN", "MAX":
+	case RollupTypeMin, RollupTypeMax:
 		// Could be number, date, or text
 		if err := row.Scan(&nullString); err != nil {
 			return nil, err
@@ -107,8 +107,8 @@ func (r *RollupRepository) CalculateRollup(ctx context.Context, tx *sql.Tx, calc
 
 // UpdateParentRollup updates the target field on the parent record with the calculated value.
 func (r *RollupRepository) UpdateParentRollup(ctx context.Context, tx *sql.Tx, parentObjName, parentID, targetField string, value interface{}) error {
-	// Update query: UPDATE parent SET field = ? WHERE id = ?
-	updateQuery := fmt.Sprintf("UPDATE `%s` SET `%s` = ? WHERE `id` = ?", parentObjName, targetField)
+	// Update query: UPDATE parent SET field = ? WHERE __sys_gen_id = ?
+	updateQuery := fmt.Sprintf("UPDATE `%s` SET `%s` = ? WHERE `%s` = ?", parentObjName, targetField, constants.FieldID)
 
 	// value can be nil, int, float, string
 	var execErr error

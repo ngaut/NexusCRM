@@ -106,7 +106,7 @@ test_invalid_and_operator() {
         \"filter_expr\": \"status == 'Open' AND is_read == false\"
     }")
     
-    if echo "$response" | grep -qE '"error"|"Error"'; then
+    if echo "$response" | grep -qE 'invalid operator|syntax error|unexpected token'; then
         test_passed "Invalid AND operator correctly rejected"
     else
         # If it returns records, that means AND was incorrectly interpreted
@@ -143,7 +143,7 @@ test_invalid_or_operator() {
         \"filter_expr\": \"status == 'Open' OR status == 'Closed'\"
     }")
     
-    if echo "$response" | grep -qE '"error"|"Error"'; then
+    if echo "$response" | grep -qE 'invalid operator|syntax error|unexpected token'; then
         test_passed "Invalid OR operator correctly rejected"
     else
         if echo "$response" | grep -q '"records"'; then

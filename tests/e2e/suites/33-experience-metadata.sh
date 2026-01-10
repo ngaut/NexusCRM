@@ -41,7 +41,7 @@ test_theme_lifecycle() {
          # Let's see helper implementation.
          # helper: .theme // .record.theme ...? No, logic is .$field // .record.$field.
          # So json_extract "$response" "id" matches .id or .record.id
-         # But response is { "theme": { "id": ... } }
+         # But response is { "theme": { "__sys_gen_id": ... } }
          # So we need to extract from .theme.
          theme_id=$(echo "$response" | jq -r ".theme.id")
          

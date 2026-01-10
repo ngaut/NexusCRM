@@ -90,6 +90,46 @@ func (r *RecordRepository) Insert(ctx context.Context, tx *sql.Tx, tableName str
 	return err
 }
 
+// BulkInsert executes a multi-row INSERT statement for batch insertions
+// Records are inserted in batches of batchSize to avoid query size limits
+func (r *RecordRepository) BulkInsert(ctx context.Context, tx *sql.Tx, tableName string, records []models.SObject, columns []string, batchSize int) error {
+	if len(records) == 0 {
+		return nil
+	}
+
+	if batchSize <= 0 {
+		batchSize = 100 // Default batch size
+	}
+
+	exec := r.GetExecutor(tx)
+
+	// Process in batches
+	for i := 0; i < len(records); i += batchSize {
+		end := i + batchSize
+		if end > len(records) {
+			end = len(records)
+		}
+		batch := records[i:end]
+
+		// Convert to []map[string]interface{} for query builder
+		batchMaps := make([]map[string]interface{}, len(batch))
+		for j, rec := range batch {
+			batchMaps[j] = rec
+		}
+
+		sql, params := query.BulkInsertOrdered(tableName, columns, batchMaps)
+		if sql == "" {
+			continue
+		}
+
+		if _, err := exec.ExecContext(ctx, sql, params...); err != nil {
+			return fmt.Errorf("bulk insert batch %d-%d failed: %w", i, end, err)
+		}
+	}
+
+	return nil
+}
+
 // Update executes an UPDATE statement
 func (r *RecordRepository) Update(ctx context.Context, tx *sql.Tx, tableName string, id string, updates models.SObject) error {
 	builder := query.Update(tableName).

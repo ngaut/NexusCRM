@@ -220,7 +220,7 @@ test_bulk_query_performance() {
     local end_time=$(date +%s)
     local duration=$((end_time - start_time))
     
-    local count=$(echo "$accounts" | jq '.records | length' 2>/dev/null || echo "0")
+    local count=$(echo "$accounts" | jq '.data | length' 2>/dev/null || echo "0")
     echo "  Query 100 accounts: ${duration}ms ($count returned)"
     
     # Query with filter
@@ -228,16 +228,14 @@ test_bulk_query_performance() {
     
     local filtered=$(api_post "/api/data/query" '{
         "object_api_name": "account",
-        "filters": [
-            {"field": "industry", "operator": "=", "value": "Technology"}
-        ],
+        "filter_expr": "industry == '"'"'Technology'"'"'",
         "limit": 50
     }')
     
     end_time=$(date +%s)
     duration=$((end_time - start_time))
     
-    count=$(echo "$filtered" | jq '.records | length' 2>/dev/null || echo "0")
+    count=$(echo "$filtered" | jq '.data | length' 2>/dev/null || echo "0")
     echo "  Filtered query: ${duration}ms ($count returned)"
     
     # Query contacts with relationship
@@ -251,7 +249,7 @@ test_bulk_query_performance() {
     end_time=$(date +%s)
     duration=$((end_time - start_time))
     
-    count=$(echo "$contacts" | jq '.records | length' 2>/dev/null || echo "0")
+    count=$(echo "$contacts" | jq '.data | length' 2>/dev/null || echo "0")
     echo "  Query 100 contacts: ${duration}ms ($count returned)"
     
     test_passed "Query performance benchmarks collected"
@@ -346,17 +344,15 @@ test_referential_integrity() {
     # Query contacts for this account
     local contacts=$(api_post "/api/data/query" '{
         "object_api_name": "contact",
-        "filters": [
-            {"field": "account_id", "operator": "=", "value": "'$test_account'"}
-        ]
+        "filter_expr": "account_id == '"'"'$test_account'"'"'"
     }')
     
-    local count=$(echo "$contacts" | jq '.records | length' 2>/dev/null || echo "0")
+    local count=$(echo "$contacts" | jq '.data | length' 2>/dev/null || echo "0")
     echo "  Account $test_account has $count contacts"
     
     # Verify contact references valid account
     if [ $count -gt 0 ]; then
-        local first_contact=$(echo "$contacts" | jq -r '.records[0].account_id' 2>/dev/null)
+        local first_contact=$(echo "$contacts" | jq -r '.data[0].account_id' 2>/dev/null)
         if [ "$first_contact" == "$test_account" ]; then
             echo "  ✓ Contact → Account reference verified"
         fi

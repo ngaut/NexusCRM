@@ -1,18 +1,9 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
 import { FlowStepCard } from './FlowStepCard';
+import { FlowStep } from '../../infrastructure/api/flows';
+import { COMMON_FIELDS } from '../../core/constants';
 
-export interface FlowStep {
-    id: string;
-    step_order: number;
-    step_name: string;
-    step_type: 'action' | 'approval' | 'decision';
-    action_type?: string;
-    action_config?: Record<string, unknown>;
-    entry_condition?: string;
-    on_success_step?: string;
-    on_failure_step?: string;
-}
 
 interface FlowStepEditorProps {
     steps: FlowStep[];
@@ -33,7 +24,7 @@ export const FlowStepEditor: React.FC<FlowStepEditorProps> = ({
 
     const addStep = () => {
         const newStep: FlowStep = {
-            id: generateId(),
+            [COMMON_FIELDS.ID]: generateId(),
             step_order: steps.length + 1,
             step_name: `Step ${steps.length + 1}`,
             step_type: 'action',
@@ -44,14 +35,14 @@ export const FlowStepEditor: React.FC<FlowStepEditorProps> = ({
     };
 
     const removeStep = (stepId: string) => {
-        const filtered = steps.filter(s => s.id !== stepId);
+        const filtered = steps.filter(s => s[COMMON_FIELDS.ID] !== stepId);
         // Re-order remaining steps
         const reordered = filtered.map((s, idx) => ({ ...s, step_order: idx + 1 }));
         onStepsChange(reordered);
     };
 
     const updateStep = (stepId: string, updates: Partial<FlowStep>) => {
-        onStepsChange(steps.map(s => s.id === stepId ? { ...s, ...updates } : s));
+        onStepsChange(steps.map(s => s[COMMON_FIELDS.ID] === stepId ? { ...s, ...updates } : s));
     };
 
     const moveStep = (fromIndex: number, toIndex: number) => {
@@ -92,14 +83,14 @@ export const FlowStepEditor: React.FC<FlowStepEditorProps> = ({
                 <div className="space-y-3">
                     {steps.map((step, index) => (
                         <FlowStepCard
-                            key={step.id}
+                            key={step[COMMON_FIELDS.ID]}
                             step={step}
                             index={index}
                             totalSteps={steps.length}
                             objects={objects}
                             triggerObject={triggerObject}
-                            onUpdate={(updates) => updateStep(step.id, updates)}
-                            onRemove={() => removeStep(step.id)}
+                            onUpdate={(updates) => updateStep(step[COMMON_FIELDS.ID], updates)}
+                            onRemove={() => removeStep(step[COMMON_FIELDS.ID])}
                             onMoveUp={() => moveStep(index, index - 1)}
                             onMoveDown={() => moveStep(index, index + 1)}
                             allSteps={steps}
