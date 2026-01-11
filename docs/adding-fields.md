@@ -62,8 +62,8 @@ ALTER TABLE `_System_User` ADD COLUMN `phone` VARCHAR(40);
 
 For development, wipe and recreate:
 ```bash
-cd backend && go run ./cmd/wipe_db
-./backend/restart-server.sh
+cd backend && go run scripts/wipe_db.go
+./restart-server.sh
 ```
 
 ## Generated Output Example
