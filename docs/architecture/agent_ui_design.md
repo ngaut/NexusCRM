@@ -5,10 +5,10 @@ The Agent should not be a separate "AI Tab". It must **inhabit** the existing UI
 
 ## 2. User Interaction (The Manager)
 
-### 2.1 The Omnipresent Copilot (Top Bar) (Implemented)
+### 2.1 The Omnipresent Nexus AI (Top Bar) (Implemented)
 **Component**: `components/layout/TopBar.tsx` / `components/AIAssistant.tsx`
 **Location**: Persistent in the global **Top Bar**.
-*   **Context-Aware**: When viewing `Account/123`, the Copilot knows it.
+*   **Context-Aware**: When viewing `Account/123`, Nexus AI knows it.
 *   **Interaction**:
     *   **Chat**: "Enrich this account." (Implemented)
     *   **Magic Fill**: Clicking "Magic Wand" icon on a Form (`MetadataRecordForm`) triggers the agent to draft fields. (Planned)
@@ -53,7 +53,7 @@ The Agent should not be a separate "AI Tab". It must **inhabit** the existing UI
 ## 5. Interaction Flow Example (Planned Scenario)
 
 **Scenario**: Data Enrichment
-1.  **User (UI)**: Views `Lead` page. Clicks "Enrich" in Copilot.
+1.  **User (UI)**: Views `Lead` page. Clicks "Enrich" in Nexus AI.
 2.  **Agent (Backend)**: Runs MCP tools. Finds data.
 3.  **Agent (UI)**: Does NOT auto-save. Sends a **"Proposal"** event.
 4.  **UI**: `MetadataRecordDetail` shows a "Proposal Banner".
