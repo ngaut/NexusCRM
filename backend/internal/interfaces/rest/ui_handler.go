@@ -49,7 +49,7 @@ func (h *UIHandler) CreateApp(c *gin.Context) {
 func (h *UIHandler) UpdateApp(c *gin.Context) {
 	// requireSystemAdmin handled by middleware
 
-	id := c.Param(constants.FieldID)
+	id := c.Param("id")
 	var updates models.AppConfig
 
 	HandleUpdateEnvelope(c, "", "App updated successfully", &updates, func() error {
@@ -61,7 +61,7 @@ func (h *UIHandler) UpdateApp(c *gin.Context) {
 func (h *UIHandler) DeleteApp(c *gin.Context) {
 	// requireSystemAdmin handled by middleware
 
-	id := c.Param(constants.FieldID)
+	id := c.Param("id")
 
 	HandleDeleteEnvelope(c, "App deleted successfully", func() error {
 		// Prevent deleting standard apps if needed
@@ -93,7 +93,7 @@ func (h *UIHandler) CreateTheme(c *gin.Context) {
 func (h *UIHandler) ActivateTheme(c *gin.Context) {
 	// requireSystemAdmin handled by middleware
 
-	id := c.Param(constants.FieldID)
+	id := c.Param("id")
 	var req struct{}
 	HandleUpdateEnvelope(c, "", "Theme activated successfully", &req, func() error {
 		return h.svc.UIMetadata.ActivateTheme(c.Request.Context(), id)
@@ -138,7 +138,7 @@ func (h *UIHandler) SaveLayout(c *gin.Context) {
 
 // DeleteLayout handles DELETE /api/metadata/layouts/:id
 func (h *UIHandler) DeleteLayout(c *gin.Context) {
-	layoutID := c.Param(constants.FieldID)
+	layoutID := c.Param("id")
 	HandleDeleteEnvelope(c, "Layout deleted successfully", func() error {
 		return h.svc.UIMetadata.DeleteLayout(c.Request.Context(), layoutID)
 	})

@@ -216,7 +216,7 @@ type ValidationRule struct {
 
 // NavigationItem represents a navigation item in an app
 type NavigationItem struct {
-	ID            string `json:"__sys_gen_id"`
+	ID            string `json:"id"`
 	Type          string `json:"type"` // object, page, web
 	ObjectAPIName string `json:"object_api_name,omitempty"`
 	PageURL       string `json:"page_url,omitempty"`
@@ -227,7 +227,7 @@ type NavigationItem struct {
 
 // AppConfig represents application configuration
 type AppConfig struct {
-	ID               string           `json:"__sys_gen_id"`
+	ID               string           `json:"id"`
 	Label            string           `json:"label"`
 	Description      string           `json:"description"`
 	Icon             string           `json:"icon"`
@@ -240,7 +240,7 @@ type AppConfig struct {
 
 // Theme represents a visual theme
 type Theme struct {
-	ID               string                 `json:"__sys_gen_id"`
+	ID               string                 `json:"id"`
 	Name             string                 `json:"name"`
 	IsActive         bool                   `json:"is_active"`
 	Colors           map[string]interface{} `json:"colors"`
@@ -252,7 +252,7 @@ type Theme struct {
 
 // DashboardConfig represents dashboard configuration
 type DashboardConfig struct {
-	ID          string         `json:"__sys_gen_id"`
+	ID          string         `json:"id"`
 	Label       string         `json:"label"`
 	Description *string        `json:"description,omitempty"`
 	Layout      string         `json:"layout,omitempty"`
@@ -261,7 +261,7 @@ type DashboardConfig struct {
 
 // WidgetConfig represents a dashboard widget
 type WidgetConfig struct {
-	ID     string                 `json:"__sys_gen_id"`
+	ID     string                 `json:"id"`
 	Title  string                 `json:"title"`
 	Type   string                 `json:"type"`
 	Query  AnalyticsQuery         `json:"query"`

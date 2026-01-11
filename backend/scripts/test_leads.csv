@@ -1,0 +1,4 @@
+id,name,amount,is_active,join_date,manager_id,email,website,rating_score
+001,Lead 1,"$1,000.50",Yes,2024/01/01,005u1,t1@e.com,https://e.com,1
+002,Lead 2,200,No,25/01/2024,005u2,t2@e.com,http://x.org,0
+003,Lead 3,"3,500.00",Yes,2024.03.01,005u1,t3@e.uk,https://y.net,1

@@ -15,6 +15,8 @@ interface NavigationItemPickerProps {
     onAddWeb: (url: string, label: string, icon: string) => void;
     onAddDashboard: (d: { id: string; label: string }) => void;
     onAddStandard: (type: 'Home') => void;
+    onCreateNewObject?: () => void;
+    onCreateNewDashboard?: () => void;
 }
 
 export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
@@ -27,7 +29,9 @@ export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
     onAddObject,
     onAddWeb,
     onAddDashboard,
-    onAddStandard
+    onAddStandard,
+    onCreateNewObject,
+    onCreateNewDashboard
 }) => {
     const [pickerTab, setPickerTab] = useState<'objects' | 'web' | 'standard' | 'dashboards'>('objects');
     const [webForm, setWebForm] = useState({ url: '', label: '', icon: 'Globe' });
@@ -51,8 +55,8 @@ export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[100]">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md m-4">
-                <div className="flex items-center justify-between p-4 border-b">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md m-4 flex flex-col max-h-[90vh]">
+                <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
                     <h3 className="font-semibold text-slate-800">Add Navigation Item</h3>
                     <button onClick={() => { onClose(); setObjectSearch(''); setPickerTab('objects'); }} className="text-slate-400 hover:text-slate-600">
                         <X size={18} />
@@ -60,7 +64,7 @@ export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b">
+                <div className="flex border-b flex-shrink-0">
                     <button
                         type="button"
                         onClick={() => setPickerTab('objects')}
@@ -109,8 +113,8 @@ export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
 
                 {/* Objects Tab Content */}
                 {pickerTab === 'objects' && (
-                    <div className="p-4">
-                        <div className="relative mb-4">
+                    <div className="p-4 flex-1 overflow-hidden flex flex-col">
+                        <div className="relative mb-4 flex-shrink-0">
                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
@@ -122,7 +126,7 @@ export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
                             />
                         </div>
 
-                        <div className="max-h-64 overflow-y-auto border rounded-lg divide-y">
+                        <div className="flex-1 overflow-y-auto border rounded-lg divide-y mb-4">
                             {filteredObjects.length === 0 ? (
                                 <div className="px-4 py-6 text-center text-slate-500 text-sm">
                                     {objectSearch ? 'No matching objects found' : 'No objects available'}
@@ -152,12 +156,22 @@ export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
                                 })
                             )}
                         </div>
+
+                        {onCreateNewObject && (
+                            <button
+                                onClick={onCreateNewObject}
+                                className="w-full flex-shrink-0 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium flex items-center justify-center gap-2 border border-slate-200"
+                            >
+                                <Plus size={16} />
+                                Create New Object
+                            </button>
+                        )}
                     </div>
                 )}
 
                 {/* Web Tab Content */}
                 {pickerTab === 'web' && (
-                    <div className="p-4 space-y-4">
+                    <div className="p-4 space-y-4 flex-1 overflow-y-auto">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">URL</label>
                             <input
@@ -206,7 +220,7 @@ export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
 
                 {/* Standard Tab Content */}
                 {pickerTab === 'standard' && (
-                    <div className="p-4">
+                    <div className="p-4 flex-1 overflow-y-auto">
                         <div className="space-y-2">
                             <button
                                 type="button"
@@ -227,8 +241,8 @@ export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
 
                 {/* Dashboards Tab Content */}
                 {pickerTab === 'dashboards' && (
-                    <div className="p-4">
-                        <div className="relative mb-4">
+                    <div className="p-4 flex-1 overflow-hidden flex flex-col">
+                        <div className="relative mb-4 flex-shrink-0">
                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
@@ -238,7 +252,7 @@ export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
                                 className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
-                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                        <div className="flex-1 overflow-y-auto space-y-2 mb-4">
                             {availableDashboards
                                 .filter(d => d.label.toLowerCase().includes(dashboardSearch.toLowerCase()))
                                 .map(dashboard => (
@@ -265,6 +279,16 @@ export const NavigationItemPicker: React.FC<NavigationItemPickerProps> = ({
                                 </div>
                             )}
                         </div>
+
+                        {onCreateNewDashboard && (
+                            <button
+                                onClick={onCreateNewDashboard}
+                                className="w-full flex-shrink-0 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium flex items-center justify-center gap-2 border border-slate-200"
+                            >
+                                <Plus size={16} />
+                                Create New Dashboard
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

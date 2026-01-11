@@ -44,3 +44,7 @@ coverage/
 .idea/
 *.swp
 backend/uploads/
+
+# Large Data Sets
+salesforce_data/
+*.csv

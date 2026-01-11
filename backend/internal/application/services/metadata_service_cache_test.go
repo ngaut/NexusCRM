@@ -85,8 +85,22 @@ func TestMetadataCache_ValidationRuleCaching(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Use account object for testing
-	testObject := "account"
+	// Create a unique test object for this test
+	testObject := "test_validation_cache_obj"
+	objDef := models.ObjectMetadata{
+		APIName: testObject,
+		Label:   "Test Validation Cache Object",
+		Fields: []models.FieldMetadata{
+			{APIName: "name", Label: "Name", Type: constants.FieldTypeText},
+		},
+	}
+	err := ms.CreateSchemaOptimized(ctx, &objDef)
+	require.NoError(t, err, "Failed to create test object")
+
+	// Cleanup after test
+	t.Cleanup(func() {
+		_ = ms.DeleteSchema(ctx, testObject)
+	})
 
 	t.Run("GetValidationRules_uses_cache", func(t *testing.T) {
 		// Initial call should load cache

@@ -1408,8 +1408,9 @@ func (r *MetadataRepository) UpsertUIComponent(ctx context.Context, component *m
 
 // UpsertSetupPage inserts or updates a setup page definition
 func (r *MetadataRepository) UpsertSetupPage(ctx context.Context, page *models.SetupPage) error {
+	// Check by component_name which is unique - not ID which may not be set on first load
 	var existingID string
-	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableSetupPage, constants.FieldID), page.ID).Scan(&existingID)
+	err := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?", constants.FieldID, constants.TableSetupPage, constants.FieldSysSetupPage_ComponentName), page.ComponentName).Scan(&existingID)
 
 	if err == nil {
 		updates := strings.Join([]string{
@@ -1427,7 +1428,7 @@ func (r *MetadataRepository) UpsertSetupPage(ctx context.Context, page *models.S
 			UPDATE %s SET %s
 			WHERE %s = ?`, constants.TableSetupPage, updates, constants.FieldID)
 
-		_, err = r.db.ExecContext(ctx, query, page.Label, page.Icon, page.ComponentName, page.Category, page.PageOrder, page.PermissionRequired, page.IsEnabled, page.Description, page.ID)
+		_, err = r.db.ExecContext(ctx, query, page.Label, page.Icon, page.ComponentName, page.Category, page.PageOrder, page.PermissionRequired, page.IsEnabled, page.Description, existingID)
 		return err
 	}
 

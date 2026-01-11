@@ -41,8 +41,9 @@ export const AppStudio: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
 
-    // Available objects for adding to nav
+    // Available objects and dashboards for adding to nav
     const [availableObjects, setAvailableObjects] = useState<ObjectMetadata[]>([]);
+    const [availableDashboards, setAvailableDashboards] = useState<any[]>([]);
 
     // Editor state - what's currently being edited in the right panel
     // For new apps, open settings first so user can fill in required App ID
@@ -56,7 +57,7 @@ export const AppStudio: React.FC = () => {
             } else {
                 setLoading(false);
             }
-            await loadObjects();
+            await loadMetadata();
         };
         init();
     }, [appId, isNewApp]);
@@ -95,13 +96,21 @@ export const AppStudio: React.FC = () => {
         }
     };
 
-    const loadObjects = async () => {
+    const loadMetadata = async () => {
         try {
-            const response = await metadataAPI.getSchemas();
-            setAvailableObjects(response.schemas || []);
+            const [schemasRes, dashboardsRes] = await Promise.all([
+                metadataAPI.getSchemas(),
+                metadataAPI.getDashboards()
+            ]);
+            setAvailableObjects(schemasRes.schemas || []);
+            setAvailableDashboards((dashboardsRes.dashboards || []).map(d => ({
+                id: d.id,
+                label: d.label,
+                description: d.description
+            })));
         } catch (error) {
-            // Objects loading failure - log for debugging, handled via empty state
-            Logger.warn('AppStudio: Failed to load objects:', error instanceof Error ? error.message : error);
+            // Loading failure - log for debugging
+            Logger.warn('AppStudio: Failed to load metadata:', error instanceof Error ? error.message : error);
         }
     };
 
@@ -140,7 +149,33 @@ export const AppStudio: React.FC = () => {
         }
     };
 
-    const handleAddObject = async (objectDef: { label: string; apiName: string; icon: string }) => {
+    const handleAddExistingObject = (objectDef: ObjectMetadata) => {
+        const newNavItem: NavigationItem = {
+            id: `nav-${objectDef.api_name}-${Date.now()}`,
+            type: 'object',
+            object_api_name: objectDef.api_name,
+            label: objectDef.plural_label || objectDef.label + 's',
+            icon: objectDef.icon,
+        };
+        const updatedNavItems = [...(app.navigation_items || []), newNavItem];
+        updateApp({ navigation_items: updatedNavItems });
+        setEditor({ mode: 'object', objectApiName: objectDef.api_name });
+    };
+
+    const handleAddExistingDashboard = (dashboardDef: { id: string; label: string }) => {
+        const newNavItem: NavigationItem = {
+            id: `nav-dash-${dashboardDef.id}-${Date.now()}`,
+            type: 'dashboard',
+            dashboard_id: dashboardDef.id,
+            label: dashboardDef.label,
+            icon: 'LayoutDashboard',
+        };
+        const updatedNavItems = [...(app.navigation_items || []), newNavItem];
+        updateApp({ navigation_items: updatedNavItems });
+        setEditor({ mode: 'dashboard', dashboardId: dashboardDef.id });
+    };
+
+    const handleCreateNewObject = async (objectDef: { label: string; apiName: string; icon: string }) => {
         try {
             // Create the object via API
             await metadataAPI.createSchema({
@@ -172,7 +207,7 @@ export const AppStudio: React.FC = () => {
             }
 
             // Refresh objects list and select the new object
-            await loadObjects();
+            await loadMetadata();
             setEditor({ mode: 'object', objectApiName: objectDef.apiName });
 
             return true;
@@ -181,42 +216,39 @@ export const AppStudio: React.FC = () => {
         }
     };
 
-    const handleAddDashboard = async (def: { label: string; icon: string }) => {
-        if (!appId) return false;
+    const handleCreateNewDashboard = async (dashboardDef: { label: string; icon: string }) => {
         try {
-            // 1. Create Dashboard
-            const newDashboardId = crypto.randomUUID();
-            await metadataAPI.createDashboard({
-                id: newDashboardId,
-                label: def.label,
+            const newDashboard = {
+                id: dashboardDef.label.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+                label: dashboardDef.label,
                 widgets: []
-            });
-
-            // 2. Add to App Navigation (backend doesn't auto-add dashboards yet unlike objects)
-            const newItem: NavigationItem = {
-                id: crypto.randomUUID(),
-                type: 'dashboard',
-                label: def.label,
-                icon: def.icon,
-                dashboard_id: newDashboardId,
             };
-            const updatedItems = [...(app.navigation_items || []), newItem];
 
-            if (!isNewApp) {
-                await metadataAPI.updateApp(app.id, { navigation_items: updatedItems });
-                await loadApp(appId);
-            } else {
-                updateApp({ navigation_items: updatedItems });
-            }
+            await metadataAPI.createDashboard(newDashboard);
 
-            setEditor({ mode: 'dashboard', dashboardId: newDashboardId });
+            // Add to navigation
+            const newNavItem: NavigationItem = {
+                id: `nav-dash-${newDashboard.id}-${Date.now()}`,
+                type: 'dashboard',
+                dashboard_id: newDashboard.id,
+                label: dashboardDef.label,
+                icon: dashboardDef.icon,
+            };
+
+            const updatedNavItems = [...(app.navigation_items || []), newNavItem];
+            updateApp({ navigation_items: updatedNavItems });
+
+            await loadMetadata();
+            setEditor({ mode: 'dashboard', dashboardId: newDashboard.id });
+
             return true;
-        } catch (error) {
-            Logger.warn('AppStudio: Failed to add dashboard:', error instanceof Error ? error.message : error);
-            errorToast('Failed to add dashboard. Please try again.');
-            return false;
+        } catch (error: unknown) {
+            throw error;
         }
     };
+
+
+
 
     const handleAddWebLink = async (def: { label: string; url: string; icon: string }) => {
         if (!app.id && !isNewApp) return false; // Should have app ID unless new
@@ -240,8 +272,8 @@ export const AppStudio: React.FC = () => {
             return true;
         } catch (error) {
             Logger.warn('AppStudio: Failed to add web link:', error instanceof Error ? error.message : error);
-            errorToast('Failed to add web link. Please try again.');
-            return false;
+            errorToast(`Failed to add web link: ${error instanceof Error ? error.message : String(error)}`);
+            throw error;
         }
     };
 
@@ -348,8 +380,12 @@ export const AppStudio: React.FC = () => {
                     openAddModal={shouldOpenAddModal}
                     selectedObjectApiName={editor.mode === 'object' ? editor.objectApiName : (editor.mode === 'dashboard' ? editor.dashboardId : undefined)}
                     onSelectNavItem={handleNavItemSelect}
-                    onAddObject={handleAddObject}
-                    onAddDashboard={handleAddDashboard}
+                    availableObjects={availableObjects}
+                    availableDashboards={availableDashboards}
+                    onAddObject={handleCreateNewObject}
+                    onAddDashboard={handleCreateNewDashboard}
+                    onAddExistingObject={handleAddExistingObject}
+                    onAddExistingDashboard={handleAddExistingDashboard}
                     onAddWebLink={handleAddWebLink}
                     onReorderNavItems={handleReorderNavItems}
                     onRemoveNavItem={handleRemoveNavItem}

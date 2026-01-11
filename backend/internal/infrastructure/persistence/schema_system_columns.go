@@ -12,6 +12,8 @@ import (
 
 // GetStandardSystemColumns returns the default columns for every custom object
 // This serves as the Single Source of Truth for system field definitions.
+// NOTE: Only truly system-generated fields belong here (auto-populated by backend).
+// Business fields like 'name' should be defined in the object schema, not auto-injected.
 func (r *SchemaRepository) GetStandardSystemColumns() []schema.ColumnDefinition {
 	return []schema.ColumnDefinition{
 		{
@@ -19,11 +21,6 @@ func (r *SchemaRepository) GetStandardSystemColumns() []schema.ColumnDefinition 
 			Type:       "VARCHAR(36)",
 			PrimaryKey: true,
 			Nullable:   false,
-		},
-		{
-			Name:     constants.FieldName,
-			Type:     "VARCHAR(255)",
-			Nullable: false,
 		},
 		{
 			Name:     constants.FieldOwnerID,
@@ -78,11 +75,7 @@ func (r *SchemaRepository) GetStandardFieldMetadata() []models.FieldMetadata {
 		}
 
 		// Set special flags and refining Types
-		if strings.EqualFold(col.Name, constants.FieldName) {
-			field.IsNameField = true
-			field.Required = true
-			field.Label = "Name"
-		} else if strings.EqualFold(col.Name, constants.FieldID) {
+		if strings.EqualFold(col.Name, constants.FieldID) {
 			field.Label = "ID"
 		} else if strings.EqualFold(col.Name, constants.FieldCreatedDate) {
 			field.Label = "Created Date"

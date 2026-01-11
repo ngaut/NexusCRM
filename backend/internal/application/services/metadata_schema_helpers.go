@@ -33,12 +33,6 @@ func (ms *MetadataService) PrepareTableDefinition(schema *models.ObjectMetadata)
 
 	// Ensure System Fields
 	standardFields := ms.schemaMgr.GetStandardFieldMetadata()
-	for i, f := range standardFields {
-		if f.IsNameField {
-			// Custom objects often want "{Object} Name" instead of just "Name".
-			standardFields[i].Label = schema.Label + " Name"
-		}
-	}
 	EnrichWithSystemFields(schema, standardFields)
 
 	// Build Table Definition

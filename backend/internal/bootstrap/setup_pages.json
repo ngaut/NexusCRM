@@ -11,7 +11,7 @@
         "is_enabled": true
     },
     {
-        "id": "setup_sharing_rules",
+        "__sys_gen_id": "setup_sharing_rules",
         "label": "Sharing Rules",
         "icon": "Share2",
         "component_name": "SharingRuleManager",
@@ -22,7 +22,7 @@
         "is_enabled": true
     },
     {
-        "id": "setup_profiles_manage",
+        "__sys_gen_id": "setup_profiles_manage",
         "label": "Profiles",
         "icon": "Shield",
         "component_name": "ProfileManager",
@@ -33,7 +33,7 @@
         "is_enabled": true
     },
     {
-        "id": "setup_objects_manage",
+        "__sys_gen_id": "setup_objects_manage",
         "label": "Object Manager",
         "icon": "Database",
         "component_name": "ObjectManager",
@@ -44,7 +44,7 @@
         "is_enabled": true
     },
     {
-        "id": "setup_apps_manage",
+        "__sys_gen_id": "setup_apps_manage",
         "label": "App Manager",
         "icon": "Layout",
         "component_name": "AppManager",
@@ -55,7 +55,7 @@
         "is_enabled": true
     },
     {
-        "id": "setup_automation_manage",
+        "__sys_gen_id": "setup_automation_manage",
         "label": "Automation Studio",
         "icon": "Workflow",
         "component_name": "Flows",
@@ -66,7 +66,7 @@
         "is_enabled": true
     },
     {
-        "id": "setup_data_import",
+        "__sys_gen_id": "setup_data_import",
         "label": "Data Import",
         "icon": "Upload",
         "component_name": "DataImport",
@@ -77,7 +77,7 @@
         "is_enabled": true
     },
     {
-        "id": "setup_data_export",
+        "__sys_gen_id": "setup_data_export",
         "label": "Data Export",
         "icon": "Download",
         "component_name": "DataExport",
@@ -88,7 +88,7 @@
         "is_enabled": true
     },
     {
-        "id": "setup_recycle_bin",
+        "__sys_gen_id": "setup_recycle_bin",
         "label": "Recycle Bin",
         "icon": "Trash2",
         "component_name": "RecycleBin",

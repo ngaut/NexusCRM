@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import { Plus, GripVertical, Trash2, Database, LayoutDashboard, Globe, Settings, Users, ChevronDown } from 'lucide-react';
 import * as Icons from 'lucide-react';
-import type { AppConfig, NavigationItem } from '../../types';
+import type { AppConfig, NavigationItem, ObjectMetadata } from '../../types';
 import { AddPageModal } from './AddPageModal';
+import { NavigationItemPicker } from '../admin/app/NavigationItemPicker';
 
 interface StudioSidebarProps {
     app: AppConfig;
     selectedObjectApiName?: string;
+    availableObjects: ObjectMetadata[];
+    availableDashboards: any[];
     onSelectNavItem: (item: NavigationItem) => void;
     onAddObject: (objectDef: { label: string; apiName: string; icon: string }) => Promise<boolean>;
+    onAddExistingObject: (object: ObjectMetadata) => void;
     onReorderNavItems: (items: NavigationItem[]) => void;
     onRemoveNavItem: (itemId: string) => void;
     onAddDashboard: (dashboardDef: { label: string; icon: string }) => Promise<boolean>;
+    onAddExistingDashboard: (dashboard: { id: string; label: string }) => void;
     onAddWebLink: (webLinkDef: { label: string; url: string; icon: string }) => Promise<boolean>;
     onOpenSettings: () => void;
     onOpenPermissions: () => void;
@@ -21,9 +26,13 @@ interface StudioSidebarProps {
 export const StudioSidebar: React.FC<StudioSidebarProps> = ({
     app,
     selectedObjectApiName,
+    availableObjects,
+    availableDashboards,
     onSelectNavItem,
     onAddObject,
+    onAddExistingObject,
     onAddDashboard,
+    onAddExistingDashboard,
     onAddWebLink,
     onReorderNavItems,
     onRemoveNavItem,
@@ -32,13 +41,15 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
     openAddModal,
 }) => {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    const [showAddModal, setShowAddModal] = useState(false);
+    const [showPicker, setShowPicker] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
     const [isNavExpanded, setIsNavExpanded] = useState(true);
+    const [objectSearch, setObjectSearch] = useState('');
 
-    // Auto-open modal if requested via prop
+    // Auto-open picker if requested via prop (instead of modal directly)
     React.useEffect(() => {
         if (openAddModal) {
-            setShowAddModal(true);
+            setShowPicker(true);
         }
     }, [openAddModal]);
 
@@ -73,7 +84,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
     const handleAddObject = async (objectDef: { label: string; apiName: string; icon: string }) => {
         const success = await onAddObject(objectDef);
         if (success) {
-            setShowAddModal(false);
+            setShowCreateModal(false);
         }
         return success;
     };
@@ -81,7 +92,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
     const handleAddDashboard = async (dashboardDef: { label: string; icon: string }) => {
         const success = await onAddDashboard(dashboardDef);
         if (success) {
-            setShowAddModal(false);
+            setShowCreateModal(false);
         }
         return success;
     };
@@ -89,7 +100,11 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
     const handleAddWebLink = async (webLinkDef: { label: string; url: string; icon: string }) => {
         const success = await onAddWebLink(webLinkDef);
         if (success) {
-            setShowAddModal(false);
+            // Note: NavigationItemPicker handles web links directly now, but AddPageModal also supports it.
+            // If we use AddPageModal for web links, we close it here.
+            // If NavigationItemPicker calls it, it handles its own close.
+            setShowCreateModal(false);
+            setShowPicker(false);
         }
         return success;
     };
@@ -157,13 +172,13 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
 
                         {/* Add Page Button */}
                         <button
-                            onClick={() => setShowAddModal(true)}
+                            onClick={() => setShowPicker(true)}
                             className="w-full flex items-center gap-2 px-2 py-2 mt-2 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors"
                         >
                             <div className="w-7 h-7 rounded-md bg-blue-100 flex items-center justify-center">
                                 <Plus size={14} />
                             </div>
-                            Add Page
+                            Add Navigation Item
                         </button>
                     </div>
                 )}
@@ -187,10 +202,47 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                 </button>
             </div>
 
-            {/* Add Page Modal */}
-            {showAddModal && (
+            {/* Navigation Picker */}
+            <NavigationItemPicker
+                isOpen={showPicker}
+                onClose={() => setShowPicker(false)}
+                availableObjects={availableObjects}
+                availableDashboards={availableDashboards}
+                objectSearch={objectSearch}
+                setObjectSearch={setObjectSearch}
+                onAddObject={(obj) => {
+                    onAddExistingObject(obj);
+                    setShowPicker(false);
+                }}
+                onAddDashboard={(dashboard) => {
+                    onAddExistingDashboard(dashboard);
+                    setShowPicker(false);
+                }}
+                onAddWeb={(url, label, icon) => {
+                    handleAddWebLink({ url, label, icon });
+                    setShowPicker(false);
+                }}
+                onAddStandard={(type) => {
+                    // Handle standard items if needed, mostly Home
+                    // We can reuse onAddExistingDashboard logic or similar if we have a standard item handler
+                    // For now, assuming standard items are handled or we map them to route changes
+                    // Or we just add a "Home" link
+                    handleAddWebLink({ url: '/', label: 'Home', icon: 'Home' }); // Placeholder for standard home
+                }}
+                onCreateNewObject={() => {
+                    setShowPicker(false);
+                    setShowCreateModal(true);
+                }}
+                onCreateNewDashboard={() => {
+                    setShowPicker(false);
+                    setShowCreateModal(true);
+                }}
+            />
+
+            {/* Add Page Modal (Legacy/Creation) */}
+            {showCreateModal && (
                 <AddPageModal
-                    onClose={() => setShowAddModal(false)}
+                    onClose={() => setShowCreateModal(false)}
                     onAddObject={handleAddObject}
                     onAddDashboard={handleAddDashboard}
                     onAddWebLink={handleAddWebLink}
