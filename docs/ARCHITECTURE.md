@@ -44,7 +44,7 @@ Application structure (Schema), business logic (Flows), UI (Layouts), and securi
                        │ MySQL Protocol + TLS
 ┌──────────────────────▼──────────────────────────────────┐
 │                    TiDB Cloud                           │
-│  - 40+ System Metadata Tables                          │
+│  - 50+ System Metadata Tables                          │
 │  - User Business Tables                                │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -95,7 +95,7 @@ Application structure (Schema), business logic (Flows), UI (Layouts), and securi
 
 ---
 
-## System Tables (40+)
+## System Tables (50+)
 
 **Core Schema**: `_System_Object`, `_System_Field`, `_System_User`, `_System_Profile`, `_System_Role`
 

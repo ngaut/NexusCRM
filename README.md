@@ -51,7 +51,7 @@ npm run dev:full                         # Both backend + frontend
 ## Key Features
 
 - **Metadata-Driven**: Schema, UI, permissions stored as database config
-- **40+ System Tables**: Complete platform configuration
+- **50+ System Tables**: Complete platform configuration
 - **Enterprise Security**: JWT auth, RLS, FLS, Profile/Role system
 - **AI Assistant**: MCP-based agent integration
 
@@ -76,3 +76,27 @@ make generate           # Regenerate code from system_tables.json
 ```bash
 ./backend/restart-server.sh
 ```
+
+## Data Import (CSV Migration)
+
+Import large datasets (e.g., Salesforce exports) using the CSV migration tool:
+
+```bash
+# Wipe database (fresh start)
+cd backend && go run scripts/wipe_db.go
+
+# Restart server
+./restart-server.sh
+
+# Run import (30 threads, automatic type inference)
+python3 scripts/run_import_all.py
+```
+
+**Features:**
+- 99% threshold-based type inference (tolerates 1% dirty data)
+- Automatic batch size optimization (MySQL placeholder limits)
+- 32MB CSV field limit (handles large formula fields)
+- Relaxed validation for legacy data (Email, URL, Phone accept any value)
+
+See: `backend/scripts/migration_csv_tool/`
+
