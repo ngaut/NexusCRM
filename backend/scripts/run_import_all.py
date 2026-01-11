@@ -126,6 +126,7 @@ def run_import():
             "python3", "-m", "scripts.migration_tool.main",
             "--file", file_path,
             "--obj", obj_name,
+            "--concurrency", "30",
             "--url", f"http://{HOST}",
             "--token", token
         ]
@@ -138,5 +139,15 @@ def run_import():
             # Continue to next file? Yes, usually.
             time.sleep(1)
 
+def clean_checkpoints():
+    print("🧹 Cleaning old checkpoints and logs...")
+    # Remove import_stats.csv if exists
+    if os.path.exists("import_stats.csv"):
+        os.remove("import_stats.csv")
+    # Clean checkpoints dir if we had one (currently using file tracking logic in main?)
+    # The current importer doesn't strictly use a checkpoints dir, but we should ensure fresh start.
+    pass
+
 if __name__ == "__main__":
+    clean_checkpoints()
     run_import()

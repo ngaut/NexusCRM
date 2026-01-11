@@ -99,7 +99,7 @@ func (r *SchemaRepository) MapFieldTypeToSQL(fieldType string) string {
 	case constants.FieldTypePhone:
 		return SQLTypeVarchar50
 	case constants.FieldTypeURL:
-		return SQLTypeVarchar255
+		return SQLTypeText
 	case constants.FieldTypePicklist:
 		return SQLTypeVarchar255
 	case constants.FieldTypeMultiPicklist:
@@ -111,7 +111,7 @@ func (r *SchemaRepository) MapFieldTypeToSQL(fieldType string) string {
 	case constants.FieldTypeFormula:
 		return SQLTypeVarchar255 // Depends on return type, handled by buildColumnDDL
 	case constants.FieldTypePassword, constants.FieldTypeEncryptedString:
-		return SQLTypeVarchar255
+		return SQLTypeText
 	case constants.FieldTypeJSON:
 		return SQLTypeJSON
 	}
