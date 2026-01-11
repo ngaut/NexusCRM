@@ -80,15 +80,26 @@ FieldSysUser_Phone = "phone"
 phone?: string;
 ```
 
-## Common Types
+## Supported Field Types (from `fieldTypes.json`)
 
-| Purpose | SQL Type | Go Type | TypeScript |
-|---------|----------|---------|------------|
-| ID | `VARCHAR(255)` | `string` | `string` |
-| Text | `VARCHAR(100)` | `string` | `string` |
-| Boolean | `TINYINT(1)` | `bool` | `boolean` |
-| Number | `INT` | `int` | `number` |
-| DateTime | `DATETIME` | `time.Time` | `string` |
+| Logical Type | SQL Type | Description |
+|--------------|----------|-------------|
+| `Text` | `VARCHAR(255)` | Short text (Name, Title) |
+| `TextArea` | `TEXT` | Multi-line text (Address) |
+| `LongTextArea` | `LONGTEXT` | Large text content |
+| `RichText` | `LONGTEXT` | HTML content |
+| `Number` | `DECIMAL(18,2)` | Numeric with decimals |
+| `Currency` | `DECIMAL(18,2)` | Monetary values |
+| `Percent` | `DECIMAL(5,2)` | Percentage (0.00-100.00) |
+| `Date` | `DATE` | Date only |
+| `DateTime` | `DATETIME` | Date and Time |
+| `Boolean` | `BOOLEAN` | Checkbox (True/False) |
+| `Picklist` | `VARCHAR(255)` | Single select option |
+| `Email` | `VARCHAR(255)` | Email with validation |
+| `Phone` | `VARCHAR(40)` | Phone number |
+| `Url` | `VARCHAR(1024)` | Web link |
+| `Lookup` | `VARCHAR(36)` | Reference IDs (Foreign Key) |
+| `JSON` | `JSON` | Structured data |
 
 ## Using Constants
 

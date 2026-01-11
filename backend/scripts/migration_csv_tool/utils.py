@@ -10,7 +10,7 @@ logging.basicConfig(
     format='%(asctime)s | %(levelname)-5s | %(message)s',
     datefmt='%H:%M:%S'
 )
-logger = logging.getLogger('migration_tool')
+logger = logging.getLogger('migration_csv_tool')
 
 @dataclass
 class ImportStatistics:

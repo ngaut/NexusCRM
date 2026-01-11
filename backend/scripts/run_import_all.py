@@ -10,7 +10,7 @@ HOST = "localhost:3001"
 EMAIL = "admin@test.com"
 PASSWORD = "Admin123!"
 DATA_DIR = "../../salesforce_data/data"
-IMPORT_SCRIPT = "migration/import_salesforce.py"
+
 
 # Order matters for foreign keys!
 PRIORITY_ORDER = [
@@ -94,7 +94,7 @@ def run_import():
 
     print(f"Found {len(all_files)} files. Sorted order: {sorted_files[:5]}...")
 
-    script_path = os.path.join(os.path.dirname(__file__), IMPORT_SCRIPT)
+
     data_abs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), DATA_DIR))
 
     for filename in sorted_files:
@@ -116,9 +116,7 @@ def run_import():
 
         file_path = os.path.join(data_abs_path, filename)
         # Run import script
-        # script_path = os.path.join(os.path.dirname(__file__), "migration/import_salesforce.py")
-        # Run migration tool module
-        # script_path = os.path.join(os.path.dirname(__file__), "import_generic.py")
+
         
         print(f"\n>>> Importing {obj_name} from {filename}...")
         
