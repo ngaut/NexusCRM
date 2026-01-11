@@ -103,7 +103,7 @@ The Tool Bus explicitly enforces permissions **before** calling Layer 1.
 ## 6. Data Model Updates
 
 ### New System Tables
-*   `_System_ToolCall`: Audit log for AI actions (Optional/Future).
+*   `_System_ToolCall`: Audit log for AI actions (Planned/Future Feature - Not yet implemented).
 
 ## 7. Scalability & Performance
 *   **Tool List Caching**: Since metadata changes are rare vs. reads, cache generated Tool Definitions in memory, invalidate on `MetadataService.Update()`.

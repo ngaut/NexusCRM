@@ -14,7 +14,7 @@ The Agent should not be a separate "AI Tab". It must **inhabit** the existing UI
     *   **Magic Fill**: Clicking "Magic Wand" icon on a Form (`MetadataRecordForm`) triggers the agent to draft fields. (Planned)
 
 ### 2.2 In-Flow Proposals (Action Injection) (Planned)
-*Future Feature*: Agents don't just chat; they propose state changes.
+*Future Feature (Not Yet Implemented)*: Agents don't just chat; they propose state changes.
 **Mechanism**:
 1.  On a Record Page (`MetadataRecordDetail`), an **Agent Notification** appears: *"I found 3 missing fields for this Lead."*
 2.  User clicks **"Review"**.
@@ -30,14 +30,14 @@ The Agent should not be a separate "AI Tab". It must **inhabit** the existing UI
 ## 3. Admin Interaction (The Architect) (Planned)
 
 ### 3.1 Agent Studio
-*Future Feature*: Admins define Agents just like they define Objects.
+*Future Feature (Not Yet Implemented)*: Admins define Agents just like they define Objects.
 *   **Builder UI**:
     *   **Profile**: Name, Avatar, Base Model (Claude/GPT).
     *   **Permissions**: Link to `_System_Profile`.
     *   **Skills**: Drag-and-drop enabled Skills from the Skills Registry.
 
 ### 3.2 Skills Monitor
-*Future Feature*: A dashboard to see "What are my agents doing?"
+*Future Feature (Not Yet Implemented)*: A dashboard to see "What are my agents doing?"
 *   **Live Stream**: Leverages `_System_AgentActivity` audit logs.
 *   **Replay**: Visual playback of Tool Calls.
 
