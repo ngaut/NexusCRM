@@ -80,4 +80,4 @@ def normalize_boolean(val):
         return True
     if v in ('false', '0', 'no', 'n', 'f'):
         return False
-    return val # Fallback
+    return None # Fallback: invalid boolean becomes null logic to prevent batch failure

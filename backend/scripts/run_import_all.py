@@ -123,7 +123,7 @@ def run_import():
         print(f"\n>>> Importing {obj_name} from {filename}...")
         
         cmd = [
-            "python3", "-m", "scripts.migration_tool.main",
+            "python3", "-m", "scripts.migration_csv_tool.main",
             "--file", file_path,
             "--obj", obj_name,
             "--concurrency", "30",
@@ -144,9 +144,14 @@ def clean_checkpoints():
     # Remove import_stats.csv if exists
     if os.path.exists("import_stats.csv"):
         os.remove("import_stats.csv")
-    # Clean checkpoints dir if we had one (currently using file tracking logic in main?)
-    # The current importer doesn't strictly use a checkpoints dir, but we should ensure fresh start.
-    pass
+    
+    # Remove any local .checkpoint files
+    for f in os.listdir("."):
+        if f.endswith(".checkpoint") or f.endswith(".log"):
+            try:
+                os.remove(f)
+            except Exception:
+                pass
 
 if __name__ == "__main__":
     clean_checkpoints()

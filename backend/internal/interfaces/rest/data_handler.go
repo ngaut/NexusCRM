@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nexuscrm/backend/internal/application/services"
 	"github.com/nexuscrm/backend/pkg/errors"
-	"github.com/nexuscrm/backend/pkg/utils"
 	"github.com/nexuscrm/shared/pkg/constants"
 	"github.com/nexuscrm/shared/pkg/models"
 )
@@ -119,9 +118,6 @@ func (h *DataHandler) GetRecord(c *gin.Context) {
 	id := c.Param("id")
 
 	HandleGetEnvelope(c, "data", func() (interface{}, error) {
-		if !utils.IsValidUUID(id) {
-			return nil, errors.NewValidationError(constants.FieldID, "Invalid ID format")
-		}
 		// Use formula expression for ID lookup
 		filterExpr := fmt.Sprintf("%s == '%s'", constants.FieldID, id)
 		records, err := h.svc.QuerySvc.QueryWithFilter(

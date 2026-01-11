@@ -77,8 +77,9 @@ class SchemaManager:
             return bool(num_pattern.match(v_clean))
 
         if get_match_rate(is_number) >= THRESHOLD:
-            # Heuristic: if name ends in _id, it's likely NOT a math Number (it's a FK key)
-            if not field_name.lower().endswith('_id'): 
+            # Heuristic: if name ends in _id, contains _id_, or ends with _id_c, it's likely NOT a math Number (it's a FK key or external ID)
+            lower_name = field_name.lower()
+            if not lower_name.endswith('_id') and '_id_' not in lower_name and not lower_name.endswith('_id_c'):
                 return 'Number', None
 
         # 4. Email

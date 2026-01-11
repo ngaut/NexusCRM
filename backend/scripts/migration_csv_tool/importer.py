@@ -1,7 +1,11 @@
 import csv
 import os
+import sys
 from .utils import logger, stats, normalize_date, normalize_number, normalize_boolean
 from .schema import SchemaManager
+
+# Increase CSV field size limit to handle large formula fields (default is 128KB, set to 32MB)
+csv.field_size_limit(32 * 1024 * 1024)
 
 def process_file(file_path, obj_name, client, args, shutdown_signal=None):
     stats.objects_processed += 1
@@ -105,10 +109,10 @@ def process_file(file_path, obj_name, client, args, shutdown_signal=None):
         batch = []
         
         # Calculate Safe Batch Size (MySQL Limit: 65,535 placeholders)
-        # Formula: num_rows * num_columns <= 65000
+        # Formula: num_rows * num_columns <= 50000 (with safety buffer for system columns)
         num_columns = len(headers)
         if num_columns > 0:
-            safe_limit = int(60000 / num_columns) # 60k buffer
+            safe_limit = int(50000 / num_columns) # 50k buffer for safety
             batch_size = min(args.batch_size, safe_limit)
         else:
             batch_size = args.batch_size
