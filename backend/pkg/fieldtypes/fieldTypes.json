@@ -201,7 +201,7 @@
         "isSearchable": true,
         "isGroupable": false,
         "isSummable": false,
-        "validationPattern": "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$",
+        "validationPattern": ".*",
         "validationMessage": "invalid email format",
         "operators": [
             "equals",
@@ -221,7 +221,7 @@
         "isSearchable": true,
         "isGroupable": false,
         "isSummable": false,
-        "validationPattern": "^\\+?[0-9\\-\\.\\(\\)\\s]{3,30}$",
+        "validationPattern": ".*",
         "validationMessage": "invalid phone format",
         "operators": [
             "equals",
@@ -240,7 +240,7 @@
         "isSearchable": true,
         "isGroupable": false,
         "isSummable": false,
-        "validationPattern": "^https?://[^\\s/$.?#].[^\\s]*$",
+        "validationPattern": ".*",
         "validationMessage": "invalid URL format",
         "operators": [
             "equals",
