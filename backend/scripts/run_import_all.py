@@ -9,7 +9,7 @@ import sys
 HOST = "localhost:3001"
 EMAIL = "admin@test.com"
 PASSWORD = "Admin123!"
-DATA_DIR = "../../salesforce_data/data"
+DATA_DIR = "../../salesforce_data"
 
 
 # Order matters for foreign keys!
@@ -51,77 +51,76 @@ def login():
         return data["token"]
     return None
 
-def get_csv_files():
-    data_path = os.path.join(os.path.dirname(__file__), DATA_DIR)
-    if not os.path.exists(data_path):
-        print(f"Data dir not found: {data_path}")
-        return []
-    
-    files = []
-    for f in os.listdir(data_path):
-        if f.endswith(".csv"):
-            files.append(f)
-    return files
-
 def run_import():
     token = login()
     if not token:
         print("Login failed")
         return
 
-    all_files = get_csv_files()
-    if not all_files:
-        print("No CSV files found.")
-        return
-
-    # Sort files
-    sorted_files = []
-    
-    # 1. Priority files
-    for p in PRIORITY_ORDER:
-        # Check for exact Match or variations
-        for f in all_files:
-            name = f.lower().replace(".csv", "")
-            # Check exact match or standard prefixes like "salesforce__user"
-            if name == p or name == f"salesforce__{p}" or name == f"stg_salesforce__{p}":
-                if f not in sorted_files:
-                    sorted_files.append(f)
-    
-    # 2. Rest of files
-    for f in all_files:
-        if f not in sorted_files:
-            sorted_files.append(f)
-
-    print(f"Found {len(all_files)} files. Sorted order: {sorted_files[:5]}...")
-
-
     data_abs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), DATA_DIR))
 
-    for filename in sorted_files:
-        # Normalize: 
-        # stg_salesforce__user.csv -> stg_user
-        # salesforce__user.csv -> user
-        # user.csv -> user
+    # Walk directory to find items (CSV files or Parquet Directories)
+    data_items = []
+
+    # get immediate children
+    for name in os.listdir(data_abs_path):
+        full_path = os.path.join(data_abs_path, name)
         
-        name = filename.lower()
+        # CSV File
         if name.endswith(".csv"):
-            name = name[:-4]
-            
-        if name.startswith("stg_salesforce__"):
-            obj_name = "stg_" + name[16:]
-        elif name.startswith("salesforce__"):
-            obj_name = name[12:]
-        else:
-            obj_name = name
+             data_items.append(name)
+        # Directory (Parquet?)
+        elif os.path.isdir(full_path):
+            # Check if likely parquet
+            # Just assume any directory in 'data' is a partitioned table
+            if not name.startswith('.'):
+                data_items.append(name)
+    
+    # Sort
+    sorted_items = []
+    
+    # 1. Priority
+    for p in PRIORITY_ORDER:
+        for f in data_items:
+            # f might be "account" or "account.csv"
+            clean_name = f.replace(".csv", "").lower()
+            if clean_name == p or clean_name == f"salesforce__{p}" or clean_name == f"stg_salesforce__{p}":
+                if f not in sorted_items:
+                    sorted_items.append(f)
+                    
+    # 2. Others
+    for f in data_items:
+        if f not in sorted_items:
+            sorted_items.append(f)
 
-        file_path = os.path.join(data_abs_path, filename)
-        # Run import script
+    print(f"Found {len(sorted_items)} items. Sorted order: {sorted_items[:5]}...")
 
+    for item_name in sorted_items:
+        # Normalize Object Name
+        # stg_salesforce__user -> user
+        # salesforce__user -> user
+        # user -> user
         
-        print(f"\n>>> Importing {obj_name} from {filename}...")
+        lower = item_name.lower().replace(".csv", "")
+        if lower.startswith("stg_salesforce__"):
+            obj_name = "stg_" + lower[16:]
+        elif lower.startswith("salesforce__"):
+            obj_name = lower[12:]
+        else:
+            obj_name = lower
+
+        file_path = os.path.join(data_abs_path, item_name)
+        
+        print(f"\n>>> Importing {obj_name} from {item_name}...")
+        
+        # Use venv python if available
+        python_bin = "python3"
+        venv_python = os.path.join(os.path.dirname(__file__), "../venv/bin/python")
+        if os.path.exists(venv_python):
+            python_bin = venv_python
         
         cmd = [
-            "python3", "-m", "scripts.migration_csv_tool.main",
+            python_bin, "-m", "scripts.migration_tool.main",
             "--file", file_path,
             "--obj", obj_name,
             "--concurrency", "30",
@@ -130,11 +129,9 @@ def run_import():
         ]
         
         try:
-            # We want to see output live, so we don't capture it (allow stdout)
             subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as e:
-            print(f"!!! Error importing {filename}: {e}")
-            # Continue to next file? Yes, usually.
+            print(f"!!! Error importing {item_name}: {e}")
             time.sleep(1)
 
 def clean_checkpoints():
